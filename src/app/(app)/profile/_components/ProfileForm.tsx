@@ -15,25 +15,43 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@/lib/definitions';
+import type { User, UserSettings } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { updateUserSettings } from '@/lib/actions'; // For updating currency
+
+const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']; // Consistent currency list
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }).max(50, {message: 'Name cannot exceed 50 characters.'}),
-  email: z.string().email(), // Keep email for display, but it won't be submitted for change
+  email: z.string().email(), // Keep email for display
+  defaultCurrency: z.string().min(3, { message: 'Default currency is required.' }),
 });
 
-type ProfileFormValues = Pick<z.infer<typeof profileFormSchema>, 'name'>; // Only 'name' is updatable here
+type ProfileFormValues = Pick<z.infer<typeof profileFormSchema>, 'name'>;
+type SettingsFormValues = Pick<z.infer<typeof profileFormSchema>, 'defaultCurrency'>;
+
 
 interface ProfileFormProps {
   initialData: User;
-  onSubmitAction: (data: ProfileFormValues) => Promise<User | null>;
+  initialSettings: UserSettings | undefined;
+  onSubmitUserAction: (data: ProfileFormValues) => Promise<User | null>;
+  onSubmitSettingsAction: (data: SettingsFormValues) => Promise<User | null>; // User is returned by updateUserSettings
   translations: {
+    profileDetailsTitle: string;
     nameLabel: string;
     namePlaceholder: string;
     emailLabel: string;
+    defaultCurrencyLabel: string;
+    defaultCurrencyPlaceholder: string;
     saveButton: string;
     successToastTitle: string;
     successToastDescription: string;
@@ -42,31 +60,46 @@ interface ProfileFormProps {
   };
 }
 
-export function ProfileForm({ initialData, onSubmitAction, translations }: ProfileFormProps) {
+export function ProfileForm({ 
+  initialData, 
+  initialSettings,
+  onSubmitUserAction, 
+  onSubmitSettingsAction, 
+  translations 
+}: ProfileFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const form = useForm<ProfileFormValues & { email: string }>({ // Include email for defaultValues
-    resolver: zodResolver(profileFormSchema.pick({ name: true })), // Validate only name
+  const form = useForm<ProfileFormValues & SettingsFormValues & { email: string }>({ 
+    resolver: zodResolver(profileFormSchema.pick({ name: true, defaultCurrency: true })), 
     defaultValues: {
       name: initialData?.name || '',
       email: initialData?.email || '',
+      defaultCurrency: initialSettings?.defaultCurrency || 'USD',
     },
   });
 
-  async function onSubmit(data: ProfileFormValues) {
+  async function onSubmit(data: ProfileFormValues & SettingsFormValues) {
     setIsSubmitting(true);
     try {
-      const result = await onSubmitAction({ name: data.name });
-      if (result) {
+      // Submit name change
+      const userResult = await onSubmitUserAction({ name: data.name });
+      
+      // Submit currency setting change
+      const settingsResult = await onSubmitSettingsAction({ defaultCurrency: data.defaultCurrency });
+
+      if (userResult && settingsResult) {
         toast({
           title: translations.successToastTitle,
           description: translations.successToastDescription,
         });
-        router.refresh(); // Refresh to ensure data is up-to-date across the app
+        router.refresh(); 
       } else {
-        throw new Error('Failed to update profile.');
+        let errorMessages = [];
+        if (!userResult) errorMessages.push("Failed to update name.");
+        if (!settingsResult) errorMessages.push("Failed to update currency.");
+        throw new Error(errorMessages.join(' '));
       }
     } catch (error) {
       toast({
@@ -80,9 +113,9 @@ export function ProfileForm({ initialData, onSubmitAction, translations }: Profi
   }
 
   return (
-    <Card className="max-w-2xl mx-auto shadow-lg">
+    <Card className="w-full shadow-lg">
       <CardHeader>
-        {/* Title and description handled by PageHeader */}
+        <CardTitle className="font-headline">{translations.profileDetailsTitle}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -108,8 +141,32 @@ export function ProfileForm({ initialData, onSubmitAction, translations }: Profi
               </FormControl>
               <FormMessage />
             </FormItem>
-            
 
+            <FormField
+              control={form.control}
+              name="defaultCurrency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{translations.defaultCurrencyLabel}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={translations.defaultCurrencyPlaceholder} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {currencies.map((currency) => (
+                        <SelectItem key={currency} value={currency}>
+                          {currency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Saving...' : translations.saveButton}

@@ -9,7 +9,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 
 // In-memory store for mock data (to be replaced by API calls)
 let MOCK_DB: MockDb = {
-  users: [{ id: 'user-123', email: 'user@example.com', name: 'Test User', settings: { transactionsPerPage: 10 } }],
+  users: [{ id: 'user-123', email: 'user@example.com', name: 'Test User', settings: { transactionsPerPage: 10, defaultCurrency: 'USD' } }],
   mainCategories: [
     { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347' },
     { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4' },
@@ -93,9 +93,6 @@ export async function getUserSettings(): Promise<UserSettings | undefined> {
 }
 
 export async function updateUserSettings(newSettings: Partial<UserSettings>): Promise<User | null> {
-  // For mutations, we might still want to throw errors to indicate failure clearly.
-  // Or adopt the { data, error } pattern if preferred for consistency.
-  // For now, keeping mutations as throwing on failure.
   try {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
@@ -106,6 +103,7 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
     MOCK_DB.users[userIndex].settings = { ...MOCK_DB.users[userIndex].settings, ...newSettings } as UserSettings;
     
     revalidatePath('/settings');
+    revalidatePath('/profile'); // If default currency is updated on profile page
     revalidatePath('/transactions'); // If transactionsPerPage affects transaction list
     return MOCK_DB.users[userIndex];
   } catch (error) {
@@ -134,6 +132,23 @@ export async function updateUserProfile(userId: string, data: { name?: string })
     console.error('Failed to update user profile:', error);
     throw error;
   }
+}
+
+export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{success: boolean, message: string}> {
+  // TODO: USER: Implement actual password change logic with your API
+  // This is a mock implementation.
+  console.log(`Attempting to change password for user ${userId}. Current: ${currentPassword}, New: ${newPassword}`);
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID || MOCK_USER_ID !== userId) {
+    return { success: false, message: "Unauthorized or user mismatch." };
+  }
+  // Mock validation: In a real scenario, verify currentPassword against stored hash
+  if (currentPassword === "password123_wrong") { // Simulate wrong current password
+     return { success: false, message: "Incorrect current password." };
+  }
+  // Simulate successful password change
+  console.log(`Mock password change successful for user ${userId}.`);
+  return { success: true, message: "Password changed successfully." };
 }
 
 

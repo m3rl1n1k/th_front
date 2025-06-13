@@ -1,6 +1,7 @@
 
 export interface UserSettings {
   transactionsPerPage: number;
+  defaultCurrency?: string; // Added
 }
 
 export interface User {
@@ -93,3 +94,4 @@ export type MockDb = {
   budgets: Budget[];
   sharedCapitalSessions: SharedCapitalSession[];
 };
+

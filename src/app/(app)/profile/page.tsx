@@ -1,38 +1,56 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { getCurrentUser } from '@/lib/auth';
-import { updateUserProfile } from '@/lib/actions';
-import type { User } from '@/lib/definitions';
+import { updateUserProfile, updateUserSettings, getUserSettings } from '@/lib/actions';
+import type { User, UserSettings } from '@/lib/definitions';
 import { ProfileForm } from './_components/ProfileForm';
+import { ChangePasswordForm } from './_components/ChangePasswordForm';
 import { getTranslations } from '@/lib/getTranslations';
 import { redirect } from 'next/navigation';
 
 export default async function ProfilePage({ params: { locale } }: { params: { locale: string } }) {
   const t = await getTranslations(locale);
-  const tp = t.profilePage; // Translations for profile page
+  const tp = t.profilePage; 
 
   const currentUser = await getCurrentUser();
-
+  
   if (!currentUser) {
-    // This should ideally not happen if middleware is correctly protecting routes
     redirect(`/${locale}/login`);
   }
-  
+  // Fetch current settings specifically for the profile form, ensure it matches user
+  const userSettings = await getUserSettings();
+
+
   const handleUpdateProfile = async (data: { name?: string }) => {
     'use server';
-    // The updateUserProfile action expects userId as the first argument.
-    // We get it from the currentUser object fetched on this server component.
     return updateUserProfile(currentUser.id, data);
   };
+
+  const handleUpdateSettings = async (data: { defaultCurrency?: string }) => {
+    'use server';
+    // Ensure we pass all settings fields required by updateUserSettings or adjust action
+    const currentSettings = await getUserSettings() || { transactionsPerPage: 10 }; // Fallback
+    const newSettings = { ...currentSettings, ...data };
+    return updateUserSettings(newSettings as UserSettings);
+  };
+
 
   return (
     <>
       <PageHeader title={tp.title} description={tp.description} />
-      <ProfileForm 
-        initialData={currentUser} 
-        onSubmitAction={handleUpdateProfile}
-        translations={tp}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ProfileForm 
+          initialData={currentUser} 
+          initialSettings={userSettings}
+          onSubmitUserAction={handleUpdateProfile}
+          onSubmitSettingsAction={handleUpdateSettings}
+          translations={tp}
+        />
+        <ChangePasswordForm 
+          currentUser={currentUser}
+          translations={tp}
+        />
+      </div>
     </>
   );
 }
