@@ -37,10 +37,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const transactionTypes: TransactionType[] = ['Income', 'Expense'];
 const transactionFrequencies: TransactionFrequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
-const NO_CATEGORY_VALUE = "__NONE__"; // Special value for "No Category"
+const NO_CATEGORY_VALUE = "_NONE_"; // Special value for "No Category"
 
 const transactionFormSchema = z.object({
-  subCategoryId: z.string().optional(), // Stays optional
+  subCategoryId: z.string().optional(),
   walletId: z.string().min(1, { message: 'Wallet is required.' }),
   type: z.enum(transactionTypes as [TransactionType, ...TransactionType[]], { required_error: 'Transaction type is required.' }),
   frequency: z.enum(transactionFrequencies as [TransactionFrequency, ...TransactionFrequency[]], { required_error: 'Frequency is required.' }),
@@ -57,9 +57,17 @@ interface TransactionFormProps {
   wallets: Wallet[];
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
+  defaultWalletId?: string; // New prop for auto-selecting wallet
 }
 
-export function TransactionForm({ initialData, onSubmitAction, wallets, subCategories, mainCategories }: TransactionFormProps) {
+export function TransactionForm({
+  initialData,
+  onSubmitAction,
+  wallets,
+  subCategories,
+  mainCategories,
+  defaultWalletId, // Destructure new prop
+}: TransactionFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -69,8 +77,6 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
     defaultValues: initialData
       ? {
           ...initialData,
-          // If initialData.subCategoryId is undefined, form state will be undefined.
-          // If it has a value, that value is used. This is fine.
           subCategoryId: initialData.subCategoryId === undefined ? NO_CATEGORY_VALUE : initialData.subCategoryId,
           createdAt: new Date(initialData.createdAt),
         }
@@ -80,7 +86,8 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
           createdAt: new Date(),
           amount: 0,
           description: '',
-          subCategoryId: NO_CATEGORY_VALUE, // Default to "No Category" selected
+          subCategoryId: NO_CATEGORY_VALUE,
+          walletId: defaultWalletId, // Use the prop for new transactions
         },
   });
 
@@ -161,9 +168,10 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category (Optional)</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value} // field.value will be NO_CATEGORY_VALUE or an actual ID
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value === undefined && NO_CATEGORY_VALUE ? NO_CATEGORY_VALUE : field.value}
+                    defaultValue={field.value}
                     disabled={isSubmitting}
                   >
                     <FormControl>
@@ -185,7 +193,7 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -266,12 +274,12 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end space-x-3 pt-4">
               <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || wallets.length === 0 || mainCategories.length === 0 && subCategories.length === 0}>
+              <Button type="submit" disabled={isSubmitting || wallets.length === 0}>
                 {isSubmitting ? (initialData ? 'Saving...' : 'Creating...') : (initialData ? 'Save Changes' : 'Create Transaction')}
               </Button>
             </div>
@@ -281,4 +289,3 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
     </Card>
   );
 }
-
