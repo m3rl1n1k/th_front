@@ -74,7 +74,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`API Error (${response.status}) on ${endpoint}: ${errorBody}`);
+      console.warn(`API Error (${response.status}) on ${endpoint}: ${errorBody}`); // Changed to console.warn
       return { data: null, error: { message: `API request failed: ${response.statusText} - ${errorBody}`, status: response.status } };
     }
 
@@ -85,7 +85,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
     return { data: responseData, error: null };
 
   } catch (networkError: any) {
-    console.error(`Network/Fetch Error for ${endpoint}:`, networkError.message);
+    console.warn(`Network/Fetch Error for ${endpoint}:`, networkError.message); // Changed to console.warn
     return { data: null, error: { message: networkError.message || 'Network request failed' } };
   }
 }
@@ -97,7 +97,7 @@ export async function getUserSettings(): Promise<UserSettings | undefined> {
     const user = await getCurrentUser(); 
     return user?.settings;
   } catch (error) {
-    console.error('Failed to fetch user settings (mock):', error);
+    console.warn('Failed to fetch user settings (mock):', error); // Changed to console.warn
     const MOCK_USER_ID = 'user-123';
     const user = MOCK_DB.users.find(u => u.id === MOCK_USER_ID);
     return user?.settings;
@@ -566,3 +566,4 @@ export async function stopSharedCapitalSession(): Promise<SharedCapitalSession |
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
+
