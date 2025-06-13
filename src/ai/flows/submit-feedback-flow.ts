@@ -41,33 +41,14 @@ export async function submitFeedback(input: SubmitFeedbackInput): Promise<Submit
   return submitFeedbackFlow(input);
 }
 
-const feedbackPrompt = ai.definePrompt({
-  name: 'feedbackSubmissionPrompt',
-  input: {schema: SubmitFeedbackInputSchema},
-  // Output schema for the prompt still provides a trackingId for the user message
-  output: {schema:  z.object({
-    confirmationMessage: z.string().describe('A message confirming receipt of the feedback.'),
-    trackingId: z.string().describe('A unique tracking ID for the submitted feedback for user display.'),
-  })},
-  prompt: `
-You have received new user feedback.
-User Email (if provided): {{userEmail}}
-Feedback Type: {{feedbackType}}
-Subject: {{subject}}
-Message:
-{{{message}}}
-
-Acknowledge receipt of this feedback. Provide a polite confirmation message for the user.
-Generate a unique mock tracking ID for this feedback (e.g., FBK- followed by 8 random alphanumeric characters) for the user to reference.
-Return the confirmation message and the tracking ID.
-`,
-});
+// Removed the LLM prompt for feedback submission.
+// const feedbackPrompt = ai.definePrompt({ ... });
 
 const submitFeedbackFlow = ai.defineFlow(
   {
     name: 'submitFeedbackFlow',
     inputSchema: SubmitFeedbackInputSchema,
-    outputSchema: SubmitFeedbackOutputSchema, // Use the extended output schema
+    outputSchema: SubmitFeedbackOutputSchema,
   },
   async (input) => {
     const currentUser = await getCurrentUser();
@@ -75,7 +56,9 @@ const submitFeedbackFlow = ai.defineFlow(
       throw new Error("User not authenticated to submit feedback.");
     }
 
-    const {output: promptOutput} = await feedbackPrompt(input);
+    // Generate confirmation message and tracking ID directly
+    const confirmationMessage = `Thank you for your feedback regarding "${input.subject}". We have received it and will review it shortly.`;
+    const trackingId = `FBK-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 9)}`;
 
     let storedFeedback: FeedbackItem;
 
@@ -89,31 +72,18 @@ const submitFeedbackFlow = ai.defineFlow(
       });
     } catch (error) {
       console.error('Error storing feedback via action:', error);
-      // Handle error case - perhaps return a specific error message
-      // For now, we'll still try to provide a generic confirmation
+      // Handle error case
       return {
         confirmationMessage: 'Thank you for your feedback! We have received it, but there was an issue with internal processing.',
-        trackingId: promptOutput?.trackingId || 'N/A',
+        trackingId: trackingId || 'N/A', // Use generated trackingId
         feedbackId: 'ERROR_STORING', // Indicate an error
-      };
-    }
-    
-
-    if (!promptOutput) {
-      console.error('Feedback prompt did not return structured output. Feedback was still stored.');
-      return {
-        confirmationMessage: 'Thank you for your feedback! We have received it, though there was a hiccup generating a display tracking ID.',
-        trackingId: 'N/A',
-        feedbackId: storedFeedback.id,
       };
     }
         
     return {
-      confirmationMessage: promptOutput.confirmationMessage,
-      trackingId: promptOutput.trackingId, // This is the one from the LLM for user display
-      feedbackId: storedFeedback.id, // This is the internal ID from the addFeedback action
+      confirmationMessage: confirmationMessage,
+      trackingId: trackingId, 
+      feedbackId: storedFeedback.id,
     };
   }
 );
-
-    
