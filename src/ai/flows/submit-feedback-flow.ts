@@ -11,9 +11,9 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const feedbackTypes = ['Technical Issue', 'Error Report', 'Suggestion', 'General Feedback', 'Other'] as const;
+const feedbackTypes = ['Technical Issue', 'Error Report', 'Suggestion', 'General Feedback', 'Other'] as const;
 
-export const SubmitFeedbackInputSchema = z.object({
+const SubmitFeedbackInputSchema = z.object({
   feedbackType: z.enum(feedbackTypes).describe('The type of feedback being submitted.'),
   subject: z.string().min(5, { message: 'Subject must be at least 5 characters.' }).max(100, {message: 'Subject cannot exceed 100 characters.'}).describe('A brief subject line for the feedback.'),
   message: z.string().min(10, { message: 'Message must be at least 10 characters.' }).max(1000, {message: 'Message cannot exceed 1000 characters.'}).describe('The detailed feedback message from the user.'),
@@ -21,7 +21,7 @@ export const SubmitFeedbackInputSchema = z.object({
 });
 export type SubmitFeedbackInput = z.infer<typeof SubmitFeedbackInputSchema>;
 
-export const SubmitFeedbackOutputSchema = z.object({
+const SubmitFeedbackOutputSchema = z.object({
   confirmationMessage: z.string().describe('A message confirming receipt of the feedback.'),
   trackingId: z.string().describe('A unique tracking ID for the submitted feedback.'),
 });
@@ -74,3 +74,4 @@ const submitFeedbackFlow = ai.defineFlow(
     return output;
   }
 );
+

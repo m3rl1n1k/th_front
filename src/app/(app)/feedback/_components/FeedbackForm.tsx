@@ -26,22 +26,34 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { submitFeedback, SubmitFeedbackInputSchema, feedbackTypes } from '@/ai/flows/submit-feedback-flow';
+import { submitFeedback, type SubmitFeedbackInput } from '@/ai/flows/submit-feedback-flow'; // Removed SubmitFeedbackInputSchema and feedbackTypes from import
 import type { User } from '@/lib/definitions';
+
+// Define feedbackTypes locally or import from a shared non-server file
+const feedbackTypes = ['Technical Issue', 'Error Report', 'Suggestion', 'General Feedback', 'Other'] as const;
+
+// Define SubmitFeedbackInputSchema locally or import from a shared non-server file
+const SubmitFeedbackInputSchemaForForm = z.object({
+  feedbackType: z.enum(feedbackTypes).describe('The type of feedback being submitted.'),
+  subject: z.string().min(5, { message: 'Subject must be at least 5 characters.' }).max(100, {message: 'Subject cannot exceed 100 characters.'}).describe('A brief subject line for the feedback.'),
+  message: z.string().min(10, { message: 'Message must be at least 10 characters.' }).max(1000, {message: 'Message cannot exceed 1000 characters.'}).describe('The detailed feedback message from the user.'),
+  userEmail: z.string().email().optional().describe('The email of the user submitting feedback, if available.'),
+});
+
 
 interface FeedbackFormProps {
   translations: any; // From feedbackPage namespace
   currentUserEmail?: string | null;
 }
 
-type FeedbackFormValues = z.infer<typeof SubmitFeedbackInputSchema>;
+type FeedbackFormValues = z.infer<typeof SubmitFeedbackInputSchemaForForm>;
 
 export function FeedbackForm({ translations, currentUserEmail }: FeedbackFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FeedbackFormValues>({
-    resolver: zodResolver(SubmitFeedbackInputSchema),
+    resolver: zodResolver(SubmitFeedbackInputSchemaForForm),
     defaultValues: {
       feedbackType: undefined,
       subject: '',
@@ -53,7 +65,8 @@ export function FeedbackForm({ translations, currentUserEmail }: FeedbackFormPro
   async function onSubmit(data: FeedbackFormValues) {
     setIsSubmitting(true);
     try {
-      const result = await submitFeedback(data);
+      // We use SubmitFeedbackInput type for the server action, which is still exported
+      const result = await submitFeedback(data as SubmitFeedbackInput);
       toast({
         title: translations.successToastTitle,
         description: `${result.confirmationMessage} (ID: ${result.trackingId})`,
