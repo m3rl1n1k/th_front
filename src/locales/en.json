@@ -8,7 +8,11 @@
     "monthlyExpenses": "Monthly Expenses",
     "recentTransactions": "Recent Transactions",
     "recentActivity": "Recent Activity",
-    "spendingOverview": "Spending Overview"
+    "spendingOverview": "Spending Overview",
+    "spendingByCategory": "Spending by Category",
+    "spendingByCategoryDescription": "Visual representation of your expenses across different categories.",
+    "noExpenseData": "No expense data available to display chart.",
+    "totalExpensesLabel": "Total Expenses"
   },
   "sidebar": {
     "dashboard": "Dashboard",

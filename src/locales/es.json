@@ -8,7 +8,11 @@
     "monthlyExpenses": "Gastos Mensuales",
     "recentTransactions": "Transacciones Recientes",
     "recentActivity": "Actividad Reciente",
-    "spendingOverview": "Resumen de Gastos"
+    "spendingOverview": "Resumen de Gastos",
+    "spendingByCategory": "Gastos por Categoría",
+    "spendingByCategoryDescription": "Representación visual de tus gastos en diferentes categorías.",
+    "noExpenseData": "No hay datos de gastos disponibles para mostrar el gráfico.",
+    "totalExpensesLabel": "Gastos Totales"
   },
   "sidebar": {
     "dashboard": "Panel",
