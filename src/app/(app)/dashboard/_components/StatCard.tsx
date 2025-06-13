@@ -11,10 +11,10 @@ export type StatCardIconName = 'DollarSign' | 'Users' | 'CreditCard' | 'Calculat
 interface StatCardProps {
   title: string;
   value: string | number;
-  iconName: StatCardIconName; // Changed from icon: React.ElementType
-  currency?: boolean;
+  iconName: StatCardIconName;
+  currencyCode?: string; // Make this optional; if present, format as currency
   dataAiHint?: string;
-  locale?: string;
+  locale: string; // locale is now required
   localStorageKey: string;
   initialVisible: boolean;
 }
@@ -22,10 +22,10 @@ interface StatCardProps {
 export function StatCard({
   title,
   value,
-  iconName, // Changed from icon
-  currency = false,
+  iconName,
+  currencyCode,
   dataAiHint,
-  locale = 'en',
+  locale,
   localStorageKey,
   initialVisible,
 }: StatCardProps) {
@@ -72,7 +72,6 @@ export function StatCard({
       case 'Calculator':
         return <Calculator {...iconProps} />;
       default:
-        // Optionally return a default icon or null
         return null; 
     }
   };
@@ -89,10 +88,11 @@ export function StatCard({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
-          {currency
+          {currencyCode
             ? Number(value).toLocaleString(locale, {
                 style: 'currency',
-                currency: 'USD', 
+                currency: currencyCode,
+                currencyDisplay: 'code', // Use ISO code
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })

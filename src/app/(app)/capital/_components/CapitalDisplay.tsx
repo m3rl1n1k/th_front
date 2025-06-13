@@ -85,7 +85,13 @@ export function CapitalDisplay({
   };
   
   const formatCurrency = (amount: number, currencyCode: string) => {
-    return amount.toLocaleString(locale, { style: 'currency', currency: currencyCode, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return amount.toLocaleString(locale, { 
+      style: 'currency', 
+      currency: currencyCode, 
+      currencyDisplay: 'code', // Use ISO code
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
   };
 
   return (

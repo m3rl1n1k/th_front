@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LineChart as LineChartIcon } from 'lucide-react';
 import type { MonthlyIncomeExpenseData } from '../page';
-import { useTheme } from 'next-themes'; // To get theme for colors if needed
+import { useTheme } from 'next-themes'; 
 
 interface IncomeExpenseLineChartProps {
   data: MonthlyIncomeExpenseData[];
@@ -23,24 +23,31 @@ interface IncomeExpenseLineChartProps {
     currentYearLabel: string;
   };
   locale: string;
+  currencyCode: string; // Added currencyCode
 }
 
-export function IncomeExpenseLineChart({ data, translations, locale }: IncomeExpenseLineChartProps) {
+export function IncomeExpenseLineChart({ data, translations, locale, currencyCode }: IncomeExpenseLineChartProps) {
   const { resolvedTheme } = useTheme();
 
   const chartConfig = {
     income: {
       label: translations.incomeLabel,
-      color: 'hsl(var(--chart-2))', // Example color, adjust from globals.css or define new
+      color: 'hsl(var(--chart-2))', 
     },
     expense: {
       label: translations.expenseLabel,
-      color: 'hsl(var(--chart-1))', // Example color
+      color: 'hsl(var(--chart-1))', 
     },
   } satisfies ChartConfig;
 
   const formatCurrency = (value: number) => {
-    return value.toLocaleString(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }); // Assuming USD for now
+    return value.toLocaleString(locale, { 
+      style: 'currency', 
+      currency: currencyCode, // Use currencyCode
+      currencyDisplay: 'code', // Use ISO code
+      minimumFractionDigits: 0, 
+      maximumFractionDigits: 0 
+    });
   };
 
   return (

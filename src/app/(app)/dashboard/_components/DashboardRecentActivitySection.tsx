@@ -18,6 +18,8 @@ interface DashboardRecentActivitySectionProps {
     income?: string;
     expense?: string;
   };
+  locale: string; // Added locale
+  defaultCurrencyCode: string; // Added defaultCurrencyCode
   localStorageKey: string;
   initialVisible: boolean;
 }
@@ -28,6 +30,8 @@ export function DashboardRecentActivitySection({
   subCategories,
   mainCategories,
   translations,
+  locale, // Use locale
+  defaultCurrencyCode, // Use defaultCurrencyCode
   localStorageKey,
   initialVisible,
 }: DashboardRecentActivitySectionProps) {
@@ -79,6 +83,8 @@ export function DashboardRecentActivitySection({
           subCategories={subCategories}
           mainCategories={mainCategories}
           translations={translations}
+          locale={locale}
+          defaultCurrencyCode={defaultCurrencyCode}
         />
       </CardContent>
     </Card>

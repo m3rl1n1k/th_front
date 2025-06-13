@@ -18,6 +18,8 @@ interface RecentActivityListProps {
     income?: string;
     expense?: string;
   };
+  locale: string;
+  defaultCurrencyCode: string;
 }
 
 export function RecentActivityList({
@@ -26,9 +28,11 @@ export function RecentActivityList({
   subCategories,
   mainCategories,
   translations,
+  locale,
+  defaultCurrencyCode,
 }: RecentActivityListProps) {
   const getWalletCurrency = (walletId: string) => {
-    return wallets.find(w => w.id === walletId)?.currency || 'USD';
+    return wallets.find(w => w.id === walletId)?.currency || defaultCurrencyCode;
   };
 
   const getCategoryInfo = (subCategoryId?: string) => {
@@ -81,7 +85,7 @@ export function RecentActivityList({
               </div>
               <div className="text-right">
                 <p className={`text-sm font-semibold ${isIncome ? 'text-accent' : 'text-destructive'}`}>
-                  {isIncome ? '+' : '-'}{transaction.amount.toLocaleString(undefined, { style: 'currency', currency })}
+                  {isIncome ? '+' : '-'}{transaction.amount.toLocaleString(locale, { style: 'currency', currency, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(transaction.createdAt), 'MMM dd, yyyy')}

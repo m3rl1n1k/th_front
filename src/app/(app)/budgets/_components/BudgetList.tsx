@@ -31,9 +31,10 @@ interface BudgetListProps {
   initialBudgets: AugmentedBudget[];
   translations: any; 
   locale: string;
+  defaultCurrencyCode: string; // Added defaultCurrencyCode
 }
 
-export function BudgetList({ initialBudgets, translations, locale }: BudgetListProps) {
+export function BudgetList({ initialBudgets, translations, locale, defaultCurrencyCode }: BudgetListProps) {
   const [budgets, setBudgets] = useState<AugmentedBudget[]>(initialBudgets);
   const [itemToDelete, setItemToDelete] = useState<AugmentedBudget | null>(null);
   const { toast } = useToast();
@@ -60,8 +61,13 @@ export function BudgetList({ initialBudgets, translations, locale }: BudgetListP
   };
 
   const formatCurrency = (amount: number) => {
-    // TODO: Make currency dynamic based on user settings or wallet
-    return amount.toLocaleString(locale, { style: 'currency', currency: 'USD' });
+    return amount.toLocaleString(locale, { 
+      style: 'currency', 
+      currency: defaultCurrencyCode, 
+      currencyDisplay: 'code', // Use ISO code
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
   };
 
   if (budgets.length === 0) {
@@ -138,4 +144,3 @@ export function BudgetList({ initialBudgets, translations, locale }: BudgetListP
     </>
   );
 }
-

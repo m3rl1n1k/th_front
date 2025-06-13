@@ -2,7 +2,7 @@
 import { PageHeader } from '@/components/shared/PageHeader';
 import { getTranslations } from '@/lib/getTranslations';
 import { cookies } from 'next/headers';
-import { getTransactions, getMainCategories, getSubCategories } from '@/lib/actions';
+import { getTransactions, getMainCategories, getSubCategories, getUserSettings } from '@/lib/actions';
 import type { Transaction, MainCategory, SubCategory } from '@/lib/definitions';
 import { IncomeExpenseLineChart } from './_components/IncomeExpenseLineChart';
 import { ExpenseBySubCategoryBarChart } from './_components/ExpenseBySubCategoryBarChart';
@@ -27,6 +27,8 @@ export default async function StandardReportsPage() {
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tsr = t.standardReportsPage;
+  const userSettings = await getUserSettings();
+  const defaultCurrency = userSettings?.defaultCurrency || 'USD';
 
   const transactions: Transaction[] = await getTransactions();
   const mainCategories: MainCategory[] = await getMainCategories();
@@ -67,6 +69,7 @@ export default async function StandardReportsPage() {
             currentYearLabel: tsr.currentYearLabel,
           }}
           locale={locale}
+          currencyCode={defaultCurrency}
         />
         <ExpenseBySubCategoryBarChart
           allTransactions={transactions}
@@ -79,6 +82,7 @@ export default async function StandardReportsPage() {
             totalLabel: tsr.totalLabel,
           }}
           locale={locale}
+          currencyCode={defaultCurrency}
         />
       </div>
     </>

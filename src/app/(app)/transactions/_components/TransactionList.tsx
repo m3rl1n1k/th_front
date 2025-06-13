@@ -18,8 +18,8 @@ import { deleteTransaction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { format, isToday, isYesterday, parseISO, startOfDay, compareDesc } from 'date-fns';
-import { enUS, es } from 'date-fns/locale'; // Explicitly import locales
-import type { Locale } from 'date-fns'; // Import Locale type
+import { enUS, es } from 'date-fns/locale'; 
+import type { Locale } from 'date-fns'; 
 import { Card } from '@/components/ui/card';
 import { ArrowDownCircle, ArrowUpCircle, ListX } from 'lucide-react';
 import { TransactionFilters, type TransactionFiltersState } from './TransactionFilters';
@@ -34,6 +34,7 @@ interface TransactionListProps {
   mainCategories: MainCategory[];
   translations: any;
   locale: string;
+  defaultCurrencyCode: string; // Added defaultCurrencyCode
 }
 
 interface GroupedTransactions {
@@ -42,7 +43,6 @@ interface GroupedTransactions {
   transactions: Transaction[];
 }
 
-// Map string locales to date-fns locale objects
 const dateFnsLocalesMap: { [key: string]: Locale } = {
   en: enUS,
   es: es,
@@ -55,6 +55,7 @@ export function TransactionList({
   mainCategories,
   translations,
   locale,
+  defaultCurrencyCode, // Use defaultCurrencyCode
 }: TransactionListProps) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [itemToDelete, setItemToDelete] = useState<Transaction | null>(null);
@@ -208,6 +209,7 @@ export function TransactionList({
                   </TableRow>
                   {group.transactions.map((transaction) => {
                     const categoryInfo = getCategoryInfo(transaction.subCategoryId);
+                    const walletCurrency = wallets.find(w => w.id === transaction.walletId)?.currency || defaultCurrencyCode;
                     return (
                       <TableRow key={transaction.id}>
                         <TableCell>
@@ -225,7 +227,7 @@ export function TransactionList({
                           </Badge>
                         </TableCell>
                         <TableCell className={`text-right font-semibold ${transaction.type === 'Income' ? 'text-accent' : 'text-destructive'}`}>
-                          {transaction.amount.toLocaleString(undefined, { style: 'currency', currency: wallets.find(w=>w.id === transaction.walletId)?.currency || 'USD' })}
+                          {transaction.amount.toLocaleString(locale, { style: 'currency', currency: walletCurrency, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell className="text-right">
                           <DataTableActions

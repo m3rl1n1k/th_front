@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from '@/lib/getTranslations';
-import { getBudgets, getMainCategories, getTransactions, getSubCategories } from '@/lib/actions';
+import { getBudgets, getMainCategories, getTransactions, getSubCategories, getUserSettings } from '@/lib/actions';
 import { BudgetList, type AugmentedBudget } from './_components/BudgetList';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +16,8 @@ export default async function BudgetsPage() {
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;
+  const userSettings = await getUserSettings();
+  const defaultCurrency = userSettings?.defaultCurrency || 'USD';
 
   const budgets: Budget[] = await getBudgets();
   const mainCategories: MainCategory[] = await getMainCategories();
@@ -69,6 +71,7 @@ export default async function BudgetsPage() {
           initialBudgets={augmentedBudgets}
           translations={tb}
           locale={locale}
+          defaultCurrencyCode={defaultCurrency}
         />
       </Suspense>
     </>

@@ -5,8 +5,11 @@ import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { WalletList } from './_components/WalletList';
 import { getWallets } from '@/lib/actions';
+import { cookies } from 'next/headers';
 
 export default async function WalletsPage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const wallets = await getWallets();
 
   return (
@@ -18,7 +21,7 @@ export default async function WalletsPage() {
           </Link>
         </Button>
       </PageHeader>
-      <WalletList initialWallets={wallets} />
+      <WalletList initialWallets={wallets} locale={locale} />
     </>
   );
 }

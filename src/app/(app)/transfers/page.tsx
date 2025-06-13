@@ -1,11 +1,17 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
-import { getTransfers, getWallets } from '@/lib/actions';
+import { getTransfers, getWallets, getUserSettings } from '@/lib/actions';
 import { TransferForm } from './_components/TransferForm';
 import { TransferList } from './_components/TransferList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cookies } from 'next/headers';
 
 export default async function TransfersPage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
+  const userSettings = await getUserSettings();
+  const defaultCurrency = userSettings?.defaultCurrency || 'USD';
+
   const transfers = await getTransfers();
   const wallets = await getWallets();
 
@@ -22,7 +28,12 @@ export default async function TransfersPage() {
                <CardTitle className="font-headline">Transfer History</CardTitle>
              </CardHeader>
              <CardContent>
-                <TransferList initialTransfers={transfers} wallets={wallets} />
+                <TransferList 
+                  initialTransfers={transfers} 
+                  wallets={wallets} 
+                  locale={locale}
+                  defaultCurrencyCode={defaultCurrency}
+                />
              </CardContent>
            </Card>
         </div>

@@ -26,7 +26,9 @@ interface RecurringTransactionListProps {
   wallets: Wallet[];
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
-  translations: any; // From transactionsPage namespace
+  translations: any; 
+  locale: string; 
+  defaultCurrencyCode: string; 
 }
 
 export function RecurringTransactionList({
@@ -35,6 +37,8 @@ export function RecurringTransactionList({
   subCategories,
   mainCategories,
   translations,
+  locale, 
+  defaultCurrencyCode, 
 }: RecurringTransactionListProps) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions.filter(t => t.frequency !== 'One-time'));
   const [itemToStop, setItemToStop] = useState<Transaction | null>(null);
@@ -42,7 +46,7 @@ export function RecurringTransactionList({
   const router = useRouter();
 
   const getWalletName = (walletId: string) => wallets.find(w => w.id === walletId)?.name || 'N/A';
-  const getWalletCurrency = (walletId: string) => wallets.find(w => w.id === walletId)?.currency || 'USD';
+  const getWalletCurrency = (walletId: string) => wallets.find(w => w.id === walletId)?.currency || defaultCurrencyCode;
 
   const getCategoryInfo = (subCategoryId?: string) => {
     if (!subCategoryId) {
@@ -57,18 +61,14 @@ export function RecurringTransactionList({
   const calculateNextOccurrence = (createdAt: Date, frequency: TransactionFrequency): Date => {
     let nextDate = new Date(createdAt);
     const today = new Date();
-    today.setHours(0,0,0,0); // Normalize today to the start of the day
+    today.setHours(0,0,0,0); 
 
-    if (frequency === 'One-time') return nextDate; // Should not happen for this list
+    if (frequency === 'One-time') return nextDate; 
 
-    // Ensure the seed date (nextDate) isn't in the future beyond what's reasonable.
-    // If createdAt is already in the future, that's the next date.
     if (nextDate > today && isPast(createdAt)) {
-       // if createdAt is in the past, but somehow nextDate based on it is future (e.g. yearly), this is fine
     } else if (nextDate > today) {
         return nextDate;
     }
-
 
     while (nextDate < today) {
       switch (frequency) {
@@ -84,7 +84,7 @@ export function RecurringTransactionList({
         case 'Yearly':
           nextDate = addYears(nextDate, 1);
           break;
-        default: // Should not happen
+        default: 
           return nextDate;
       }
     }
@@ -95,12 +95,12 @@ export function RecurringTransactionList({
     if (!itemToStop) return;
     try {
       await stopRecurringTransaction(itemToStop.id);
-      setTransactions(transactions.filter((t) => t.id !== itemToStop.id)); // Remove from this list
+      setTransactions(transactions.filter((t) => t.id !== itemToStop.id)); 
       toast({
         title: translations.stopRecurringSuccessTitle || 'Recurring Transaction Stopped',
         description: translations.stopRecurringSuccessDescription || `The transaction will no longer recur.`,
       });
-      router.refresh(); // To update "All Transactions" list if needed
+      router.refresh(); 
     } catch (error) {
       toast({
         title: translations.stopRecurringErrorTitle || 'Error Stopping Recurrence',
@@ -140,6 +140,7 @@ export function RecurringTransactionList({
             {transactions.map((transaction) => {
               const categoryInfo = getCategoryInfo(transaction.subCategoryId);
               const nextOccurrence = calculateNextOccurrence(new Date(transaction.createdAt), transaction.frequency);
+              const walletCurrency = getWalletCurrency(transaction.walletId);
               return (
                 <TableRow key={transaction.id}>
                   <TableCell>
@@ -150,7 +151,7 @@ export function RecurringTransactionList({
                     </div>
                   </TableCell>
                   <TableCell className={`font-semibold ${transaction.type === 'Income' ? 'text-accent' : 'text-destructive'}`}>
-                    {transaction.amount.toLocaleString(undefined, { style: 'currency', currency: getWalletCurrency(transaction.walletId) })}
+                    {transaction.amount.toLocaleString(locale, { style: 'currency', currency: walletCurrency, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="flex items-center">
@@ -163,9 +164,8 @@ export function RecurringTransactionList({
                   <TableCell className="text-right">
                     <DataTableActions
                       onEdit={() => router.push(`/transactions/edit/${transaction.id}`)}
-                      onDelete={() => setItemToStop(transaction)} // Using onDelete slot for "Stop Recurring"
-                      deleteDisabled={false} // Ensure enabled
-                      // Custom labels for DataTableActions might be needed or use tooltip
+                      onDelete={() => setItemToStop(transaction)} 
+                      deleteDisabled={false} 
                     />
                   </TableCell>
                 </TableRow>

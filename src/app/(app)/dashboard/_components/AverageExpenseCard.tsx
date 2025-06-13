@@ -10,6 +10,7 @@ interface AverageExpenseCardProps {
   avgWeekly: number;
   avgMonthly: number;
   locale: string;
+  currencyCode: string; // Added currencyCode
   translations: {
     averageSpendingTitle?: string;
     dailyLabel?: string;
@@ -25,6 +26,7 @@ export function AverageExpenseCard({
   avgWeekly,
   avgMonthly,
   locale,
+  currencyCode, // Use currencyCode
   translations,
   localStorageKey,
   initialVisible,
@@ -67,7 +69,8 @@ export function AverageExpenseCard({
   const formatCurrency = (amount: number) => {
     return Number(amount).toLocaleString(locale, {
       style: 'currency',
-      currency: 'USD', 
+      currency: currencyCode, // Use passed currencyCode
+      currencyDisplay: 'code', // Use ISO code
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });

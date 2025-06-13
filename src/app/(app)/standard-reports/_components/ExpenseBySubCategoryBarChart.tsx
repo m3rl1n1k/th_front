@@ -28,6 +28,7 @@ interface ExpenseBySubCategoryBarChartProps {
     totalLabel: string;
   };
   locale: string;
+  currencyCode: string; // Added currencyCode
 }
 
 export function ExpenseBySubCategoryBarChart({
@@ -36,6 +37,7 @@ export function ExpenseBySubCategoryBarChart({
   subCategories,
   translations,
   locale,
+  currencyCode, // Use currencyCode
 }: ExpenseBySubCategoryBarChartProps) {
   const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString()); // Default to current month (1-12)
   const currentYear = new Date().getFullYear();
@@ -87,7 +89,7 @@ export function ExpenseBySubCategoryBarChart({
 
     const dynamicChartConfig: ChartConfig = {};
     finalChartData.forEach(item => {
-      dynamicChartConfig[item.subCategoryName] = { // Use subCategoryName as key for config
+      dynamicChartConfig[item.subCategoryName] = { 
         label: item.subCategoryName,
         color: item.fill,
       };
@@ -102,8 +104,14 @@ export function ExpenseBySubCategoryBarChart({
   }, [selectedMonth, currentYear, allTransactions, subCategoryMap, mainCategoryMap, translations.totalLabel]);
 
   const formatCurrency = (value: number) => {
-    if (isNaN(value)) return 'N/A'; // Handle NaN case
-    return value.toLocaleString(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }); // Assuming USD
+    if (isNaN(value)) return 'N/A'; 
+    return value.toLocaleString(locale, { 
+      style: 'currency', 
+      currency: currencyCode, // Use currencyCode
+      currencyDisplay: 'code', // Use ISO code
+      minimumFractionDigits: 0, 
+      maximumFractionDigits: 0 
+    }); 
   };
 
   const monthsForSelect = Array.from({ length: 12 }, (_, i) => ({
@@ -213,4 +221,3 @@ export function ExpenseBySubCategoryBarChart({
     </Card>
   );
 }
-

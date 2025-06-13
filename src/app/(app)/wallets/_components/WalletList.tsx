@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -34,7 +35,12 @@ const WalletTypeIcon = ({ type }: { type: Wallet['type'] }) => {
   }
 };
 
-export function WalletList({ initialWallets }: { initialWallets: Wallet[] }) {
+interface WalletListProps {
+  initialWallets: Wallet[];
+  locale: string; // Added locale
+}
+
+export function WalletList({ initialWallets, locale }: WalletListProps) {
   const [wallets, setWallets] = useState<Wallet[]>(initialWallets);
   const [itemToDelete, setItemToDelete] = useState<Wallet | null>(null);
   const { toast } = useToast();
@@ -95,7 +101,7 @@ export function WalletList({ initialWallets }: { initialWallets: Wallet[] }) {
                 </TableCell>
                 <TableCell>{wallet.currency}</TableCell>
                 <TableCell className="text-right">
-                  {wallet.initialAmount.toLocaleString(undefined, { style: 'currency', currency: wallet.currency, minimumFractionDigits: 2 })}
+                  {wallet.initialAmount.toLocaleString(locale, { style: 'currency', currency: wallet.currency, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </TableCell>
                 <TableCell className="text-right">
                   <DataTableActions

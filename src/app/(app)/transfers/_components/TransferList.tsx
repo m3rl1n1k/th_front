@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -21,16 +22,18 @@ import { ArrowRight, ListChecks } from 'lucide-react';
 interface TransferListProps {
   initialTransfers: Transfer[];
   wallets: Wallet[];
+  locale: string; // Added locale
+  defaultCurrencyCode: string; // Added defaultCurrencyCode for fallback
 }
 
-export function TransferList({ initialTransfers, wallets }: TransferListProps) {
+export function TransferList({ initialTransfers, wallets, locale, defaultCurrencyCode }: TransferListProps) {
   const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers);
   const [itemToDelete, setItemToDelete] = useState<Transfer | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
   const getWalletName = (walletId: string) => wallets.find(w => w.id === walletId)?.name || 'N/A';
-  const getWalletCurrency = (walletId: string) => wallets.find(w => w.id === walletId)?.currency || 'USD';
+  const getWalletCurrency = (walletId: string) => wallets.find(w => w.id === walletId)?.currency || defaultCurrencyCode;
 
 
   const handleDelete = async () => {
@@ -80,23 +83,26 @@ export function TransferList({ initialTransfers, wallets }: TransferListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transfers.map((transfer) => (
-              <TableRow key={transfer.id}>
-                <TableCell>{format(new Date(transfer.createdAt), 'MMM dd, yyyy')}</TableCell>
-                <TableCell>{getWalletName(transfer.fromWalletId)}</TableCell>
-                <TableCell><ArrowRight className="h-4 w-4 text-muted-foreground" /></TableCell>
-                <TableCell>{getWalletName(transfer.toWalletId)}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{transfer.description || '-'}</TableCell>
-                <TableCell className="text-right font-semibold">
-                  {transfer.amount.toLocaleString(undefined, { style: 'currency', currency: getWalletCurrency(transfer.fromWalletId) })}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DataTableActions
-                    onDelete={() => setItemToDelete(transfer)}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {transfers.map((transfer) => {
+              const currencyCode = getWalletCurrency(transfer.fromWalletId);
+              return (
+                <TableRow key={transfer.id}>
+                  <TableCell>{format(new Date(transfer.createdAt), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>{getWalletName(transfer.fromWalletId)}</TableCell>
+                  <TableCell><ArrowRight className="h-4 w-4 text-muted-foreground" /></TableCell>
+                  <TableCell>{getWalletName(transfer.toWalletId)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{transfer.description || '-'}</TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {transfer.amount.toLocaleString(locale, { style: 'currency', currency: currencyCode, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DataTableActions
+                      onDelete={() => setItemToDelete(transfer)}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -104,7 +110,7 @@ export function TransferList({ initialTransfers, wallets }: TransferListProps) {
         isOpen={!!itemToDelete}
         onOpenChange={(open) => !open && setItemToDelete(null)}
         onConfirm={handleDelete}
-        itemName={`transfer of ${itemToDelete?.amount}`}
+        itemName={`transfer of ${itemToDelete?.amount.toLocaleString(locale, {currency: getWalletCurrency(itemToDelete?.fromWalletId || ''), currencyDisplay:'code', minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
       />
     </>
   );

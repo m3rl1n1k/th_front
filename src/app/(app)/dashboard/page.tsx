@@ -31,6 +31,7 @@ export default async function DashboardPage() {
   const t = await getTranslations(locale);
   const td = t.dashboard; 
   const userSettings = await getUserSettings();
+  const defaultCurrency = userSettings?.defaultCurrency || 'USD';
 
   const transactions = await getTransactions();
   const mainCategories = await getMainCategories();
@@ -106,7 +107,7 @@ export default async function DashboardPage() {
             title={td.totalBalance} 
             value={summaryData.totalBalance} 
             iconName="DollarSign" 
-            currency 
+            currencyCode={defaultCurrency} 
             locale={locale} 
             dataAiHint="piggy bank"
             localStorageKey={dashboardVisibilityLocalStorageKeys.showTotalBalanceCard}
@@ -116,7 +117,7 @@ export default async function DashboardPage() {
             title={td.monthlyIncome} 
             value={summaryData.totalIncome} 
             iconName="Users" 
-            currency 
+            currencyCode={defaultCurrency} 
             locale={locale} 
             dataAiHint="money rain"
             localStorageKey={dashboardVisibilityLocalStorageKeys.showMonthlyIncomeCard}
@@ -126,7 +127,7 @@ export default async function DashboardPage() {
             title={td.monthlyExpenses} 
             value={summaryData.totalExpenses} 
             iconName="CreditCard" 
-            currency 
+            currencyCode={defaultCurrency} 
             locale={locale} 
             dataAiHint="empty wallet"
             localStorageKey={dashboardVisibilityLocalStorageKeys.showMonthlyExpensesCard}
@@ -137,6 +138,7 @@ export default async function DashboardPage() {
             avgWeekly={avgWeeklyExpense}
             avgMonthly={avgMonthlyExpense}
             locale={locale}
+            currencyCode={defaultCurrency}
             translations={{
                 averageSpendingTitle: td.averageSpendingTitle,
                 dailyLabel: td.dailyLabel,
@@ -153,6 +155,8 @@ export default async function DashboardPage() {
             chartData={chartData}
             chartConfig={chartConfig}
             translations={td}
+            locale={locale}
+            currencyCode={defaultCurrency}
             localStorageKey={dashboardVisibilityLocalStorageKeys.showExpenseChartCard}
             initialVisible={userSettings?.showExpenseChartCard !== false}
         />
@@ -162,6 +166,8 @@ export default async function DashboardPage() {
             subCategories={subCategories}
             mainCategories={mainCategories}
             translations={td}
+            locale={locale}
+            defaultCurrencyCode={defaultCurrency}
             localStorageKey={dashboardVisibilityLocalStorageKeys.showRecentActivityCard}
             initialVisible={userSettings?.showRecentActivityCard !== false}
         />

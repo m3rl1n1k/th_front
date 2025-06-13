@@ -5,7 +5,7 @@ import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { TransactionList } from './_components/TransactionList';
 import { RecurringTransactionList } from './_components/RecurringTransactionList';
-import { getTransactions, getWallets, getSubCategories, getMainCategories } from '@/lib/actions';
+import { getTransactions, getWallets, getSubCategories, getMainCategories, getUserSettings } from '@/lib/actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTranslations } from '@/lib/getTranslations';
 import { cookies } from 'next/headers'; 
@@ -20,7 +20,7 @@ export default async function TransactionsPage() {
     addTransactionButton: "Add Transaction",
     title: "Transactions",
     description: "Track your income and expenses.",
-    filters: {}, // Ensure filters key exists
+    filters: {}, 
     uncategorized: "Uncategorized",
     income: "Income",
     expense: "Expense",
@@ -32,6 +32,8 @@ export default async function TransactionsPage() {
   const wallets = await getWallets();
   const subCategories = await getSubCategories();
   const mainCategories = await getMainCategories();
+  const userSettings = await getUserSettings();
+  const defaultCurrency = userSettings?.defaultCurrency || 'USD';
 
   const recurringTransactions = allTransactions.filter(tx => tx.frequency !== 'One-time');
 
@@ -56,8 +58,9 @@ export default async function TransactionsPage() {
             wallets={wallets}
             subCategories={subCategories}
             mainCategories={mainCategories}
-            translations={tt} // Pass the whole transactionsPage translations
+            translations={tt}
             locale={locale}
+            defaultCurrencyCode={defaultCurrency}
           />
         </TabsContent>
         <TabsContent value="recurring">
@@ -67,6 +70,8 @@ export default async function TransactionsPage() {
             subCategories={subCategories}
             mainCategories={mainCategories}
             translations={tt}
+            locale={locale}
+            defaultCurrencyCode={defaultCurrency}
           />
         </TabsContent>
       </Tabs>

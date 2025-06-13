@@ -27,6 +27,8 @@ interface DashboardExpenseChartProps {
     noExpenseData?: string;
     totalExpensesLabel?: string;
   };
+  locale: string; // Added locale
+  currencyCode: string; // Added currencyCode
   localStorageKey: string;
   initialVisible: boolean;
 }
@@ -35,6 +37,8 @@ export function DashboardExpenseChart({
   chartData, 
   chartConfig, 
   translations,
+  locale, // Use locale
+  currencyCode, // Use currencyCode
   localStorageKey,
   initialVisible 
 }: DashboardExpenseChartProps) {
@@ -116,9 +120,10 @@ export function DashboardExpenseChart({
                 content={
                   <ChartTooltipContent
                     formatter={(value, name) => {
-                      const formattedAmount = Number(value).toLocaleString(undefined, {
+                      const formattedAmount = Number(value).toLocaleString(locale, { // Use locale
                         style: 'currency',
-                        currency: 'USD', 
+                        currency: currencyCode, // Use currencyCode
+                        currencyDisplay: 'code', // Use ISO code
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       });
@@ -156,7 +161,7 @@ export function DashboardExpenseChart({
                 dominantBaseline="middle"
                 className="fill-foreground text-2xl font-semibold"
               >
-                {Number(totalExpenses).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {Number(totalExpenses).toLocaleString(locale, { style: 'currency', currency: currencyCode, currencyDisplay: 'code', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </text>
               <text
                 x="50%"
