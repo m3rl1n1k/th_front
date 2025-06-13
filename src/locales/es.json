@@ -6,7 +6,6 @@
     "totalBalance": "Balance Total",
     "monthlyIncome": "Ingresos Mensuales",
     "monthlyExpenses": "Gastos Mensuales",
-    "recentTransactionsCount": "Transacciones Recientes",
     "recentActivity": "Actividad Reciente",
     "recentActivityDescription": "Últimos movimientos financieros.",
     "noRecentActivity": "No hay actividad reciente para mostrar.",

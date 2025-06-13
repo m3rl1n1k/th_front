@@ -1,14 +1,14 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Users, CreditCard, Activity, CalendarDays, CalendarHeart, CalendarRange } from 'lucide-react';
+import { DollarSign, Users, CreditCard, CalendarDays, CalendarHeart, CalendarRange } from 'lucide-react';
 import { getTranslations } from '@/lib/getTranslations';
 import { getTransactions, getMainCategories, getSubCategories, getWallets } from '@/lib/actions';
 import type { Transaction, MainCategory, SubCategory, Wallet } from '@/lib/definitions';
 import type { ChartConfig } from '@/components/ui/chart';
 import { DashboardExpenseChart } from './_components/DashboardExpenseChart';
 import { RecentActivityList } from './_components/RecentActivityList';
-import { differenceInDays, differenceInCalendarMonths, format as formatDate } from 'date-fns';
+import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
 
 
 // Mock data - replace with actual data fetching
@@ -90,7 +90,6 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
   };
 
   const recentTransactions = transactions.slice(0, 10);
-  const recentTransactionsCount = transactions.length;
 
   // Calculate average expenses
   let avgDailyExpense = 0;
@@ -117,11 +116,10 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
     <>
       <PageHeader title={td.title} description={td.description} />
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
         <StatCard title={td.totalBalance} value={summaryData.totalBalance} icon={DollarSign} currency locale={locale} dataAiHint="piggy bank" />
         <StatCard title={td.monthlyIncome} value={summaryData.totalIncome} icon={Users} currency locale={locale} dataAiHint="money rain" />
         <StatCard title={td.monthlyExpenses} value={summaryData.totalExpenses} icon={CreditCard} currency locale={locale} dataAiHint="empty wallet" />
-        <StatCard title={td.recentTransactionsCount || "Recent Transactions"} value={recentTransactionsCount} icon={Activity} locale={locale} dataAiHint="graph chart" />
         
         <StatCard title={td.avgDailyExpense || "Avg. Daily Expense"} value={avgDailyExpense} icon={CalendarDays} currency locale={locale} dataAiHint="calendar day" />
         <StatCard title={td.avgWeeklyExpense || "Avg. Weekly Expense"} value={avgWeeklyExpense} icon={CalendarHeart} currency locale={locale} dataAiHint="calendar week" />
