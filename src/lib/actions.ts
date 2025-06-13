@@ -42,44 +42,50 @@ let MOCK_DB: MockDb = {
 };
 
 // --- Helper for API calls ---
-async function fetchAPI(endpoint: string, options: RequestInit = {}) {
-  const currentUser = await getCurrentUser(); // Or however you manage user session/ID
-  const token = await getAuthToken(); // Get the auth token
+async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ data: any | null, error: { message: string, status?: number } | null }> {
+  try {
+    const token = await getAuthToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  if (token) {
-    (headers as any)['Authorization'] = `Bearer ${token}`;
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`API Error (${response.status}) on ${endpoint}: ${errorBody}`);
+      return { data: null, error: { message: `API request failed: ${response.statusText} - ${errorBody}`, status: response.status } };
+    }
+
+    if (response.status === 204) { // No Content
+      return { data: null, error: null };
+    }
+    const responseData = await response.json();
+    return { data: responseData, error: null };
+
+  } catch (networkError: any) {
+    console.error(`Network/Fetch Error for ${endpoint}:`, networkError.message);
+    return { data: null, error: { message: networkError.message || 'Network request failed' } };
   }
-  
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(`API Error (${response.status}) on ${endpoint}: ${errorBody}`);
-    throw new Error(`API request failed: ${response.statusText} - ${errorBody}`);
-  }
-
-  if (response.status === 204) { // No Content
-    return null;
-  }
-  return response.json();
 }
 
 
 // --- User Settings Actions ---
 export async function getUserSettings(): Promise<UserSettings | undefined> {
+  // This function currently uses mock data directly via getCurrentUser,
+  // If it were to fetch settings via API, it would need the new fetchAPI pattern.
   try {
     const user = await getCurrentUser(); 
     return user?.settings;
   } catch (error) {
-    console.error('Failed to fetch user settings:', error);
+    console.error('Failed to fetch user settings (mock):', error);
     const MOCK_USER_ID = 'user-123';
     const user = MOCK_DB.users.find(u => u.id === MOCK_USER_ID);
     return user?.settings;
@@ -87,30 +93,43 @@ export async function getUserSettings(): Promise<UserSettings | undefined> {
 }
 
 export async function updateUserSettings(newSettings: Partial<UserSettings>): Promise<User | null> {
+  // For mutations, we might still want to throw errors to indicate failure clearly.
+  // Or adopt the { data, error } pattern if preferred for consistency.
+  // For now, keeping mutations as throwing on failure.
   try {
-    const updatedUser = await fetchAPI('/users/settings', { 
-      method: 'PATCH', 
-      body: JSON.stringify(newSettings),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    
+    const userIndex = MOCK_DB.users.findIndex(u => u.id === MOCK_USER_ID);
+    if (userIndex === -1) throw new Error("User not found");
+
+    MOCK_DB.users[userIndex].settings = { ...MOCK_DB.users[userIndex].settings, ...newSettings } as UserSettings;
+    
     revalidatePath('/settings');
-    revalidatePath('/transactions');
-    return updatedUser;
+    revalidatePath('/transactions'); // If transactionsPerPage affects transaction list
+    return MOCK_DB.users[userIndex];
   } catch (error) {
     console.error('Failed to update user settings:', error);
-    throw error; 
+    throw error; // Re-throw for the component to handle
   }
 }
 
 // --- User Profile Actions ---
 export async function updateUserProfile(userId: string, data: { name?: string }): Promise<User | null> {
   try {
-    const updatedUser = await fetchAPI(`/users/${userId}/profile`, { 
-      method: 'PATCH', 
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID || MOCK_USER_ID !== userId) throw new Error("Unauthorized or user mismatch");
+
+    const userIndex = MOCK_DB.users.findIndex(u => u.id === userId);
+    if (userIndex === -1) throw new Error("User not found");
+
+    if (data.name) {
+      MOCK_DB.users[userIndex].name = data.name;
+    }
+    
     revalidatePath('/profile');
-    revalidatePath('/(app)/layout', 'layout');
-    return updatedUser;
+    revalidatePath('/(app)/layout', 'layout'); // To update sidebar avatar/name
+    return MOCK_DB.users[userIndex];
   } catch (error) {
     console.error('Failed to update user profile:', error);
     throw error;
@@ -120,20 +139,29 @@ export async function updateUserProfile(userId: string, data: { name?: string })
 
 // --- Main Category Actions ---
 export async function getMainCategories(): Promise<MainCategory[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  const mockData = MOCK_DB.mainCategories.filter(mc => mc.userId === MOCK_USER_ID);
+
+  const result = await fetchAPI('/main-categories');
+  if (result.error || !result.data) {
+    console.warn(`getMainCategories: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
+    return mockData;
+  }
   try {
-    return await fetchAPI('/main-categories'); 
-  } catch (error) {
-    console.error('Failed to fetch main categories:', error);
-    return MOCK_DB.mainCategories.filter(mc => mc.userId === 'user-123'); 
+    return result.data as MainCategory[];
+  } catch (processingError: any) {
+    console.error(`getMainCategories: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
+    return mockData;
   }
 }
 
 export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId'>): Promise<MainCategory> {
   try {
-    const newCategory = await fetchAPI('/main-categories', { 
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    // Simulating API call for create
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const newCategory: MainCategory = { ...data, id: `mc${Date.now()}`, userId: MOCK_USER_ID };
+    MOCK_DB.mainCategories.push(newCategory);
     revalidatePath('/categories');
     return newCategory;
   } catch (error) {
@@ -144,12 +172,13 @@ export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId
 
 export async function updateMainCategory(id: string, data: Partial<Omit<MainCategory, 'id' | 'userId'>>): Promise<MainCategory | null> {
   try {
-    const updatedCategory = await fetchAPI(`/main-categories/${id}`, { 
-      method: 'PATCH', 
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const index = MOCK_DB.mainCategories.findIndex(c => c.id === id && c.userId === MOCK_USER_ID);
+    if (index === -1) return null;
+    MOCK_DB.mainCategories[index] = { ...MOCK_DB.mainCategories[index], ...data };
     revalidatePath('/categories');
-    return updatedCategory;
+    return MOCK_DB.mainCategories[index];
   } catch (error) {
     console.error('Failed to update main category:', error);
     throw error;
@@ -158,7 +187,10 @@ export async function updateMainCategory(id: string, data: Partial<Omit<MainCate
 
 export async function deleteMainCategory(id: string): Promise<void> {
   try {
-    await fetchAPI(`/main-categories/${id}`, { method: 'DELETE' }); 
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    MOCK_DB.mainCategories = MOCK_DB.mainCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
+    MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID); // Cascade delete
     revalidatePath('/categories');
   } catch (error) {
     console.error('Failed to delete main category:', error);
@@ -168,24 +200,36 @@ export async function deleteMainCategory(id: string): Promise<void> {
 
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryId?: string): Promise<SubCategory[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  let mockData = MOCK_DB.subCategories.filter(sc => sc.userId === MOCK_USER_ID);
+  if (mainCategoryId) {
+    mockData = mockData.filter(sc => sc.mainCategoryId === mainCategoryId);
+  }
+
+  let endpoint = '/sub-categories';
+  if (mainCategoryId) {
+    endpoint += `?mainCategoryId=${mainCategoryId}`;
+  }
+  const result = await fetchAPI(endpoint);
+
+  if (result.error || !result.data) {
+    console.warn(`getSubCategories: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
+    return mockData;
+  }
   try {
-    let endpoint = '/sub-categories';
-    if (mainCategoryId) {
-      endpoint += `?mainCategoryId=${mainCategoryId}`; 
-    }
-    return await fetchAPI(endpoint); 
-  } catch (error) {
-    console.error('Failed to fetch sub categories:', error);
-    return MOCK_DB.subCategories.filter(sc => sc.userId === 'user-123'); 
+    return result.data as SubCategory[];
+  } catch (processingError: any) {
+    console.error(`getSubCategories: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
+    return mockData;
   }
 }
 
 export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>): Promise<SubCategory> {
   try {
-    const newCategory = await fetchAPI('/sub-categories', { 
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const newCategory: SubCategory = { ...data, id: `sc${Date.now()}`, userId: MOCK_USER_ID };
+    MOCK_DB.subCategories.push(newCategory);
     revalidatePath('/categories');
     return newCategory;
   } catch (error) {
@@ -196,12 +240,13 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
 
 export async function updateSubCategory(id: string, data: Partial<Omit<SubCategory, 'id' | 'userId'>>): Promise<SubCategory | null> {
   try {
-    const updatedCategory = await fetchAPI(`/sub-categories/${id}`, { 
-      method: 'PATCH', 
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const index = MOCK_DB.subCategories.findIndex(c => c.id === id && c.userId === MOCK_USER_ID);
+    if (index === -1) return null;
+    MOCK_DB.subCategories[index] = { ...MOCK_DB.subCategories[index], ...data };
     revalidatePath('/categories');
-    return updatedCategory;
+    return MOCK_DB.subCategories[index];
   } catch (error) {
     console.error('Failed to update sub category:', error);
     throw error;
@@ -210,7 +255,9 @@ export async function updateSubCategory(id: string, data: Partial<Omit<SubCatego
 
 export async function deleteSubCategory(id: string): Promise<void> {
   try {
-    await fetchAPI(`/sub-categories/${id}`, { method: 'DELETE' }); 
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    MOCK_DB.subCategories = MOCK_DB.subCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
     revalidatePath('/categories');
   } catch (error) {
     console.error('Failed to delete sub category:', error);
@@ -221,21 +268,28 @@ export async function deleteSubCategory(id: string): Promise<void> {
 
 // --- Wallet Actions ---
 export async function getWallets(): Promise<Wallet[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  const mockData = MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID);
+
+  const result = await fetchAPI('/wallets');
+  if (result.error || !result.data) {
+    console.warn(`getWallets: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
+    return mockData;
+  }
   try {
-    const wallets = await fetchAPI('/wallets'); 
-    return wallets;
-  } catch (error) {
-    console.error('Failed to fetch wallets:', error);
-    return MOCK_DB.wallets.filter(w => w.userId === 'user-123');
+    return result.data as Wallet[];
+  } catch (processingError: any) {
+    console.error(`getWallets: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
+    return mockData;
   }
 }
 
 export async function createWallet(data: Omit<Wallet, 'id' | 'userId'>): Promise<Wallet> {
   try {
-    const newWallet = await fetchAPI('/wallets', { 
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const newWallet: Wallet = { ...data, id: `w${Date.now()}`, userId: MOCK_USER_ID };
+    MOCK_DB.wallets.push(newWallet);
     revalidatePath('/wallets');
     revalidatePath('/capital');
     return newWallet;
@@ -247,13 +301,14 @@ export async function createWallet(data: Omit<Wallet, 'id' | 'userId'>): Promise
 
 export async function updateWallet(id: string, data: Partial<Omit<Wallet, 'id' | 'userId'>>): Promise<Wallet | null> {
   try {
-    const updatedWallet = await fetchAPI(`/wallets/${id}`, { 
-      method: 'PATCH', 
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const index = MOCK_DB.wallets.findIndex(w => w.id === id && w.userId === MOCK_USER_ID);
+    if (index === -1) return null;
+    MOCK_DB.wallets[index] = { ...MOCK_DB.wallets[index], ...data };
     revalidatePath('/wallets');
     revalidatePath('/capital');
-    return updatedWallet;
+    return MOCK_DB.wallets[index];
   } catch (error) {
     console.error('Failed to update wallet:', error);
     throw error;
@@ -262,7 +317,10 @@ export async function updateWallet(id: string, data: Partial<Omit<Wallet, 'id' |
 
 export async function deleteWallet(id: string): Promise<void> {
   try {
-    await fetchAPI(`/wallets/${id}`, { method: 'DELETE' }); 
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    MOCK_DB.wallets = MOCK_DB.wallets.filter(w => w.id !== id || w.userId !== MOCK_USER_ID);
+    // Also delete transactions and transfers associated with this wallet? For mock, keep it simple.
     revalidatePath('/wallets');
     revalidatePath('/capital');
   } catch (error) {
@@ -274,26 +332,38 @@ export async function deleteWallet(id: string): Promise<void> {
 
 // --- Transaction Actions ---
 export async function getTransactions(): Promise<Transaction[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  const mockTransactions = MOCK_DB.transactions
+    .filter(t => t.userId === MOCK_USER_ID)
+    .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
+    .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const result = await fetchAPI('/transactions');
+  
+  if (result.error || !result.data) {
+    console.warn(`getTransactions: API call failed or returned no data (Error: ${result.error?.message}). Falling back to mock data.`);
+    return mockTransactions;
+  }
+
   try {
-    const transactions = await fetchAPI('/transactions'); 
-    return transactions.map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
-                       .sort((a: Transaction, b: Transaction) => b.createdAt.getTime() - a.createdAt.getTime());
-  } catch (error) {
-    console.error('Failed to fetch transactions:', error);
-    return MOCK_DB.transactions.filter(t => t.userId === 'user-123').sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()); 
+    return (result.data as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
+                         .sort((a: Transaction, b: Transaction) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch (processingError: any) {
+    console.error(`getTransactions: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
+    return mockTransactions;
   }
 }
 
 export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>): Promise<Transaction> {
   try {
-    const newTransaction = await fetchAPI('/transactions', { 
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const newTransaction: Transaction = { ...data, id: `t${Date.now()}`, userId: MOCK_USER_ID, createdAt: new Date(data.createdAt) };
+    MOCK_DB.transactions.push(newTransaction);
     revalidatePath('/transactions');
     revalidatePath('/dashboard');
     revalidatePath('/budgets');
-    return { ...newTransaction, createdAt: new Date(newTransaction.createdAt) };
+    return newTransaction;
   } catch (error) {
     console.error('Failed to create transaction:', error);
     throw error;
@@ -302,14 +372,19 @@ export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>
 
 export async function updateTransaction(id: string, data: Partial<Omit<Transaction, 'id' | 'userId'>>): Promise<Transaction | null> {
   try {
-    const updatedTransaction = await fetchAPI(`/transactions/${id}`, { 
-      method: 'PATCH', 
-      body: JSON.stringify(data),
-    });
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const index = MOCK_DB.transactions.findIndex(t => t.id === id && t.userId === MOCK_USER_ID);
+    if (index === -1) return null;
+    const updatedData = { ...MOCK_DB.transactions[index], ...data };
+    if (data.createdAt) {
+      updatedData.createdAt = new Date(data.createdAt);
+    }
+    MOCK_DB.transactions[index] = updatedData;
     revalidatePath('/transactions');
     revalidatePath('/dashboard');
     revalidatePath('/budgets');
-    return { ...updatedTransaction, createdAt: new Date(updatedTransaction.createdAt) };
+    return MOCK_DB.transactions[index];
   } catch (error) {
     console.error('Failed to update transaction:', error);
     throw error;
@@ -318,7 +393,9 @@ export async function updateTransaction(id: string, data: Partial<Omit<Transacti
 
 export async function deleteTransaction(id: string): Promise<void> {
   try {
-    await fetchAPI(`/transactions/${id}`, { method: 'DELETE' }); 
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    MOCK_DB.transactions = MOCK_DB.transactions.filter(t => t.id !== id || t.userId !== MOCK_USER_ID);
     revalidatePath('/transactions');
     revalidatePath('/dashboard');
     revalidatePath('/budgets');
@@ -330,24 +407,34 @@ export async function deleteTransaction(id: string): Promise<void> {
 
 // --- Transfer Actions ---
 export async function getTransfers(): Promise<Transfer[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  const mockTransfers = MOCK_DB.transfers
+    .filter(t => t.userId === MOCK_USER_ID)
+    .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
+    .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const result = await fetchAPI('/transfers');
+  if (result.error || !result.data) {
+    console.warn(`getTransfers: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
+    return mockTransfers;
+  }
   try {
-    const transfers = await fetchAPI('/transfers'); 
-    return transfers.map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
+    return (result.data as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
                      .sort((a: Transfer,b: Transfer) => b.createdAt.getTime() - a.createdAt.getTime());
-  } catch (error) {
-    console.error('Failed to fetch transfers:', error);
-    return MOCK_DB.transfers.filter(t => t.userId === 'user-123').sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()); 
+  } catch (processingError: any) {
+    console.error(`getTransfers: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
+    return mockTransfers;
   }
 }
 
 export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Promise<Transfer> {
-  try {
-    const newTransfer = await fetchAPI('/transfers', { 
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+   try {
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const newTransfer: Transfer = { ...data, id: `tr${Date.now()}`, userId: MOCK_USER_ID, createdAt: new Date(data.createdAt) };
+    MOCK_DB.transfers.push(newTransfer);
     revalidatePath('/transfers');
-    return { ...newTransfer, createdAt: new Date(newTransfer.createdAt) };
+    return newTransfer;
   } catch (error) {
     console.error('Failed to create transfer:', error);
     throw error;
@@ -356,7 +443,9 @@ export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Pro
 
 export async function deleteTransfer(id: string): Promise<void> {
   try {
-    await fetchAPI(`/transfers/${id}`, { method: 'DELETE' }); 
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    MOCK_DB.transfers = MOCK_DB.transfers.filter(t => t.id !== id || t.userId !== MOCK_USER_ID);
     revalidatePath('/transfers');
   } catch (error) {
     console.error('Failed to delete transfer:', error);
@@ -366,8 +455,7 @@ export async function deleteTransfer(id: string): Promise<void> {
 
 // --- Budget Actions ---
 export async function getBudgets(month?: number, year?: number): Promise<Budget[]> {
-  const MOCK_USER_ID = (await getCurrentUser())?.id;
-  if (!MOCK_USER_ID) return [];
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   let budgets = MOCK_DB.budgets.filter(b => b.userId === MOCK_USER_ID);
   if (month && year) {
     budgets = budgets.filter(b => b.month === month && b.year === year);
@@ -405,7 +493,6 @@ export async function deleteBudget(id: string): Promise<void> {
 export async function getSharedCapitalSession(): Promise<SharedCapitalSession | null> {
   const MOCK_USER_ID = (await getCurrentUser())?.id;
   if (!MOCK_USER_ID) return null;
-  // For mock: find the latest active session for the user
   const session = MOCK_DB.sharedCapitalSessions
     .filter(s => s.userId === MOCK_USER_ID && s.isActive)
     .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
@@ -416,7 +503,6 @@ export async function startSharedCapitalSession(partnerEmail: string): Promise<S
   const MOCK_USER_ID = (await getCurrentUser())?.id;
   if (!MOCK_USER_ID) throw new Error("User not authenticated");
 
-  // Deactivate any existing sessions for this user
   MOCK_DB.sharedCapitalSessions.forEach(s => {
     if (s.userId === MOCK_USER_ID) {
       s.isActive = false;
@@ -454,5 +540,7 @@ export async function stopSharedCapitalSession(): Promise<SharedCapitalSession |
 
 // Helper to reset DB for testing if needed - not for production
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
-  MOCK_DB = JSON.parse(JSON.stringify(initialDbState)); // Deep copy to avoid reference issues
+  MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
+
+    
