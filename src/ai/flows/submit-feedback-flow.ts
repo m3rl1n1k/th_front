@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { MOCK_DB } from '@/lib/actions'; // Import MOCK_DB
+import { addFeedback } from '@/lib/actions'; // Import the new server action
 import type { FeedbackItem, FeedbackStatus, FeedbackType } from '@/lib/definitions'; // Import necessary types
 import { getCurrentUser } from '@/lib/auth';
 
@@ -77,48 +77,43 @@ const submitFeedbackFlow = ai.defineFlow(
 
     const {output: promptOutput} = await feedbackPrompt(input);
 
-    if (!promptOutput) {
-      console.error('Feedback prompt did not return structured output.');
-      // Still attempt to save feedback even if prompt fails partially
-      const newFeedbackIdOnError = `FBK-ERR-${Date.now()}`;
-      const feedbackToStoreOnError: FeedbackItem = {
-        id: newFeedbackIdOnError,
-        userId: currentUser.id,
+    let storedFeedback: FeedbackItem;
+
+    try {
+      // Call the server action to store feedback
+      storedFeedback = await addFeedback({
         feedbackType: input.feedbackType,
         subject: input.subject,
         message: input.message,
         userEmail: input.userEmail,
-        status: 'pending' as FeedbackStatus,
-        createdAt: new Date(),
-      };
-      MOCK_DB.feedbacks.push(feedbackToStoreOnError);
-
+      });
+    } catch (error) {
+      console.error('Error storing feedback via action:', error);
+      // Handle error case - perhaps return a specific error message
+      // For now, we'll still try to provide a generic confirmation
       return {
-        confirmationMessage: 'Thank you for your feedback! We have received it, though there was a hiccup generating a tracking ID.',
-        trackingId: 'N/A',
-        feedbackId: newFeedbackIdOnError,
+        confirmationMessage: 'Thank you for your feedback! We have received it, but there was an issue with internal processing.',
+        trackingId: promptOutput?.trackingId || 'N/A',
+        feedbackId: 'ERROR_STORING', // Indicate an error
       };
     }
     
-    // Store the feedback in MOCK_DB
-    const newFeedbackId = `FBK-${Date.now()}`; // System-generated ID for storage
-    const feedbackToStore: FeedbackItem = {
-      id: newFeedbackId,
-      userId: currentUser.id,
-      feedbackType: input.feedbackType,
-      subject: input.subject,
-      message: input.message,
-      userEmail: input.userEmail,
-      status: 'pending' as FeedbackStatus, // Default status
-      createdAt: new Date(),
-    };
-    MOCK_DB.feedbacks.push(feedbackToStore);
-    console.log('Feedback stored:', feedbackToStore); // For debugging
-    
+
+    if (!promptOutput) {
+      console.error('Feedback prompt did not return structured output. Feedback was still stored.');
+      return {
+        confirmationMessage: 'Thank you for your feedback! We have received it, though there was a hiccup generating a display tracking ID.',
+        trackingId: 'N/A',
+        feedbackId: storedFeedback.id,
+      };
+    }
+        
     return {
       confirmationMessage: promptOutput.confirmationMessage,
       trackingId: promptOutput.trackingId, // This is the one from the LLM for user display
-      feedbackId: newFeedbackId, // This is the internal ID
+      feedbackId: storedFeedback.id, // This is the internal ID from the addFeedback action
     };
   }
 );
+
+    

@@ -8,7 +8,7 @@ import { getCurrentUser, getAuthToken } from './auth'; // Import getCurrentUser 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'; // Example
 
 // In-memory store for mock data (to be replaced by API calls)
-export let MOCK_DB: MockDb = { // Export MOCK_DB so it can be accessed by flows
+let MOCK_DB: MockDb = { // MOCK_DB is no longer exported
   users: [{
     id: 'user-123',
     email: 'user@example.com',
@@ -602,7 +602,32 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
   // Sort by creation date, newest first
   return MOCK_DB.feedbacks
     .filter(f => f.userId === MOCK_USER_ID)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    .sort((a, b) => b.createdAt.getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function addFeedback(
+  feedbackData: Omit<FeedbackItem, 'id' | 'userId' | 'createdAt' | 'status'>
+): Promise<FeedbackItem> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    throw new Error("User not authenticated to submit feedback.");
+  }
+  const newFeedbackId = `FBK-${Date.now()}`;
+  const feedbackToStore: FeedbackItem = {
+    id: newFeedbackId,
+    userId: currentUser.id,
+    feedbackType: feedbackData.feedbackType,
+    subject: feedbackData.subject,
+    message: feedbackData.message,
+    userEmail: feedbackData.userEmail,
+    status: 'pending' as FeedbackStatus, // Default status
+    createdAt: new Date(),
+  };
+  MOCK_DB.feedbacks.push(feedbackToStore);
+  console.log('Feedback stored via action:', feedbackToStore); // For debugging
+  // No revalidatePath needed here as the flow itself doesn't directly render UI
+  // The page calling the flow might revalidate or refresh.
+  return feedbackToStore;
 }
 
 export async function updateFeedbackStatus(id: string, status: FeedbackStatus): Promise<FeedbackItem | null> {
@@ -624,3 +649,5 @@ export async function updateFeedbackStatus(id: string, status: FeedbackStatus): 
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
+
+    
