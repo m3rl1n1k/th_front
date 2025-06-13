@@ -90,12 +90,12 @@ export function TransactionFilters({
       <AccordionItem value="filters-accordion" className="border-none">
         <Card className="shadow-lg">
           <AccordionTrigger
-            className="w-full flex items-center justify-start text-left p-4 hover:no-underline data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg focus-visible:ring-inset focus-visible:!ring-offset-0"
+            className="w-full flex items-center justify-between text-left p-4 hover:no-underline data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg focus-visible:ring-inset focus-visible:!ring-offset-0"
           >
             <CardTitle className="text-lg font-headline">
               {translations.filterTitle || 'Filter Transactions'}
             </CardTitle>
-            {/* AccordionTrigger component appends its own chevron icon */}
+            {/* AccordionTrigger component appends its own chevron icon here, justify-between will place it to the right */}
           </AccordionTrigger>
           <AccordionContent className="border-t p-0 data-[state=open]:rounded-b-lg">
             <div className="p-4 space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
