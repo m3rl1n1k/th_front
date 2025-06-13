@@ -8,7 +8,7 @@ import { RecurringTransactionList } from './_components/RecurringTransactionList
 import { getTransactions, getWallets, getSubCategories, getMainCategories } from '@/lib/actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTranslations } from '@/lib/getTranslations';
-import { cookies } from 'next/headers'; // Import cookies
+import { cookies } from 'next/headers'; 
 
 export default async function TransactionsPage() {
   const cookieStore = cookies();
@@ -20,6 +20,12 @@ export default async function TransactionsPage() {
     addTransactionButton: "Add Transaction",
     title: "Transactions",
     description: "Track your income and expenses.",
+    filters: {}, // Ensure filters key exists
+    uncategorized: "Uncategorized",
+    income: "Income",
+    expense: "Expense",
+    dateToday: "Today",
+    dateYesterday: "Yesterday"
   };
 
   const allTransactions = await getTransactions();
@@ -33,7 +39,7 @@ export default async function TransactionsPage() {
     <>
       <PageHeader title={tt.title} description={tt.description}>
         <Button asChild>
-          <Link href="/transactions/new">
+          <Link href={`/${locale}/transactions/new`}>
             <PlusCircle className="mr-2 h-4 w-4" /> {tt.addTransactionButton}
           </Link>
         </Button>
@@ -50,6 +56,8 @@ export default async function TransactionsPage() {
             wallets={wallets}
             subCategories={subCategories}
             mainCategories={mainCategories}
+            translations={tt} // Pass the whole transactionsPage translations
+            locale={locale}
           />
         </TabsContent>
         <TabsContent value="recurring">

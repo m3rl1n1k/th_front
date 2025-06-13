@@ -1,8 +1,8 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import type { Transaction, Wallet, SubCategory, MainCategory } from '@/lib/definitions';
+import React, { useState, useEffect, useMemo } from 'react';
+import type { Transaction, Wallet, SubCategory, MainCategory, TransactionType } from '@/lib/definitions';
 import {
   Table,
   TableBody,
@@ -17,28 +17,94 @@ import { DeleteConfirmationDialog } from '@/components/shared/DeleteConfirmation
 import { deleteTransaction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday, parseISO, startOfDay, compareDesc } from 'date-fns';
+import * as Locales from 'date-fns/locale';
 import { Card } from '@/components/ui/card';
 import { ArrowDownCircle, ArrowUpCircle, ListX } from 'lucide-react';
+import { TransactionFilters, type TransactionFiltersState } from './TransactionFilters'; // Import filters
+
+const ALL_VALUE = '_ALL_';
+const UNCAT_VALUE = '_UNCATEGORIZED_';
 
 interface TransactionListProps {
   initialTransactions: Transaction[];
   wallets: Wallet[];
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
+  translations: any; // from transactionsPage namespace
+  locale: string;
 }
 
-export function TransactionList({ initialTransactions, wallets, subCategories, mainCategories }: TransactionListProps) {
+interface GroupedTransactions {
+  dateDisplay: string;
+  dateActual: Date; // For sorting groups
+  transactions: Transaction[];
+}
+
+export function TransactionList({
+  initialTransactions,
+  wallets,
+  subCategories,
+  mainCategories,
+  translations,
+  locale,
+}: TransactionListProps) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [itemToDelete, setItemToDelete] = useState<Transaction | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const dateLocale = Locales[locale as keyof typeof Locales] || Locales.enUS;
+
+  const initialFilterState: TransactionFiltersState = {
+    type: ALL_VALUE,
+    walletId: ALL_VALUE,
+    subCategoryId: ALL_VALUE,
+    startDate: null,
+    endDate: null,
+    searchTerm: '',
+  };
+  const [activeFilters, setActiveFilters] = useState<TransactionFiltersState>(initialFilterState);
+
+  useEffect(() => {
+    setTransactions(initialTransactions); // Reset transactions if initialTransactions prop changes
+  }, [initialTransactions]);
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(transaction => {
+      const lowerCaseSearchTerm = activeFilters.searchTerm.toLowerCase();
+      const descriptionMatch = transaction.description?.toLowerCase().includes(lowerCaseSearchTerm) || 
+                                 getCategoryInfo(transaction.subCategoryId).name.toLowerCase().includes(lowerCaseSearchTerm) ||
+                                 getCategoryInfo(transaction.subCategoryId).mainCategoryName.toLowerCase().includes(lowerCaseSearchTerm);
+
+      if (activeFilters.searchTerm && !descriptionMatch) return false;
+      if (activeFilters.type !== ALL_VALUE && transaction.type !== activeFilters.type) return false;
+      if (activeFilters.walletId !== ALL_VALUE && transaction.walletId !== activeFilters.walletId) return false;
+      
+      if (activeFilters.subCategoryId === UNCAT_VALUE && transaction.subCategoryId) return false;
+      if (activeFilters.subCategoryId !== ALL_VALUE && activeFilters.subCategoryId !== UNCAT_VALUE && transaction.subCategoryId !== activeFilters.subCategoryId) {
+        // Also check if filtering by a main category when subCategory is ALL_VALUE or UNCAT_VALUE
+        const subCat = subCategories.find(sc => sc.id === transaction.subCategoryId);
+        if (activeFilters.subCategoryId && mainCategories.some(mc => mc.id === activeFilters.subCategoryId)) { // If filter is a main category ID
+             if (!subCat || subCat.mainCategoryId !== activeFilters.subCategoryId) return false;
+        } else if (transaction.subCategoryId !== activeFilters.subCategoryId) { // Standard sub-category check
+            return false;
+        }
+      }
+
+
+      const transactionDate = startOfDay(new Date(transaction.createdAt));
+      if (activeFilters.startDate && transactionDate < startOfDay(activeFilters.startDate)) return false;
+      if (activeFilters.endDate && transactionDate > startOfDay(activeFilters.endDate)) return false;
+      
+      return true;
+    });
+  }, [transactions, activeFilters, subCategories, mainCategories]);
 
   const getWalletName = (walletId: string) => wallets.find(w => w.id === walletId)?.name || 'N/A';
   
   const getCategoryInfo = (subCategoryId?: string) => {
     if (!subCategoryId) {
-      return { name: 'Uncategorized', color: 'hsl(var(--muted-foreground))', mainCategoryName: 'N/A' };
+      return { name: translations?.uncategorized || 'Uncategorized', color: 'hsl(var(--muted-foreground))', mainCategoryName: 'N/A' };
     }
     const sub = subCategories.find(sc => sc.id === subCategoryId);
     if (!sub) return { name: 'N/A', color: 'hsl(var(--muted-foreground))', mainCategoryName: 'N/A' };
@@ -50,15 +116,16 @@ export function TransactionList({ initialTransactions, wallets, subCategories, m
     if (!itemToDelete) return;
     try {
       await deleteTransaction(itemToDelete.id);
-      setTransactions(transactions.filter((t) => t.id !== itemToDelete.id));
+      // Update local state for transactions (which feeds into filteredTransactions)
+      setTransactions(prev => prev.filter((t) => t.id !== itemToDelete.id));
       toast({
-        title: 'Transaction Deleted',
-        description: `Transaction has been successfully deleted.`,
+        title: translations?.deleteSuccessToastTitle || 'Transaction Deleted',
+        description: translations?.deleteSuccessToastDescription || 'Transaction has been successfully deleted.',
       });
     } catch (error) {
       toast({
-        title: 'Error Deleting Transaction',
-        description: `Could not delete transaction: ${error instanceof Error ? error.message : String(error)}`,
+        title: translations?.errorToastTitle || 'Error Deleting Transaction',
+        description: `${translations?.errorToastDescription?.replace('{error}', error instanceof Error ? error.message : String(error)) || (error instanceof Error ? error.message : String(error))}`,
         variant: 'destructive',
       });
     } finally {
@@ -66,70 +133,121 @@ export function TransactionList({ initialTransactions, wallets, subCategories, m
     }
   };
 
-  if (transactions.length === 0) {
-    return (
-       <Card className="text-center p-10 shadow">
-        <ListX className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-xl font-semibold mb-2">No Transactions Yet</h3>
-        <p className="text-muted-foreground">Start by adding your income and expenses.</p>
-      </Card>
-    );
-  }
+  const groupedTransactions = useMemo(() => {
+    const groups: Record<string, Transaction[]> = {};
+    // Ensure transactions are sorted by date descending before grouping
+    const sortedTransactions = [...filteredTransactions].sort((a, b) => compareDesc(new Date(a.createdAt), new Date(b.createdAt)));
+
+    sortedTransactions.forEach(transaction => {
+      const date = new Date(transaction.createdAt);
+      let dateKey: string;
+      if (isToday(date)) {
+        dateKey = 'Today';
+      } else if (isYesterday(date)) {
+        dateKey = 'Yesterday';
+      } else {
+        dateKey = format(date, 'MMMM dd, yyyy', { locale: dateLocale });
+      }
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(transaction);
+    });
+
+    return Object.entries(groups).map(([dateDisplay, transactions]) => {
+        // For sorting, use the actual date of the first transaction in the group
+        // or a fixed very old/new date for Today/Yesterday to ensure they are on top.
+        let dateActual: Date;
+        if (dateDisplay === 'Today') dateActual = new Date(); // Most recent
+        else if (dateDisplay === 'Yesterday') dateActual = new Date(new Date().setDate(new Date().getDate() -1));
+        else dateActual = transactions[0] ? new Date(transactions[0].createdAt) : new Date(0); // Fallback, oldest
+        return { dateDisplay, dateActual, transactions };
+    }).sort((a,b) => compareDesc(a.dateActual, b.dateActual));
+
+  }, [filteredTransactions, dateLocale]);
+
 
   return (
     <>
-      <Card className="shadow-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Description/Category</TableHead>
-              <TableHead>Wallet</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((transaction) => {
-              const categoryInfo = getCategoryInfo(transaction.subCategoryId);
-              return (
-                <TableRow key={transaction.id}>
-                  <TableCell>{format(new Date(transaction.createdAt), 'MMM dd, yyyy')}</TableCell>
-                  <TableCell>
-                    <div className="font-medium">{transaction.description || categoryInfo.name}</div>
-                    <div className="text-xs text-muted-foreground flex items-center">
-                       <span className="h-2 w-2 rounded-full mr-1 border" style={{ backgroundColor: categoryInfo.color }}></span>
-                       {categoryInfo.mainCategoryName === 'N/A' && categoryInfo.name === 'Uncategorized' ? 'Uncategorized' : `${categoryInfo.mainCategoryName} / ${categoryInfo.name}`}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getWalletName(transaction.walletId)}</TableCell>
-                  <TableCell>
-                    <Badge variant={transaction.type === 'Income' ? 'default' : 'destructive'} className={transaction.type === 'Income' ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''}>
-                      {transaction.type === 'Income' ? <ArrowUpCircle className="mr-1 h-3 w-3" /> : <ArrowDownCircle className="mr-1 h-3 w-3" />}
-                      {transaction.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className={`text-right font-semibold ${transaction.type === 'Income' ? 'text-accent' : 'text-destructive'}`}>
-                    {transaction.amount.toLocaleString(undefined, { style: 'currency', currency: wallets.find(w=>w.id === transaction.walletId)?.currency || 'USD' })}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DataTableActions
-                      onEdit={() => router.push(`/transactions/edit/${transaction.id}`)}
-                      onDelete={() => setItemToDelete(transaction)}
-                    />
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+      <TransactionFilters
+        wallets={wallets}
+        subCategories={subCategories}
+        mainCategories={mainCategories}
+        onApplyFilters={setActiveFilters}
+        initialFilters={initialFilterState}
+        translations={translations?.filters || {}}
+        locale={locale}
+      />
+      {groupedTransactions.length === 0 ? (
+         <Card className="text-center p-10 shadow mt-6">
+          <ListX className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-xl font-semibold mb-2">{translations?.noTransactionsTitle || 'No Transactions Found'}</h3>
+          <p className="text-muted-foreground">{translations?.noTransactionsDescription || 'Try adjusting your filters or adding new transactions.'}</p>
+        </Card>
+      ) : (
+        <Card className="shadow-lg mt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {/* Date header is now implicit via grouping headers */}
+                <TableHead>{translations?.descriptionCategoryHeader || 'Description/Category'}</TableHead>
+                <TableHead>{translations?.walletHeader || 'Wallet'}</TableHead>
+                <TableHead>{translations?.typeHeader || 'Type'}</TableHead>
+                <TableHead className="text-right">{translations?.amountHeader || 'Amount'}</TableHead>
+                <TableHead className="text-right">{translations?.actionsHeader || 'Actions'}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {groupedTransactions.map((group, groupIndex) => (
+                <React.Fragment key={group.dateDisplay + groupIndex}>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50 sticky top-0 z-10"> {/* Make group header sticky */}
+                    <TableCell colSpan={5} className="py-2 px-4 font-semibold text-foreground">
+                      {group.dateDisplay === 'Today' ? translations?.dateToday || 'Today' 
+                       : group.dateDisplay === 'Yesterday' ? translations?.dateYesterday || 'Yesterday'
+                       : group.dateDisplay}
+                    </TableCell>
+                  </TableRow>
+                  {group.transactions.map((transaction) => {
+                    const categoryInfo = getCategoryInfo(transaction.subCategoryId);
+                    return (
+                      <TableRow key={transaction.id}>
+                        <TableCell>
+                          <div className="font-medium">{transaction.description || categoryInfo.name}</div>
+                          <div className="text-xs text-muted-foreground flex items-center">
+                             <span className="h-2 w-2 rounded-full mr-1 border" style={{ backgroundColor: categoryInfo.color }}></span>
+                             {categoryInfo.mainCategoryName === 'N/A' && categoryInfo.name === (translations?.uncategorized || 'Uncategorized') ? (translations?.uncategorized || 'Uncategorized') : `${categoryInfo.mainCategoryName} / ${categoryInfo.name}`}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getWalletName(transaction.walletId)}</TableCell>
+                        <TableCell>
+                          <Badge variant={transaction.type === 'Income' ? 'default' : 'destructive'} className={transaction.type === 'Income' ? 'bg-accent text-accent-foreground hover:bg-accent/90' : ''}>
+                            {transaction.type === 'Income' ? <ArrowUpCircle className="mr-1 h-3 w-3" /> : <ArrowDownCircle className="mr-1 h-3 w-3" />}
+                            {translations?.[transaction.type.toLowerCase() as keyof typeof translations] || transaction.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={`text-right font-semibold ${transaction.type === 'Income' ? 'text-accent' : 'text-destructive'}`}>
+                          {transaction.amount.toLocaleString(undefined, { style: 'currency', currency: wallets.find(w=>w.id === transaction.walletId)?.currency || 'USD' })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DataTableActions
+                            onEdit={() => router.push(`/${locale}/transactions/edit/${transaction.id}`)}
+                            onDelete={() => setItemToDelete(transaction)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
       <DeleteConfirmationDialog
         isOpen={!!itemToDelete}
         onOpenChange={(open) => !open && setItemToDelete(null)}
         onConfirm={handleDelete}
-        itemName={`transaction of ${itemToDelete?.amount}`}
+        itemName={`${translations?.deleteItemNamePrefix || 'transaction of'} ${itemToDelete?.amount}`}
       />
     </>
   );
