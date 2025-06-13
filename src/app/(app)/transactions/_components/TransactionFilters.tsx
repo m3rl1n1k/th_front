@@ -8,9 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, XCircle } from 'lucide-react';
-import { format, isValid } from 'date-fns';
+import { format, isValid, type Locale } from 'date-fns';
+import { enUS, es } from 'date-fns/locale'; // Explicitly import locales
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input'; // For potential text search later
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
 const ALL_VALUE = '_ALL_';
 const UNCAT_VALUE = '_UNCATEGORIZED_';
@@ -27,12 +30,18 @@ export interface TransactionFiltersState {
 interface TransactionFiltersProps {
   wallets: Wallet[];
   subCategories: SubCategory[];
-  mainCategories: MainCategory[]; // Needed to group sub-categories
+  mainCategories: MainCategory[];
   onApplyFilters: (filters: TransactionFiltersState) => void;
   initialFilters: TransactionFiltersState;
-  translations: any; // From transactionsPage.filters namespace
+  translations: any;
   locale: string;
 }
+
+// Map string locales to date-fns locale objects
+const dateFnsLocales: { [key: string]: Locale } = {
+  en: enUS,
+  es: es,
+};
 
 export function TransactionFilters({
   wallets,
@@ -51,6 +60,7 @@ export function TransactionFilters({
   const [searchTerm, setSearchTerm] = useState<string>(initialFilters.searchTerm);
 
   const transactionTypes: (TransactionType | typeof ALL_VALUE)[] = [ALL_VALUE, 'Income', 'Expense'];
+  const currentDtsLocale = dateFnsLocales[locale] || enUS; // Use the map
 
   const handleApply = () => {
     onApplyFilters({ type, walletId, subCategoryId, startDate, endDate, searchTerm });
@@ -162,7 +172,7 @@ export function TransactionFilters({
                 className={cn('w-full justify-start text-left font-normal h-9', !startDate && 'text-muted-foreground')}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate && isValid(startDate) ? format(startDate, 'PPP', { locale: require(`date-fns/locale/${locale}`) }) : <span>{translations.datePlaceholder || 'Pick a date'}</span>}
+                {startDate && isValid(startDate) ? format(startDate, 'PPP', { locale: currentDtsLocale }) : <span>{translations.datePlaceholder || 'Pick a date'}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -171,6 +181,7 @@ export function TransactionFilters({
                 selected={startDate}
                 onSelect={setStartDate}
                 initialFocus
+                locale={currentDtsLocale}
               />
             </PopoverContent>
           </Popover>
@@ -186,7 +197,7 @@ export function TransactionFilters({
                 className={cn('w-full justify-start text-left font-normal h-9', !endDate && 'text-muted-foreground')}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate && isValid(endDate) ? format(endDate, 'PPP', { locale: require(`date-fns/locale/${locale}`) }) : <span>{translations.datePlaceholder || 'Pick a date'}</span>}
+                {endDate && isValid(endDate) ? format(endDate, 'PPP', { locale: currentDtsLocale }) : <span>{translations.datePlaceholder || 'Pick a date'}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -196,6 +207,7 @@ export function TransactionFilters({
                 onSelect={setEndDate}
                 disabled={(date) => startDate && date < startDate}
                 initialFocus
+                locale={currentDtsLocale}
               />
             </PopoverContent>
           </Popover>
@@ -212,10 +224,3 @@ export function TransactionFilters({
     </Card>
   );
 }
-
-// Helper components from TransactionForm, slightly adapted for TransactionFilters context if needed
-// For simplicity, assuming Card, CardHeader, CardTitle, CardContent, Label are globally available or imported in TransactionFilters.tsx
-// If not, they would need to be imported from '@/components/ui/card' and '@/components/ui/label'.
-// These are already standard ShadCN components.
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';

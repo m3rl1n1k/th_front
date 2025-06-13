@@ -18,10 +18,11 @@ import { deleteTransaction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { format, isToday, isYesterday, parseISO, startOfDay, compareDesc } from 'date-fns';
-import * as Locales from 'date-fns/locale';
+import { enUS, es } from 'date-fns/locale'; // Explicitly import locales
+import type { Locale } from 'date-fns'; // Import Locale type
 import { Card } from '@/components/ui/card';
 import { ArrowDownCircle, ArrowUpCircle, ListX } from 'lucide-react';
-import { TransactionFilters, type TransactionFiltersState } from './TransactionFilters'; // Import filters
+import { TransactionFilters, type TransactionFiltersState } from './TransactionFilters';
 
 const ALL_VALUE = '_ALL_';
 const UNCAT_VALUE = '_UNCATEGORIZED_';
@@ -31,15 +32,21 @@ interface TransactionListProps {
   wallets: Wallet[];
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
-  translations: any; // from transactionsPage namespace
+  translations: any;
   locale: string;
 }
 
 interface GroupedTransactions {
   dateDisplay: string;
-  dateActual: Date; // For sorting groups
+  dateActual: Date;
   transactions: Transaction[];
 }
+
+// Map string locales to date-fns locale objects
+const dateFnsLocalesMap: { [key: string]: Locale } = {
+  en: enUS,
+  es: es,
+};
 
 export function TransactionList({
   initialTransactions,
@@ -53,7 +60,7 @@ export function TransactionList({
   const [itemToDelete, setItemToDelete] = useState<Transaction | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const dateLocale = Locales[locale as keyof typeof Locales] || Locales.enUS;
+  const dateLocaleForFormatting = dateFnsLocalesMap[locale] || enUS;
 
   const initialFilterState: TransactionFiltersState = {
     type: ALL_VALUE,
@@ -66,7 +73,7 @@ export function TransactionList({
   const [activeFilters, setActiveFilters] = useState<TransactionFiltersState>(initialFilterState);
 
   useEffect(() => {
-    setTransactions(initialTransactions); // Reset transactions if initialTransactions prop changes
+    setTransactions(initialTransactions);
   }, [initialTransactions]);
 
   const filteredTransactions = useMemo(() => {
@@ -82,15 +89,13 @@ export function TransactionList({
       
       if (activeFilters.subCategoryId === UNCAT_VALUE && transaction.subCategoryId) return false;
       if (activeFilters.subCategoryId !== ALL_VALUE && activeFilters.subCategoryId !== UNCAT_VALUE && transaction.subCategoryId !== activeFilters.subCategoryId) {
-        // Also check if filtering by a main category when subCategory is ALL_VALUE or UNCAT_VALUE
         const subCat = subCategories.find(sc => sc.id === transaction.subCategoryId);
-        if (activeFilters.subCategoryId && mainCategories.some(mc => mc.id === activeFilters.subCategoryId)) { // If filter is a main category ID
+        if (activeFilters.subCategoryId && mainCategories.some(mc => mc.id === activeFilters.subCategoryId)) {
              if (!subCat || subCat.mainCategoryId !== activeFilters.subCategoryId) return false;
-        } else if (transaction.subCategoryId !== activeFilters.subCategoryId) { // Standard sub-category check
+        } else if (transaction.subCategoryId !== activeFilters.subCategoryId) {
             return false;
         }
       }
-
 
       const transactionDate = startOfDay(new Date(transaction.createdAt));
       if (activeFilters.startDate && transactionDate < startOfDay(activeFilters.startDate)) return false;
@@ -116,7 +121,6 @@ export function TransactionList({
     if (!itemToDelete) return;
     try {
       await deleteTransaction(itemToDelete.id);
-      // Update local state for transactions (which feeds into filteredTransactions)
       setTransactions(prev => prev.filter((t) => t.id !== itemToDelete.id));
       toast({
         title: translations?.deleteSuccessToastTitle || 'Transaction Deleted',
@@ -135,7 +139,6 @@ export function TransactionList({
 
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, Transaction[]> = {};
-    // Ensure transactions are sorted by date descending before grouping
     const sortedTransactions = [...filteredTransactions].sort((a, b) => compareDesc(new Date(a.createdAt), new Date(b.createdAt)));
 
     sortedTransactions.forEach(transaction => {
@@ -146,7 +149,7 @@ export function TransactionList({
       } else if (isYesterday(date)) {
         dateKey = 'Yesterday';
       } else {
-        dateKey = format(date, 'MMMM dd, yyyy', { locale: dateLocale });
+        dateKey = format(date, 'MMMM dd, yyyy', { locale: dateLocaleForFormatting });
       }
       if (!groups[dateKey]) {
         groups[dateKey] = [];
@@ -155,17 +158,14 @@ export function TransactionList({
     });
 
     return Object.entries(groups).map(([dateDisplay, transactions]) => {
-        // For sorting, use the actual date of the first transaction in the group
-        // or a fixed very old/new date for Today/Yesterday to ensure they are on top.
         let dateActual: Date;
-        if (dateDisplay === 'Today') dateActual = new Date(); // Most recent
+        if (dateDisplay === 'Today') dateActual = new Date();
         else if (dateDisplay === 'Yesterday') dateActual = new Date(new Date().setDate(new Date().getDate() -1));
-        else dateActual = transactions[0] ? new Date(transactions[0].createdAt) : new Date(0); // Fallback, oldest
+        else dateActual = transactions[0] ? new Date(transactions[0].createdAt) : new Date(0);
         return { dateDisplay, dateActual, transactions };
     }).sort((a,b) => compareDesc(a.dateActual, b.dateActual));
 
-  }, [filteredTransactions, dateLocale]);
-
+  }, [filteredTransactions, dateLocaleForFormatting]);
 
   return (
     <>
@@ -189,7 +189,6 @@ export function TransactionList({
           <Table>
             <TableHeader>
               <TableRow>
-                {/* Date header is now implicit via grouping headers */}
                 <TableHead>{translations?.descriptionCategoryHeader || 'Description/Category'}</TableHead>
                 <TableHead>{translations?.walletHeader || 'Wallet'}</TableHead>
                 <TableHead>{translations?.typeHeader || 'Type'}</TableHead>
@@ -200,7 +199,7 @@ export function TransactionList({
             <TableBody>
               {groupedTransactions.map((group, groupIndex) => (
                 <React.Fragment key={group.dateDisplay + groupIndex}>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50 sticky top-0 z-10"> {/* Make group header sticky */}
+                  <TableRow className="bg-muted/50 hover:bg-muted/50 sticky top-0 z-10">
                     <TableCell colSpan={5} className="py-2 px-4 font-semibold text-foreground">
                       {group.dateDisplay === 'Today' ? translations?.dateToday || 'Today' 
                        : group.dateDisplay === 'Yesterday' ? translations?.dateYesterday || 'Yesterday'
