@@ -5,7 +5,8 @@ import { getTranslations } from '@/lib/getTranslations';
 import { CapitalDisplay } from './_components/CapitalDisplay';
 import type { Wallet, SharedCapitalSession } from '@/lib/definitions';
 
-export default async function CapitalPage({ params: { locale } }: { params: { locale: string } }) {
+export default async function CapitalPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
+  const locale = 'en'; // Hardcode locale
   const t = await getTranslations(locale);
   const tc = t.capitalPage;
 

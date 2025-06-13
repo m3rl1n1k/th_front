@@ -1,6 +1,5 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
-// Removed DollarSign, Users, CreditCard imports as they are now handled by StatCard
 import { getTranslations } from '@/lib/getTranslations';
 import { getTransactions, getMainCategories, getSubCategories, getWallets, getUserSettings } from '@/lib/actions';
 import type { Transaction, MainCategory, SubCategory, Wallet, UserSettings } from '@/lib/definitions';
@@ -12,7 +11,6 @@ import { DashboardRecentActivitySection } from './_components/DashboardRecentAct
 import { dashboardVisibilityLocalStorageKeys } from '@/app/(app)/settings/_components/SettingsForm';
 import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
 
-
 // Mock data - replace with actual data fetching
 const summaryData = {
   totalBalance: 12530.75,
@@ -20,14 +18,14 @@ const summaryData = {
   totalExpenses: 2800.50,
 };
 
-
 interface ExpenseByCategory {
   mainCategoryName: string;
   totalAmount: number;
   fill: string;
 }
 
-export default async function DashboardPage({ params: { locale } }: { params: { locale: string } }) {
+export default async function DashboardPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
+  const locale = 'en'; // Hardcode locale
   const t = await getTranslations(locale);
   const td = t.dashboard; 
   const userSettings = await getUserSettings();
@@ -63,7 +61,6 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
     totalAmount: parseFloat(item.totalAmount.toFixed(2)),
     fill: item.color,
   })).sort((a, b) => b.totalAmount - a.totalAmount);
-
 
   const chartConfig = {} as ChartConfig;
   chartData.forEach(item => {
@@ -106,7 +103,7 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
         <StatCard 
             title={td.totalBalance} 
             value={summaryData.totalBalance} 
-            iconName="DollarSign" // Changed
+            iconName="DollarSign" 
             currency 
             locale={locale} 
             dataAiHint="piggy bank"
@@ -116,7 +113,7 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
         <StatCard 
             title={td.monthlyIncome} 
             value={summaryData.totalIncome} 
-            iconName="Users" // Changed
+            iconName="Users" 
             currency 
             locale={locale} 
             dataAiHint="money rain"
@@ -126,7 +123,7 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
         <StatCard 
             title={td.monthlyExpenses} 
             value={summaryData.totalExpenses} 
-            iconName="CreditCard" // Changed
+            iconName="CreditCard" 
             currency 
             locale={locale} 
             dataAiHint="empty wallet"

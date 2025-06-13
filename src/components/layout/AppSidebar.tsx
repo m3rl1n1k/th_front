@@ -17,7 +17,7 @@ import {
   PiggyBank,
   Users, 
   MessageSquareText, 
-  FileText, // Added FileText icon
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth'; 
@@ -44,19 +44,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 interface NavItemProps {
-  href: string;
+  href: string; // No longer locale-prefixed by default
   icon: React.ElementType;
   label: string;
   currentPath: string;
-  locale: string;
+  // locale: string; // locale prop removed from NavItem, will use non-prefixed paths
   subItems?: { href: string; label: string }[];
 }
 
-const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: NavItemProps) => {
-  const localePrefixedHref = `/${locale}${href}`;
+const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProps) => {
+  // const localePrefixedHref = `/${locale}${href}`; // Changed to direct href
   const isActive = subItems 
-    ? subItems.some(sub => currentPath.startsWith(`/${locale}${sub.href}`)) || currentPath === localePrefixedHref
-    : currentPath.startsWith(localePrefixedHref);
+    ? subItems.some(sub => currentPath.startsWith(sub.href)) || currentPath === href
+    : currentPath.startsWith(href);
   
   const [isOpen, setIsOpen] = React.useState(isActive && !!subItems);
 
@@ -79,8 +79,8 @@ const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: Nav
             <SidebarMenuSub>
                 {subItems.map(subItem => (
                     <SidebarMenuSubItem key={subItem.href}>
-                        <Link href={`/${locale}${subItem.href}`}>
-                            <SidebarMenuSubButton isActive={currentPath.startsWith(`/${locale}${subItem.href}`)} aria-label={subItem.label}>
+                        <Link href={subItem.href}> {/* Use direct subItem.href */}
+                            <SidebarMenuSubButton isActive={currentPath.startsWith(subItem.href)} aria-label={subItem.label}>
                                 {subItem.label}
                             </SidebarMenuSubButton>
                         </Link>
@@ -94,7 +94,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: Nav
 
   return (
     <SidebarMenuItem>
-        <Link href={localePrefixedHref} aria-label={label}>
+        <Link href={href} aria-label={label}> {/* Use direct href */}
             <SidebarMenuButton isActive={isActive} tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}}>
                 <Icon className="h-5 w-5" />
                 <span className="truncate">{label}</span>
@@ -106,7 +106,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: Nav
 
 interface AppSidebarProps {
   children: React.ReactNode;
-  locale: string;
+  locale: string; // Will be "en"
   translations: {
     dashboard: string;
     transactions: string;
@@ -115,7 +115,7 @@ interface AppSidebarProps {
     transfers: string;
     budgets: string; 
     capital: string;
-    aiReports: string; // Added for AI Reports
+    aiReports: string;
     feedback: string;
     settings: string;
     profile: string; 
@@ -135,12 +135,12 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
       setCurrentUser(user);
     }
     fetchUser();
-  }, [pathname]); // Refetch user if path changes, e.g., after profile update
+  }, [pathname]); 
 
   const handleLogout = async () => {
     await logout();
     toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-    router.push(`/${locale}/login`);
+    router.push('/login'); // Redirect to non-prefixed /login
   };
 
   const navItems = [
@@ -151,7 +151,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     { href: '/transfers', icon: Repeat, label: translations.transfers },
     { href: '/budgets', icon: PiggyBank, label: translations.budgets },
     { href: '/capital', icon: Users, label: translations.capital },
-    { href: '/ai-reports', icon: FileText, label: translations.aiReports }, // Added AI Reports link
+    { href: '/ai-reports', icon: FileText, label: translations.aiReports },
   ];
   
   const utilityNavItems = [
@@ -169,7 +169,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     <SidebarProvider defaultOpen>
       <Sidebar collapsible="icon" className="border-r">
         <SidebarHeader className="p-4">
-            <Link href={`/${locale}/dashboard`} className="flex items-center gap-2 font-headline text-xl text-sidebar-primary-foreground hover:text-sidebar-primary-foreground/80 transition-colors">
+            <Link href={'/dashboard'} className="flex items-center gap-2 font-headline text-xl text-sidebar-primary-foreground hover:text-sidebar-primary-foreground/80 transition-colors"> {/* Non-prefixed link */}
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M8 6h10M6 12h10M4 18h10"/><path d="m18 12 4-4-4-4"/><path d="m18 12 4 4-4 4"/></svg>
                 <span className="group-data-[collapsible=icon]:hidden">FinanceFlow</span>
             </Link>
@@ -177,14 +177,14 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
         <SidebarContent className="p-2 flex-grow">
           <SidebarMenu>
             {navItems.map((item) => (
-              <NavItem key={item.href} {...item} currentPath={pathname} locale={locale} />
+              <NavItem key={item.href} {...item} currentPath={pathname} /> {/* locale prop removed */}
             ))}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-2 border-t border-sidebar-border">
           <SidebarMenu>
              {utilityNavItems.map((item) => (
-                <NavItem key={item.href} {...item} currentPath={pathname} locale={locale} />
+                <NavItem key={item.href} {...item} currentPath={pathname} />  // locale prop removed
               ))}
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} className="w-full" tooltip={{children: translations.logout, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}} aria-label={translations.logout}>
@@ -202,7 +202,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
             </div>
             <div className="flex-1"> 
             </div>
-            <Link href={`/${locale}/profile`} className="flex items-center gap-2">
+            <Link href={'/profile'} className="flex items-center gap-2"> {/* Non-prefixed link */}
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={currentUser?.name ? `https://placehold.co/40x40.png?text=${getInitials(currentUser.name)}` : undefined} alt={currentUser?.name || "User Avatar"} />
                   <AvatarFallback>{getInitials(currentUser?.name)}</AvatarFallback>

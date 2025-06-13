@@ -1,27 +1,26 @@
 
 'use client';
 import { useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // useParams removed
 import { isAuthenticated } from '@/lib/auth'; 
 
 export default function HomePage() {
   const router = useRouter();
-  const params = useParams();
+  // const params = useParams(); // useParams removed
 
   useEffect(() => {
-    // Derive locale inside useEffect to ensure params is available and use it directly
-    const currentLocale = typeof params.locale === 'string' ? params.locale : 'en';
+    // const currentLocale = typeof params.locale === 'string' ? params.locale : 'en'; // Locale logic removed
     
     async function checkAuthAndRedirect() {
       const authStatus = await isAuthenticated();
       if (authStatus) {
-        router.replace(`/${currentLocale}/dashboard`);
+        router.replace('/dashboard'); // Redirect to non-prefixed path
       } else {
-        router.replace(`/${currentLocale}/login`);
+        router.replace('/login'); // Redirect to non-prefixed path
       }
     }
     checkAuthAndRedirect();
-  }, [router, params.locale]); // Depend on params.locale to re-run if it changes
+  }, [router]); // params.locale dependency removed
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -29,4 +28,3 @@ export default function HomePage() {
     </div>
   );
 }
-

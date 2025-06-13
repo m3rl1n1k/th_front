@@ -10,7 +10,8 @@ import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Transaction, SubCategory, Budget, MainCategory } from '@/lib/definitions';
 
-export default async function BudgetsPage({ params: { locale } }: { params: { locale: string } }) {
+export default async function BudgetsPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
+  const locale = 'en'; // Hardcode locale
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;
 
@@ -53,7 +54,7 @@ export default async function BudgetsPage({ params: { locale } }: { params: { lo
     <>
       <PageHeader title={tb.title} description={tb.description}>
         <Button asChild>
-          <Link href={`/${locale}/budgets/new`}>
+          <Link href="/budgets/new"> {/* Non-prefixed link */}
             <PlusCircle className="mr-2 h-4 w-4" /> {tb.addBudget}
           </Link>
         </Button>

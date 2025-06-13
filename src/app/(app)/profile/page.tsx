@@ -8,18 +8,17 @@ import { ChangePasswordForm } from './_components/ChangePasswordForm';
 import { getTranslations } from '@/lib/getTranslations';
 import { redirect } from 'next/navigation';
 
-export default async function ProfilePage({ params: { locale } }: { params: { locale: string } }) {
+export default async function ProfilePage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
+  const locale = 'en'; // Hardcode locale
   const t = await getTranslations(locale);
   const tp = t.profilePage; 
 
   const currentUser = await getCurrentUser();
   
   if (!currentUser) {
-    redirect(`/${locale}/login`);
+    redirect('/login'); // Redirect to non-prefixed login
   }
-  // Fetch current settings specifically for the profile form, ensure it matches user
   const userSettings = await getUserSettings();
-
 
   const handleUpdateProfile = async (data: { name?: string }) => {
     'use server';
@@ -28,12 +27,10 @@ export default async function ProfilePage({ params: { locale } }: { params: { lo
 
   const handleUpdateSettings = async (data: { defaultCurrency?: string }) => {
     'use server';
-    // Ensure we pass all settings fields required by updateUserSettings or adjust action
-    const currentSettings = await getUserSettings() || { transactionsPerPage: 10 }; // Fallback
+    const currentSettings = await getUserSettings() || { transactionsPerPage: 10 }; 
     const newSettings = { ...currentSettings, ...data };
     return updateUserSettings(newSettings as UserSettings);
   };
-
 
   return (
     <>

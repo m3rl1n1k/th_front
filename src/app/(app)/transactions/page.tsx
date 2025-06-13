@@ -1,3 +1,4 @@
+
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -15,7 +16,7 @@ export default async function TransactionsPage() {
     <>
       <PageHeader title="Transactions" description="Track your income and expenses.">
         <Button asChild>
-          <Link href="/transactions/new">
+          <Link href="/transactions/new"> {/* Non-prefixed link */}
             <PlusCircle className="mr-2 h-4 w-4" /> Add Transaction
           </Link>
         </Button>

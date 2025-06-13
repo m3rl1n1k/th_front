@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // useParams removed
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const params = useParams(); // locale should be in params here as it's /[locale]/login
+  // const params = useParams(); // useParams removed
   const { toast } = useToast();
   
   const [email, setEmail] = useState('user@example.com');
@@ -23,8 +23,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Derive locale directly from params when needed, with a fallback
-    const localeToUse = typeof params.locale === 'string' ? params.locale : 'en';
+    // const localeToUse = typeof params.locale === 'string' ? params.locale : 'en'; // Locale logic removed
     try {
       const user = await login(email, password);
       if (user) {
@@ -32,7 +31,7 @@ export default function LoginPage() {
           title: 'Login Successful',
           description: `Welcome back, ${user.name || user.email}!`,
         });
-        router.push(`/${localeToUse}/dashboard`); // Use derived locale
+        router.push('/dashboard'); // Redirect to non-prefixed path
       } else {
         toast({
           title: 'Login Failed',
@@ -97,4 +96,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

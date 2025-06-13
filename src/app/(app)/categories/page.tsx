@@ -1,3 +1,4 @@
+
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -9,12 +10,11 @@ import { getMainCategories, getSubCategories } from '@/lib/actions';
 
 export default async function CategoriesPage() {
   const mainCategories = await getMainCategories();
-  const subCategories = await getSubCategories(); // Fetch all subcategories
+  const subCategories = await getSubCategories(); 
 
   return (
     <>
       <PageHeader title="Categories" description="Organize your transactions by main and sub-categories.">
-        {/* The "Add" button could be context-dependent based on the active tab, or a modal could handle type selection */}
       </PageHeader>
 
       <Tabs defaultValue="main" className="w-full">
@@ -24,7 +24,7 @@ export default async function CategoriesPage() {
             <TabsTrigger value="sub">Sub-Categories</TabsTrigger>
           </TabsList>
            <Button asChild variant="outline">
-              <Link href="/categories/new">
+              <Link href="/categories/new"> {/* Non-prefixed link */}
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Category
               </Link>
             </Button>

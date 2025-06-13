@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -11,13 +12,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  params: { locale }
+  // params: { locale } // Locale param removed
 }: Readonly<{
   children: React.ReactNode;
-  params: { locale: string };
+  // params: { locale: string }; // Locale param removed
 }>) {
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning> {/* Hardcoded lang="en" */}
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
