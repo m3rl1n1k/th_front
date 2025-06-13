@@ -110,6 +110,10 @@ export function ExpenseBySubCategoryBarChart({
     label: getMonthName(i + 1, locale),
   }));
 
+  const bottomMargin = chartData.length > 7 ? 80 : chartData.length > 4 ? 60 : 30;
+  const xAxisAngle = chartData.length > 7 ? -60 : chartData.length > 4 ? -45 : 0;
+  const xAxisTextAnchor = chartData.length > 4 ? "end" : "middle";
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -140,24 +144,38 @@ export function ExpenseBySubCategoryBarChart({
       </CardHeader>
       <CardContent>
         {chartData.length > 0 ? (
-          <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="min-h-[350px] w-full">
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" tickFormatter={formatCurrency} axisLine={false} tickLine={false} />
-                <YAxis
+              <BarChart 
+                data={chartData} 
+                layout="vertical" // This layout with X as category and Y as number produces vertical bars in Recharts
+                margin={{ top: 20, right: 30, left: 20, bottom: bottomMargin }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} /> {/* Show horizontal grid lines */}
+                <XAxis
                   dataKey="subCategoryName"
                   type="category"
-                  width={120}
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 12 }}
+                  angle={xAxisAngle}
+                  textAnchor={xAxisTextAnchor}
+                  interval={0}
+                  height={50} // Allocate space for rotated labels
+                />
+                <YAxis
+                  type="number"
+                  tickFormatter={formatCurrency}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12 }}
+                  width={80} // Space for Y-axis labels
                 />
                 <RechartsTooltip
                   cursor={{ fill: 'hsl(var(--muted))' }}
                   content={
                     <ChartTooltipContent
-                        nameKey="subCategoryName" // tells tooltip to use subCategoryName for the label
+                        nameKey="subCategoryName"
                         formatter={(value, name, entry) => {
                            const itemConfig = chartConfig[name as keyof typeof chartConfig] as {label: string, color: string} | undefined;
                            return (
@@ -167,22 +185,24 @@ export function ExpenseBySubCategoryBarChart({
                             </div>
                            )
                         }}
-                        hideLabel={true} // We will show label inside formatter
+                        hideLabel={true}
                     />
                   }
                 />
                 <Bar dataKey="totalAmount" radius={[4, 4, 0, 0]}>
-                   {chartData.map((entry, index) => (
-                    <LabelList
-                      key={`label-${index}`}
+                   {/* Corrected LabelList usage */}
+                   <LabelList
                       dataKey="totalAmount"
-                      position="right"
+                      position="top"
                       offset={8}
                       className="fill-foreground"
                       fontSize={12}
                       formatter={(value: number) => formatCurrency(value)}
                     />
-                  ))}
+                    {/* Fill cells based on chartConfig */}
+                    {chartData.map((entry) => (
+                        <div key={entry.subCategoryName} style={{ backgroundColor: chartConfig[entry.subCategoryName]?.color || 'hsl(var(--chart-1))' }} />
+                    ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
