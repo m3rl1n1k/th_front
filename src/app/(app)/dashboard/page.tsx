@@ -1,6 +1,6 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
-import { DollarSign, Users, CreditCard } from 'lucide-react'; 
+// Removed DollarSign, Users, CreditCard imports as they are now handled by StatCard
 import { getTranslations } from '@/lib/getTranslations';
 import { getTransactions, getMainCategories, getSubCategories, getWallets, getUserSettings } from '@/lib/actions';
 import type { Transaction, MainCategory, SubCategory, Wallet, UserSettings } from '@/lib/definitions';
@@ -106,7 +106,7 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
         <StatCard 
             title={td.totalBalance} 
             value={summaryData.totalBalance} 
-            icon={DollarSign} 
+            iconName="DollarSign" // Changed
             currency 
             locale={locale} 
             dataAiHint="piggy bank"
@@ -116,7 +116,7 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
         <StatCard 
             title={td.monthlyIncome} 
             value={summaryData.totalIncome} 
-            icon={Users} 
+            iconName="Users" // Changed
             currency 
             locale={locale} 
             dataAiHint="money rain"
@@ -126,7 +126,7 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
         <StatCard 
             title={td.monthlyExpenses} 
             value={summaryData.totalExpenses} 
-            icon={CreditCard} 
+            iconName="CreditCard" // Changed
             currency 
             locale={locale} 
             dataAiHint="empty wallet"

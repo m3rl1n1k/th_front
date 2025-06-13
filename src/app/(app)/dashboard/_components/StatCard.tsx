@@ -3,11 +3,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DollarSign, Users, CreditCard, Calculator, type LucideProps } from 'lucide-react'; // Import icons here
+
+// Define the type for accepted icon names
+export type StatCardIconName = 'DollarSign' | 'Users' | 'CreditCard' | 'Calculator';
 
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: React.ElementType;
+  iconName: StatCardIconName; // Changed from icon: React.ElementType
   currency?: boolean;
   dataAiHint?: string;
   locale?: string;
@@ -18,7 +22,7 @@ interface StatCardProps {
 export function StatCard({
   title,
   value,
-  icon: Icon,
+  iconName, // Changed from icon
   currency = false,
   dataAiHint,
   locale = 'en',
@@ -32,13 +36,13 @@ export function StatCard({
     if (storedSetting !== null) {
       setIsVisible(storedSetting === 'true');
     } else {
-      setIsVisible(initialVisible); // Fallback to server-prop if nothing in localStorage
+      setIsVisible(initialVisible); 
     }
 
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === localStorageKey && event.newValue !== null) {
         setIsVisible(event.newValue === 'true');
-      } else if (event.key === 'dashboard_settings_updated') { // General update trigger
+      } else if (event.key === 'dashboard_settings_updated') { 
         const freshStoredSetting = localStorage.getItem(localStorageKey);
         if (freshStoredSetting !== null) {
           setIsVisible(freshStoredSetting === 'true');
@@ -56,6 +60,23 @@ export function StatCard({
     };
   }, [localStorageKey, initialVisible]);
 
+  const renderIcon = () => {
+    const iconProps: LucideProps = { className: "h-5 w-5 text-primary" };
+    switch (iconName) {
+      case 'DollarSign':
+        return <DollarSign {...iconProps} />;
+      case 'Users':
+        return <Users {...iconProps} />;
+      case 'CreditCard':
+        return <CreditCard {...iconProps} />;
+      case 'Calculator':
+        return <Calculator {...iconProps} />;
+      default:
+        // Optionally return a default icon or null
+        return null; 
+    }
+  };
+
   if (!isVisible) {
     return null;
   }
@@ -64,14 +85,14 @@ export function StatCard({
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-5 w-5 text-primary" />
+        {renderIcon()}
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
           {currency
             ? Number(value).toLocaleString(locale, {
                 style: 'currency',
-                currency: 'USD', // TODO: Make this dynamic from user settings
+                currency: 'USD', 
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })
