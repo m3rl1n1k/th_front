@@ -1,14 +1,13 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Users, CreditCard, Activity, TrendingDown } from 'lucide-react';
+import { DollarSign, Users, CreditCard, Activity } from 'lucide-react';
 import Image from 'next/image';
 import { getTranslations } from '@/lib/getTranslations';
 import { getTransactions, getMainCategories, getSubCategories } from '@/lib/actions';
 import type { Transaction, MainCategory, SubCategory } from '@/lib/definitions';
-
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+import { DashboardExpenseChart } from './_components/DashboardExpenseChart';
 
 
 // Mock data - replace with actual data fetching
@@ -70,22 +69,23 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
 
   const chartData: ExpenseByCategory[] = Object.values(expensesByMainCategory).map(item => ({
     mainCategoryName: item.name,
-    totalAmount: parseFloat(item.totalAmount.toFixed(2)), // Ensure two decimal places for currency
+    totalAmount: parseFloat(item.totalAmount.toFixed(2)),
     fill: item.color,
-  })).sort((a, b) => b.totalAmount - a.totalAmount); // Sort by amount descending
+  })).sort((a, b) => b.totalAmount - a.totalAmount);
 
 
   const chartConfig = {} as ChartConfig;
   chartData.forEach(item => {
+    // Using a sanitized key for chartConfig if mainCategoryName could have spaces/special chars
+    // For now, direct usage as in original for simplicity of labels
     chartConfig[item.mainCategoryName] = {
       label: item.mainCategoryName,
-      color: item.fill,
+      color: item.fill, // This color is for legend/tooltip lookup if needed
     };
   });
-  // Add a generic key for the Bar dataKey if needed, or use mainCategoryName directly
-  chartConfig["totalAmount"] = {
-    label: td.totalExpenses || "Total Expenses", // Use translation
-    color: "hsl(var(--primary))", // Default bar color, will be overridden by 'fill' in Bar component
+  chartConfig["totalAmount"] = { // dataKey for the Bar
+    label: td.totalExpensesLabel || "Total Expenses",
+    color: "hsl(var(--primary))", // Default bar color (overridden by Cell)
   };
 
 
@@ -101,60 +101,11 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingDown className="h-6 w-6 mr-2 text-destructive" />
-              {td.spendingByCategory || "Spending by Category"}
-            </CardTitle>
-            <CardDescription>
-              {td.spendingByCategoryDescription || "Visual representation of your expenses across different categories."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {chartData.length > 0 ? (
-              <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData} layout="vertical" margin={{ right: 20, left: 30 }}>
-                    <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-                    <XAxis type="number"  tickFormatter={(value) => `$${value.toLocaleString()}`} />
-                    <YAxis 
-                      dataKey="mainCategoryName" 
-                      type="category" 
-                      tickLine={false} 
-                      axisLine={false} 
-                      width={100}
-                      style={{ fontSize: '0.75rem' }}
-                      interval={0}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'hsl(var(--muted))' }}
-                      content={<ChartTooltipContent 
-                                  formatter={(value, name, props) => {
-                                    const { payload } = props;
-                                    return (
-                                      <div className="flex flex-col">
-                                        <span className="font-medium">{payload.mainCategoryName}</span>
-                                        <span className="text-muted-foreground">{`$${Number(value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}</span>
-                                      </div>
-                                    )
-                                  }}
-                                  hideIndicator
-                                />}
-                    />
-                    <Bar dataKey="totalAmount" radius={4}>
-                      {chartData.map((entry, index) => (
-                        <rect key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            ) : (
-              <p className="text-muted-foreground text-center py-10">{td.noExpenseData || "No expense data available to display chart."}</p>
-            )}
-          </CardContent>
-        </Card>
+        <DashboardExpenseChart
+          chartData={chartData}
+          chartConfig={chartConfig}
+          translations={td}
+        />
 
         <Card className="shadow-lg">
           <CardHeader>
