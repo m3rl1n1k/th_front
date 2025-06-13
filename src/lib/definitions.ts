@@ -63,6 +63,16 @@ export interface Transfer {
   description?: string;
 }
 
+export interface Budget {
+  id: string;
+  userId: string;
+  mainCategoryId: string;
+  plannedAmount: number;
+  month: number; // 1-12
+  year: number;
+  createdAt: Date;
+}
+
 // Mock data types
 export type MockDb = {
   users: User[];
@@ -71,4 +81,6 @@ export type MockDb = {
   wallets: Wallet[];
   transactions: Transaction[];
   transfers: Transfer[];
+  budgets: Budget[];
 };
+

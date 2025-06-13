@@ -24,6 +24,7 @@
     "categories": "Categories",
     "wallets": "Wallets",
     "transfers": "Transfers",
+    "budgets": "Budgets",
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout"
@@ -50,5 +51,34 @@
     "successToastDescription": "Your profile has been successfully updated.",
     "errorToastTitle": "Error Updating Profile",
     "errorToastDescription": "Could not update your profile. Please try again."
+  },
+  "budgetsPage": {
+    "title": "Budgets",
+    "description": "Manage your monthly budgets for different categories.",
+    "addBudget": "Add Budget",
+    "newBudgetTitle": "Create New Budget",
+    "newBudgetDescription": "Set a planned amount for a category for a specific month and year.",
+    "editBudgetTitle": "Edit Budget",
+    "editBudgetDescription": "Update the details for your budget.",
+    "mainCategoryLabel": "Main Category",
+    "mainCategoryPlaceholder": "Select a main category",
+    "plannedAmountLabel": "Planned Amount",
+    "monthLabel": "Month",
+    "monthPlaceholder": "Select month",
+    "yearLabel": "Year",
+    "yearPlaceholder": "Select year",
+    "saveButton": "Save Budget",
+    "createButton": "Create Budget",
+    "successCreateToastTitle": "Budget Created",
+    "successCreateToastDescription": "Budget for {categoryName} in {monthYear} has been successfully created.",
+    "successUpdateToastTitle": "Budget Updated",
+    "successUpdateToastDescription": "Budget for {categoryName} in {monthYear} has been successfully updated.",
+    "errorToastTitle": "Error Saving Budget",
+    "errorToastDescription": "An error occurred: {error}",
+    "noBudgets": "No budgets found for the selected period.",
+    "confirmDeleteTitle": "Delete Budget",
+    "confirmDeleteDescription": "Are you sure you want to delete the budget for {categoryName} for {monthYear}?",
+    "deleteSuccessToastTitle": "Budget Deleted",
+    "deleteSuccessToastDescription": "Budget has been successfully deleted."
   }
 }

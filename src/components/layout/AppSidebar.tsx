@@ -13,7 +13,8 @@ import {
   Settings,
   ChevronDown,
   ChevronUp,
-  UserCircle, // Added UserCircle icon
+  UserCircle, 
+  PiggyBank, // Added PiggyBank icon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth'; 
@@ -109,8 +110,9 @@ interface AppSidebarProps {
     categories: string;
     wallets: string;
     transfers: string;
+    budgets: string; // Added budgets translation
     settings: string;
-    profile: string; // Added profile translation
+    profile: string; 
     logout: string;
   };
 }
@@ -141,11 +143,12 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     { href: '/categories', icon: Tags, label: translations.categories },
     { href: '/wallets', icon: Wallet, label: translations.wallets },
     { href: '/transfers', icon: Repeat, label: translations.transfers },
+    { href: '/budgets', icon: PiggyBank, label: translations.budgets },
   ];
   
   const utilityNavItems = [
      { href: '/settings', icon: Settings, label: translations.settings },
-     { href: '/profile', icon: UserCircle, label: translations.profile }, // Added Profile
+     { href: '/profile', icon: UserCircle, label: translations.profile }, 
   ];
 
   const getInitials = (name?: string) => {

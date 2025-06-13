@@ -1,6 +1,6 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth'; // Import getCurrentUser and getAuthToken
 
@@ -13,6 +13,7 @@ let MOCK_DB: MockDb = {
   mainCategories: [
     { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347' },
     { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4' },
+    { id: 'mc3', userId: 'user-123', name: 'Housing', color: '#2E8B57' },
   ],
   subCategories: [
     { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A' },
@@ -30,6 +31,10 @@ let MOCK_DB: MockDb = {
   ],
   transfers: [
     { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 100, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' }
+  ],
+  budgets: [
+    { id: 'b1', userId: 'user-123', mainCategoryId: 'mc1', plannedAmount: 500, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
+    { id: 'b2', userId: 'user-123', mainCategoryId: 'mc2', plannedAmount: 150, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
   ],
 };
 
@@ -440,6 +445,7 @@ export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>
       body: JSON.stringify(data),
     });
     revalidatePath('/transactions');
+    revalidatePath('/dashboard');
     return { ...newTransaction, createdAt: new Date(newTransaction.createdAt) };
   } catch (error) {
     console.error('Failed to create transaction:', error);
@@ -463,6 +469,7 @@ export async function updateTransaction(id: string, data: Partial<Omit<Transacti
       body: JSON.stringify(data),
     });
     revalidatePath('/transactions');
+    revalidatePath('/dashboard');
     return { ...updatedTransaction, createdAt: new Date(updatedTransaction.createdAt) };
   } catch (error) {
     console.error('Failed to update transaction:', error);
@@ -480,6 +487,7 @@ export async function deleteTransaction(id: string): Promise<void> {
   try {
     await fetchAPI(`/transactions/${id}`, { method: 'DELETE' }); // Replace with your endpoint
     revalidatePath('/transactions');
+    revalidatePath('/dashboard');
   } catch (error) {
     console.error('Failed to delete transaction:', error);
     throw error;
@@ -540,6 +548,94 @@ export async function deleteTransfer(id: string): Promise<void> {
     throw error;
   }
 }
+
+// --- Budget Actions ---
+export async function getBudgets(month?: number, year?: number): Promise<Budget[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) return [];
+  let budgets = MOCK_DB.budgets.filter(b => b.userId === MOCK_USER_ID);
+  if (month && year) {
+    budgets = budgets.filter(b => b.month === month && b.year === year);
+  }
+  return budgets.sort((a, b) => new Date(a.year, a.month - 1).getTime() - new Date(b.year, b.month - 1).getTime() || a.mainCategoryId.localeCompare(b.mainCategoryId));
+
+  // TODO: USER: Replace with API call
+  // try {
+  //   let endpoint = '/budgets';
+  //   const queryParams = new URLSearchParams();
+  //   if (month) queryParams.append('month', month.toString());
+  //   if (year) queryParams.append('year', year.toString());
+  //   if (queryParams.toString()) endpoint += `?${queryParams.toString()}`;
+  //   const budgets = await fetchAPI(endpoint);
+  //   return budgets.map((b: any) => ({ ...b, createdAt: new Date(b.createdAt) }))
+  //                  .sort((a: Budget, b: Budget) => new Date(a.year, a.month - 1).getTime() - new Date(b.year, b.month - 1).getTime() || a.mainCategoryId.localeCompare(b.mainCategoryId));
+  // } catch (error) {
+  //   console.error('Failed to fetch budgets:', error);
+  //   return MOCK_DB.budgets.filter(b => b.userId === 'user-123'); // Fallback
+  // }
+}
+
+export async function createBudget(data: Omit<Budget, 'id' | 'userId' | 'createdAt'>): Promise<Budget> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) throw new Error("User not authenticated");
+  const newBudget: Budget = { ...data, id: `b${Date.now()}`, userId: MOCK_USER_ID, createdAt: new Date() };
+  MOCK_DB.budgets.push(newBudget);
+  revalidatePath('/budgets');
+  return newBudget;
+
+  // TODO: USER: Replace with API call
+  // try {
+  //   const newBudget = await fetchAPI('/budgets', {
+  //     method: 'POST',
+  //     body: JSON.stringify(data),
+  //   });
+  //   revalidatePath('/budgets');
+  //   return { ...newBudget, createdAt: new Date(newBudget.createdAt) };
+  // } catch (error) {
+  //   console.error('Failed to create budget:', error);
+  //   throw error;
+  // }
+}
+
+export async function updateBudget(id: string, data: Partial<Omit<Budget, 'id' | 'userId' | 'createdAt'>>): Promise<Budget | null> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) return null;
+  const index = MOCK_DB.budgets.findIndex(b => b.id === id && b.userId === MOCK_USER_ID);
+  if (index === -1) return null;
+  MOCK_DB.budgets[index] = { ...MOCK_DB.budgets[index], ...data };
+  revalidatePath('/budgets');
+  return MOCK_DB.budgets[index];
+
+  // TODO: USER: Replace with API call
+  // try {
+  //   const updatedBudget = await fetchAPI(`/budgets/${id}`, {
+  //     method: 'PATCH',
+  //     body: JSON.stringify(data),
+  //   });
+  //   revalidatePath('/budgets');
+  //   return { ...updatedBudget, createdAt: new Date(updatedBudget.createdAt) };
+  // } catch (error) {
+  //   console.error('Failed to update budget:', error);
+  //   throw error;
+  // }
+}
+
+export async function deleteBudget(id: string): Promise<void> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) return;
+  MOCK_DB.budgets = MOCK_DB.budgets.filter(b => b.id !== id || b.userId !== MOCK_USER_ID);
+  revalidatePath('/budgets');
+
+  // TODO: USER: Replace with API call
+  // try {
+  //   await fetchAPI(`/budgets/${id}`, { method: 'DELETE' });
+  //   revalidatePath('/budgets');
+  // } catch (error) {
+  //   console.error('Failed to delete budget:', error);
+  //   throw error;
+  // }
+}
+
 
 // Helper to reset DB for testing if needed - not for production
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {

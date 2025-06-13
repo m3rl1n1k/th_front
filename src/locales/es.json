@@ -24,6 +24,7 @@
     "categories": "Categorías",
     "wallets": "Billeteras",
     "transfers": "Transferencias",
+    "budgets": "Presupuestos",
     "settings": "Configuración",
     "profile": "Perfil",
     "logout": "Cerrar Sesión"
@@ -50,5 +51,34 @@
     "successToastDescription": "Tu perfil ha sido actualizado exitosamente.",
     "errorToastTitle": "Error al Actualizar Perfil",
     "errorToastDescription": "No se pudo actualizar tu perfil. Por favor, inténtalo de nuevo."
+  },
+  "budgetsPage": {
+    "title": "Presupuestos",
+    "description": "Gestiona tus presupuestos mensuales para diferentes categorías.",
+    "addBudget": "Añadir Presupuesto",
+    "newBudgetTitle": "Crear Nuevo Presupuesto",
+    "newBudgetDescription": "Establece un monto planificado para una categoría para un mes y año específicos.",
+    "editBudgetTitle": "Editar Presupuesto",
+    "editBudgetDescription": "Actualiza los detalles de tu presupuesto.",
+    "mainCategoryLabel": "Categoría Principal",
+    "mainCategoryPlaceholder": "Selecciona una categoría principal",
+    "plannedAmountLabel": "Monto Planificado",
+    "monthLabel": "Mes",
+    "monthPlaceholder": "Selecciona mes",
+    "yearLabel": "Año",
+    "yearPlaceholder": "Selecciona año",
+    "saveButton": "Guardar Presupuesto",
+    "createButton": "Crear Presupuesto",
+    "successCreateToastTitle": "Presupuesto Creado",
+    "successCreateToastDescription": "El presupuesto para {categoryName} en {monthYear} ha sido creado exitosamente.",
+    "successUpdateToastTitle": "Presupuesto Actualizado",
+    "successUpdateToastDescription": "El presupuesto para {categoryName} en {monthYear} ha sido actualizado exitosamente.",
+    "errorToastTitle": "Error al Guardar Presupuesto",
+    "errorToastDescription": "Ocurrió un error: {error}",
+    "noBudgets": "No se encontraron presupuestos para el período seleccionado.",
+    "confirmDeleteTitle": "Eliminar Presupuesto",
+    "confirmDeleteDescription": "¿Estás seguro de que quieres eliminar el presupuesto para {categoryName} para {monthYear}?",
+    "deleteSuccessToastTitle": "Presupuesto Eliminado",
+    "deleteSuccessToastDescription": "El presupuesto ha sido eliminado exitosamente."
   }
 }
