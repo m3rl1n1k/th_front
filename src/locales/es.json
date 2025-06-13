@@ -182,5 +182,26 @@
     "errorDescription": "No se pudo generar el informe: {error}",
     "summary": "Resumen",
     "suggestions": "Sugerencias"
+  },
+  "transactionsPage": {
+    "title": "Transacciones",
+    "description": "Realiza un seguimiento de tus ingresos y gastos.",
+    "addTransactionButton": "Añadir Transacción",
+    "allTransactionsTab": "Todas las Transacciones",
+    "recurringTransactionsTab": "Recurrentes",
+    "uncategorized": "Sin categoría",
+    "stopRecurringSuccessTitle": "Transacción Recurrente Detenida",
+    "stopRecurringSuccessDescription": "La transacción ya no se repetirá.",
+    "stopRecurringErrorTitle": "Error al Detener Recurrencia",
+    "errorToastDescription": "No se pudo realizar la acción: {error}",
+    "noRecurringTransactionsTitle": "No Hay Transacciones Recurrentes",
+    "noRecurringTransactionsDescription": "Las transacciones configuradas como diarias, semanales, mensuales o anuales aparecerán aquí.",
+    "descriptionCategoryHeader": "Descripción/Categoría",
+    "amountHeader": "Monto",
+    "frequencyHeader": "Frecuencia",
+    "nextExecutionDateHeader": "Próxima Ejecución",
+    "walletHeader": "Billetera",
+    "actionsHeader": "Acciones",
+    "recurringItemNamePrefix": "transacción recurrente para"
   }
 }

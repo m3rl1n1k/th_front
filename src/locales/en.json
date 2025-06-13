@@ -183,5 +183,26 @@
     "errorDescription": "Could not generate the report: {error}",
     "summary": "Summary",
     "suggestions": "Suggestions"
+  },
+  "transactionsPage": {
+    "title": "Transactions",
+    "description": "Track your income and expenses.",
+    "addTransactionButton": "Add Transaction",
+    "allTransactionsTab": "All Transactions",
+    "recurringTransactionsTab": "Recurring",
+    "uncategorized": "Uncategorized",
+    "stopRecurringSuccessTitle": "Recurring Transaction Stopped",
+    "stopRecurringSuccessDescription": "The transaction will no longer recur.",
+    "stopRecurringErrorTitle": "Error Stopping Recurrence",
+    "errorToastDescription": "Could not perform action: {error}",
+    "noRecurringTransactionsTitle": "No Recurring Transactions",
+    "noRecurringTransactionsDescription": "Transactions set to daily, weekly, monthly, or yearly will appear here.",
+    "descriptionCategoryHeader": "Description/Category",
+    "amountHeader": "Amount",
+    "frequencyHeader": "Frequency",
+    "nextExecutionDateHeader": "Next Execution",
+    "walletHeader": "Wallet",
+    "actionsHeader": "Actions",
+    "recurringItemNamePrefix": "recurring transaction for"
   }
 }

@@ -1,6 +1,6 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth'; // Import getCurrentUser and getAuthToken
 
@@ -9,12 +9,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 
 // In-memory store for mock data (to be replaced by API calls)
 let MOCK_DB: MockDb = {
-  users: [{ 
-    id: 'user-123', 
-    email: 'user@example.com', 
-    name: 'Test User', 
-    settings: { 
-      transactionsPerPage: 10, 
+  users: [{
+    id: 'user-123',
+    email: 'user@example.com',
+    name: 'Test User',
+    settings: {
+      transactionsPerPage: 10,
       defaultCurrency: 'USD',
       showTotalBalanceCard: true,
       showMonthlyIncomeCard: true,
@@ -22,7 +22,7 @@ let MOCK_DB: MockDb = {
       showAverageSpendingCard: true,
       showExpenseChartCard: true,
       showRecentActivityCard: true,
-    } 
+    }
   }],
   mainCategories: [
     { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347' },
@@ -47,8 +47,8 @@ let MOCK_DB: MockDb = {
     { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 55.75, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' },
     { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 40.00, createdAt: new Date('2023-10-03'), description: 'Fuel' },
     { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 3000.00, createdAt: new Date('2023-10-05'), description: 'Salary' }, // Uncategorized income
-    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 22.50, createdAt: new Date(), description: 'More groceries this month' },
-    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 30.00, createdAt: new Date(), description: 'More fuel this month' },
+    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'Weekly', amount: 22.50, createdAt: new Date(new Date().setDate(new Date().getDate() - 10)), description: 'Weekly Snack Box' },
+    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'Daily', amount: 5.00, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), description: 'Daily Coffee' },
 
   ],
   transfers: [
@@ -100,7 +100,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
 // --- User Settings Actions ---
 export async function getUserSettings(): Promise<UserSettings | undefined> {
   try {
-    const user = await getCurrentUser(); 
+    const user = await getCurrentUser();
     return user?.settings;
   } catch (error) {
     console.warn('Failed to fetch user settings (mock):', error); // Changed to console.warn
@@ -114,22 +114,22 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
   try {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
-    
+
     const userIndex = MOCK_DB.users.findIndex(u => u.id === MOCK_USER_ID);
     if (userIndex === -1) throw new Error("User not found");
 
     // Ensure existing settings are preserved
     const currentUserSettings = MOCK_DB.users[userIndex].settings || {};
     MOCK_DB.users[userIndex].settings = { ...currentUserSettings, ...newSettings };
-    
+
     revalidatePath('/settings');
-    revalidatePath('/profile'); 
-    revalidatePath('/transactions'); 
+    revalidatePath('/profile');
+    revalidatePath('/transactions');
     revalidatePath('/dashboard'); // Dashboard depends on these settings
     return MOCK_DB.users[userIndex];
   } catch (error) {
     console.error('Failed to update user settings:', error);
-    throw error; 
+    throw error;
   }
 }
 
@@ -145,9 +145,9 @@ export async function updateUserProfile(userId: string, data: { name?: string })
     if (data.name) {
       MOCK_DB.users[userIndex].name = data.name;
     }
-    
+
     revalidatePath('/profile');
-    revalidatePath('/(app)/layout', 'layout'); 
+    revalidatePath('/(app)/layout', 'layout');
     return MOCK_DB.users[userIndex];
   } catch (error) {
     console.error('Failed to update user profile:', error);
@@ -161,7 +161,7 @@ export async function changePassword(userId: string, currentPassword: string, ne
   if (!MOCK_USER_ID || MOCK_USER_ID !== userId) {
     return { success: false, message: "Unauthorized or user mismatch." };
   }
-  if (currentPassword === "password123_wrong") { 
+  if (currentPassword === "password123_wrong") {
      return { success: false, message: "Incorrect current password." };
   }
   console.log(`Mock password change successful for user ${userId}.`);
@@ -221,7 +221,7 @@ export async function deleteMainCategory(id: string): Promise<void> {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
     MOCK_DB.mainCategories = MOCK_DB.mainCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
-    MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID); 
+    MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID);
     revalidatePath('/categories');
     revalidatePath('/budgets'); // Budgets might be affected if they were linked to main categories indirectly
   } catch (error) {
@@ -375,7 +375,7 @@ export async function getTransactions(): Promise<Transaction[]> {
     .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   const result = await fetchAPI('/transactions');
-  
+
   if (result.error || !result.data) {
     console.warn(`getTransactions: API call failed or returned no data (Error: ${result.error?.message}). Falling back to mock data.`);
     return mockTransactions;
@@ -440,6 +440,23 @@ export async function deleteTransaction(id: string): Promise<void> {
     throw error;
   }
 }
+
+export async function stopRecurringTransaction(transactionId: string): Promise<Transaction | null> {
+  try {
+    const MOCK_USER_ID = (await getCurrentUser())?.id;
+    if (!MOCK_USER_ID) throw new Error("User not authenticated");
+    const index = MOCK_DB.transactions.findIndex(t => t.id === transactionId && t.userId === MOCK_USER_ID);
+    if (index === -1) return null;
+
+    MOCK_DB.transactions[index].frequency = 'One-time';
+    revalidatePath('/transactions');
+    return MOCK_DB.transactions[index];
+  } catch (error) {
+    console.error('Failed to stop recurring transaction:', error);
+    throw error;
+  }
+}
+
 
 // --- Transfer Actions ---
 export async function getTransfers(): Promise<Transfer[]> {
@@ -567,7 +584,7 @@ export async function startSharedCapitalSession(partnerEmail: string): Promise<S
 export async function stopSharedCapitalSession(): Promise<SharedCapitalSession | null> {
   const MOCK_USER_ID = (await getCurrentUser())?.id;
   if (!MOCK_USER_ID) return null;
-  
+
   const activeSession = MOCK_DB.sharedCapitalSessions.find(s => s.userId === MOCK_USER_ID && s.isActive);
   if (activeSession) {
     activeSession.isActive = false;
