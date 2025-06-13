@@ -1,9 +1,9 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calculator } from 'lucide-react'; // Or another suitable icon
+import { Calculator } from 'lucide-react'; 
 
 interface AverageExpenseCardProps {
   avgDaily: number;
@@ -16,6 +16,8 @@ interface AverageExpenseCardProps {
     weeklyLabel?: string;
     monthlyLabel?: string;
   };
+  localStorageKey: string;
+  initialVisible: boolean;
 }
 
 export function AverageExpenseCard({
@@ -24,9 +26,45 @@ export function AverageExpenseCard({
   avgMonthly,
   locale,
   translations,
+  localStorageKey,
+  initialVisible,
 }: AverageExpenseCardProps) {
+  const [isVisible, setIsVisible] = useState(initialVisible);
+
+  useEffect(() => {
+    const storedSetting = typeof window !== 'undefined' ? localStorage.getItem(localStorageKey) : null;
+    if (storedSetting !== null) {
+      setIsVisible(storedSetting === 'true');
+    } else {
+      setIsVisible(initialVisible);
+    }
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === localStorageKey && event.newValue !== null) {
+        setIsVisible(event.newValue === 'true');
+      } else if (event.key === 'dashboard_settings_updated') {
+        const freshStoredSetting = localStorage.getItem(localStorageKey);
+        if (freshStoredSetting !== null) {
+          setIsVisible(freshStoredSetting === 'true');
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('storage', handleStorageChange);
+    }
+    return () => {
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('storage', handleStorageChange);
+        }
+    };
+  }, [localStorageKey, initialVisible]);
+
+  if (!isVisible) {
+    return null;
+  }
+
   const formatCurrency = (amount: number) => {
-    // Assuming USD for dashboard summary, make dynamic if primary currency is available
     return Number(amount).toLocaleString(locale, {
       style: 'currency',
       currency: 'USD', 

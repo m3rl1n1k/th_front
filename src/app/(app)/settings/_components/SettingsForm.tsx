@@ -68,6 +68,15 @@ interface SettingsFormProps {
   };
 }
 
+export const dashboardVisibilityLocalStorageKeys = {
+  showTotalBalanceCard: 'dashboard_visibility_showTotalBalanceCard',
+  showMonthlyIncomeCard: 'dashboard_visibility_showMonthlyIncomeCard',
+  showMonthlyExpensesCard: 'dashboard_visibility_showMonthlyExpensesCard',
+  showAverageSpendingCard: 'dashboard_visibility_showAverageSpendingCard',
+  showExpenseChartCard: 'dashboard_visibility_showExpenseChartCard',
+  showRecentActivityCard: 'dashboard_visibility_showRecentActivityCard',
+};
+
 export function SettingsForm({ initialSettings, onSubmitAction, translations }: SettingsFormProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -89,7 +98,20 @@ export function SettingsForm({ initialSettings, onSubmitAction, translations }: 
   async function onSubmit(data: SettingsFormValues) {
     setIsSubmitting(true);
     try {
-      await onSubmitAction(data);
+      await onSubmitAction(data); // Server update
+
+      // Client-side localStorage update for immediate effect
+      if (typeof window !== 'undefined') {
+        Object.entries(dashboardVisibilityLocalStorageKeys).forEach(([key, localStorageKey]) => {
+          const formKey = key as keyof SettingsFormValues;
+          if (data[formKey] !== undefined) {
+            localStorage.setItem(localStorageKey, String(data[formKey]));
+          }
+        });
+         // Dispatch a storage event to notify other components/tabs immediately
+        window.dispatchEvent(new StorageEvent('storage', { key: 'dashboard_settings_updated', newValue: Date.now().toString() }));
+      }
+
       toast({
         title: translations.successToastTitle,
         description: translations.successToastDescription,
@@ -106,19 +128,12 @@ export function SettingsForm({ initialSettings, onSubmitAction, translations }: 
     }
   }
 
-  const dashboardToggleFields: (keyof SettingsFormValues)[] = [
-    'showTotalBalanceCard', 
-    'showMonthlyIncomeCard', 
-    'showMonthlyExpensesCard', 
-    'showAverageSpendingCard', 
-    'showExpenseChartCard', 
-    'showRecentActivityCard'
-  ];
+  const dashboardToggleFields = Object.keys(dashboardVisibilityLocalStorageKeys) as (keyof SettingsFormValues)[];
 
 
   return (
     <Card className="max-w-2xl mx-auto shadow-lg">
-      <CardContent className="pt-6"> {/* Added pt-6 to give space if CardHeader is removed */}
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div>

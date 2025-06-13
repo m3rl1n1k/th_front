@@ -1,22 +1,21 @@
 
 'use client';
 
-import React from 'react';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Text } from 'recharts';
+import React, { useState, useEffect } from 'react';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import {
   ChartContainer,
   ChartTooltipContent,
-  ChartLegend,
   ChartLegendContent,
   type ChartConfig
 } from '@/components/ui/chart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingDown, PieChart as PieChartIcon } from 'lucide-react'; // Changed icon
+import { PieChart as PieChartIcon } from 'lucide-react';
 
 interface ExpenseByCategory {
   mainCategoryName: string;
   totalAmount: number;
-  fill: string; // This is the color for the slice
+  fill: string; 
 }
 
 interface DashboardExpenseChartProps {
@@ -26,21 +25,64 @@ interface DashboardExpenseChartProps {
     spendingByCategory?: string;
     spendingByCategoryDescription?: string;
     noExpenseData?: string;
-    totalExpensesLabel?: string; // Used for the center text
+    totalExpensesLabel?: string;
   };
+  localStorageKey: string;
+  initialVisible: boolean;
 }
 
-export function DashboardExpenseChart({ chartData, chartConfig, translations }: DashboardExpenseChartProps) {
+export function DashboardExpenseChart({ 
+  chartData, 
+  chartConfig, 
+  translations,
+  localStorageKey,
+  initialVisible 
+}: DashboardExpenseChartProps) {
+  const [isVisible, setIsVisible] = useState(initialVisible);
+
+  useEffect(() => {
+    const storedSetting = typeof window !== 'undefined' ? localStorage.getItem(localStorageKey) : null;
+    if (storedSetting !== null) {
+      setIsVisible(storedSetting === 'true');
+    } else {
+      setIsVisible(initialVisible);
+    }
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === localStorageKey && event.newValue !== null) {
+        setIsVisible(event.newValue === 'true');
+      } else if (event.key === 'dashboard_settings_updated') {
+        const freshStoredSetting = localStorage.getItem(localStorageKey);
+        if (freshStoredSetting !== null) {
+          setIsVisible(freshStoredSetting === 'true');
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('storage', handleStorageChange);
+    }
+    return () => {
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('storage', handleStorageChange);
+        }
+    };
+  }, [localStorageKey, initialVisible]);
+
   const totalExpenses = React.useMemo(() => {
     return chartData.reduce((acc, curr) => acc + curr.totalAmount, 0);
   }, [chartData]);
+
+  if (!isVisible) {
+    return null;
+  }
 
   if (chartData.length === 0) {
     return (
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <PieChartIcon className="h-6 w-6 mr-2 text-primary" /> {/* Changed icon */}
+            <PieChartIcon className="h-6 w-6 mr-2 text-primary" />
             {translations.spendingByCategory || "Spending by Category"}
           </CardTitle>
           <CardDescription>
@@ -58,7 +100,7 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center">
-          <PieChartIcon className="h-6 w-6 mr-2 text-primary" /> {/* Changed icon */}
+          <PieChartIcon className="h-6 w-6 mr-2 text-primary" />
           {translations.spendingByCategory || "Spending by Category"}
         </CardTitle>
         <CardDescription>
@@ -73,10 +115,10 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
                 cursor={{ fill: 'hsl(var(--muted))' }}
                 content={
                   <ChartTooltipContent
-                    formatter={(value, name) => { // value is totalAmount, name is mainCategoryName
+                    formatter={(value, name) => {
                       const formattedAmount = Number(value).toLocaleString(undefined, {
                         style: 'currency',
-                        currency: 'USD', // Assuming USD for aggregated view. TODO: Make dynamic if possible.
+                        currency: 'USD', 
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       });
@@ -87,7 +129,7 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
                         </div>
                       );
                     }}
-                    hideLabel // Label is handled by legend/center text
+                    hideLabel 
                     hideIndicator={false}
                   />
                 }
@@ -106,9 +148,7 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} stroke={entry.fill} />
                 ))}
-                 {/* Center Label - This approach doesn't work directly inside Pie. See below */}
               </Pie>
-              {/* Custom text element for total in center */}
               <text
                 x="50%"
                 y="45%" 
@@ -123,7 +163,7 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
                 y="45%"
                 textAnchor="middle"
                 dominantBaseline="middle"
-                dy="20" // Offset for the label below the total
+                dy="20" 
                 className="fill-muted-foreground text-sm"
               >
                 {translations.totalExpensesLabel || "Total"}
