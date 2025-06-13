@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -27,7 +28,6 @@ import {
   SidebarMenuButton,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
   SidebarInset
@@ -58,7 +58,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: { href: str
             <SidebarMenuSub>
                 {subItems.map(subItem => (
                     <SidebarMenuSubItem key={subItem.href}>
-                        <Link href={subItem.href} legacyBehavior passHref>
+                        <Link href={subItem.href}>
                             <SidebarMenuSubButton isActive={currentPath.startsWith(subItem.href)} aria-label={subItem.label}>
                                 {subItem.label}
                             </SidebarMenuSubButton>
@@ -73,7 +73,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: { href: str
 
   return (
     <SidebarMenuItem>
-        <Link href={href} legacyBehavior passHref>
+        <Link href={href}>
             <SidebarMenuButton isActive={isActive} tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}} aria-label={label}>
                 <Icon className="h-5 w-5" />
                 <span className="truncate">{label}</span>
