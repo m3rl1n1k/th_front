@@ -106,7 +106,7 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
               {/* Custom text element for total in center */}
               <text
                 x="50%"
-                y="50%"
+                y="45%" 
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className="fill-foreground text-2xl font-semibold"
@@ -115,7 +115,7 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
               </text>
               <text
                 x="50%"
-                y="50%"
+                y="45%"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 dy="20" // Offset for the label below the total
