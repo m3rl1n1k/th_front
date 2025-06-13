@@ -30,7 +30,9 @@
     "transfers": "Transfers",
     "budgets": "Budgets",
     "capital": "Capital",
+    "reports": "Reports",
     "aiReports": "AI Reports",
+    "standardReports": "Standard Reports",
     "feedback": "Feedback",
     "viewFeedback": "View Feedback",
     "settings": "Settings",
@@ -207,6 +209,18 @@
     "errorDescription": "Could not generate the report: {error}",
     "summary": "Summary",
     "suggestions": "Suggestions"
+  },
+  "standardReportsPage": {
+    "title": "Standard Reports",
+    "description": "View standard financial reports and charts.",
+    "incomeExpenseChartTitle": "Monthly Income vs. Expense",
+    "incomeLabel": "Income",
+    "expenseLabel": "Expense",
+    "currentYearLabel": "Current Year Overview",
+    "expenseBySubCategoryChartTitle": "Expenses by Sub-Category",
+    "selectMonthPlaceholder": "Select Month",
+    "noDataForMonth": "No expense data available for the selected month.",
+    "totalLabel": "Total"
   },
   "transactionsPage": {
     "title": "Transactions",

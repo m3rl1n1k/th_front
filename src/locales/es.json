@@ -29,7 +29,9 @@
     "transfers": "Transferencias",
     "budgets": "Presupuestos",
     "capital": "Capital",
+    "reports": "Informes",
     "aiReports": "Informes IA",
+    "standardReports": "Informes Estándar",
     "feedback": "Comentarios",
     "viewFeedback": "Ver Comentarios",
     "settings": "Configuración",
@@ -206,6 +208,18 @@
     "errorDescription": "No se pudo generar el informe: {error}",
     "summary": "Resumen",
     "suggestions": "Sugerencias"
+  },
+  "standardReportsPage": {
+    "title": "Informes Estándar",
+    "description": "Ver informes financieros y gráficos estándar.",
+    "incomeExpenseChartTitle": "Ingresos vs. Gastos Mensuales",
+    "incomeLabel": "Ingresos",
+    "expenseLabel": "Gastos",
+    "currentYearLabel": "Resumen del Año Actual",
+    "expenseBySubCategoryChartTitle": "Gastos por Subcategoría",
+    "selectMonthPlaceholder": "Seleccionar Mes",
+    "noDataForMonth": "No hay datos de gastos disponibles para el mes seleccionado.",
+    "totalLabel": "Total"
   },
   "transactionsPage": {
     "title": "Transacciones",

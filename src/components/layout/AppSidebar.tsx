@@ -18,8 +18,9 @@ import {
   Users,
   MessageSquareText,
   FileText,
-  Globe, // Added Globe for LocaleSwitcher
-  ListChecks // Icon for View Feedback
+  Globe,
+  ListChecks,
+  AreaChart // Icon for Reports group
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth';
@@ -43,29 +44,29 @@ import {
 import React, { useEffect, useState } from 'react';
 import type { User } from '@/lib/definitions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher'; // Import LocaleSwitcher
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
 
 
 interface NavItemProps {
-  href: string;
+  href?: string; // Optional for parent items
   icon: React.ElementType;
   label: string;
   currentPath: string;
   subItems?: { href: string; label: string }[];
+  onClick?: () => void; // For items that toggle submenus
+  isParentOpen?: boolean; // For parent items to control chevron
 }
 
-const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProps) => {
+const NavItem = ({ href, icon: Icon, label, currentPath, subItems, onClick, isParentOpen }: NavItemProps) => {
   const isActive = subItems
-    ? subItems.some(sub => currentPath.startsWith(sub.href)) || currentPath === href
-    : currentPath.startsWith(href);
-
-  const [isOpen, setIsOpen] = React.useState(isActive && !!subItems);
+    ? subItems.some(sub => currentPath.startsWith(sub.href)) || (href && currentPath.startsWith(href))
+    : href ? currentPath.startsWith(href) : false;
 
   if (subItems) {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={onClick}
             className="justify-between"
             isActive={isActive}
             tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}}
@@ -74,9 +75,9 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProp
                 <Icon className="h-5 w-5" />
                 <span className="truncate">{label}</span>
             </div>
-            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {isParentOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </SidebarMenuButton>
-        {isOpen && (
+        {isParentOpen && (
             <SidebarMenuSub>
                 {subItems.map(subItem => (
                     <SidebarMenuSubItem key={subItem.href}>
@@ -95,7 +96,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProp
 
   return (
     <SidebarMenuItem>
-        <Link href={href} aria-label={label}>
+        <Link href={href!} aria-label={label}>
             <SidebarMenuButton isActive={isActive} tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}}>
                 <Icon className="h-5 w-5" />
                 <span className="truncate">{label}</span>
@@ -116,9 +117,11 @@ interface AppSidebarProps {
     transfers: string;
     budgets: string;
     capital: string;
+    reports: string; // New top-level group
     aiReports: string;
+    standardReports: string; // New sub-item
     feedback: string;
-    viewFeedback: string; // Added for View Feedback
+    viewFeedback: string;
     settings: string;
     profile: string;
     logout: string;
@@ -130,6 +133,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
   const router = useRouter();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -138,6 +142,14 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     }
     fetchUser();
   }, [pathname]);
+
+  useEffect(() => {
+    // Open reports accordion if a sub-item is active
+    if (pathname.startsWith('/ai-reports') || pathname.startsWith('/standard-reports')) {
+      setIsReportsOpen(true);
+    }
+  }, [pathname]);
+
 
   const handleLogout = async () => {
     await logout();
@@ -153,7 +165,16 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     { href: '/transfers', icon: Repeat, label: translations.transfers },
     { href: '/budgets', icon: PiggyBank, label: translations.budgets },
     { href: '/capital', icon: Users, label: translations.capital },
-    { href: '/ai-reports', icon: FileText, label: translations.aiReports },
+    { 
+      icon: AreaChart, 
+      label: translations.reports,
+      onClick: () => setIsReportsOpen(!isReportsOpen),
+      isParentOpen: isReportsOpen,
+      subItems: [
+        { href: '/standard-reports', label: translations.standardReports },
+        { href: '/ai-reports', label: translations.aiReports },
+      ]
+    },
   ];
 
   const utilityNavItems = [
@@ -172,7 +193,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     <SidebarProvider>
       <Sidebar collapsible="icon" className="border-r">
         <SidebarHeader className="p-4">
-            <Link href={'/dashboard'} className="flex items-center gap-2 font-headline text-xl text-sidebar-primary-foreground hover:text-sidebar-primary-foreground/80 transition-colors"> {/* Non-prefixed link */}
+            <Link href={'/dashboard'} className="flex items-center gap-2 font-headline text-xl text-sidebar-primary-foreground hover:text-sidebar-primary-foreground/80 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8"><path d="M8 6h10M6 12h10M4 18h10"/><path d="m18 12 4-4-4-4"/><path d="m18 12 4 4-4 4"/></svg>
                 <span className="group-data-[collapsible=icon]:hidden">FinanceFlow</span>
             </Link>
@@ -180,7 +201,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
         <SidebarContent className="p-2 flex-grow">
           <SidebarMenu>
             {navItems.map((item) => (
-              <NavItem key={item.href} {...item} currentPath={pathname} />
+              <NavItem key={item.label} {...item} currentPath={pathname} />
             ))}
           </SidebarMenu>
         </SidebarContent>
@@ -204,11 +225,10 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
                 <SidebarTrigger />
             </div>
             <div className="flex-1">
-              {/* Placeholder for potential breadcrumbs or page title in header */}
             </div>
-            <div className="flex items-center gap-2"> {/* Wrapper for right-side items */}
-              <LocaleSwitcher currentLocale={locale} /> {/* Added LocaleSwitcher */}
-              <Link href={'/profile'} className="flex items-center gap-2"> {/* Non-prefixed link */}
+            <div className="flex items-center gap-2">
+              <LocaleSwitcher currentLocale={locale} />
+              <Link href={'/profile'} className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={currentUser?.name ? `https://placehold.co/40x40.png?text=${getInitials(currentUser.name)}` : undefined} alt={currentUser?.name || "User Avatar"} />
                     <AvatarFallback>{getInitials(currentUser?.name)}</AvatarFallback>
