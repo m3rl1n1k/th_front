@@ -31,8 +31,8 @@
     "budgets": "Budgets",
     "capital": "Capital",
     "aiReports": "AI Reports",
-    "examplePage": "Example Page",
     "feedback": "Feedback",
+    "viewFeedback": "View Feedback",
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout"
@@ -173,6 +173,29 @@
     "errorToastTitle": "Feedback Submission Failed",
     "errorToastDescription": "Could not submit your feedback: {error}. Please try again."
   },
+  "viewFeedbackPage": {
+    "title": "View Feedback",
+    "description": "Review and manage user feedback submissions.",
+    "noFeedback": "No feedback submissions yet.",
+    "status": "Status",
+    "changeStatus": "Change Status",
+    "statuses": {
+      "pending": "Pending",
+      "active": "Active",
+      "closed": "Closed"
+    },
+    "feedbackTypes": {
+        "Technical Issue": "Technical Issues",
+        "Error Report": "Error Reports",
+        "Suggestion": "Suggestions",
+        "General Feedback": "General Feedback",
+        "Other": "Other"
+    },
+    "emailLabel": "User Email",
+    "createdAtLabel": "Submitted",
+    "statusUpdateSuccess": "Feedback status updated successfully.",
+    "statusUpdateError": "Failed to update feedback status."
+  },
   "aiReportsPage": {
     "title": "AI Financial Reports",
     "description": "Generate and view AI-powered financial insights.",
@@ -237,9 +260,5 @@
       "applyButton": "Apply Filters",
       "clearButton": "Clear"
     }
-  },
-  "examplePage": {
-    "title": "Example Page",
-    "description": "This is a sample page added to the application."
   }
 }

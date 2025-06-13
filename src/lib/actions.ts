@@ -1,6 +1,6 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth'; // Import getCurrentUser and getAuthToken
 
@@ -8,7 +8,7 @@ import { getCurrentUser, getAuthToken } from './auth'; // Import getCurrentUser 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'; // Example
 
 // In-memory store for mock data (to be replaced by API calls)
-let MOCK_DB: MockDb = {
+export let MOCK_DB: MockDb = { // Export MOCK_DB so it can be accessed by flows
   users: [{
     id: 'user-123',
     email: 'user@example.com',
@@ -59,6 +59,7 @@ let MOCK_DB: MockDb = {
     { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 100, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, // Budget for Gas
   ],
   sharedCapitalSessions: [],
+  feedbacks: [], // Initialize feedbacks array
 };
 
 // --- Helper for API calls ---
@@ -595,9 +596,31 @@ export async function stopSharedCapitalSession(): Promise<SharedCapitalSession |
   return null;
 }
 
+// --- Feedback Actions ---
+export async function getFeedbacks(): Promise<FeedbackItem[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  // Sort by creation date, newest first
+  return MOCK_DB.feedbacks
+    .filter(f => f.userId === MOCK_USER_ID)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+export async function updateFeedbackStatus(id: string, status: FeedbackStatus): Promise<FeedbackItem | null> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) throw new Error("User not authenticated");
+
+  const index = MOCK_DB.feedbacks.findIndex(f => f.id === id && f.userId === MOCK_USER_ID);
+  if (index === -1) {
+    console.error(`Feedback item with id ${id} not found for user ${MOCK_USER_ID}`);
+    return null;
+  }
+  MOCK_DB.feedbacks[index].status = status;
+  revalidatePath('/view-feedback'); // Path for the new feedback page
+  return MOCK_DB.feedbacks[index];
+}
+
 
 // Helper to reset DB for testing if needed - not for production
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
-

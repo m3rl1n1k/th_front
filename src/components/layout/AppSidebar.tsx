@@ -19,7 +19,7 @@ import {
   MessageSquareText,
   FileText,
   Globe, // Added Globe for LocaleSwitcher
-  ClipboardList // Added for Example Page
+  ListChecks // Icon for View Feedback
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth';
@@ -117,8 +117,8 @@ interface AppSidebarProps {
     budgets: string;
     capital: string;
     aiReports: string;
-    examplePage: string; // Added for Example Page
     feedback: string;
+    viewFeedback: string; // Added for View Feedback
     settings: string;
     profile: string;
     logout: string;
@@ -154,11 +154,11 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     { href: '/budgets', icon: PiggyBank, label: translations.budgets },
     { href: '/capital', icon: Users, label: translations.capital },
     { href: '/ai-reports', icon: FileText, label: translations.aiReports },
-    { href: '/example-page', icon: ClipboardList, label: translations.examplePage },
   ];
 
   const utilityNavItems = [
      { href: '/feedback', icon: MessageSquareText, label: translations.feedback },
+     { href: '/view-feedback', icon: ListChecks, label: translations.viewFeedback },
      { href: '/settings', icon: Settings, label: translations.settings },
      { href: '/profile', icon: UserCircle, label: translations.profile },
   ];

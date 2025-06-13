@@ -90,6 +90,26 @@ export interface SharedCapitalSession {
   updatedAt: Date;
 }
 
+export type FeedbackStatus = 'pending' | 'active' | 'closed';
+export const feedbackStatuses: FeedbackStatus[] = ['pending', 'active', 'closed'];
+
+
+export interface FeedbackItem {
+  id: string;
+  userId: string;
+  feedbackType: FeedbackType;
+  subject: string;
+  message: string;
+  userEmail?: string;
+  status: FeedbackStatus;
+  createdAt: Date;
+}
+// Assuming FeedbackType is defined in submit-feedback-flow and imported where needed,
+// or should be defined here. For now, using a generic string for simplicity if not strictly typed.
+export type FeedbackType = 'Technical Issue' | 'Error Report' | 'Suggestion' | 'General Feedback' | 'Other';
+export const feedbackTypes: FeedbackType[] = ['Technical Issue', 'Error Report', 'Suggestion', 'General Feedback', 'Other'];
+
+
 // Mock data types
 export type MockDb = {
   users: User[];
@@ -100,5 +120,5 @@ export type MockDb = {
   transfers: Transfer[];
   budgets: Budget[];
   sharedCapitalSessions: SharedCapitalSession[];
+  feedbacks: FeedbackItem[]; // Added for storing feedback
 };
-

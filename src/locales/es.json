@@ -30,8 +30,8 @@
     "budgets": "Presupuestos",
     "capital": "Capital",
     "aiReports": "Informes IA",
-    "examplePage": "Página de Ejemplo",
     "feedback": "Comentarios",
+    "viewFeedback": "Ver Comentarios",
     "settings": "Configuración",
     "profile": "Perfil",
     "logout": "Cerrar Sesión"
@@ -172,6 +172,29 @@
     "errorToastTitle": "Error al Enviar Comentario",
     "errorToastDescription": "No se pudieron enviar tus comentarios: {error}. Por favor, inténtalo de nuevo."
   },
+  "viewFeedbackPage": {
+    "title": "Ver Comentarios",
+    "description": "Revisa y gestiona los comentarios de los usuarios.",
+    "noFeedback": "No hay comentarios enviados aún.",
+    "status": "Estado",
+    "changeStatus": "Cambiar Estado",
+    "statuses": {
+      "pending": "Pendiente",
+      "active": "Activo",
+      "closed": "Cerrado"
+    },
+    "feedbackTypes": {
+        "Technical Issue": "Problemas Técnicos",
+        "Error Report": "Reportes de Error",
+        "Suggestion": "Sugerencias",
+        "General Feedback": "Comentarios Generales",
+        "Other": "Otros"
+    },
+    "emailLabel": "Correo del Usuario",
+    "createdAtLabel": "Enviado",
+    "statusUpdateSuccess": "Estado del comentario actualizado exitosamente.",
+    "statusUpdateError": "Error al actualizar el estado del comentario."
+  },
   "aiReportsPage": {
     "title": "Informes Financieros IA",
     "description": "Genera y visualiza análisis financieros impulsados por IA.",
@@ -236,9 +259,5 @@
       "applyButton": "Aplicar Filtros",
       "clearButton": "Limpiar"
     }
-  },
-  "examplePage": {
-    "title": "Página de Ejemplo",
-    "description": "Esta es una página de ejemplo añadida a la aplicación."
   }
 }
