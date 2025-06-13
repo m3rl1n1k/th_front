@@ -1,13 +1,14 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Users, CreditCard, Activity } from 'lucide-react';
+import { DollarSign, Users, CreditCard, Activity, CalendarDays, CalendarHeart, CalendarRange } from 'lucide-react';
 import { getTranslations } from '@/lib/getTranslations';
 import { getTransactions, getMainCategories, getSubCategories, getWallets } from '@/lib/actions';
 import type { Transaction, MainCategory, SubCategory, Wallet } from '@/lib/definitions';
 import type { ChartConfig } from '@/components/ui/chart';
 import { DashboardExpenseChart } from './_components/DashboardExpenseChart';
 import { RecentActivityList } from './_components/RecentActivityList';
+import { differenceInDays, differenceInCalendarMonths, format as formatDate } from 'date-fns';
 
 
 // Mock data - replace with actual data fetching
@@ -15,10 +16,10 @@ const summaryData = {
   totalBalance: 12530.75,
   totalIncome: 5200.00,
   totalExpenses: 2800.50,
-  recentTransactions: 5, // This could be dynamically updated based on fetched transactions count
+  // recentTransactions will be calculated dynamically
 };
 
-const StatCard = ({ title, value, icon: Icon, currency = false, dataAiHint }: { title: string; value: string | number; icon: React.ElementType; currency?: boolean, dataAiHint?: string }) => (
+const StatCard = ({ title, value, icon: Icon, currency = false, dataAiHint, locale = 'en' }: { title: string; value: string | number; icon: React.ElementType; currency?: boolean, dataAiHint?: string, locale?: string }) => (
   <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
@@ -26,7 +27,7 @@ const StatCard = ({ title, value, icon: Icon, currency = false, dataAiHint }: { 
     </CardHeader>
     <CardContent>
       <div className="text-2xl font-bold">
-        {currency && '$'}{typeof value === 'number' ? value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : value}
+        {currency ? Number(value).toLocaleString(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2}) : (typeof value === 'number' ? value.toLocaleString(locale) : value)}
       </div>
       {dataAiHint && <div className="text-xs text-muted-foreground hidden" data-ai-hint={dataAiHint}>Hint for AI image generation</div>}
     </CardContent>
@@ -52,8 +53,9 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
   const subCategoryToMainCategoryMap = new Map(subCategories.map(sc => [sc.id, sc.mainCategoryId]));
 
   const expensesByMainCategory: Record<string, { totalAmount: number, name: string, color: string }> = {};
+  const expenseTransactions = transactions.filter(tx => tx.type === 'Expense');
 
-  transactions.forEach(transaction => {
+  expenseTransactions.forEach(transaction => {
     if (transaction.type === 'Expense') {
       const mainCategoryId = subCategoryToMainCategoryMap.get(transaction.subCategoryId);
       if (mainCategoryId) {
@@ -88,8 +90,27 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
   };
 
   const recentTransactions = transactions.slice(0, 10);
-  // Update the mock summary data if needed, e.g. for recent transactions count
-  summaryData.recentTransactions = transactions.length;
+  const recentTransactionsCount = transactions.length;
+
+  // Calculate average expenses
+  let avgDailyExpense = 0;
+  let avgWeeklyExpense = 0;
+  let avgMonthlyExpense = 0;
+
+  if (expenseTransactions.length > 0) {
+    const expenseDates = expenseTransactions.map(tx => new Date(tx.createdAt)).sort((a, b) => a.getTime() - b.getTime());
+    const firstExpenseDate = expenseDates[0];
+    const lastExpenseDate = expenseDates[expenseDates.length - 1];
+    const totalExpensesSum = expenseTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+    const totalDaysActive = Math.max(1, differenceInDays(lastExpenseDate, firstExpenseDate) + 1);
+    const totalWeeksActive = Math.max(1, Math.ceil(totalDaysActive / 7));
+    const totalMonthsActive = Math.max(1, differenceInCalendarMonths(lastExpenseDate, firstExpenseDate) + 1);
+    
+    avgDailyExpense = totalExpensesSum / totalDaysActive;
+    avgWeeklyExpense = totalExpensesSum / totalWeeksActive;
+    avgMonthlyExpense = totalExpensesSum / totalMonthsActive;
+  }
 
 
   return (
@@ -97,10 +118,14 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
       <PageHeader title={td.title} description={td.description} />
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <StatCard title={td.totalBalance} value={summaryData.totalBalance} icon={DollarSign} currency dataAiHint="piggy bank" />
-        <StatCard title={td.monthlyIncome} value={summaryData.totalIncome} icon={Users} currency dataAiHint="money rain" />
-        <StatCard title={td.monthlyExpenses} value={summaryData.totalExpenses} icon={CreditCard} currency dataAiHint="empty wallet" />
-        <StatCard title={td.recentTransactionsCount || "Recent Transactions"} value={summaryData.recentTransactions} icon={Activity} dataAiHint="graph chart" />
+        <StatCard title={td.totalBalance} value={summaryData.totalBalance} icon={DollarSign} currency locale={locale} dataAiHint="piggy bank" />
+        <StatCard title={td.monthlyIncome} value={summaryData.totalIncome} icon={Users} currency locale={locale} dataAiHint="money rain" />
+        <StatCard title={td.monthlyExpenses} value={summaryData.totalExpenses} icon={CreditCard} currency locale={locale} dataAiHint="empty wallet" />
+        <StatCard title={td.recentTransactionsCount || "Recent Transactions"} value={recentTransactionsCount} icon={Activity} locale={locale} dataAiHint="graph chart" />
+        
+        <StatCard title={td.avgDailyExpense || "Avg. Daily Expense"} value={avgDailyExpense} icon={CalendarDays} currency locale={locale} dataAiHint="calendar day" />
+        <StatCard title={td.avgWeeklyExpense || "Avg. Weekly Expense"} value={avgWeeklyExpense} icon={CalendarHeart} currency locale={locale} dataAiHint="calendar week" />
+        <StatCard title={td.avgMonthlyExpense || "Avg. Monthly Expense"} value={avgMonthlyExpense} icon={CalendarRange} currency locale={locale} dataAiHint="calendar month" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">

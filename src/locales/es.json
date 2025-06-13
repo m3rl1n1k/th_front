@@ -16,7 +16,10 @@
     "spendingByCategory": "Gastos por Categoría",
     "spendingByCategoryDescription": "Representación visual de tus gastos en diferentes categorías.",
     "noExpenseData": "No hay datos de gastos disponibles para mostrar el gráfico.",
-    "totalExpensesLabel": "Gastos Totales"
+    "totalExpensesLabel": "Gastos Totales",
+    "avgDailyExpense": "Gasto Diario Prom.",
+    "avgWeeklyExpense": "Gasto Semanal Prom.",
+    "avgMonthlyExpense": "Gasto Mensual Prom."
   },
   "sidebar": {
     "dashboard": "Panel",
@@ -67,7 +70,7 @@
     "successPasswordToastTitle": "Contraseña Cambiada",
     "successPasswordToastDescription": "Tu contraseña ha sido cambiada exitosamente.",
     "errorPasswordToastTitle": "Error al Cambiar Contraseña",
-    "errorPasswordToastDescription": "No se pudo cambiar tu contraseña."
+    "errorToastDescription": "No se pudo cambiar tu contraseña."
   },
   "budgetsPage": {
     "title": "Presupuestos",
