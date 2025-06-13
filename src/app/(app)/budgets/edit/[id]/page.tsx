@@ -1,10 +1,13 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { BudgetForm } from '../../_components/BudgetForm';
-import { getBudgets, updateBudget, getMainCategories, getSubCategories } from '@/lib/actions'; // Added getSubCategories
+import { getBudgets, updateBudget, getMainCategories, getSubCategories } from '@/lib/actions';
 import { notFound } from 'next/navigation';
-import type { Budget, MainCategory, SubCategory } from '@/lib/definitions'; // Added MainCategory, SubCategory
+import type { Budget, MainCategory, SubCategory } from '@/lib/definitions';
 import { getTranslations } from '@/lib/getTranslations';
+import { cookies } from 'next/headers'; // Import cookies
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 async function getBudgetById(id: string): Promise<Budget | null> {
   const budgets = await getBudgets(); 
@@ -12,24 +15,22 @@ async function getBudgetById(id: string): Promise<Budget | null> {
   return budget || null;
 }
 
-export default async function EditBudgetPage({ params }: { params: { id: string /*, locale: string*/ } }) {
-  const { id } = params; // locale removed from params
-  const locale = 'en'; // Hardcode locale
+export default async function EditBudgetPage({ params }: { params: { id: string } }) {
+  const { id } = params;
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;
 
   const budget = await getBudgetById(id);
   const mainCategories = await getMainCategories();
-  const subCategories = await getSubCategories(); // Fetch subCategories
+  const subCategories = await getSubCategories();
 
   if (!budget) {
     notFound();
   }
   
   if (mainCategories.length === 0 || subCategories.length === 0) {
-    // This check could be more granular or lead to a specific message page
-    // For now, if essential data is missing, prevent rendering the form in a broken state.
-    // Ideally, redirect or show a message prompting to create categories.
     return (
        <>
         <PageHeader title={tb.editBudgetTitle} description={tb.editBudgetDescription} />
@@ -45,7 +46,6 @@ export default async function EditBudgetPage({ params }: { params: { id: string 
     )
   }
 
-
   const handleSubmit = async (data: Omit<Budget, 'id' | 'userId' | 'createdAt'>) => {
     'use server';
     return updateBudget(id, data);
@@ -58,7 +58,7 @@ export default async function EditBudgetPage({ params }: { params: { id: string 
         initialData={budget}
         onSubmitAction={handleSubmit}
         mainCategories={mainCategories}
-        subCategories={subCategories} // Pass subCategories
+        subCategories={subCategories}
         translations={tb}
         locale={locale}
       />

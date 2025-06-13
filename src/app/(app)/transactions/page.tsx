@@ -7,10 +7,12 @@ import { TransactionList } from './_components/TransactionList';
 import { RecurringTransactionList } from './_components/RecurringTransactionList';
 import { getTransactions, getWallets, getSubCategories, getMainCategories } from '@/lib/actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getTranslations } from '@/lib/getTranslations'; // For translations
+import { getTranslations } from '@/lib/getTranslations';
+import { cookies } from 'next/headers'; // Import cookies
 
 export default async function TransactionsPage() {
-  const locale = 'en'; // Hardcode locale for now
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tt = t.transactionsPage || {
     allTransactionsTab: "All Transactions",
@@ -19,7 +21,6 @@ export default async function TransactionsPage() {
     title: "Transactions",
     description: "Track your income and expenses.",
   };
-
 
   const allTransactions = await getTransactions();
   const wallets = await getWallets();
@@ -57,7 +58,7 @@ export default async function TransactionsPage() {
             wallets={wallets}
             subCategories={subCategories}
             mainCategories={mainCategories}
-            translations={tt} // Pass translations here
+            translations={tt}
           />
         </TabsContent>
       </Tabs>

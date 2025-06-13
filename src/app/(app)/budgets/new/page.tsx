@@ -1,15 +1,19 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { BudgetForm } from '../_components/BudgetForm';
-import { createBudget, getMainCategories, getSubCategories } from '@/lib/actions'; // Added getSubCategories
+import { createBudget, getMainCategories, getSubCategories } from '@/lib/actions';
 import { getTranslations } from '@/lib/getTranslations';
+import { cookies } from 'next/headers'; // Import cookies
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
-export default async function NewBudgetPage({ /*params: { locale }*/ }: { /*params: { locale: string }*/ }) {
-  const locale = 'en'; // Hardcode locale
+export default async function NewBudgetPage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;
   const mainCategories = await getMainCategories();
-  const subCategories = await getSubCategories(); // Fetch subCategories
+  const subCategories = await getSubCategories();
 
   const handleSubmit = async (data: any) => {
     'use server';
@@ -38,7 +42,7 @@ export default async function NewBudgetPage({ /*params: { locale }*/ }: { /*para
       <BudgetForm
         onSubmitAction={handleSubmit}
         mainCategories={mainCategories}
-        subCategories={subCategories} // Pass subCategories
+        subCategories={subCategories}
         translations={tb}
         locale={locale}
       />

@@ -10,6 +10,7 @@ import { StatCard } from './_components/StatCard';
 import { DashboardRecentActivitySection } from './_components/DashboardRecentActivitySection';
 import { dashboardVisibilityLocalStorageKeys } from '@/app/(app)/settings/_components/SettingsForm';
 import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
+import { cookies } from 'next/headers'; // Import cookies
 
 // Mock data - replace with actual data fetching
 const summaryData = {
@@ -24,8 +25,9 @@ interface ExpenseByCategory {
   fill: string;
 }
 
-export default async function DashboardPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
-  const locale = 'en'; // Hardcode locale
+export default async function DashboardPage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const td = t.dashboard; 
   const userSettings = await getUserSettings();

@@ -18,6 +18,7 @@ import {
   Users,
   MessageSquareText,
   FileText,
+  Globe // Added Globe for LocaleSwitcher
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth';
@@ -41,6 +42,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import type { User } from '@/lib/definitions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher'; // Import LocaleSwitcher
 
 
 interface NavItemProps {
@@ -199,14 +201,18 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
                 <SidebarTrigger />
             </div>
             <div className="flex-1">
+              {/* Placeholder for potential breadcrumbs or page title in header */}
             </div>
-            <Link href={'/profile'} className="flex items-center gap-2"> {/* Non-prefixed link */}
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={currentUser?.name ? `https://placehold.co/40x40.png?text=${getInitials(currentUser.name)}` : undefined} alt={currentUser?.name || "User Avatar"} />
-                  <AvatarFallback>{getInitials(currentUser?.name)}</AvatarFallback>
-                </Avatar>
-                 <span className="text-sm font-medium hidden sm:inline">{currentUser?.name || 'User'}</span>
-            </Link>
+            <div className="flex items-center gap-2"> {/* Wrapper for right-side items */}
+              <LocaleSwitcher currentLocale={locale} /> {/* Added LocaleSwitcher */}
+              <Link href={'/profile'} className="flex items-center gap-2"> {/* Non-prefixed link */}
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={currentUser?.name ? `https://placehold.co/40x40.png?text=${getInitials(currentUser.name)}` : undefined} alt={currentUser?.name || "User Avatar"} />
+                    <AvatarFallback>{getInitials(currentUser?.name)}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium hidden sm:inline">{currentUser?.name || 'User'}</span>
+              </Link>
+            </div>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
             {children}

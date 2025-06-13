@@ -7,16 +7,18 @@ import { ProfileForm } from './_components/ProfileForm';
 import { ChangePasswordForm } from './_components/ChangePasswordForm';
 import { getTranslations } from '@/lib/getTranslations';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers'; // Import cookies
 
-export default async function ProfilePage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
-  const locale = 'en'; // Hardcode locale
+export default async function ProfilePage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tp = t.profilePage; 
 
   const currentUser = await getCurrentUser();
   
   if (!currentUser) {
-    redirect('/login'); // Redirect to non-prefixed login
+    redirect('/login');
   }
   const userSettings = await getUserSettings();
 

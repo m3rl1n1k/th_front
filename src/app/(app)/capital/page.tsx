@@ -4,9 +4,11 @@ import { getWallets, getSharedCapitalSession } from '@/lib/actions';
 import { getTranslations } from '@/lib/getTranslations';
 import { CapitalDisplay } from './_components/CapitalDisplay';
 import type { Wallet, SharedCapitalSession } from '@/lib/definitions';
+import { cookies } from 'next/headers'; // Import cookies
 
-export default async function CapitalPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
-  const locale = 'en'; // Hardcode locale
+export default async function CapitalPage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tc = t.capitalPage;
 

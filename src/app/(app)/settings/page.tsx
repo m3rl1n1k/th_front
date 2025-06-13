@@ -5,9 +5,11 @@ import type { UserSettings } from '@/lib/definitions';
 import { SettingsForm } from './_components/SettingsForm';
 import { getTranslations } from '@/lib/getTranslations';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers'; // Import cookies
 
-export default async function SettingsPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
-  const locale = 'en'; // Hardcode locale
+export default async function SettingsPage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const ts = t.settingsPage; 
 
@@ -15,7 +17,7 @@ export default async function SettingsPage({ /* params: { locale } */ }: { /* pa
 
   if (!currentSettings) {
     console.error("User settings not found.");
-    redirect('/dashboard'); // Redirect to non-prefixed dashboard
+    redirect('/dashboard');
   }
   
   const handleUpdateSettings = async (data: Partial<UserSettings>) => {

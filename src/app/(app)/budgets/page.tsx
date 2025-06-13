@@ -9,9 +9,11 @@ import { BudgetList, type AugmentedBudget } from './_components/BudgetList';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Transaction, SubCategory, Budget, MainCategory } from '@/lib/definitions';
+import { cookies } from 'next/headers'; // Import cookies
 
-export default async function BudgetsPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
-  const locale = 'en'; // Hardcode locale
+export default async function BudgetsPage() {
+  const cookieStore = cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;
 
@@ -34,11 +36,10 @@ export default async function BudgetsPage({ /* params: { locale } */ }: { /* par
 
       const relevantTransactions = transactions.filter(transaction => {
         if (transaction.type !== 'Expense') return false;
-        // Check if transaction's subCategory matches the budget's subCategory
         if (transaction.subCategoryId !== budget.subCategoryId) return false;
 
         const txDate = new Date(transaction.createdAt);
-        const txMonth = txDate.getMonth() + 1; // getMonth is 0-indexed
+        const txMonth = txDate.getMonth() + 1;
         const txYear = txDate.getFullYear();
 
         return txMonth === budget.month && txYear === budget.year;
@@ -58,7 +59,7 @@ export default async function BudgetsPage({ /* params: { locale } */ }: { /* par
     <>
       <PageHeader title={tb.title} description={tb.description}>
         <Button asChild>
-          <Link href="/budgets/new"> {/* Non-prefixed link */}
+          <Link href="/budgets/new">
             <PlusCircle className="mr-2 h-4 w-4" /> {tb.addBudget}
           </Link>
         </Button>
