@@ -37,8 +37,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const transactionTypes: TransactionType[] = ['Income', 'Expense'];
 const transactionFrequencies: TransactionFrequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
+const NO_CATEGORY_VALUE = "__NONE__"; // Special value for "No Category"
+
 const transactionFormSchema = z.object({
-  subCategoryId: z.string().optional(), // Made optional
+  subCategoryId: z.string().optional(), // Stays optional
   walletId: z.string().min(1, { message: 'Wallet is required.' }),
   type: z.enum(transactionTypes as [TransactionType, ...TransactionType[]], { required_error: 'Transaction type is required.' }),
   frequency: z.enum(transactionFrequencies as [TransactionFrequency, ...TransactionFrequency[]], { required_error: 'Frequency is required.' }),
@@ -67,7 +69,9 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
     defaultValues: initialData
       ? {
           ...initialData,
-          subCategoryId: initialData.subCategoryId || undefined, // Ensure undefined if not present
+          // If initialData.subCategoryId is undefined, form state will be undefined.
+          // If it has a value, that value is used. This is fine.
+          subCategoryId: initialData.subCategoryId === undefined ? NO_CATEGORY_VALUE : initialData.subCategoryId,
           createdAt: new Date(initialData.createdAt),
         }
       : {
@@ -76,16 +80,15 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
           createdAt: new Date(),
           amount: 0,
           description: '',
-          subCategoryId: undefined, // Default to undefined
+          subCategoryId: NO_CATEGORY_VALUE, // Default to "No Category" selected
         },
   });
 
   async function onSubmit(data: TransactionFormValues) {
     setIsSubmitting(true);
-    // If subCategoryId is an empty string from "No Category" option, convert to undefined
     const payload = {
       ...data,
-      subCategoryId: data.subCategoryId === "" ? undefined : data.subCategoryId,
+      subCategoryId: data.subCategoryId === NO_CATEGORY_VALUE ? undefined : data.subCategoryId,
     };
     try {
       const result = await onSubmitAction(payload);
@@ -160,14 +163,14 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
                   <FormLabel>Category (Optional)</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value || ""} // Ensure value is not undefined for Select
+                    value={field.value} // field.value will be NO_CATEGORY_VALUE or an actual ID
                     disabled={isSubmitting}
                   >
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select category (Optional)" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No Category</SelectItem>
+                      <SelectItem value={NO_CATEGORY_VALUE}>No Category</SelectItem>
                       {mainCategories.map(mc => (
                         <React.Fragment key={mc.id}>
                           <SelectItem value={mc.id} disabled className="font-bold text-muted-foreground">{mc.name}</SelectItem>
@@ -268,7 +271,7 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
               <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || wallets.length === 0 || mainCategories.length === 0 && subCategories.length === 0}>
                 {isSubmitting ? (initialData ? 'Saving...' : 'Creating...') : (initialData ? 'Save Changes' : 'Create Transaction')}
               </Button>
             </div>
@@ -278,3 +281,4 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
     </Card>
   );
 }
+
