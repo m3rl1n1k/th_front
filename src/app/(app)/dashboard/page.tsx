@@ -2,6 +2,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Users, CreditCard, Activity } from 'lucide-react';
 import Image from 'next/image';
+import { getTranslations } from '@/lib/getTranslations';
 
 // Mock data - replace with actual data fetching
 const summaryData = {
@@ -26,22 +27,25 @@ const StatCard = ({ title, value, icon: Icon, currency = false, dataAiHint }: { 
   </Card>
 );
 
-export default function DashboardPage() {
+export default async function DashboardPage({ params: { locale } }: { params: { locale: string } }) {
+  const t = await getTranslations(locale);
+  const td = t.dashboard; // Shorthand for dashboard translations
+
   return (
     <>
-      <PageHeader title="Dashboard" description="Overview of your financial activity." />
+      <PageHeader title={td.title} description={td.description} />
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <StatCard title="Total Balance" value={summaryData.totalBalance} icon={DollarSign} currency dataAiHint="piggy bank" />
-        <StatCard title="Monthly Income" value={summaryData.totalIncome} icon={Users} currency dataAiHint="money rain" />
-        <StatCard title="Monthly Expenses" value={summaryData.totalExpenses} icon={CreditCard} currency dataAiHint="empty wallet" />
-        <StatCard title="Recent Transactions" value={summaryData.recentTransactions} icon={Activity} dataAiHint="graph chart" />
+        <StatCard title={td.totalBalance} value={summaryData.totalBalance} icon={DollarSign} currency dataAiHint="piggy bank" />
+        <StatCard title={td.monthlyIncome} value={summaryData.totalIncome} icon={Users} currency dataAiHint="money rain" />
+        <StatCard title={td.monthlyExpenses} value={summaryData.totalExpenses} icon={CreditCard} currency dataAiHint="empty wallet" />
+        <StatCard title={td.recentTransactions} value={summaryData.recentTransactions} icon={Activity} dataAiHint="graph chart" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>{td.recentActivity}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">Placeholder for recent transactions list or chart.</p>
@@ -57,7 +61,7 @@ export default function DashboardPage() {
         </Card>
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Spending Overview</CardTitle>
+            <CardTitle>{td.spendingOverview}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">Placeholder for spending by category chart.</p>

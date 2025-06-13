@@ -1,22 +1,25 @@
-'use client'; // For redirect
+'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth'; // Using mock auth
+import { useRouter, useParams } from 'next/navigation';
+import { isAuthenticated } from '@/lib/auth'; 
 
 export default function HomePage() {
   const router = useRouter();
+  const params = useParams();
+  // Ensure locale is a string, fallback to default 'en' if needed
+  const locale = typeof params.locale === 'string' ? params.locale : 'en';
 
   useEffect(() => {
     async function checkAuthAndRedirect() {
       const authStatus = await isAuthenticated();
       if (authStatus) {
-        router.replace('/dashboard');
+        router.replace(`/${locale}/dashboard`);
       } else {
-        router.replace('/login');
+        router.replace(`/${locale}/login`);
       }
     }
     checkAuthAndRedirect();
-  }, [router]);
+  }, [router, locale]);
 
   return (
     <div className="flex h-screen items-center justify-center">

@@ -1,10 +1,14 @@
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import React from 'react';
+import { getTranslations } from '@/lib/getTranslations';
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
+  params: { locale }
 }: {
   children: React.ReactNode;
+  params: { locale: string };
 }) {
-  return <AppSidebar>{children}</AppSidebar>;
+  const t = await getTranslations(locale);
+  return <AppSidebar locale={locale} translations={t.sidebar}>{children}</AppSidebar>;
 }

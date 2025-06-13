@@ -1,20 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { login } from '@/lib/auth'; // Mock login
+import { login } from '@/lib/auth'; 
 import { useToast } from '@/hooks/use-toast';
 import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const params = useParams();
   const { toast } = useToast();
+  
+  // Ensure locale is a string, fallback to default 'en' if needed
+  const [locale, setLocale] = useState('en');
+
+  useEffect(() => {
+    if (params.locale && typeof params.locale === 'string') {
+      setLocale(params.locale);
+    }
+  }, [params.locale]);
+  
   const [email, setEmail] = useState('user@example.com');
-  const [password, setPassword] = useState('password'); // Mock password
+  const [password, setPassword] = useState('password'); 
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +38,7 @@ export default function LoginPage() {
           title: 'Login Successful',
           description: `Welcome back, ${user.name || user.email}!`,
         });
-        router.push('/dashboard');
+        router.push(`/${locale}/dashboard`); // Use locale in redirect
       } else {
         toast({
           title: 'Login Failed',

@@ -1,0 +1,20 @@
+{
+  "dashboard": {
+    "title": "Panel de Control",
+    "description": "Resumen de tu actividad financiera.",
+    "totalBalance": "Balance Total",
+    "monthlyIncome": "Ingresos Mensuales",
+    "monthlyExpenses": "Gastos Mensuales",
+    "recentTransactions": "Transacciones Recientes",
+    "recentActivity": "Actividad Reciente",
+    "spendingOverview": "Resumen de Gastos"
+  },
+  "sidebar": {
+    "dashboard": "Panel",
+    "transactions": "Transacciones",
+    "categories": "Categorías",
+    "wallets": "Billeteras",
+    "transfers": "Transferencias",
+    "logout": "Cerrar Sesión"
+  }
+}

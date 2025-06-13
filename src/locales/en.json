@@ -1,0 +1,20 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Overview of your financial activity.",
+    "totalBalance": "Total Balance",
+    "monthlyIncome": "Monthly Income",
+    "monthlyExpenses": "Monthly Expenses",
+    "recentTransactions": "Recent Transactions",
+    "recentActivity": "Recent Activity",
+    "spendingOverview": "Spending Overview"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "categories": "Categories",
+    "wallets": "Wallets",
+    "transfers": "Transfers",
+    "logout": "Logout"
+  }
+}
