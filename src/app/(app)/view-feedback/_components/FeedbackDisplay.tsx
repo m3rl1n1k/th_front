@@ -79,7 +79,7 @@ export function FeedbackDisplay({ groupedFeedbacks, translations, locale }: Feed
   }
 
   return (
-    <Accordion type="multiple" defaultValue={groupedFeedbacks.map(g => g.type)} className="w-full space-y-2">
+    <Accordion type="multiple" defaultValue={groupedFeedbacks.map(g => g.type)} className="w-full space-y-4">
       {groupedFeedbacks.map((group) => (
         <AccordionItem value={group.type} key={group.type} className="border rounded-lg shadow-sm bg-card">
           <AccordionTrigger className="p-4 hover:no-underline">
@@ -143,3 +143,4 @@ export function FeedbackDisplay({ groupedFeedbacks, translations, locale }: Feed
     </Accordion>
   );
 }
+
