@@ -9,7 +9,21 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 
 // In-memory store for mock data (to be replaced by API calls)
 let MOCK_DB: MockDb = {
-  users: [{ id: 'user-123', email: 'user@example.com', name: 'Test User', settings: { transactionsPerPage: 10, defaultCurrency: 'USD' } }],
+  users: [{ 
+    id: 'user-123', 
+    email: 'user@example.com', 
+    name: 'Test User', 
+    settings: { 
+      transactionsPerPage: 10, 
+      defaultCurrency: 'USD',
+      showTotalBalanceCard: true,
+      showMonthlyIncomeCard: true,
+      showMonthlyExpensesCard: true,
+      showAverageSpendingCard: true,
+      showExpenseChartCard: true,
+      showRecentActivityCard: true,
+    } 
+  }],
   mainCategories: [
     { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347' },
     { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4' },
@@ -79,8 +93,6 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
 
 // --- User Settings Actions ---
 export async function getUserSettings(): Promise<UserSettings | undefined> {
-  // This function currently uses mock data directly via getCurrentUser,
-  // If it were to fetch settings via API, it would need the new fetchAPI pattern.
   try {
     const user = await getCurrentUser(); 
     return user?.settings;
@@ -100,15 +112,18 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
     const userIndex = MOCK_DB.users.findIndex(u => u.id === MOCK_USER_ID);
     if (userIndex === -1) throw new Error("User not found");
 
-    MOCK_DB.users[userIndex].settings = { ...MOCK_DB.users[userIndex].settings, ...newSettings } as UserSettings;
+    // Ensure existing settings are preserved
+    const currentUserSettings = MOCK_DB.users[userIndex].settings || {};
+    MOCK_DB.users[userIndex].settings = { ...currentUserSettings, ...newSettings };
     
     revalidatePath('/settings');
-    revalidatePath('/profile'); // If default currency is updated on profile page
-    revalidatePath('/transactions'); // If transactionsPerPage affects transaction list
+    revalidatePath('/profile'); 
+    revalidatePath('/transactions'); 
+    revalidatePath('/dashboard'); // Dashboard depends on these settings
     return MOCK_DB.users[userIndex];
   } catch (error) {
     console.error('Failed to update user settings:', error);
-    throw error; // Re-throw for the component to handle
+    throw error; 
   }
 }
 
@@ -126,7 +141,7 @@ export async function updateUserProfile(userId: string, data: { name?: string })
     }
     
     revalidatePath('/profile');
-    revalidatePath('/(app)/layout', 'layout'); // To update sidebar avatar/name
+    revalidatePath('/(app)/layout', 'layout'); 
     return MOCK_DB.users[userIndex];
   } catch (error) {
     console.error('Failed to update user profile:', error);
@@ -135,18 +150,14 @@ export async function updateUserProfile(userId: string, data: { name?: string })
 }
 
 export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{success: boolean, message: string}> {
-  // TODO: USER: Implement actual password change logic with your API
-  // This is a mock implementation.
   console.log(`Attempting to change password for user ${userId}. Current: ${currentPassword}, New: ${newPassword}`);
   const MOCK_USER_ID = (await getCurrentUser())?.id;
   if (!MOCK_USER_ID || MOCK_USER_ID !== userId) {
     return { success: false, message: "Unauthorized or user mismatch." };
   }
-  // Mock validation: In a real scenario, verify currentPassword against stored hash
-  if (currentPassword === "password123_wrong") { // Simulate wrong current password
+  if (currentPassword === "password123_wrong") { 
      return { success: false, message: "Incorrect current password." };
   }
-  // Simulate successful password change
   console.log(`Mock password change successful for user ${userId}.`);
   return { success: true, message: "Password changed successfully." };
 }
@@ -172,7 +183,6 @@ export async function getMainCategories(): Promise<MainCategory[]> {
 
 export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId'>): Promise<MainCategory> {
   try {
-    // Simulating API call for create
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
     const newCategory: MainCategory = { ...data, id: `mc${Date.now()}`, userId: MOCK_USER_ID };
@@ -205,7 +215,7 @@ export async function deleteMainCategory(id: string): Promise<void> {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
     MOCK_DB.mainCategories = MOCK_DB.mainCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
-    MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID); // Cascade delete
+    MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID); 
     revalidatePath('/categories');
   } catch (error) {
     console.error('Failed to delete main category:', error);
@@ -335,7 +345,6 @@ export async function deleteWallet(id: string): Promise<void> {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
     MOCK_DB.wallets = MOCK_DB.wallets.filter(w => w.id !== id || w.userId !== MOCK_USER_ID);
-    // Also delete transactions and transfers associated with this wallet? For mock, keep it simple.
     revalidatePath('/wallets');
     revalidatePath('/capital');
   } catch (error) {
@@ -557,5 +566,3 @@ export async function stopSharedCapitalSession(): Promise<SharedCapitalSession |
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
-
-    

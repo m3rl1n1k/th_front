@@ -16,7 +16,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import type { UserSettings } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
@@ -28,16 +30,36 @@ const settingsFormSchema = z.object({
     .positive({ message: 'Must be a positive number.' })
     .min(1, { message: 'Must be at least 1.' })
     .max(100, { message: 'Cannot exceed 100.' }),
+  showTotalBalanceCard: z.boolean().optional(),
+  showMonthlyIncomeCard: z.boolean().optional(),
+  showMonthlyExpensesCard: z.boolean().optional(),
+  showAverageSpendingCard: z.boolean().optional(),
+  showExpenseChartCard: z.boolean().optional(),
+  showRecentActivityCard: z.boolean().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 interface SettingsFormProps {
   initialSettings: UserSettings;
-  onSubmitAction: (data: SettingsFormValues) => Promise<any>; // Can be more specific if needed
+  onSubmitAction: (data: SettingsFormValues) => Promise<any>; 
   translations: {
     transactionsPerPage: string;
     transactionsPerPageDescription: string;
+    dashboardSettingsTitle: string;
+    dashboardSettingsDescription: string;
+    showTotalBalanceCardLabel: string;
+    showTotalBalanceCardDescription: string;
+    showMonthlyIncomeCardLabel: string;
+    showMonthlyIncomeCardDescription: string;
+    showMonthlyExpensesCardLabel: string;
+    showMonthlyExpensesCardDescription: string;
+    showAverageSpendingCardLabel: string;
+    showAverageSpendingCardDescription: string;
+    showExpenseChartCardLabel: string;
+    showExpenseChartCardDescription: string;
+    showRecentActivityCardLabel: string;
+    showRecentActivityCardDescription: string;
     saveButton: string;
     successToastTitle: string;
     successToastDescription: string;
@@ -55,6 +77,12 @@ export function SettingsForm({ initialSettings, onSubmitAction, translations }: 
     resolver: zodResolver(settingsFormSchema),
     defaultValues: {
       transactionsPerPage: initialSettings?.transactionsPerPage || 10,
+      showTotalBalanceCard: initialSettings?.showTotalBalanceCard !== false,
+      showMonthlyIncomeCard: initialSettings?.showMonthlyIncomeCard !== false,
+      showMonthlyExpensesCard: initialSettings?.showMonthlyExpensesCard !== false,
+      showAverageSpendingCard: initialSettings?.showAverageSpendingCard !== false,
+      showExpenseChartCard: initialSettings?.showExpenseChartCard !== false,
+      showRecentActivityCard: initialSettings?.showRecentActivityCard !== false,
     },
   });
 
@@ -66,7 +94,7 @@ export function SettingsForm({ initialSettings, onSubmitAction, translations }: 
         title: translations.successToastTitle,
         description: translations.successToastDescription,
       });
-      router.refresh(); // Refresh to ensure settings are re-fetched if needed by other components
+      router.refresh(); 
     } catch (error) {
       toast({
         title: translations.errorToastTitle,
@@ -78,31 +106,73 @@ export function SettingsForm({ initialSettings, onSubmitAction, translations }: 
     }
   }
 
+  const dashboardToggleFields: (keyof SettingsFormValues)[] = [
+    'showTotalBalanceCard', 
+    'showMonthlyIncomeCard', 
+    'showMonthlyExpensesCard', 
+    'showAverageSpendingCard', 
+    'showExpenseChartCard', 
+    'showRecentActivityCard'
+  ];
+
+
   return (
     <Card className="max-w-2xl mx-auto shadow-lg">
-      <CardHeader>
-        {/* Title and description are handled by PageHeader now */}
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6"> {/* Added pt-6 to give space if CardHeader is removed */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="transactionsPerPage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{translations.transactionsPerPage}</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g., 10" {...field} disabled={isSubmitting} />
-                  </FormControl>
-                  <FormDescription>
-                    {translations.transactionsPerPageDescription}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <div>
+              <FormField
+                control={form.control}
+                name="transactionsPerPage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{translations.transactionsPerPage}</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 10" {...field} disabled={isSubmitting} className="max-w-xs"/>
+                    </FormControl>
+                    <FormDescription>
+                      {translations.transactionsPerPageDescription}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-medium font-headline">{translations.dashboardSettingsTitle}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{translations.dashboardSettingsDescription}</p>
+              <div className="space-y-4">
+                {dashboardToggleFields.map((fieldName) => (
+                   <FormField
+                    key={fieldName}
+                    control={form.control}
+                    name={fieldName as any} // Cast to any due to dynamic nature
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                          <FormLabel>{translations[`${fieldName}Label` as keyof typeof translations]}</FormLabel>
+                          <FormDescription>
+                            {translations[`${fieldName}Description` as keyof typeof translations]}
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={isSubmitting}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+            
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Saving...' : translations.saveButton}

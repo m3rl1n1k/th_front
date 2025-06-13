@@ -1,14 +1,14 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Users, CreditCard, CalendarClock } from 'lucide-react'; // Replaced specific calendar icons with CalendarClock
+import { DollarSign, Users, CreditCard, CalendarClock } from 'lucide-react'; 
 import { getTranslations } from '@/lib/getTranslations';
-import { getTransactions, getMainCategories, getSubCategories, getWallets } from '@/lib/actions';
-import type { Transaction, MainCategory, SubCategory, Wallet } from '@/lib/definitions';
+import { getTransactions, getMainCategories, getSubCategories, getWallets, getUserSettings } from '@/lib/actions';
+import type { Transaction, MainCategory, SubCategory, Wallet, UserSettings } from '@/lib/definitions';
 import type { ChartConfig } from '@/components/ui/chart';
 import { DashboardExpenseChart } from './_components/DashboardExpenseChart';
 import { RecentActivityList } from './_components/RecentActivityList';
-import { AverageExpenseCard } from './_components/AverageExpenseCard'; // New import
+import { AverageExpenseCard } from './_components/AverageExpenseCard'; 
 import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
 
 
@@ -43,6 +43,7 @@ interface ExpenseByCategory {
 export default async function DashboardPage({ params: { locale } }: { params: { locale: string } }) {
   const t = await getTranslations(locale);
   const td = t.dashboard; 
+  const userSettings = await getUserSettings();
 
   const transactions = await getTransactions();
   const mainCategories = await getMainCategories();
@@ -91,7 +92,6 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
 
   const recentTransactions = transactions.slice(0, 10);
 
-  // Calculate average expenses
   let avgDailyExpense = 0;
   let avgWeeklyExpense = 0;
   let avgMonthlyExpense = 0;
@@ -111,51 +111,62 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
     avgMonthlyExpense = totalExpensesSum / totalMonthsActive;
   }
 
-
   return (
     <>
       <PageHeader title={td.title} description={td.description} />
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8"> {/* Adjusted grid */}
-        <StatCard title={td.totalBalance} value={summaryData.totalBalance} icon={DollarSign} currency locale={locale} dataAiHint="piggy bank" />
-        <StatCard title={td.monthlyIncome} value={summaryData.totalIncome} icon={Users} currency locale={locale} dataAiHint="money rain" />
-        <StatCard title={td.monthlyExpenses} value={summaryData.totalExpenses} icon={CreditCard} currency locale={locale} dataAiHint="empty wallet" />
-        <AverageExpenseCard 
-            avgDaily={avgDailyExpense}
-            avgWeekly={avgWeeklyExpense}
-            avgMonthly={avgMonthlyExpense}
-            locale={locale}
-            translations={{
-                averageSpendingTitle: td.averageSpendingTitle,
-                dailyLabel: td.dailyLabel,
-                weeklyLabel: td.weeklyLabel,
-                monthlyLabel: td.monthlyLabel,
-            }}
-        />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        {userSettings?.showTotalBalanceCard !== false && (
+          <StatCard title={td.totalBalance} value={summaryData.totalBalance} icon={DollarSign} currency locale={locale} dataAiHint="piggy bank" />
+        )}
+        {userSettings?.showMonthlyIncomeCard !== false && (
+          <StatCard title={td.monthlyIncome} value={summaryData.totalIncome} icon={Users} currency locale={locale} dataAiHint="money rain" />
+        )}
+        {userSettings?.showMonthlyExpensesCard !== false && (
+          <StatCard title={td.monthlyExpenses} value={summaryData.totalExpenses} icon={CreditCard} currency locale={locale} dataAiHint="empty wallet" />
+        )}
+        {userSettings?.showAverageSpendingCard !== false && (
+          <AverageExpenseCard 
+              avgDaily={avgDailyExpense}
+              avgWeekly={avgWeeklyExpense}
+              avgMonthly={avgMonthlyExpense}
+              locale={locale}
+              translations={{
+                  averageSpendingTitle: td.averageSpendingTitle,
+                  dailyLabel: td.dailyLabel,
+                  weeklyLabel: td.weeklyLabel,
+                  monthlyLabel: td.monthlyLabel,
+              }}
+          />
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-        <DashboardExpenseChart
-          chartData={chartData}
-          chartConfig={chartConfig}
-          translations={td}
-        />
+        {userSettings?.showExpenseChartCard !== false && (
+          <DashboardExpenseChart
+            chartData={chartData}
+            chartConfig={chartConfig}
+            translations={td}
+          />
+        )}
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>{td.recentActivity}</CardTitle>
-            <CardDescription>{td.recentActivityDescription || "Latest financial movements."}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RecentActivityList
-              transactions={recentTransactions}
-              wallets={wallets}
-              subCategories={subCategories}
-              mainCategories={mainCategories}
-              translations={td} 
-            />
-          </CardContent>
-        </Card>
+        {userSettings?.showRecentActivityCard !== false && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>{td.recentActivity}</CardTitle>
+              <CardDescription>{td.recentActivityDescription || "Latest financial movements."}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RecentActivityList
+                transactions={recentTransactions}
+                wallets={wallets}
+                subCategories={subCategories}
+                mainCategories={mainCategories}
+                translations={td} 
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );

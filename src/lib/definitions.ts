@@ -1,7 +1,13 @@
 
 export interface UserSettings {
   transactionsPerPage: number;
-  defaultCurrency?: string; // Added
+  defaultCurrency?: string;
+  showTotalBalanceCard?: boolean;
+  showMonthlyIncomeCard?: boolean;
+  showMonthlyExpensesCard?: boolean;
+  showAverageSpendingCard?: boolean;
+  showExpenseChartCard?: boolean;
+  showRecentActivityCard?: boolean;
 }
 
 export interface User {
@@ -94,4 +100,3 @@ export type MockDb = {
   budgets: Budget[];
   sharedCapitalSessions: SharedCapitalSession[];
 };
-
