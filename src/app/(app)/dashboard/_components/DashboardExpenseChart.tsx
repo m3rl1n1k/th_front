@@ -73,14 +73,19 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
                 cursor={{ fill: 'hsl(var(--muted))' }}
                 content={
                   <ChartTooltipContent
-                    formatter={(value, name, props) => {
-                      // For Pie, props.payload.name is the category name, props.payload.value is the amount
+                    formatter={(value, name) => { // value is totalAmount, name is mainCategoryName
+                      const formattedAmount = Number(value).toLocaleString(undefined, {
+                        style: 'currency',
+                        currency: 'USD', // Assuming USD for aggregated view. TODO: Make dynamic if possible.
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
                       return (
                         <div className="flex flex-col">
-                          <span className="font-medium">{props.payload?.name}</span>
-                          <span className="text-muted-foreground">{`$${Number(props.payload?.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                          <span className="font-medium">{name}</span>
+                          <span className="text-muted-foreground">{formattedAmount}</span>
                         </div>
-                      )
+                      );
                     }}
                     hideLabel // Label is handled by legend/center text
                     hideIndicator={false}
@@ -111,7 +116,7 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
                 dominantBaseline="middle"
                 className="fill-foreground text-2xl font-semibold"
               >
-                {`$${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                {Number(totalExpenses).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </text>
               <text
                 x="50%"
