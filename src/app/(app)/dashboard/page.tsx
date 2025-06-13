@@ -1,13 +1,14 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Users, CreditCard, CalendarDays, CalendarHeart, CalendarRange } from 'lucide-react';
+import { DollarSign, Users, CreditCard, CalendarClock } from 'lucide-react'; // Replaced specific calendar icons with CalendarClock
 import { getTranslations } from '@/lib/getTranslations';
 import { getTransactions, getMainCategories, getSubCategories, getWallets } from '@/lib/actions';
 import type { Transaction, MainCategory, SubCategory, Wallet } from '@/lib/definitions';
 import type { ChartConfig } from '@/components/ui/chart';
 import { DashboardExpenseChart } from './_components/DashboardExpenseChart';
 import { RecentActivityList } from './_components/RecentActivityList';
+import { AverageExpenseCard } from './_components/AverageExpenseCard'; // New import
 import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
 
 
@@ -16,7 +17,6 @@ const summaryData = {
   totalBalance: 12530.75,
   totalIncome: 5200.00,
   totalExpenses: 2800.50,
-  // recentTransactions will be calculated dynamically
 };
 
 const StatCard = ({ title, value, icon: Icon, currency = false, dataAiHint, locale = 'en' }: { title: string; value: string | number; icon: React.ElementType; currency?: boolean, dataAiHint?: string, locale?: string }) => (
@@ -99,7 +99,7 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
   if (expenseTransactions.length > 0) {
     const expenseDates = expenseTransactions.map(tx => new Date(tx.createdAt)).sort((a, b) => a.getTime() - b.getTime());
     const firstExpenseDate = expenseDates[0];
-    const lastExpenseDate = expenseDates[expenseDates.length - 1];
+    const lastExpenseDate = expenseDates[expenseTransactions.length - 1];
     const totalExpensesSum = expenseTransactions.reduce((sum, tx) => sum + tx.amount, 0);
 
     const totalDaysActive = Math.max(1, differenceInDays(lastExpenseDate, firstExpenseDate) + 1);
@@ -116,14 +116,22 @@ export default async function DashboardPage({ params: { locale } }: { params: { 
     <>
       <PageHeader title={td.title} description={td.description} />
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8"> {/* Adjusted grid */}
         <StatCard title={td.totalBalance} value={summaryData.totalBalance} icon={DollarSign} currency locale={locale} dataAiHint="piggy bank" />
         <StatCard title={td.monthlyIncome} value={summaryData.totalIncome} icon={Users} currency locale={locale} dataAiHint="money rain" />
         <StatCard title={td.monthlyExpenses} value={summaryData.totalExpenses} icon={CreditCard} currency locale={locale} dataAiHint="empty wallet" />
-        
-        <StatCard title={td.avgDailyExpense || "Avg. Daily Expense"} value={avgDailyExpense} icon={CalendarDays} currency locale={locale} dataAiHint="calendar day" />
-        <StatCard title={td.avgWeeklyExpense || "Avg. Weekly Expense"} value={avgWeeklyExpense} icon={CalendarHeart} currency locale={locale} dataAiHint="calendar week" />
-        <StatCard title={td.avgMonthlyExpense || "Avg. Monthly Expense"} value={avgMonthlyExpense} icon={CalendarRange} currency locale={locale} dataAiHint="calendar month" />
+        <AverageExpenseCard 
+            avgDaily={avgDailyExpense}
+            avgWeekly={avgWeeklyExpense}
+            avgMonthly={avgMonthlyExpense}
+            locale={locale}
+            translations={{
+                averageSpendingTitle: td.averageSpendingTitle,
+                dailyLabel: td.dailyLabel,
+                weeklyLabel: td.weeklyLabel,
+                monthlyLabel: td.monthlyLabel,
+            }}
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">

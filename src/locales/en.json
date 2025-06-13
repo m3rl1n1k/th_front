@@ -16,9 +16,10 @@
     "spendingByCategoryDescription": "Visual representation of your expenses across different categories.",
     "noExpenseData": "No expense data available to display chart.",
     "totalExpensesLabel": "Total Expenses",
-    "avgDailyExpense": "Avg. Daily Expense",
-    "avgWeeklyExpense": "Avg. Weekly Expense",
-    "avgMonthlyExpense": "Avg. Monthly Expense"
+    "averageSpendingTitle": "Average Spending",
+    "dailyLabel": "Daily",
+    "weeklyLabel": "Weekly",
+    "monthlyLabel": "Monthly"
   },
   "sidebar": {
     "dashboard": "Dashboard",
