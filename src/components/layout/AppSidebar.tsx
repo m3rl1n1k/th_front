@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter, useParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -30,7 +30,8 @@ import {
   SidebarMenuSubButton,
   SidebarProvider,
   SidebarTrigger,
-  SidebarInset
+  SidebarInset,
+  SidebarMenuSubItem, // Corrected import
 } from '@/components/ui/sidebar';
 import React from 'react';
 
@@ -49,7 +50,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: Nav
     ? subItems.some(sub => currentPath.startsWith(`/${locale}${sub.href}`)) || currentPath === localePrefixedHref
     : currentPath.startsWith(localePrefixedHref);
   
-  const [isOpen, setIsOpen] = React.useState(isActive && !!subItems); // Ensure isOpen is true if active and has subItems
+  const [isOpen, setIsOpen] = React.useState(isActive && !!subItems);
 
   if (subItems) {
     return (
@@ -85,7 +86,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: Nav
 
   return (
     <SidebarMenuItem>
-        <Link href={localePrefixedHref}>
+        <Link href={localePrefixedHref} >
             <SidebarMenuButton isActive={isActive} tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}} aria-label={label}>
                 <Icon className="h-5 w-5" />
                 <span className="truncate">{label}</span>
@@ -98,12 +99,13 @@ const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: Nav
 interface AppSidebarProps {
   children: React.ReactNode;
   locale: string;
-  translations: { // Add translations prop type based on your JSON structure for sidebar
+  translations: {
     dashboard: string;
     transactions: string;
     categories: string;
     wallets: string;
     transfers: string;
+    settings: string;
     logout: string;
   };
 }
@@ -116,7 +118,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
   const handleLogout = async () => {
     await logout();
     toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-    router.push(`/${locale}/login`); // Redirect to locale-prefixed login
+    router.push(`/${locale}/login`);
   };
 
   const navItems = [
@@ -127,6 +129,10 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     { href: '/transfers', icon: Repeat, label: translations.transfers },
   ];
   
+  const utilityNavItems = [
+     { href: '/settings', icon: Settings, label: translations.settings },
+  ];
+
   return (
     <SidebarProvider defaultOpen>
       <Sidebar collapsible="icon" className="border-r">
@@ -136,15 +142,18 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
                 <span className="group-data-[collapsible=icon]:hidden">FinanceFlow</span>
             </Link>
         </SidebarHeader>
-        <SidebarContent className="p-2">
+        <SidebarContent className="p-2 flex-grow">
           <SidebarMenu>
             {navItems.map((item) => (
               <NavItem key={item.href} {...item} currentPath={pathname} locale={locale} />
             ))}
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter className="p-4 border-t border-sidebar-border">
+        <SidebarFooter className="p-2 border-t border-sidebar-border">
           <SidebarMenu>
+             {utilityNavItems.map((item) => (
+                <NavItem key={item.href} {...item} currentPath={pathname} locale={locale} />
+              ))}
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} className="w-full" tooltip={{children: translations.logout, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}} aria-label={translations.logout}>
                     <LogOut className="h-5 w-5" />
@@ -155,15 +164,19 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 justify-between md:justify-end">
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 justify-between">
             <div className="md:hidden">
                 <SidebarTrigger />
             </div>
-            {/* Add user menu or other header items here if needed */}
-             <Button variant="ghost" size="icon" className="rounded-full">
-                <Settings className="h-5 w-5" />
-                <span className="sr-only">Settings</span>
-            </Button>
+            <div className="flex-1"> {/* This div can be used to align items to the right or fill space */}
+            </div>
+             {/* Placeholder for user menu or other header items, aligned to the right */}
+            <Link href={`/${locale}/settings`}>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                    <Settings className="h-5 w-5" />
+                    <span className="sr-only">Settings</span>
+                </Button>
+            </Link>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
             {children}

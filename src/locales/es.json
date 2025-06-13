@@ -1,3 +1,4 @@
+
 {
   "dashboard": {
     "title": "Panel de Control",
@@ -15,6 +16,18 @@
     "categories": "Categorías",
     "wallets": "Billeteras",
     "transfers": "Transferencias",
+    "settings": "Configuración",
     "logout": "Cerrar Sesión"
+  },
+  "settingsPage": {
+    "title": "Configuración",
+    "description": "Gestiona las preferencias de tu aplicación.",
+    "transactionsPerPage": "Transacciones por Página",
+    "transactionsPerPageDescription": "Número de transacciones a mostrar en la página de transacciones.",
+    "saveButton": "Guardar Configuración",
+    "successToastTitle": "Configuración Actualizada",
+    "successToastDescription": "Tu configuración ha sido guardada exitosamente.",
+    "errorToastTitle": "Error al Actualizar Configuración",
+    "errorToastDescription": "No se pudo guardar tu configuración. Por favor, inténtalo de nuevo."
   }
 }

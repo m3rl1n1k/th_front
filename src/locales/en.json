@@ -1,3 +1,4 @@
+
 {
   "dashboard": {
     "title": "Dashboard",
@@ -15,6 +16,18 @@
     "categories": "Categories",
     "wallets": "Wallets",
     "transfers": "Transfers",
+    "settings": "Settings",
     "logout": "Logout"
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "description": "Manage your application preferences.",
+    "transactionsPerPage": "Transactions per Page",
+    "transactionsPerPageDescription": "Number of transactions to display on the transactions page.",
+    "saveButton": "Save Settings",
+    "successToastTitle": "Settings Updated",
+    "successToastDescription": "Your settings have been successfully saved.",
+    "errorToastTitle": "Error Updating Settings",
+    "errorToastDescription": "Could not save your settings. Please try again."
   }
 }

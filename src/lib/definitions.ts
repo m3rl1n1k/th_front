@@ -1,7 +1,13 @@
+
+export interface UserSettings {
+  transactionsPerPage: number;
+}
+
 export interface User {
   id: string;
   email: string;
   name?: string;
+  settings?: UserSettings;
 }
 
 export type TransactionType = 'Income' | 'Expense';

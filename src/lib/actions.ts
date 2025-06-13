@@ -1,10 +1,11 @@
+
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings } from './definitions';
 import { revalidatePath } from 'next/cache';
 
 // In-memory store for mock data
 let MOCK_DB: MockDb = {
-  users: [{ id: 'user-123', email: 'user@example.com', name: 'Test User' }],
+  users: [{ id: 'user-123', email: 'user@example.com', name: 'Test User', settings: { transactionsPerPage: 10 } }],
   mainCategories: [
     { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347' },
     { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4' },
@@ -29,6 +30,27 @@ let MOCK_DB: MockDb = {
 };
 
 const MOCK_USER_ID = 'user-123'; // Assume all operations are for this user
+
+// --- User Settings Actions ---
+export async function getUserSettings(): Promise<UserSettings | undefined> {
+  const user = MOCK_DB.users.find(u => u.id === MOCK_USER_ID);
+  return user?.settings;
+}
+
+export async function updateUserSettings(newSettings: Partial<UserSettings>): Promise<User | null> {
+  const userIndex = MOCK_DB.users.findIndex(u => u.id === MOCK_USER_ID);
+  if (userIndex === -1) return null;
+
+  MOCK_DB.users[userIndex].settings = {
+    ...MOCK_DB.users[userIndex].settings,
+    ...newSettings,
+  } as UserSettings; // Ensure settings is not undefined after partial update
+
+  revalidatePath('/settings');
+  revalidatePath('/transactions'); // Revalidate transactions page as it will use this setting
+  return MOCK_DB.users[userIndex];
+}
+
 
 // --- Main Category Actions ---
 export async function getMainCategories(): Promise<MainCategory[]> {
