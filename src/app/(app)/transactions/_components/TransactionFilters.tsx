@@ -86,7 +86,7 @@ export function TransactionFilters({
   const mainCategoryMap = new Map(mainCategories.map(mc => [mc.id, mc.name]));
 
   return (
-    <Accordion type="single" collapsible className="w-full mb-6" defaultValue="filters-accordion">
+    <Accordion type="single" collapsible className="w-full mb-6">
       <AccordionItem value="filters-accordion" className="border-none">
         <Card className="shadow-lg">
           <AccordionTrigger
@@ -235,3 +235,4 @@ export function TransactionFilters({
     </Accordion>
   );
 }
+
