@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'; // Added
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const ALL_VALUE = '_ALL_';
 const UNCAT_VALUE = '_UNCATEGORIZED_';
@@ -89,16 +89,16 @@ export function TransactionFilters({
     <Accordion type="single" collapsible className="w-full mb-6" defaultValue="filters-accordion">
       <AccordionItem value="filters-accordion" className="border-none">
         <Card className="shadow-lg">
-          <AccordionTrigger className="p-0 hover:no-underline focus-visible:ring-inset focus-visible:!ring-offset-0 data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg w-full">
-            <CardHeader className="p-2 pb-4 flex justify-between items-center w-full">
-              <CardTitle className="text-lg font-headline">
-                {translations.filterTitle || 'Filter Transactions'}
-              </CardTitle>
-              {/* AccordionTrigger adds its own chevron here */}
-            </CardHeader>
+          <AccordionTrigger
+            className="w-full flex items-center justify-start text-left p-4 hover:no-underline data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg focus-visible:ring-inset focus-visible:!ring-offset-0"
+          >
+            <CardTitle className="text-lg font-headline">
+              {translations.filterTitle || 'Filter Transactions'}
+            </CardTitle>
+            {/* AccordionTrigger component appends its own chevron icon */}
           </AccordionTrigger>
-          <AccordionContent className="p-0 data-[state=open]:rounded-b-lg">
-            <CardContent className="p-2 space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <AccordionContent className="border-t p-0 data-[state=open]:rounded-b-lg">
+            <div className="p-4 space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="searchTerm">{translations.searchLabel || 'Search Description'}</Label>
                 <Input
@@ -228,7 +228,7 @@ export function TransactionFilters({
                   {translations.clearButton || 'Clear'}
                 </Button>
               </div>
-            </CardContent>
+            </div>
           </AccordionContent>
         </Card>
       </AccordionItem>
