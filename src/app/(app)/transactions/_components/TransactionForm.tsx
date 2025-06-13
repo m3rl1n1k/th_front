@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -37,7 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const transactionTypes: TransactionType[] = ['Income', 'Expense'];
 const transactionFrequencies: TransactionFrequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
-const NO_CATEGORY_VALUE = "_NONE_"; // Special value for "No Category"
+const NO_CATEGORY_VALUE = "_NONE_"; 
 
 const transactionFormSchema = z.object({
   subCategoryId: z.string().optional(),
@@ -57,7 +56,7 @@ interface TransactionFormProps {
   wallets: Wallet[];
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
-  defaultWalletId?: string; // New prop for auto-selecting wallet
+  defaultWalletId?: string;
 }
 
 export function TransactionForm({
@@ -66,7 +65,7 @@ export function TransactionForm({
   wallets,
   subCategories,
   mainCategories,
-  defaultWalletId, // Destructure new prop
+  defaultWalletId,
 }: TransactionFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -77,7 +76,7 @@ export function TransactionForm({
     defaultValues: initialData
       ? {
           ...initialData,
-          subCategoryId: initialData.subCategoryId === undefined ? NO_CATEGORY_VALUE : initialData.subCategoryId,
+          subCategoryId: initialData.subCategoryId === undefined || initialData.subCategoryId === null ? NO_CATEGORY_VALUE : initialData.subCategoryId,
           createdAt: new Date(initialData.createdAt),
         }
       : {
@@ -87,7 +86,7 @@ export function TransactionForm({
           amount: 0,
           description: '',
           subCategoryId: NO_CATEGORY_VALUE,
-          walletId: defaultWalletId, // Use the prop for new transactions
+          walletId: defaultWalletId,
         },
   });
 
@@ -170,8 +169,8 @@ export function TransactionForm({
                   <FormLabel>Category (Optional)</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value === undefined && NO_CATEGORY_VALUE ? NO_CATEGORY_VALUE : field.value}
-                    defaultValue={field.value}
+                    value={field.value} // Direct value from form state
+                    defaultValue={field.value} // Default value from form state
                     disabled={isSubmitting}
                   >
                     <FormControl>
@@ -187,6 +186,14 @@ export function TransactionForm({
                           ))}
                         </React.Fragment>
                       ))}
+                       {subCategories.filter(sc => !mainCategories.some(mc => mc.id === sc.mainCategoryId)).length > 0 && (
+                         <React.Fragment>
+                            <SelectItem value="unassigned-header" disabled className="font-bold text-muted-foreground">Unassigned Sub-Categories</SelectItem>
+                             {subCategories.filter(sc => !mainCategories.some(mc => mc.id === sc.mainCategoryId)).map((sc) => (
+                                <SelectItem key={sc.id} value={sc.id} className="pl-6">{sc.name}</SelectItem>
+                             ))}
+                         </React.Fragment>
+                       )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
