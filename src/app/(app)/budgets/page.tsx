@@ -4,18 +4,50 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from '@/lib/getTranslations';
-import { getBudgets, getMainCategories } from '@/lib/actions';
-import { BudgetList } from './_components/BudgetList';
+import { getBudgets, getMainCategories, getTransactions, getSubCategories } from '@/lib/actions';
+import { BudgetList, type AugmentedBudget } from './_components/BudgetList';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Transaction, SubCategory, Budget, MainCategory } from '@/lib/definitions';
 
 export default async function BudgetsPage({ params: { locale } }: { params: { locale: string } }) {
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;
 
-  // For now, fetch all budgets. We can add month/year filters later.
-  const budgets = await getBudgets();
-  const mainCategories = await getMainCategories();
+  const budgets: Budget[] = await getBudgets();
+  const mainCategories: MainCategory[] = await getMainCategories();
+  const transactions: Transaction[] = await getTransactions();
+  const subCategories: SubCategory[] = await getSubCategories();
+
+  const mainCategoryMap = new Map(mainCategories.map(mc => [mc.id, mc]));
+  const subCategoryToMainCategoryMap = new Map(subCategories.map(sc => [sc.id, sc.mainCategoryId]));
+
+  const augmentedBudgets: AugmentedBudget[] = budgets.map(budget => {
+    let actualSpent = 0;
+    const budgetMainCategory = mainCategoryMap.get(budget.mainCategoryId);
+
+    if (budgetMainCategory) {
+      const relevantTransactions = transactions.filter(transaction => {
+        if (transaction.type !== 'Expense') return false;
+
+        const mainCategoryIdForTx = subCategoryToMainCategoryMap.get(transaction.subCategoryId);
+        if (mainCategoryIdForTx !== budget.mainCategoryId) return false;
+
+        const txDate = new Date(transaction.createdAt);
+        const txMonth = txDate.getMonth() + 1; // getMonth is 0-indexed
+        const txYear = txDate.getFullYear();
+
+        return txMonth === budget.month && txYear === budget.year;
+      });
+      actualSpent = relevantTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+    }
+    
+    return {
+      ...budget,
+      actualSpent,
+      mainCategoryName: budgetMainCategory?.name || 'N/A',
+    };
+  });
 
   return (
     <>
@@ -28,8 +60,7 @@ export default async function BudgetsPage({ params: { locale } }: { params: { lo
       </PageHeader>
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
         <BudgetList 
-          initialBudgets={budgets} 
-          mainCategories={mainCategories} 
+          initialBudgets={augmentedBudgets}
           translations={tb}
           locale={locale}
         />

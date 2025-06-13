@@ -18,24 +18,25 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { PiggyBank } from 'lucide-react';
-import { getMonthName } from '@/lib/utils'; // We'll create this helper
+import { getMonthName } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
+
+export interface AugmentedBudget extends Budget {
+  actualSpent: number;
+  mainCategoryName: string;
+}
 
 interface BudgetListProps {
-  initialBudgets: Budget[];
-  mainCategories: MainCategory[];
-  translations: any; // from budgetsPage namespace
+  initialBudgets: AugmentedBudget[];
+  translations: any; 
   locale: string;
 }
 
-export function BudgetList({ initialBudgets, mainCategories, translations, locale }: BudgetListProps) {
-  const [budgets, setBudgets] = useState<Budget[]>(initialBudgets);
-  const [itemToDelete, setItemToDelete] = useState<Budget | null>(null);
+export function BudgetList({ initialBudgets, translations, locale }: BudgetListProps) {
+  const [budgets, setBudgets] = useState<AugmentedBudget[]>(initialBudgets);
+  const [itemToDelete, setItemToDelete] = useState<AugmentedBudget | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-
-  const getMainCategoryName = (mainCategoryId: string) => {
-    return mainCategories.find(mc => mc.id === mainCategoryId)?.name || 'N/A';
-  };
 
   const handleDelete = async () => {
     if (!itemToDelete) return;
@@ -57,6 +58,11 @@ export function BudgetList({ initialBudgets, mainCategories, translations, local
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    // TODO: Make currency dynamic based on user settings or wallet
+    return amount.toLocaleString(locale, { style: 'currency', currency: 'USD' });
+  };
+
   if (budgets.length === 0) {
     return (
       <Card className="text-center p-10 shadow">
@@ -74,22 +80,37 @@ export function BudgetList({ initialBudgets, mainCategories, translations, local
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Month/Year</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Planned Amount</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{translations.monthYearHeader || 'Month/Year'}</TableHead>
+                <TableHead>{translations.categoryHeader || 'Category'}</TableHead>
+                <TableHead>{translations.budgetProgressHeader || 'Budget Progress'}</TableHead>
+                <TableHead className="text-right">{translations.actionsHeader || 'Actions'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {budgets.map((budget) => {
-                const categoryName = getMainCategoryName(budget.mainCategoryId);
                 const monthYear = `${getMonthName(budget.month, locale)} ${budget.year}`;
+                const progressPercentage = budget.plannedAmount > 0 ? (budget.actualSpent / budget.plannedAmount) * 100 : 0;
+                const progressBarColor = progressPercentage > 100 ? 'bg-destructive' : 'bg-primary';
+                
                 return (
                   <TableRow key={budget.id}>
                     <TableCell>{monthYear}</TableCell>
-                    <TableCell className="font-medium">{categoryName}</TableCell>
-                    <TableCell className="text-right">
-                      {budget.plannedAmount.toLocaleString(undefined, { style: 'currency', currency: 'USD' })} {/* TODO: Use actual currency */}
+                    <TableCell className="font-medium">{budget.mainCategoryName}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className={budget.actualSpent > budget.plannedAmount ? 'text-destructive font-semibold' : 'text-muted-foreground'}>
+                            {formatCurrency(budget.actualSpent)} {translations.spentLabel || 'spent'}
+                          </span>
+                          <span className="text-muted-foreground">
+                            / {formatCurrency(budget.plannedAmount)}
+                          </span>
+                        </div>
+                        <Progress value={Math.min(progressPercentage, 100)} className="h-2" indicatorClassName={progressBarColor} />
+                        {progressPercentage > 100 && (
+                           <p className="text-xs text-destructive">{translations.overBudgetWarning || 'Over budget!'}</p>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <DataTableActions
@@ -108,7 +129,7 @@ export function BudgetList({ initialBudgets, mainCategories, translations, local
         isOpen={!!itemToDelete}
         onOpenChange={(open) => !open && setItemToDelete(null)}
         onConfirm={handleDelete}
-        itemName={`${translations.title.toLowerCase()} for ${getMainCategoryName(itemToDelete?.mainCategoryId || '')} for ${getMonthName(itemToDelete?.month || 1, locale)} ${itemToDelete?.year}`}
+        itemName={`${translations.title.toLowerCase()} for ${itemToDelete?.mainCategoryName || ''} for ${getMonthName(itemToDelete?.month || 1, locale)} ${itemToDelete?.year}`}
       />
     </>
   );

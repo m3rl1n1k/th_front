@@ -79,6 +79,12 @@
     "confirmDeleteTitle": "Eliminar Presupuesto",
     "confirmDeleteDescription": "¿Estás seguro de que quieres eliminar el presupuesto para {categoryName} para {monthYear}?",
     "deleteSuccessToastTitle": "Presupuesto Eliminado",
-    "deleteSuccessToastDescription": "El presupuesto ha sido eliminado exitosamente."
+    "deleteSuccessToastDescription": "El presupuesto ha sido eliminado exitosamente.",
+    "monthYearHeader": "Mes/Año",
+    "categoryHeader": "Categoría",
+    "budgetProgressHeader": "Progreso del Presupuesto",
+    "actionsHeader": "Acciones",
+    "spentLabel": "gastado",
+    "overBudgetWarning": "¡Exceso de presupuesto!"
   }
 }

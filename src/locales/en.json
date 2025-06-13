@@ -79,6 +79,12 @@
     "confirmDeleteTitle": "Delete Budget",
     "confirmDeleteDescription": "Are you sure you want to delete the budget for {categoryName} for {monthYear}?",
     "deleteSuccessToastTitle": "Budget Deleted",
-    "deleteSuccessToastDescription": "Budget has been successfully deleted."
+    "deleteSuccessToastDescription": "Budget has been successfully deleted.",
+    "monthYearHeader": "Month/Year",
+    "categoryHeader": "Category",
+    "budgetProgressHeader": "Budget Progress",
+    "actionsHeader": "Actions",
+    "spentLabel": "spent",
+    "overBudgetWarning": "Over budget!"
   }
 }
