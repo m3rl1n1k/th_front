@@ -3,6 +3,7 @@
 import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth'; // Import getCurrentUser and getAuthToken
+import { cookies as nextCookies } from 'next/headers'; // Renamed to avoid conflict if 'cookies' is used as a variable
 
 // TODO: USER: Replace with your actual API base URL, ideally from an environment variable
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'; // Example
@@ -625,8 +626,7 @@ export async function addFeedback(
   };
   MOCK_DB.feedbacks.push(feedbackToStore);
   console.log('Feedback stored via action:', feedbackToStore); // For debugging
-  // No revalidatePath needed here as the flow itself doesn't directly render UI
-  // The page calling the flow might revalidate or refresh.
+  revalidatePath('/view-feedback');
   return feedbackToStore;
 }
 
@@ -644,10 +644,25 @@ export async function updateFeedbackStatus(id: string, status: FeedbackStatus): 
   return MOCK_DB.feedbacks[index];
 }
 
+// --- Locale Actions ---
+export async function setLocaleCookie(locale: string, currentPath: string) {
+  const cookieStore = nextCookies();
+  cookieStore.set('NEXT_LOCALE', locale, {
+    path: '/',
+    maxAge: 365 * 24 * 60 * 60, // 1 year
+    sameSite: 'lax',
+    // secure: process.env.NODE_ENV === 'production', // Uncomment in production if using HTTPS
+  });
+  revalidatePath(currentPath); // Revalidate the current path
+  revalidatePath('/', 'layout'); // Revalidate the root layout
+}
+
 
 // Helper to reset DB for testing if needed - not for production
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
+
+    
 
     
