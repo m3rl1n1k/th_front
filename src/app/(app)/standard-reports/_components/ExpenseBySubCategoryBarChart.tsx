@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import {
   ChartContainer,
   ChartTooltipContent,
@@ -102,6 +102,7 @@ export function ExpenseBySubCategoryBarChart({
   }, [selectedMonth, currentYear, allTransactions, subCategoryMap, mainCategoryMap, translations.totalLabel]);
 
   const formatCurrency = (value: number) => {
+    if (isNaN(value)) return 'N/A'; // Handle NaN case
     return value.toLocaleString(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }); // Assuming USD
   };
 
@@ -148,10 +149,10 @@ export function ExpenseBySubCategoryBarChart({
             <ResponsiveContainer width="100%" height={400}>
               <BarChart 
                 data={chartData} 
-                layout="vertical" // This layout with X as category and Y as number produces vertical bars in Recharts
+                layout="vertical" 
                 margin={{ top: 20, right: 30, left: 20, bottom: bottomMargin }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} /> {/* Show horizontal grid lines */}
+                <CartesianGrid strokeDasharray="3 3" vertical={false} /> 
                 <XAxis
                   dataKey="subCategoryName"
                   type="category"
@@ -161,7 +162,7 @@ export function ExpenseBySubCategoryBarChart({
                   angle={xAxisAngle}
                   textAnchor={xAxisTextAnchor}
                   interval={0}
-                  height={50} // Allocate space for rotated labels
+                  height={50} 
                 />
                 <YAxis
                   type="number"
@@ -169,7 +170,7 @@ export function ExpenseBySubCategoryBarChart({
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12 }}
-                  width={80} // Space for Y-axis labels
+                  width={80} 
                 />
                 <RechartsTooltip
                   cursor={{ fill: 'hsl(var(--muted))' }}
@@ -190,7 +191,6 @@ export function ExpenseBySubCategoryBarChart({
                   }
                 />
                 <Bar dataKey="totalAmount" radius={[4, 4, 0, 0]}>
-                   {/* Corrected LabelList usage */}
                    <LabelList
                       dataKey="totalAmount"
                       position="top"
@@ -199,9 +199,8 @@ export function ExpenseBySubCategoryBarChart({
                       fontSize={12}
                       formatter={(value: number) => formatCurrency(value)}
                     />
-                    {/* Fill cells based on chartConfig */}
-                    {chartData.map((entry) => (
-                        <div key={entry.subCategoryName} style={{ backgroundColor: chartConfig[entry.subCategoryName]?.color || 'hsl(var(--chart-1))' }} />
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                 </Bar>
               </BarChart>
@@ -214,3 +213,4 @@ export function ExpenseBySubCategoryBarChart({
     </Card>
   );
 }
+
