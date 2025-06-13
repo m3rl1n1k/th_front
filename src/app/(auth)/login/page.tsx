@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,17 +13,8 @@ import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const params = useParams();
+  const params = useParams(); // locale should be in params here as it's /[locale]/login
   const { toast } = useToast();
-  
-  // Ensure locale is a string, fallback to default 'en' if needed
-  const [locale, setLocale] = useState('en');
-
-  useEffect(() => {
-    if (params.locale && typeof params.locale === 'string') {
-      setLocale(params.locale);
-    }
-  }, [params.locale]);
   
   const [email, setEmail] = useState('user@example.com');
   const [password, setPassword] = useState('password'); 
@@ -31,6 +23,8 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    // Derive locale directly from params when needed, with a fallback
+    const localeToUse = typeof params.locale === 'string' ? params.locale : 'en';
     try {
       const user = await login(email, password);
       if (user) {
@@ -38,7 +32,7 @@ export default function LoginPage() {
           title: 'Login Successful',
           description: `Welcome back, ${user.name || user.email}!`,
         });
-        router.push(`/${locale}/dashboard`); // Use locale in redirect
+        router.push(`/${localeToUse}/dashboard`); // Use derived locale
       } else {
         toast({
           title: 'Login Failed',
@@ -103,3 +97,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

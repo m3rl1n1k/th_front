@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -6,20 +7,21 @@ import { isAuthenticated } from '@/lib/auth';
 export default function HomePage() {
   const router = useRouter();
   const params = useParams();
-  // Ensure locale is a string, fallback to default 'en' if needed
-  const locale = typeof params.locale === 'string' ? params.locale : 'en';
 
   useEffect(() => {
+    // Derive locale inside useEffect to ensure params is available and use it directly
+    const currentLocale = typeof params.locale === 'string' ? params.locale : 'en';
+    
     async function checkAuthAndRedirect() {
       const authStatus = await isAuthenticated();
       if (authStatus) {
-        router.replace(`/${locale}/dashboard`);
+        router.replace(`/${currentLocale}/dashboard`);
       } else {
-        router.replace(`/${locale}/login`);
+        router.replace(`/${currentLocale}/login`);
       }
     }
     checkAuthAndRedirect();
-  }, [router, locale]);
+  }, [router, params.locale]); // Depend on params.locale to re-run if it changes
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -27,3 +29,4 @@ export default function HomePage() {
     </div>
   );
 }
+
