@@ -30,6 +30,7 @@
     "budgets": "Presupuestos",
     "capital": "Capital",
     "aiReports": "Informes IA",
+    "examplePage": "Página de Ejemplo",
     "feedback": "Comentarios",
     "settings": "Configuración",
     "profile": "Perfil",
@@ -235,5 +236,9 @@
       "applyButton": "Aplicar Filtros",
       "clearButton": "Limpiar"
     }
+  },
+  "examplePage": {
+    "title": "Página de Ejemplo",
+    "description": "Esta es una página de ejemplo añadida a la aplicación."
   }
 }

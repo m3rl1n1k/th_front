@@ -31,6 +31,7 @@
     "budgets": "Budgets",
     "capital": "Capital",
     "aiReports": "AI Reports",
+    "examplePage": "Example Page",
     "feedback": "Feedback",
     "settings": "Settings",
     "profile": "Profile",
@@ -236,5 +237,9 @@
       "applyButton": "Apply Filters",
       "clearButton": "Clear"
     }
+  },
+  "examplePage": {
+    "title": "Example Page",
+    "description": "This is a sample page added to the application."
   }
 }
