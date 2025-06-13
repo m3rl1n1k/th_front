@@ -14,7 +14,8 @@ export default async function AiReportsPage() {
 
   const handleGenerateReport = async () => {
     'use server';
-    return generateFinancialReport({});
+    // Pass the locale to the report generation flow
+    return generateFinancialReport({ locale });
   };
 
   return (
@@ -27,3 +28,4 @@ export default async function AiReportsPage() {
     </>
   );
 }
+
