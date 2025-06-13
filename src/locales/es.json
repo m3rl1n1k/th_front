@@ -29,6 +29,7 @@
     "transfers": "Transferencias",
     "budgets": "Presupuestos",
     "capital": "Capital",
+    "aiReports": "Informes IA",
     "feedback": "Comentarios",
     "settings": "Configuración",
     "profile": "Perfil",
@@ -53,6 +54,11 @@
     "showExpenseChartCardDescription": "Mostrar el gráfico que visualiza los gastos por categoría.",
     "showRecentActivityCardLabel": "Tarjeta de Actividad Reciente",
     "showRecentActivityCardDescription": "Mostrar la lista de transacciones recientes.",
+    "aiSettingsTitle": "Configuración de IA",
+    "aiSettingsDescription": "Configura tus funciones impulsadas por IA.",
+    "geminiApiKeyLabel": "Clave API de Gemini",
+    "geminiApiKeyPlaceholder": "Ingresa tu clave API de Google AI Gemini",
+    "geminiApiKeyDescription": "Tu clave API para acceder a los modelos Gemini. Esta clave se almacena localmente y se utiliza para las funciones de IA.",
     "saveButton": "Guardar Configuración",
     "successToastTitle": "Configuración Actualizada",
     "successToastDescription": "Tu configuración ha sido guardada exitosamente.",
@@ -162,5 +168,15 @@
     "successToastTitle": "Comentario Recibido",
     "errorToastTitle": "Error al Enviar Comentario",
     "errorToastDescription": "No se pudieron enviar tus comentarios: {error}. Por favor, inténtalo de nuevo."
+  },
+  "aiReportsPage": {
+    "title": "Informes Financieros IA",
+    "description": "Genera y visualiza análisis financieros impulsados por IA.",
+    "generateButton": "Generar Informe Financiero",
+    "generatingButton": "Generando...",
+    "reportTitle": "Informe Financiero",
+    "noReport": "Aún no se ha generado ningún informe. Haz clic en el botón de arriba para generar uno.",
+    "errorTitle": "Falló la Generación del Informe",
+    "errorDescription": "No se pudo generar el informe: {error}"
   }
 }

@@ -29,6 +29,7 @@
     "transfers": "Transfers",
     "budgets": "Budgets",
     "capital": "Capital",
+    "aiReports": "AI Reports",
     "feedback": "Feedback",
     "settings": "Settings",
     "profile": "Profile",
@@ -53,6 +54,11 @@
     "showExpenseChartCardDescription": "Show the chart visualizing spending by category.",
     "showRecentActivityCardLabel": "Recent Activity Card",
     "showRecentActivityCardDescription": "Show the list of recent transactions.",
+    "aiSettingsTitle": "AI Settings",
+    "aiSettingsDescription": "Configure your AI-powered features.",
+    "geminiApiKeyLabel": "Gemini API Key",
+    "geminiApiKeyPlaceholder": "Enter your Google AI Gemini API Key",
+    "geminiApiKeyDescription": "Your API key for accessing Gemini models. This key is stored locally and used for AI features.",
     "saveButton": "Save Settings",
     "successToastTitle": "Settings Updated",
     "successToastDescription": "Your settings have been successfully saved.",
@@ -162,5 +168,15 @@
     "successToastTitle": "Feedback Received",
     "errorToastTitle": "Feedback Submission Failed",
     "errorToastDescription": "Could not submit your feedback: {error}. Please try again."
+  },
+  "aiReportsPage": {
+    "title": "AI Financial Reports",
+    "description": "Generate and view AI-powered financial insights.",
+    "generateButton": "Generate Financial Report",
+    "generatingButton": "Generating...",
+    "reportTitle": "Financial Report",
+    "noReport": "No report generated yet. Click the button above to generate one.",
+    "errorTitle": "Report Generation Failed",
+    "errorDescription": "Could not generate the report: {error}"
   }
 }
