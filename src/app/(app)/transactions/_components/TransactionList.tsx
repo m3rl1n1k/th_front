@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -34,9 +35,13 @@ export function TransactionList({ initialTransactions, wallets, subCategories, m
   const router = useRouter();
 
   const getWalletName = (walletId: string) => wallets.find(w => w.id === walletId)?.name || 'N/A';
-  const getCategoryInfo = (subCategoryId: string) => {
+  
+  const getCategoryInfo = (subCategoryId?: string) => {
+    if (!subCategoryId) {
+      return { name: 'Uncategorized', color: 'hsl(var(--muted-foreground))', mainCategoryName: 'N/A' };
+    }
     const sub = subCategories.find(sc => sc.id === subCategoryId);
-    if (!sub) return { name: 'N/A', color: '#888888', mainCategoryName: 'N/A' };
+    if (!sub) return { name: 'N/A', color: 'hsl(var(--muted-foreground))', mainCategoryName: 'N/A' };
     const main = mainCategories.find(mc => mc.id === sub.mainCategoryId);
     return { name: sub.name, color: sub.color, mainCategoryName: main?.name || 'N/A' };
   };
@@ -95,7 +100,7 @@ export function TransactionList({ initialTransactions, wallets, subCategories, m
                     <div className="font-medium">{transaction.description || categoryInfo.name}</div>
                     <div className="text-xs text-muted-foreground flex items-center">
                        <span className="h-2 w-2 rounded-full mr-1 border" style={{ backgroundColor: categoryInfo.color }}></span>
-                       {categoryInfo.mainCategoryName} / {categoryInfo.name}
+                       {categoryInfo.mainCategoryName === 'N/A' && categoryInfo.name === 'Uncategorized' ? 'Uncategorized' : `${categoryInfo.mainCategoryName} / ${categoryInfo.name}`}
                     </div>
                   </TableCell>
                   <TableCell>{getWalletName(transaction.walletId)}</TableCell>

@@ -8,7 +8,7 @@
  * - GenerateFinancialReportOutput - The output type, containing the report.
  */
 
-import {z} from 'genkit'; // Corrected Zod import
+import {z} from 'genkit';
 import {ai} from '@/ai/genkit';
 import type {Transaction, MainCategory, SubCategory} from '@/lib/definitions';
 import {getTransactions, getMainCategories, getSubCategories} from '@/lib/actions';
@@ -40,7 +40,7 @@ const reportPrompt = ai.definePrompt({
   output: { schema: GenerateFinancialReportOutputSchema },
   prompt: `
 You are a financial analyst AI. Analyze the following financial data for a user and generate a comprehensive report.
-The report should be in Markdown format.
+The report should be in Markdown format. Transactions without a sub-category or main-category should be treated as 'Uncategorized'.
 
 Data:
 Transactions (JSON):
@@ -52,7 +52,7 @@ Categories (JSON):
 Based on this data, provide:
 1.  A general "reportContent" in Markdown that includes:
     *   An overview of income vs. expenses.
-    *   Spending breakdown by main categories.
+    *   Spending breakdown by main categories (include an 'Uncategorized' section if applicable).
     *   Identification of any significant trends or unusual spending.
     *   Observations about spending habits.
 2.  A concise "summary" of the overall financial health.
@@ -74,18 +74,38 @@ const financialReportFlow = ai.defineFlow(
     // For mock, data is filtered by 'user-123' in actions.ts based on getCurrentUser()
     const transactions: Transaction[] = await getTransactions();
     const mainCategories: MainCategory[] = await getMainCategories();
-    const subCategories: SubCategory[] = await getSubCategories();
+    const subCategoriesData: SubCategory[] = await getSubCategories(); // Renamed to avoid conflict
 
     const categoryMap = new Map(mainCategories.map(mc => [mc.id, mc.name]));
-    const subCategoryToMainCategoryMap = new Map(subCategories.map(sc => [sc.id, {mainCategoryId: sc.mainCategoryId, mainCategoryName: categoryMap.get(sc.mainCategoryId) || 'N/A'}]));
+    const subCategoryToMainCategoryMap = new Map(subCategoriesData.map(sc => [sc.id, {mainCategoryId: sc.mainCategoryId, mainCategoryName: categoryMap.get(sc.mainCategoryId) || 'N/A'}]));
 
-    const processedTransactions = transactions.map(t => ({
-      ...t,
-      amount: t.type === 'Expense' ? -t.amount : t.amount, // Represent expenses as negative
-      mainCategoryName: subCategoryToMainCategoryMap.get(t.subCategoryId)?.mainCategoryName,
-      subCategoryName: subCategories.find(sc => sc.id === t.subCategoryId)?.name || 'N/A',
-      createdAt: t.createdAt.toISOString().split('T')[0], // Format date for readability
-    }));
+    const processedTransactions = transactions.map(t => {
+      let mainCatName = 'Uncategorized';
+      let subCatName = 'Uncategorized';
+
+      if (t.subCategoryId) {
+        const subCatDetails = subCategoriesData.find(sc => sc.id === t.subCategoryId);
+        if (subCatDetails) {
+          subCatName = subCatDetails.name;
+          const mainCat = mainCategories.find(mc => mc.id === subCatDetails.mainCategoryId);
+          if (mainCat) {
+            mainCatName = mainCat.name;
+          } else {
+            mainCatName = 'N/A (Main Category Missing)';
+          }
+        } else {
+          subCatName = 'N/A (Sub Category Missing)';
+        }
+      }
+      
+      return {
+        ...t,
+        amount: t.type === 'Expense' ? -t.amount : t.amount, // Represent expenses as negative
+        mainCategoryName: mainCatName,
+        subCategoryName: subCatName,
+        createdAt: t.createdAt.toISOString().split('T')[0], // Format date for readability
+      };
+    });
     
     const transactionsJson = JSON.stringify(processedTransactions, null, 2);
     const categoriesJson = JSON.stringify(mainCategories.map(c => ({ name: c.name, color: c.color})), null, 2);

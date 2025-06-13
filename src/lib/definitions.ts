@@ -8,6 +8,7 @@ export interface UserSettings {
   showAverageSpendingCard?: boolean;
   showExpenseChartCard?: boolean;
   showRecentActivityCard?: boolean;
+  geminiApiKey?: string; // Added for AI settings
 }
 
 export interface User {
@@ -23,7 +24,7 @@ export type TransactionFrequency = 'One-time' | 'Daily' | 'Weekly' | 'Monthly' |
 export interface Transaction {
   id: string;
   userId: string;
-  subCategoryId: string;
+  subCategoryId?: string; // Made optional
   walletId: string;
   type: TransactionType;
   frequency: TransactionFrequency;

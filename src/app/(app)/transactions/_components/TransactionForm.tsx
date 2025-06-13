@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,7 +38,7 @@ const transactionTypes: TransactionType[] = ['Income', 'Expense'];
 const transactionFrequencies: TransactionFrequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
 const transactionFormSchema = z.object({
-  subCategoryId: z.string().min(1, { message: 'Sub-category is required.' }),
+  subCategoryId: z.string().optional(), // Made optional
   walletId: z.string().min(1, { message: 'Wallet is required.' }),
   type: z.enum(transactionTypes as [TransactionType, ...TransactionType[]], { required_error: 'Transaction type is required.' }),
   frequency: z.enum(transactionFrequencies as [TransactionFrequency, ...TransactionFrequency[]], { required_error: 'Frequency is required.' }),
@@ -66,7 +67,8 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
     defaultValues: initialData
       ? {
           ...initialData,
-          createdAt: new Date(initialData.createdAt), // Ensure Date object
+          subCategoryId: initialData.subCategoryId || undefined, // Ensure undefined if not present
+          createdAt: new Date(initialData.createdAt),
         }
       : {
           type: 'Expense',
@@ -74,17 +76,23 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
           createdAt: new Date(),
           amount: 0,
           description: '',
+          subCategoryId: undefined, // Default to undefined
         },
   });
 
   async function onSubmit(data: TransactionFormValues) {
     setIsSubmitting(true);
+    // If subCategoryId is an empty string from "No Category" option, convert to undefined
+    const payload = {
+      ...data,
+      subCategoryId: data.subCategoryId === "" ? undefined : data.subCategoryId,
+    };
     try {
-      const result = await onSubmitAction(data);
+      const result = await onSubmitAction(payload);
       if (result) {
         toast({
           title: initialData ? 'Transaction Updated' : 'Transaction Created',
-          description: `Transaction of ${data.amount} has been successfully ${initialData ? 'updated' : 'created'}.`,
+          description: `Transaction of ${payload.amount} has been successfully ${initialData ? 'updated' : 'created'}.`,
         });
         router.push('/transactions');
         router.refresh();
@@ -149,12 +157,17 @@ export function TransactionForm({ initialData, onSubmitAction, wallets, subCateg
               name="subCategoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                  <FormLabel>Category (Optional)</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ""} // Ensure value is not undefined for Select
+                    disabled={isSubmitting}
+                  >
                     <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Select category (Optional)" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="">No Category</SelectItem>
                       {mainCategories.map(mc => (
                         <React.Fragment key={mc.id}>
                           <SelectItem value={mc.id} disabled className="font-bold text-muted-foreground">{mc.name}</SelectItem>

@@ -31,7 +31,10 @@ export function RecentActivityList({
     return wallets.find(w => w.id === walletId)?.currency || 'USD';
   };
 
-  const getCategoryInfo = (subCategoryId: string) => {
+  const getCategoryInfo = (subCategoryId?: string) => {
+    if (!subCategoryId) {
+      return { name: 'Uncategorized', color: 'hsl(var(--muted-foreground))', mainCategoryName: 'N/A' };
+    }
     const sub = subCategories.find(sc => sc.id === subCategoryId);
     if (!sub) return { name: 'N/A', color: 'hsl(var(--muted-foreground))', mainCategoryName: 'N/A' };
     const main = mainCategories.find(mc => mc.id === sub.mainCategoryId);
@@ -72,7 +75,7 @@ export function RecentActivityList({
                       className="h-2 w-2 rounded-full mr-1.5 border"
                       style={{ backgroundColor: categoryInfo.color }}
                     ></span>
-                    {categoryInfo.mainCategoryName} / {categoryInfo.name}
+                    {categoryInfo.mainCategoryName === 'N/A' && categoryInfo.name === 'Uncategorized' ? 'Uncategorized' : `${categoryInfo.mainCategoryName} / ${categoryInfo.name}`}
                   </div>
                 </div>
               </div>
