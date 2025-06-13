@@ -13,14 +13,14 @@ import {ai} from '@/ai/genkit';
 import type {Transaction, MainCategory, SubCategory} from '@/lib/definitions';
 import {getTransactions, getMainCategories, getSubCategories} from '@/lib/actions';
 
-export const GenerateFinancialReportInputSchema = z.object({
+const GenerateFinancialReportInputSchema = z.object({
   // For this flow, we'll fetch data based on the authenticated user contextually
   // No explicit userId needed in the input for this version.
   // placeholder: z.string().optional().describe("A placeholder if any input is ever needed."),
 });
 export type GenerateFinancialReportInput = z.infer<typeof GenerateFinancialReportInputSchema>;
 
-export const GenerateFinancialReportOutputSchema = z.object({
+const GenerateFinancialReportOutputSchema = z.object({
   reportContent: z.string().describe("The generated financial report content in Markdown format."),
   summary: z.string().describe("A brief summary of the financial status."),
   suggestions: z.array(z.string()).describe("Actionable suggestions based on the analysis."),
@@ -122,3 +122,4 @@ const financialReportFlow = ai.defineFlow(
     return output;
   }
 );
+
