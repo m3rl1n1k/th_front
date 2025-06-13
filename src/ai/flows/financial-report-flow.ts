@@ -66,7 +66,7 @@ Be insightful and provide practical advice.
 const financialReportFlow = ai.defineFlow(
   {
     name: 'financialReportFlow',
-    inputSchema: GenerateFinancialReportInputSchema, // Use the empty input schema
+    inputSchema: GenerateFinancialReportInputSchema, // Use the schema
     outputSchema: GenerateFinancialReportOutputSchema,
   },
   async (/*input*/) => { // Input is not used as data is fetched internally
@@ -77,8 +77,7 @@ const financialReportFlow = ai.defineFlow(
     const subCategoriesData: SubCategory[] = await getSubCategories(); // Renamed to avoid conflict
 
     const categoryMap = new Map(mainCategories.map(mc => [mc.id, mc.name]));
-    const subCategoryToMainCategoryMap = new Map(subCategoriesData.map(sc => [sc.id, {mainCategoryId: sc.mainCategoryId, mainCategoryName: categoryMap.get(sc.mainCategoryId) || 'N/A'}]));
-
+    
     const processedTransactions = transactions.map(t => {
       let mainCatName = 'Uncategorized';
       let subCatName = 'Uncategorized';
