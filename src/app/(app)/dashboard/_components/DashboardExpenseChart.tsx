@@ -2,19 +2,21 @@
 'use client';
 
 import React from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Text } from 'recharts';
 import {
   ChartContainer,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
   type ChartConfig
 } from '@/components/ui/chart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { TrendingDown } from 'lucide-react';
+import { TrendingDown, PieChart as PieChartIcon } from 'lucide-react'; // Changed icon
 
 interface ExpenseByCategory {
   mainCategoryName: string;
   totalAmount: number;
-  fill: string;
+  fill: string; // This is the color for the slice
 }
 
 interface DashboardExpenseChartProps {
@@ -24,17 +26,21 @@ interface DashboardExpenseChartProps {
     spendingByCategory?: string;
     spendingByCategoryDescription?: string;
     noExpenseData?: string;
-    totalExpensesLabel?: string;
+    totalExpensesLabel?: string; // Used for the center text
   };
 }
 
 export function DashboardExpenseChart({ chartData, chartConfig, translations }: DashboardExpenseChartProps) {
+  const totalExpenses = React.useMemo(() => {
+    return chartData.reduce((acc, curr) => acc + curr.totalAmount, 0);
+  }, [chartData]);
+
   if (chartData.length === 0) {
     return (
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <TrendingDown className="h-6 w-6 mr-2 text-destructive" />
+            <PieChartIcon className="h-6 w-6 mr-2 text-primary" /> {/* Changed icon */}
             {translations.spendingByCategory || "Spending by Category"}
           </CardTitle>
           <CardDescription>
@@ -52,49 +58,73 @@ export function DashboardExpenseChart({ chartData, chartConfig, translations }: 
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center">
-          <TrendingDown className="h-6 w-6 mr-2 text-destructive" />
+          <PieChartIcon className="h-6 w-6 mr-2 text-primary" /> {/* Changed icon */}
           {translations.spendingByCategory || "Spending by Category"}
         </CardTitle>
         <CardDescription>
           {translations.spendingByCategoryDescription || "Visual representation of your expenses across different categories."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+      <CardContent className="flex flex-col items-center">
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full max-w-xs sm:max-w-sm md:max-w-md">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} layout="vertical" margin={{ right: 20, left: 30, bottom: 5, top: 5 }}>
-              <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-              <XAxis type="number" tickFormatter={(value) => `$${value.toLocaleString()}`} />
-              <YAxis
-                dataKey="mainCategoryName"
-                type="category"
-                tickLine={false}
-                axisLine={false}
-                width={100}
-                style={{ fontSize: '0.75rem' }}
-                interval={0}
-              />
+            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <RechartsTooltip
                 cursor={{ fill: 'hsl(var(--muted))' }}
-                content={<ChartTooltipContent
-                  formatter={(value, name, props) => {
-                    const chartItemPayload = props.payload && props.payload[0] ? props.payload[0].payload : {};
-                    return (
-                      <div className="flex flex-col">
-                        <span className="font-medium">{chartItemPayload.mainCategoryName}</span>
-                        <span className="text-muted-foreground">{`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-                      </div>
-                    )
-                  }}
-                  hideIndicator
-                />}
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, name, props) => {
+                      // For Pie, props.payload.name is the category name, props.payload.value is the amount
+                      return (
+                        <div className="flex flex-col">
+                          <span className="font-medium">{props.payload?.name}</span>
+                          <span className="text-muted-foreground">{`$${Number(props.payload?.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                        </div>
+                      )
+                    }}
+                    hideLabel // Label is handled by legend/center text
+                    hideIndicator={false}
+                  />
+                }
               />
-              <Bar dataKey="totalAmount" radius={4}>
+              <Pie
+                data={chartData}
+                dataKey="totalAmount"
+                nameKey="mainCategoryName"
+                cx="50%"
+                cy="50%"
+                innerRadius={70} 
+                outerRadius={110}
+                labelLine={false}
+                paddingAngle={2}
+              >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                  <Cell key={`cell-${index}`} fill={entry.fill} stroke={entry.fill} />
                 ))}
-              </Bar>
-            </BarChart>
+                 {/* Center Label - This approach doesn't work directly inside Pie. See below */}
+              </Pie>
+              {/* Custom text element for total in center */}
+              <text
+                x="50%"
+                y="50%"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-foreground text-2xl font-semibold"
+              >
+                {`$${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </text>
+              <text
+                x="50%"
+                y="50%"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                dy="20" // Offset for the label below the total
+                className="fill-muted-foreground text-sm"
+              >
+                {translations.totalExpensesLabel || "Total"}
+              </text>
+              <Legend content={<ChartLegendContent nameKey="mainCategoryName" />} verticalAlign="bottom" wrapperStyle={{paddingTop: "20px"}}/>
+            </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
