@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -17,7 +18,8 @@ import { deleteSubCategory } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { Tag } from 'lucide-react';
+import { Tag as DefaultTagIcon } from 'lucide-react';
+import { DynamicIcon } from '@/components/shared/DynamicIcon';
 
 interface SubCategoryListProps {
   initialSubCategories: SubCategory[];
@@ -57,7 +59,7 @@ export function SubCategoryList({ initialSubCategories, mainCategories }: SubCat
   if (subCategories.length === 0) {
      return (
       <Card className="text-center p-10 shadow">
-        <Tag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <DefaultTagIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-xl font-semibold mb-2">No Sub-Categories Yet</h3>
         <p className="text-muted-foreground">Create sub-categories for more detailed financial tracking.</p>
       </Card>
@@ -79,7 +81,15 @@ export function SubCategoryList({ initialSubCategories, mainCategories }: SubCat
           <TableBody>
             {subCategories.map((subCategory) => (
               <TableRow key={subCategory.id}>
-                <TableCell className="font-medium">{subCategory.name}</TableCell>
+                <TableCell className="font-medium flex items-center">
+                  <DynamicIcon 
+                    name={subCategory.icon} 
+                    fallback={DefaultTagIcon} 
+                    className="h-5 w-5 mr-2 text-muted-foreground" 
+                    style={subCategory.icon ? { color: subCategory.color } : {}}
+                  />
+                  {subCategory.name}
+                </TableCell>
                 <TableCell>{getMainCategoryName(subCategory.mainCategoryId)}</TableCell>
                 <TableCell>
                   <div className="flex items-center">

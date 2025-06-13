@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -17,7 +18,8 @@ import { deleteMainCategory } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { Tag } from 'lucide-react';
+import { Tag as DefaultTagIcon } from 'lucide-react';
+import { DynamicIcon } from '@/components/shared/DynamicIcon';
 
 export function MainCategoryList({ initialMainCategories }: { initialMainCategories: MainCategory[] }) {
   const [categories, setCategories] = useState<MainCategory[]>(initialMainCategories);
@@ -49,7 +51,7 @@ export function MainCategoryList({ initialMainCategories }: { initialMainCategor
   if (categories.length === 0) {
     return (
       <Card className="text-center p-10 shadow">
-        <Tag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <DefaultTagIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-xl font-semibold mb-2">No Main Categories Yet</h3>
         <p className="text-muted-foreground">Create main categories to organize your finances.</p>
       </Card>
@@ -70,7 +72,15 @@ export function MainCategoryList({ initialMainCategories }: { initialMainCategor
           <TableBody>
             {categories.map((category) => (
               <TableRow key={category.id}>
-                <TableCell className="font-medium">{category.name}</TableCell>
+                <TableCell className="font-medium flex items-center">
+                   <DynamicIcon 
+                    name={category.icon} 
+                    fallback={DefaultTagIcon} 
+                    className="h-5 w-5 mr-2 text-muted-foreground" 
+                    style={category.icon ? { color: category.color } : {}}
+                  />
+                  {category.name}
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <span

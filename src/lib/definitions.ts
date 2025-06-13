@@ -38,6 +38,7 @@ export interface MainCategory {
   userId: string;
   name: string;
   color: string; // hex code
+  icon?: string; // Name of a lucide-react icon
 }
 
 export interface SubCategory {
@@ -46,6 +47,7 @@ export interface SubCategory {
   mainCategoryId: string;
   name: string;
   color: string; // hex code
+  icon?: string; // Name of a lucide-react icon
 }
 
 export type WalletType = 'Cash' | 'Bank Account' | 'Credit Card' | 'E-Wallet';
@@ -57,6 +59,7 @@ export interface Wallet {
   currency: string; // e.g., USD, EUR
   initialAmount: number; // Use 'initialAmount' to avoid confusion with current balance which might be calculated
   type: WalletType;
+  icon?: string; // Name of a lucide-react icon
   // Current balance can be calculated by summing transactions or stored and updated.
   // For simplicity in CRUD, we might just store initialAmount.
 }
@@ -122,3 +125,4 @@ export type MockDb = {
   sharedCapitalSessions: SharedCapitalSession[];
   feedbacks: FeedbackItem[]; // Added for storing feedback
 };
+

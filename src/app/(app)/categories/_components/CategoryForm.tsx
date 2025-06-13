@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,11 +26,15 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { categoryIconNames, type CategoryIconName } from '@/lib/icon-names';
+import { DynamicIcon } from '@/components/shared/DynamicIcon';
+import * as LucideIcons from 'lucide-react';
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   color: z.string().regex(/^#([0-9A-Fa-f]{3}){1,2}$/, { message: 'Must be a valid hex color code (e.g., #RRGGBB or #RGB).' }),
   mainCategoryId: z.string().optional(), // Only for sub-categories
+  icon: z.string().optional(),
 });
 
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
@@ -51,11 +56,13 @@ export function CategoryForm({ type, initialData, mainCategories, onSubmitAction
         name: initialData.name,
         color: initialData.color,
         mainCategoryId: type === 'sub' ? (initialData as SubCategory).mainCategoryId : undefined,
+        icon: initialData.icon || undefined,
       }
     : {
         name: '',
         color: '#3498db', // Default color
         mainCategoryId: type === 'sub' && mainCategories && mainCategories.length > 0 ? mainCategories[0].id : undefined,
+        icon: categoryIconNames[0], // Default to the first icon
       };
   
   const form = useForm<CategoryFormValues>({
@@ -170,6 +177,40 @@ export function CategoryForm({ type, initialData, mainCategories, onSubmitAction
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Icon</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <FormControl>
+                      <SelectTrigger>
+                         <div className="flex items-center gap-2">
+                          {field.value && LucideIcons[field.value as CategoryIconName] && (
+                            <DynamicIcon name={field.value as CategoryIconName} className="h-4 w-4" />
+                          )}
+                          <SelectValue placeholder="Select an icon" />
+                        </div>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categoryIconNames.map((iconName) => (
+                        <SelectItem key={iconName} value={iconName}>
+                          <div className="flex items-center gap-2">
+                            <DynamicIcon name={iconName} className="h-4 w-4" />
+                            {iconName}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
 
             <div className="flex justify-end space-x-3 pt-4">
               <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>

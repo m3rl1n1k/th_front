@@ -18,26 +18,12 @@ import { deleteWallet } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { Wallet as WalletIcon, CircleDollarSign, Landmark, CreditCardIcon, Smartphone } from 'lucide-react';
-
-const WalletTypeIcon = ({ type }: { type: Wallet['type'] }) => {
-  switch (type) {
-    case 'Bank Account':
-      return <Landmark className="h-4 w-4 mr-2 text-muted-foreground" />;
-    case 'Cash':
-      return <CircleDollarSign className="h-4 w-4 mr-2 text-muted-foreground" />;
-    case 'Credit Card':
-      return <CreditCardIcon className="h-4 w-4 mr-2 text-muted-foreground" />;
-    case 'E-Wallet':
-      return <Smartphone className="h-4 w-4 mr-2 text-muted-foreground" />;
-    default:
-      return <WalletIcon className="h-4 w-4 mr-2 text-muted-foreground" />;
-  }
-};
+import { Wallet as DefaultWalletIcon } from 'lucide-react';
+import { DynamicIcon } from '@/components/shared/DynamicIcon';
 
 interface WalletListProps {
   initialWallets: Wallet[];
-  locale: string; // Added locale
+  locale: string; 
 }
 
 export function WalletList({ initialWallets, locale }: WalletListProps) {
@@ -69,7 +55,7 @@ export function WalletList({ initialWallets, locale }: WalletListProps) {
   if (wallets.length === 0) {
     return (
       <Card className="text-center p-10 shadow">
-        <WalletIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <DefaultWalletIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-xl font-semibold mb-2">No Wallets Yet</h3>
         <p className="text-muted-foreground">Get started by adding your first wallet.</p>
       </Card>
@@ -93,7 +79,11 @@ export function WalletList({ initialWallets, locale }: WalletListProps) {
             {wallets.map((wallet) => (
               <TableRow key={wallet.id}>
                 <TableCell className="font-medium flex items-center">
-                  <WalletTypeIcon type={wallet.type} />
+                  <DynamicIcon 
+                    name={wallet.icon} 
+                    fallback={DefaultWalletIcon} 
+                    className="h-5 w-5 mr-2 text-muted-foreground" 
+                  />
                   {wallet.name}
                 </TableCell>
                 <TableCell>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +26,9 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { walletIconNames, type WalletIconName } from '@/lib/icon-names';
+import { DynamicIcon } from '@/components/shared/DynamicIcon';
+import * as LucideIcons from 'lucide-react';
 
 const walletTypes: WalletType[] = ['Cash', 'Bank Account', 'Credit Card', 'E-Wallet'];
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']; // Add more as needed
@@ -34,6 +38,7 @@ const walletFormSchema = z.object({
   currency: z.string().min(3, { message: 'Currency must be selected.' }),
   initialAmount: z.coerce.number().min(0, { message: 'Amount must be non-negative.' }),
   type: z.enum(walletTypes as [WalletType, ...WalletType[]], { required_error: 'Wallet type is required.' }),
+  icon: z.string().optional(), // Allow any string, or use z.enum(walletIconNames) for strictness
 });
 
 type WalletFormValues = z.infer<typeof walletFormSchema>;
@@ -56,12 +61,14 @@ export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
           currency: initialData.currency,
           initialAmount: initialData.initialAmount,
           type: initialData.type,
+          icon: initialData.icon || undefined,
         }
       : {
           name: '',
           currency: 'USD',
           initialAmount: 0,
           type: undefined,
+          icon: walletIconNames[0], // Default to the first icon in the list
         },
   });
 
@@ -172,6 +179,39 @@ export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
                   <FormControl>
                     <Input type="number" placeholder="0.00" {...field} disabled={isSubmitting} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Icon</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <div className="flex items-center gap-2">
+                          {field.value && LucideIcons[field.value as WalletIconName] && (
+                            <DynamicIcon name={field.value as WalletIconName} className="h-4 w-4" />
+                          )}
+                          <SelectValue placeholder="Select an icon" />
+                        </div>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {walletIconNames.map((iconName) => (
+                        <SelectItem key={iconName} value={iconName}>
+                          <div className="flex items-center gap-2">
+                            <DynamicIcon name={iconName} className="h-4 w-4" />
+                            {iconName}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

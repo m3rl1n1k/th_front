@@ -26,23 +26,23 @@ let MOCK_DB: MockDb = { // MOCK_DB is no longer exported
     }
   }],
   mainCategories: [
-    { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347' },
-    { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4' },
-    { id: 'mc3', userId: 'user-123', name: 'Housing', color: '#2E8B57' },
-    { id: 'mc4', userId: 'user-123', name: 'Entertainment', color: '#8A2BE2'}
+    { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347', icon: 'Utensils' },
+    { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4', icon: 'Car' },
+    { id: 'mc3', userId: 'user-123', name: 'Housing', color: '#2E8B57', icon: 'Home' },
+    { id: 'mc4', userId: 'user-123', name: 'Entertainment', color: '#8A2BE2', icon: 'Film'}
   ],
   subCategories: [
-    { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A' },
-    { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072' },
-    { id: 'sc3', userId: 'user-123', mainCategoryId: 'mc2', name: 'Gas', color: '#B0C4DE' },
-    { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent', color: '#90EE90' },
-    { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB'}
+    { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A', icon: 'ShoppingCart' },
+    { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072', icon: 'Utensils' },
+    { id: 'sc3', userId: 'user-123', mainCategoryId: 'mc2', name: 'Gas', color: '#B0C4DE', icon: 'Fuel' },
+    { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent', color: '#90EE90', icon: 'Home' },
+    { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB', icon: 'Ticket'}
   ],
   wallets: [
-    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 5000, type: 'Bank Account' },
-    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 300, type: 'Cash' },
-    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 5889.68, type: 'Bank Account' },
-    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 700, type: 'Cash' },
+    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 5000, type: 'Bank Account', icon: 'Landmark' },
+    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 300, type: 'Cash', icon: 'Wallet' },
+    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 5889.68, type: 'Bank Account', icon: 'PiggyBank' },
+    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 700, type: 'Cash', icon: 'Euro' },
   ],
   transactions: [
     { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 55.75, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' },
@@ -603,7 +603,7 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
   // Sort by creation date, newest first
   return MOCK_DB.feedbacks
     .filter(f => f.userId === MOCK_USER_ID)
-    .sort((a, b) => b.createdAt.getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function addFeedback(
@@ -662,7 +662,3 @@ export async function setLocaleCookie(locale: string, currentPath: string) {
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
-
-    
-
-    
