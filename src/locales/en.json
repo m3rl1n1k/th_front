@@ -26,6 +26,7 @@
     "transfers": "Transfers",
     "budgets": "Budgets",
     "capital": "Capital",
+    "feedback": "Feedback",
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout"
@@ -107,5 +108,27 @@
     "stopShareErrorTitle": "Error Stopping Share",
     "stopShareErrorDescription": "Could not stop capital sharing: {error}",
     "noWallets": "No wallets found. Add a wallet to see your capital."
+  },
+  "feedbackPage": {
+    "title": "Submit Feedback",
+    "description": "Help us improve! Share your thoughts, report issues, or suggest new features.",
+    "typeLabel": "Feedback Type",
+    "typePlaceholder": "Select a feedback type",
+    "feedbackTypes": {
+        "Technical Issue": "Technical Issue",
+        "Error Report": "Error Report",
+        "Suggestion": "Suggestion",
+        "General Feedback": "General Feedback",
+        "Other": "Other"
+    },
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "e.g., Problem with login, Idea for new chart",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Please provide as much detail as possible...",
+    "submitButton": "Submit Feedback",
+    "submittingButton": "Submitting...",
+    "successToastTitle": "Feedback Received",
+    "errorToastTitle": "Feedback Submission Failed",
+    "errorToastDescription": "Could not submit your feedback: {error}. Please try again."
   }
 }

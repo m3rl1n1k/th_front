@@ -26,6 +26,7 @@
     "transfers": "Transferencias",
     "budgets": "Presupuestos",
     "capital": "Capital",
+    "feedback": "Comentarios",
     "settings": "Configuración",
     "profile": "Perfil",
     "logout": "Cerrar Sesión"
@@ -107,5 +108,27 @@
     "stopShareErrorTitle": "Error al Detener Compartir",
     "stopShareErrorDescription": "No se pudo detener el compartir capital: {error}",
     "noWallets": "No se encontraron billeteras. Añade una billetera para ver tu capital."
+  },
+  "feedbackPage": {
+    "title": "Enviar Comentarios",
+    "description": "¡Ayúdanos a mejorar! Comparte tus ideas, reporta problemas o sugiere nuevas funciones.",
+    "typeLabel": "Tipo de Comentario",
+    "typePlaceholder": "Selecciona un tipo de comentario",
+    "feedbackTypes": {
+        "Technical Issue": "Problema Técnico",
+        "Error Report": "Reporte de Error",
+        "Suggestion": "Sugerencia",
+        "General Feedback": "Comentario General",
+        "Other": "Otro"
+    },
+    "subjectLabel": "Asunto",
+    "subjectPlaceholder": "Ej: Problema con inicio de sesión, Idea para nuevo gráfico",
+    "messageLabel": "Mensaje",
+    "messagePlaceholder": "Por favor, proporciona tantos detalles como sea posible...",
+    "submitButton": "Enviar Comentarios",
+    "submittingButton": "Enviando...",
+    "successToastTitle": "Comentario Recibido",
+    "errorToastTitle": "Error al Enviar Comentario",
+    "errorToastDescription": "No se pudieron enviar tus comentarios: {error}. Por favor, inténtalo de nuevo."
   }
 }

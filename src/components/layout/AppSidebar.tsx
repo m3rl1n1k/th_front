@@ -16,6 +16,7 @@ import {
   UserCircle, 
   PiggyBank,
   Users, // Changed for Capital
+  MessageSquareText, // Added for Feedback
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth'; 
@@ -113,6 +114,7 @@ interface AppSidebarProps {
     transfers: string;
     budgets: string; 
     capital: string;
+    feedback: string; // Added
     settings: string;
     profile: string; 
     logout: string;
@@ -150,6 +152,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
   ];
   
   const utilityNavItems = [
+     { href: '/feedback', icon: MessageSquareText, label: translations.feedback }, // Added
      { href: '/settings', icon: Settings, label: translations.settings },
      { href: '/profile', icon: UserCircle, label: translations.profile }, 
   ];
