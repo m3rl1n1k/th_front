@@ -25,6 +25,7 @@
     "wallets": "Billeteras",
     "transfers": "Transferencias",
     "budgets": "Presupuestos",
+    "capital": "Capital",
     "settings": "Configuración",
     "profile": "Perfil",
     "logout": "Cerrar Sesión"
@@ -86,5 +87,25 @@
     "actionsHeader": "Acciones",
     "spentLabel": "gastado",
     "overBudgetWarning": "¡Exceso de presupuesto!"
+  },
+  "capitalPage": {
+    "title": "Capital",
+    "description": "Gestiona y comparte tu resumen de capital.",
+    "yourTotalCapital": "Tu Capital Total",
+    "walletBalances": "Saldos de Billetera",
+    "shareCapitalButton": "Compartir Capital",
+    "stopSharingButton": "Dejar de Compartir",
+    "partnerEmailLabel": "Correo Electrónico del Socio",
+    "partnerEmailPlaceholder": "Ingresa el correo electrónico del socio",
+    "sharingWith": "Actualmente compartiendo capital con: {email}",
+    "startShareSuccessTitle": "Compartir Capital Iniciado",
+    "startShareSuccessDescription": "Ahora estás compartiendo tu capital con {email}.",
+    "startShareErrorTitle": "Error al Iniciar Compartir",
+    "startShareErrorDescription": "No se pudo iniciar el compartir capital: {error}",
+    "stopShareSuccessTitle": "Compartir Capital Detenido",
+    "stopShareSuccessDescription": "Has dejado de compartir tu capital.",
+    "stopShareErrorTitle": "Error al Detener Compartir",
+    "stopShareErrorDescription": "No se pudo detener el compartir capital: {error}",
+    "noWallets": "No se encontraron billeteras. Añade una billetera para ver tu capital."
   }
 }

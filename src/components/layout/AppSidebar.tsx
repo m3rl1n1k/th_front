@@ -14,7 +14,8 @@ import {
   ChevronDown,
   ChevronUp,
   UserCircle, 
-  PiggyBank, // Added PiggyBank icon
+  PiggyBank,
+  Users, // Changed for Capital
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth'; 
@@ -110,7 +111,8 @@ interface AppSidebarProps {
     categories: string;
     wallets: string;
     transfers: string;
-    budgets: string; // Added budgets translation
+    budgets: string; 
+    capital: string;
     settings: string;
     profile: string; 
     logout: string;
@@ -144,6 +146,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     { href: '/wallets', icon: Wallet, label: translations.wallets },
     { href: '/transfers', icon: Repeat, label: translations.transfers },
     { href: '/budgets', icon: PiggyBank, label: translations.budgets },
+    { href: '/capital', icon: Users, label: translations.capital },
   ];
   
   const utilityNavItems = [

@@ -73,6 +73,15 @@ export interface Budget {
   createdAt: Date;
 }
 
+export interface SharedCapitalSession {
+  id: string;
+  userId: string;
+  partnerEmail: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Mock data types
 export type MockDb = {
   users: User[];
@@ -82,5 +91,5 @@ export type MockDb = {
   transactions: Transaction[];
   transfers: Transfer[];
   budgets: Budget[];
+  sharedCapitalSessions: SharedCapitalSession[];
 };
-

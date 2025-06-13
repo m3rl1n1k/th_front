@@ -1,6 +1,6 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth'; // Import getCurrentUser and getAuthToken
 
@@ -23,6 +23,8 @@ let MOCK_DB: MockDb = {
   wallets: [
     { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 5000, type: 'Bank Account' },
     { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 300, type: 'Cash' },
+    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 5889.68, type: 'Bank Account' },
+    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 700, type: 'Cash' },
   ],
   transactions: [
     { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 55.75, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' },
@@ -36,6 +38,7 @@ let MOCK_DB: MockDb = {
     { id: 'b1', userId: 'user-123', mainCategoryId: 'mc1', plannedAmount: 500, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
     { id: 'b2', userId: 'user-123', mainCategoryId: 'mc2', plannedAmount: 150, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
   ],
+  sharedCapitalSessions: [],
 };
 
 // --- Helper for API calls ---
@@ -52,17 +55,6 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     (headers as any)['Authorization'] = `Bearer ${token}`;
   }
   
-  // If your API needs userId in the body or as a query param, add it here
-  // For example, if options.body is an object:
-  // if (currentUser && options.body && typeof options.body === 'string') {
-  //   try {
-  //     const body = JSON.parse(options.body);
-  //     body.userId = currentUser.id;
-  //     options.body = JSON.stringify(body);
-  //   } catch (e) { /* ignore */ }
-  // }
-
-
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
@@ -83,20 +75,11 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
 
 // --- User Settings Actions ---
 export async function getUserSettings(): Promise<UserSettings | undefined> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return undefined;
-  // const user = MOCK_DB.users.find(u => u.id === MOCK_USER_ID);
-  // return user?.settings;
-  
-  // TODO: USER: Replace with API call
   try {
-    // Assuming user settings are part of the user object or a separate endpoint
-    // This example assumes it's part of the user object fetched via /auth/me or similar
-    const user = await getCurrentUser(); // This might internally call an API
+    const user = await getCurrentUser(); 
     return user?.settings;
   } catch (error) {
     console.error('Failed to fetch user settings:', error);
-    // Fallback to mock or default if API fails and you want graceful degradation
     const MOCK_USER_ID = 'user-123';
     const user = MOCK_DB.users.find(u => u.id === MOCK_USER_ID);
     return user?.settings;
@@ -104,23 +87,9 @@ export async function getUserSettings(): Promise<UserSettings | undefined> {
 }
 
 export async function updateUserSettings(newSettings: Partial<UserSettings>): Promise<User | null> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return null;
-  // const userIndex = MOCK_DB.users.findIndex(u => u.id === MOCK_USER_ID);
-  // if (userIndex === -1) return null;
-
-  // MOCK_DB.users[userIndex].settings = {
-  //   ...MOCK_DB.users[userIndex].settings,
-  //   ...newSettings,
-  // } as UserSettings; 
-  // revalidatePath('/settings');
-  // revalidatePath('/transactions'); 
-  // return MOCK_DB.users[userIndex];
-
-  // TODO: USER: Replace with API call
   try {
-    const updatedUser = await fetchAPI('/users/settings', { // Replace with your endpoint
-      method: 'PATCH', // or PUT
+    const updatedUser = await fetchAPI('/users/settings', { 
+      method: 'PATCH', 
       body: JSON.stringify(newSettings),
     });
     revalidatePath('/settings');
@@ -128,37 +97,15 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
     return updatedUser;
   } catch (error) {
     console.error('Failed to update user settings:', error);
-    throw error; // Re-throw or handle as needed
+    throw error; 
   }
 }
 
 // --- User Profile Actions ---
 export async function updateUserProfile(userId: string, data: { name?: string }): Promise<User | null> {
-  // const userIndex = MOCK_DB.users.findIndex(u => u.id === userId);
-  // if (userIndex === -1) {
-  //   console.error(`User with id ${userId} not found for profile update.`);
-  //   return null;
-  // }
-  // let updated = false;
-  // if (data.name !== undefined && MOCK_DB.users[userIndex].name !== data.name) {
-  //   MOCK_DB.users[userIndex].name = data.name;
-  //   updated = true;
-  // }
-  // if (updated) {
-  //   const currentUser = await getCurrentUser();
-  //   if (currentUser && currentUser.id === userId) {
-  //     currentUser.name = data.name; 
-  //   }
-  //   revalidatePath('/profile');
-  //   revalidatePath('/(app)/layout', 'layout');
-  // }
-  // return MOCK_DB.users[userIndex];
-
-  // TODO: USER: Replace with API call
   try {
-    // Assuming your API uses the userId in the URL or gets it from the token
-    const updatedUser = await fetchAPI(`/users/${userId}/profile`, { // Replace with your endpoint
-      method: 'PATCH', // or PUT
+    const updatedUser = await fetchAPI(`/users/${userId}/profile`, { 
+      method: 'PATCH', 
       body: JSON.stringify(data),
     });
     revalidatePath('/profile');
@@ -173,30 +120,17 @@ export async function updateUserProfile(userId: string, data: { name?: string })
 
 // --- Main Category Actions ---
 export async function getMainCategories(): Promise<MainCategory[]> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return [];
-  // return MOCK_DB.mainCategories.filter(mc => mc.userId === MOCK_USER_ID);
-
-  // TODO: USER: Replace with API call
   try {
-    return await fetchAPI('/main-categories'); // Replace with your endpoint
+    return await fetchAPI('/main-categories'); 
   } catch (error) {
     console.error('Failed to fetch main categories:', error);
-    return MOCK_DB.mainCategories.filter(mc => mc.userId === 'user-123'); // Fallback to mock
+    return MOCK_DB.mainCategories.filter(mc => mc.userId === 'user-123'); 
   }
 }
 
 export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId'>): Promise<MainCategory> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) throw new Error("User not authenticated");
-  // const newCategory: MainCategory = { ...data, id: `mc${Date.now()}`, userId: MOCK_USER_ID };
-  // MOCK_DB.mainCategories.push(newCategory);
-  // revalidatePath('/categories');
-  // return newCategory;
-
-  // TODO: USER: Replace with API call
   try {
-    const newCategory = await fetchAPI('/main-categories', { // Replace with your endpoint
+    const newCategory = await fetchAPI('/main-categories', { 
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -209,18 +143,9 @@ export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId
 }
 
 export async function updateMainCategory(id: string, data: Partial<Omit<MainCategory, 'id' | 'userId'>>): Promise<MainCategory | null> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return null;
-  // const index = MOCK_DB.mainCategories.findIndex(mc => mc.id === id && mc.userId === MOCK_USER_ID);
-  // if (index === -1) return null;
-  // MOCK_DB.mainCategories[index] = { ...MOCK_DB.mainCategories[index], ...data };
-  // revalidatePath('/categories');
-  // return MOCK_DB.mainCategories[index];
-
-  // TODO: USER: Replace with API call
   try {
-    const updatedCategory = await fetchAPI(`/main-categories/${id}`, { // Replace with your endpoint
-      method: 'PATCH', // or PUT
+    const updatedCategory = await fetchAPI(`/main-categories/${id}`, { 
+      method: 'PATCH', 
       body: JSON.stringify(data),
     });
     revalidatePath('/categories');
@@ -232,15 +157,8 @@ export async function updateMainCategory(id: string, data: Partial<Omit<MainCate
 }
 
 export async function deleteMainCategory(id: string): Promise<void> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return;
-  // MOCK_DB.mainCategories = MOCK_DB.mainCategories.filter(mc => mc.id !== id || mc.userId !== MOCK_USER_ID);
-  // MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID);
-  // revalidatePath('/categories');
-
-  // TODO: USER: Replace with API call
   try {
-    await fetchAPI(`/main-categories/${id}`, { method: 'DELETE' }); // Replace with your endpoint
+    await fetchAPI(`/main-categories/${id}`, { method: 'DELETE' }); 
     revalidatePath('/categories');
   } catch (error) {
     console.error('Failed to delete main category:', error);
@@ -250,38 +168,21 @@ export async function deleteMainCategory(id: string): Promise<void> {
 
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryId?: string): Promise<SubCategory[]> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return [];
-  // let categories = MOCK_DB.subCategories.filter(sc => sc.userId === MOCK_USER_ID);
-  // if (mainCategoryId) {
-  //   categories = categories.filter(sc => sc.mainCategoryId === mainCategoryId);
-  // }
-  // return categories;
-  
-  // TODO: USER: Replace with API call
   try {
     let endpoint = '/sub-categories';
     if (mainCategoryId) {
-      endpoint += `?mainCategoryId=${mainCategoryId}`; // Adjust query param as needed
+      endpoint += `?mainCategoryId=${mainCategoryId}`; 
     }
-    return await fetchAPI(endpoint); // Replace with your endpoint
+    return await fetchAPI(endpoint); 
   } catch (error) {
     console.error('Failed to fetch sub categories:', error);
-    return MOCK_DB.subCategories.filter(sc => sc.userId === 'user-123'); // Fallback
+    return MOCK_DB.subCategories.filter(sc => sc.userId === 'user-123'); 
   }
 }
 
 export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>): Promise<SubCategory> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) throw new Error("User not authenticated");
-  // const newCategory: SubCategory = { ...data, id: `sc${Date.now()}`, userId: MOCK_USER_ID };
-  // MOCK_DB.subCategories.push(newCategory);
-  // revalidatePath('/categories');
-  // return newCategory;
-
-  // TODO: USER: Replace with API call
   try {
-    const newCategory = await fetchAPI('/sub-categories', { // Replace with your endpoint
+    const newCategory = await fetchAPI('/sub-categories', { 
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -294,18 +195,9 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
 }
 
 export async function updateSubCategory(id: string, data: Partial<Omit<SubCategory, 'id' | 'userId'>>): Promise<SubCategory | null> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return null;
-  // const index = MOCK_DB.subCategories.findIndex(sc => sc.id === id && sc.userId === MOCK_USER_ID);
-  // if (index === -1) return null;
-  // MOCK_DB.subCategories[index] = { ...MOCK_DB.subCategories[index], ...data };
-  // revalidatePath('/categories');
-  // return MOCK_DB.subCategories[index];
-
-  // TODO: USER: Replace with API call
   try {
-    const updatedCategory = await fetchAPI(`/sub-categories/${id}`, { // Replace with your endpoint
-      method: 'PATCH', // or PUT
+    const updatedCategory = await fetchAPI(`/sub-categories/${id}`, { 
+      method: 'PATCH', 
       body: JSON.stringify(data),
     });
     revalidatePath('/categories');
@@ -317,14 +209,8 @@ export async function updateSubCategory(id: string, data: Partial<Omit<SubCatego
 }
 
 export async function deleteSubCategory(id: string): Promise<void> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return;
-  // MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.id !== id || sc.userId !== MOCK_USER_ID);
-  // revalidatePath('/categories');
-
-  // TODO: USER: Replace with API call
   try {
-    await fetchAPI(`/sub-categories/${id}`, { method: 'DELETE' }); // Replace with your endpoint
+    await fetchAPI(`/sub-categories/${id}`, { method: 'DELETE' }); 
     revalidatePath('/categories');
   } catch (error) {
     console.error('Failed to delete sub category:', error);
@@ -335,36 +221,23 @@ export async function deleteSubCategory(id: string): Promise<void> {
 
 // --- Wallet Actions ---
 export async function getWallets(): Promise<Wallet[]> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return [];
-  // return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID);
-
-  // TODO: USER: Replace with API call
   try {
-    const wallets = await fetchAPI('/wallets'); // Replace '/wallets' with your actual endpoint
+    const wallets = await fetchAPI('/wallets'); 
     return wallets;
   } catch (error) {
     console.error('Failed to fetch wallets:', error);
-    // Fallback to mock data or empty array if API fails
     return MOCK_DB.wallets.filter(w => w.userId === 'user-123');
   }
 }
 
 export async function createWallet(data: Omit<Wallet, 'id' | 'userId'>): Promise<Wallet> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) throw new Error("User not authenticated");
-  // const newWallet: Wallet = { ...data, id: `w${Date.now()}`, userId: MOCK_USER_ID };
-  // MOCK_DB.wallets.push(newWallet);
-  // revalidatePath('/wallets');
-  // return newWallet;
-
-  // TODO: USER: Replace with API call
   try {
-    const newWallet = await fetchAPI('/wallets', { // Replace with your endpoint
+    const newWallet = await fetchAPI('/wallets', { 
       method: 'POST',
       body: JSON.stringify(data),
     });
     revalidatePath('/wallets');
+    revalidatePath('/capital');
     return newWallet;
   } catch (error) {
     console.error('Failed to create wallet:', error);
@@ -373,21 +246,13 @@ export async function createWallet(data: Omit<Wallet, 'id' | 'userId'>): Promise
 }
 
 export async function updateWallet(id: string, data: Partial<Omit<Wallet, 'id' | 'userId'>>): Promise<Wallet | null> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return null;
-  // const index = MOCK_DB.wallets.findIndex(w => w.id === id && w.userId === MOCK_USER_ID);
-  // if (index === -1) return null;
-  // MOCK_DB.wallets[index] = { ...MOCK_DB.wallets[index], ...data };
-  // revalidatePath('/wallets');
-  // return MOCK_DB.wallets[index];
-
-  // TODO: USER: Replace with API call
   try {
-    const updatedWallet = await fetchAPI(`/wallets/${id}`, { // Replace with your endpoint
-      method: 'PATCH', // or PUT
+    const updatedWallet = await fetchAPI(`/wallets/${id}`, { 
+      method: 'PATCH', 
       body: JSON.stringify(data),
     });
     revalidatePath('/wallets');
+    revalidatePath('/capital');
     return updatedWallet;
   } catch (error) {
     console.error('Failed to update wallet:', error);
@@ -396,15 +261,10 @@ export async function updateWallet(id: string, data: Partial<Omit<Wallet, 'id' |
 }
 
 export async function deleteWallet(id: string): Promise<void> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return;
-  // MOCK_DB.wallets = MOCK_DB.wallets.filter(w => w.id !== id || w.userId !== MOCK_USER_ID);
-  // revalidatePath('/wallets');
-
-  // TODO: USER: Replace with API call
   try {
-    await fetchAPI(`/wallets/${id}`, { method: 'DELETE' }); // Replace with your endpoint
+    await fetchAPI(`/wallets/${id}`, { method: 'DELETE' }); 
     revalidatePath('/wallets');
+    revalidatePath('/capital');
   } catch (error) {
     console.error('Failed to delete wallet:', error);
     throw error;
@@ -414,38 +274,25 @@ export async function deleteWallet(id: string): Promise<void> {
 
 // --- Transaction Actions ---
 export async function getTransactions(): Promise<Transaction[]> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return [];
-  // return MOCK_DB.transactions.filter(t => t.userId === MOCK_USER_ID).sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
-  
-  // TODO: USER: Replace with API call
   try {
-    const transactions = await fetchAPI('/transactions'); // Replace with your endpoint
-    // Ensure createdAt is a Date object if your API returns strings
+    const transactions = await fetchAPI('/transactions'); 
     return transactions.map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
                        .sort((a: Transaction, b: Transaction) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (error) {
     console.error('Failed to fetch transactions:', error);
-    return MOCK_DB.transactions.filter(t => t.userId === 'user-123').sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()); // Fallback
+    return MOCK_DB.transactions.filter(t => t.userId === 'user-123').sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()); 
   }
 }
 
 export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>): Promise<Transaction> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) throw new Error("User not authenticated");
-  // const newTransaction: Transaction = { ...data, id: `t${Date.now()}`, userId: MOCK_USER_ID };
-  // MOCK_DB.transactions.push(newTransaction);
-  // revalidatePath('/transactions');
-  // return newTransaction;
-
-  // TODO: USER: Replace with API call
   try {
-    const newTransaction = await fetchAPI('/transactions', { // Replace with your endpoint
+    const newTransaction = await fetchAPI('/transactions', { 
       method: 'POST',
       body: JSON.stringify(data),
     });
     revalidatePath('/transactions');
     revalidatePath('/dashboard');
+    revalidatePath('/budgets');
     return { ...newTransaction, createdAt: new Date(newTransaction.createdAt) };
   } catch (error) {
     console.error('Failed to create transaction:', error);
@@ -454,22 +301,14 @@ export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>
 }
 
 export async function updateTransaction(id: string, data: Partial<Omit<Transaction, 'id' | 'userId'>>): Promise<Transaction | null> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return null;
-  // const index = MOCK_DB.transactions.findIndex(t => t.id === id && t.userId === MOCK_USER_ID);
-  // if (index === -1) return null;
-  // MOCK_DB.transactions[index] = { ...MOCK_DB.transactions[index], ...data };
-  // revalidatePath('/transactions');
-  // return MOCK_DB.transactions[index];
-
-  // TODO: USER: Replace with API call
   try {
-    const updatedTransaction = await fetchAPI(`/transactions/${id}`, { // Replace with your endpoint
-      method: 'PATCH', // or PUT
+    const updatedTransaction = await fetchAPI(`/transactions/${id}`, { 
+      method: 'PATCH', 
       body: JSON.stringify(data),
     });
     revalidatePath('/transactions');
     revalidatePath('/dashboard');
+    revalidatePath('/budgets');
     return { ...updatedTransaction, createdAt: new Date(updatedTransaction.createdAt) };
   } catch (error) {
     console.error('Failed to update transaction:', error);
@@ -478,16 +317,11 @@ export async function updateTransaction(id: string, data: Partial<Omit<Transacti
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return;
-  // MOCK_DB.transactions = MOCK_DB.transactions.filter(t => t.id !== id || t.userId !== MOCK_USER_ID);
-  // revalidatePath('/transactions');
-
-  // TODO: USER: Replace with API call
   try {
-    await fetchAPI(`/transactions/${id}`, { method: 'DELETE' }); // Replace with your endpoint
+    await fetchAPI(`/transactions/${id}`, { method: 'DELETE' }); 
     revalidatePath('/transactions');
     revalidatePath('/dashboard');
+    revalidatePath('/budgets');
   } catch (error) {
     console.error('Failed to delete transaction:', error);
     throw error;
@@ -496,32 +330,19 @@ export async function deleteTransaction(id: string): Promise<void> {
 
 // --- Transfer Actions ---
 export async function getTransfers(): Promise<Transfer[]> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return [];
-  // return MOCK_DB.transfers.filter(t => t.userId === MOCK_USER_ID).sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-  // TODO: USER: Replace with API call
   try {
-    const transfers = await fetchAPI('/transfers'); // Replace with your endpoint
+    const transfers = await fetchAPI('/transfers'); 
     return transfers.map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
                      .sort((a: Transfer,b: Transfer) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (error) {
     console.error('Failed to fetch transfers:', error);
-    return MOCK_DB.transfers.filter(t => t.userId === 'user-123').sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()); // Fallback
+    return MOCK_DB.transfers.filter(t => t.userId === 'user-123').sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()); 
   }
 }
 
 export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Promise<Transfer> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) throw new Error("User not authenticated");
-  // const newTransfer: Transfer = { ...data, id: `tr${Date.now()}`, userId: MOCK_USER_ID };
-  // MOCK_DB.transfers.push(newTransfer);
-  // revalidatePath('/transfers');
-  // return newTransfer;
-
-  // TODO: USER: Replace with API call
   try {
-    const newTransfer = await fetchAPI('/transfers', { // Replace with your endpoint
+    const newTransfer = await fetchAPI('/transfers', { 
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -534,14 +355,8 @@ export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Pro
 }
 
 export async function deleteTransfer(id: string): Promise<void> {
-  // const MOCK_USER_ID = (await getCurrentUser())?.id;
-  // if (!MOCK_USER_ID) return;
-  // MOCK_DB.transfers = MOCK_DB.transfers.filter(t => t.id !== id || t.userId !== MOCK_USER_ID);
-  // revalidatePath('/transfers');
-
-  // TODO: USER: Replace with API call
   try {
-    await fetchAPI(`/transfers/${id}`, { method: 'DELETE' }); // Replace with your endpoint
+    await fetchAPI(`/transfers/${id}`, { method: 'DELETE' }); 
     revalidatePath('/transfers');
   } catch (error) {
     console.error('Failed to delete transfer:', error);
@@ -558,21 +373,6 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
     budgets = budgets.filter(b => b.month === month && b.year === year);
   }
   return budgets.sort((a, b) => new Date(a.year, a.month - 1).getTime() - new Date(b.year, b.month - 1).getTime() || a.mainCategoryId.localeCompare(b.mainCategoryId));
-
-  // TODO: USER: Replace with API call
-  // try {
-  //   let endpoint = '/budgets';
-  //   const queryParams = new URLSearchParams();
-  //   if (month) queryParams.append('month', month.toString());
-  //   if (year) queryParams.append('year', year.toString());
-  //   if (queryParams.toString()) endpoint += `?${queryParams.toString()}`;
-  //   const budgets = await fetchAPI(endpoint);
-  //   return budgets.map((b: any) => ({ ...b, createdAt: new Date(b.createdAt) }))
-  //                  .sort((a: Budget, b: Budget) => new Date(a.year, a.month - 1).getTime() - new Date(b.year, b.month - 1).getTime() || a.mainCategoryId.localeCompare(b.mainCategoryId));
-  // } catch (error) {
-  //   console.error('Failed to fetch budgets:', error);
-  //   return MOCK_DB.budgets.filter(b => b.userId === 'user-123'); // Fallback
-  // }
 }
 
 export async function createBudget(data: Omit<Budget, 'id' | 'userId' | 'createdAt'>): Promise<Budget> {
@@ -582,19 +382,6 @@ export async function createBudget(data: Omit<Budget, 'id' | 'userId' | 'created
   MOCK_DB.budgets.push(newBudget);
   revalidatePath('/budgets');
   return newBudget;
-
-  // TODO: USER: Replace with API call
-  // try {
-  //   const newBudget = await fetchAPI('/budgets', {
-  //     method: 'POST',
-  //     body: JSON.stringify(data),
-  //   });
-  //   revalidatePath('/budgets');
-  //   return { ...newBudget, createdAt: new Date(newBudget.createdAt) };
-  // } catch (error) {
-  //   console.error('Failed to create budget:', error);
-  //   throw error;
-  // }
 }
 
 export async function updateBudget(id: string, data: Partial<Omit<Budget, 'id' | 'userId' | 'createdAt'>>): Promise<Budget | null> {
@@ -605,19 +392,6 @@ export async function updateBudget(id: string, data: Partial<Omit<Budget, 'id' |
   MOCK_DB.budgets[index] = { ...MOCK_DB.budgets[index], ...data };
   revalidatePath('/budgets');
   return MOCK_DB.budgets[index];
-
-  // TODO: USER: Replace with API call
-  // try {
-  //   const updatedBudget = await fetchAPI(`/budgets/${id}`, {
-  //     method: 'PATCH',
-  //     body: JSON.stringify(data),
-  //   });
-  //   revalidatePath('/budgets');
-  //   return { ...updatedBudget, createdAt: new Date(updatedBudget.createdAt) };
-  // } catch (error) {
-  //   console.error('Failed to update budget:', error);
-  //   throw error;
-  // }
 }
 
 export async function deleteBudget(id: string): Promise<void> {
@@ -625,15 +399,56 @@ export async function deleteBudget(id: string): Promise<void> {
   if (!MOCK_USER_ID) return;
   MOCK_DB.budgets = MOCK_DB.budgets.filter(b => b.id !== id || b.userId !== MOCK_USER_ID);
   revalidatePath('/budgets');
+}
 
-  // TODO: USER: Replace with API call
-  // try {
-  //   await fetchAPI(`/budgets/${id}`, { method: 'DELETE' });
-  //   revalidatePath('/budgets');
-  // } catch (error) {
-  //   console.error('Failed to delete budget:', error);
-  //   throw error;
-  // }
+// --- Shared Capital Actions ---
+export async function getSharedCapitalSession(): Promise<SharedCapitalSession | null> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) return null;
+  // For mock: find the latest active session for the user
+  const session = MOCK_DB.sharedCapitalSessions
+    .filter(s => s.userId === MOCK_USER_ID && s.isActive)
+    .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  return session || null;
+}
+
+export async function startSharedCapitalSession(partnerEmail: string): Promise<SharedCapitalSession> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) throw new Error("User not authenticated");
+
+  // Deactivate any existing sessions for this user
+  MOCK_DB.sharedCapitalSessions.forEach(s => {
+    if (s.userId === MOCK_USER_ID) {
+      s.isActive = false;
+      s.updatedAt = new Date();
+    }
+  });
+
+  const newSession: SharedCapitalSession = {
+    id: `scs-${Date.now()}`,
+    userId: MOCK_USER_ID,
+    partnerEmail,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  MOCK_DB.sharedCapitalSessions.push(newSession);
+  revalidatePath('/capital');
+  return newSession;
+}
+
+export async function stopSharedCapitalSession(): Promise<SharedCapitalSession | null> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id;
+  if (!MOCK_USER_ID) return null;
+  
+  const activeSession = MOCK_DB.sharedCapitalSessions.find(s => s.userId === MOCK_USER_ID && s.isActive);
+  if (activeSession) {
+    activeSession.isActive = false;
+    activeSession.updatedAt = new Date();
+    revalidatePath('/capital');
+    return activeSession;
+  }
+  return null;
 }
 
 

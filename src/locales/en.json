@@ -25,6 +25,7 @@
     "wallets": "Wallets",
     "transfers": "Transfers",
     "budgets": "Budgets",
+    "capital": "Capital",
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout"
@@ -86,5 +87,25 @@
     "actionsHeader": "Actions",
     "spentLabel": "spent",
     "overBudgetWarning": "Over budget!"
+  },
+  "capitalPage": {
+    "title": "Capital",
+    "description": "Manage and share your capital overview.",
+    "yourTotalCapital": "Your Total Capital",
+    "walletBalances": "Wallet Balances",
+    "shareCapitalButton": "Share Capital",
+    "stopSharingButton": "Stop Sharing",
+    "partnerEmailLabel": "Partner's Email",
+    "partnerEmailPlaceholder": "Enter partner's email address",
+    "sharingWith": "Currently sharing capital with: {email}",
+    "startShareSuccessTitle": "Capital Sharing Started",
+    "startShareSuccessDescription": "You are now sharing your capital with {email}.",
+    "startShareErrorTitle": "Error Starting Share",
+    "startShareErrorDescription": "Could not start capital sharing: {error}",
+    "stopShareSuccessTitle": "Capital Sharing Stopped",
+    "stopShareSuccessDescription": "You have stopped sharing your capital.",
+    "stopShareErrorTitle": "Error Stopping Share",
+    "stopShareErrorDescription": "Could not stop capital sharing: {error}",
+    "noWallets": "No wallets found. Add a wallet to see your capital."
   }
 }
