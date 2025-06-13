@@ -13,14 +13,14 @@ import {
   Settings,
   ChevronDown,
   ChevronUp,
-  UserCircle, 
+  UserCircle,
   PiggyBank,
-  Users, 
-  MessageSquareText, 
+  Users,
+  MessageSquareText,
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { logout, getCurrentUser } from '@/lib/auth'; 
+import { logout, getCurrentUser } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -36,7 +36,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarInset,
-  SidebarMenuSubItem, 
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import React, { useEffect, useState } from 'react';
 import type { User } from '@/lib/definitions';
@@ -44,20 +44,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 interface NavItemProps {
-  href: string; // No longer locale-prefixed by default
+  href: string;
   icon: React.ElementType;
   label: string;
   currentPath: string;
-  // locale: string; // locale prop removed from NavItem, will use non-prefixed paths
   subItems?: { href: string; label: string }[];
 }
 
 const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProps) => {
-  // const localePrefixedHref = `/${locale}${href}`; // Changed to direct href
-  const isActive = subItems 
+  const isActive = subItems
     ? subItems.some(sub => currentPath.startsWith(sub.href)) || currentPath === href
     : currentPath.startsWith(href);
-  
+
   const [isOpen, setIsOpen] = React.useState(isActive && !!subItems);
 
   if (subItems) {
@@ -79,7 +77,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProp
             <SidebarMenuSub>
                 {subItems.map(subItem => (
                     <SidebarMenuSubItem key={subItem.href}>
-                        <Link href={subItem.href}> {/* Use direct subItem.href */}
+                        <Link href={subItem.href}>
                             <SidebarMenuSubButton isActive={currentPath.startsWith(subItem.href)} aria-label={subItem.label}>
                                 {subItem.label}
                             </SidebarMenuSubButton>
@@ -94,7 +92,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProp
 
   return (
     <SidebarMenuItem>
-        <Link href={href} aria-label={label}> {/* Use direct href */}
+        <Link href={href} aria-label={label}>
             <SidebarMenuButton isActive={isActive} tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}}>
                 <Icon className="h-5 w-5" />
                 <span className="truncate">{label}</span>
@@ -106,19 +104,19 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems }: NavItemProp
 
 interface AppSidebarProps {
   children: React.ReactNode;
-  locale: string; // Will be "en"
+  locale: string;
   translations: {
     dashboard: string;
     transactions: string;
     categories: string;
     wallets: string;
     transfers: string;
-    budgets: string; 
+    budgets: string;
     capital: string;
     aiReports: string;
     feedback: string;
     settings: string;
-    profile: string; 
+    profile: string;
     logout: string;
   };
 }
@@ -135,12 +133,12 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
       setCurrentUser(user);
     }
     fetchUser();
-  }, [pathname]); 
+  }, [pathname]);
 
   const handleLogout = async () => {
     await logout();
     toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-    router.push('/login'); // Redirect to non-prefixed /login
+    router.push('/login');
   };
 
   const navItems = [
@@ -153,11 +151,11 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     { href: '/capital', icon: Users, label: translations.capital },
     { href: '/ai-reports', icon: FileText, label: translations.aiReports },
   ];
-  
+
   const utilityNavItems = [
      { href: '/feedback', icon: MessageSquareText, label: translations.feedback },
      { href: '/settings', icon: Settings, label: translations.settings },
-     { href: '/profile', icon: UserCircle, label: translations.profile }, 
+     { href: '/profile', icon: UserCircle, label: translations.profile },
   ];
 
   const getInitials = (name?: string) => {
@@ -166,7 +164,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
   }
 
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider>
       <Sidebar collapsible="icon" className="border-r">
         <SidebarHeader className="p-4">
             <Link href={'/dashboard'} className="flex items-center gap-2 font-headline text-xl text-sidebar-primary-foreground hover:text-sidebar-primary-foreground/80 transition-colors"> {/* Non-prefixed link */}
@@ -177,14 +175,14 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
         <SidebarContent className="p-2 flex-grow">
           <SidebarMenu>
             {navItems.map((item) => (
-              <NavItem key={item.href} {...item} currentPath={pathname} /> {/* locale prop removed */}
+              <NavItem key={item.href} {...item} currentPath={pathname} />
             ))}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-2 border-t border-sidebar-border">
           <SidebarMenu>
              {utilityNavItems.map((item) => (
-                <NavItem key={item.href} {...item} currentPath={pathname} />  // locale prop removed
+                <NavItem key={item.href} {...item} currentPath={pathname} />
               ))}
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} className="w-full" tooltip={{children: translations.logout, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}} aria-label={translations.logout}>
@@ -200,7 +198,7 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
             <div className="md:hidden">
                 <SidebarTrigger />
             </div>
-            <div className="flex-1"> 
+            <div className="flex-1">
             </div>
             <Link href={'/profile'} className="flex items-center gap-2"> {/* Non-prefixed link */}
                 <Avatar className="h-8 w-8">
