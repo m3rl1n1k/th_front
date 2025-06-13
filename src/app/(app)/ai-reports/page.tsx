@@ -1,8 +1,8 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
-import { FinancialReportDisplay } from '@/app/(app)/ai-reports/_components/FinancialReportDisplay';
+import { FinancialReportDisplay } from './_components/FinancialReportDisplay';
 import { getTranslations } from '@/lib/getTranslations';
-import { generateFinancialReport } from '@/ai/flows/financial-report-flow';
+import { generateFinancialReport } from '../../../ai/flows/financial-report-flow'; // Changed to relative path
 import { getCurrentUser } from '@/lib/auth'; // To pass userId if needed, or flow handles it
 
 export default async function AiReportsPage({ /* params: { locale } */ }: { /* params: { locale: string } */ }) {
