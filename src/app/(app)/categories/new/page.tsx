@@ -29,12 +29,12 @@ export default function NewCategoryPage() {
   }, []);
   
   const handleMainSubmit = async (data: any) => {
-    'use server'; // This indicates the function might be used in server context, but it is called from client
+    // 'use server'; // This was removed
     return createMainCategory(data);
   };
 
   const handleSubSubmit = async (data: any) => {
-    'use server';
+    // 'use server'; // This was removed
     return createSubCategory(data);
   };
 
