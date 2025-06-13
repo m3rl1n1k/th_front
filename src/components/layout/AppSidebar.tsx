@@ -13,9 +13,10 @@ import {
   Settings,
   ChevronDown,
   ChevronUp,
+  UserCircle, // Added UserCircle icon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { logout } from '@/lib/auth'; 
+import { logout, getCurrentUser } from '@/lib/auth'; 
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -31,9 +32,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarInset,
-  SidebarMenuSubItem, // Corrected import
+  SidebarMenuSubItem, 
 } from '@/components/ui/sidebar';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import type { User } from '@/lib/definitions';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 interface NavItemProps {
   href: string;
@@ -86,8 +90,8 @@ const NavItem = ({ href, icon: Icon, label, currentPath, locale, subItems }: Nav
 
   return (
     <SidebarMenuItem>
-        <Link href={localePrefixedHref} >
-            <SidebarMenuButton isActive={isActive} tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}} aria-label={label}>
+        <Link href={localePrefixedHref} aria-label={label}>
+            <SidebarMenuButton isActive={isActive} tooltip={{children: label, className: "bg-sidebar-background text-sidebar-foreground border-sidebar-border"}}>
                 <Icon className="h-5 w-5" />
                 <span className="truncate">{label}</span>
             </SidebarMenuButton>
@@ -106,6 +110,7 @@ interface AppSidebarProps {
     wallets: string;
     transfers: string;
     settings: string;
+    profile: string; // Added profile translation
     logout: string;
   };
 }
@@ -114,6 +119,15 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+    }
+    fetchUser();
+  }, [pathname]); // Refetch user if path changes, e.g., after profile update
 
   const handleLogout = async () => {
     await logout();
@@ -131,7 +145,13 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
   
   const utilityNavItems = [
      { href: '/settings', icon: Settings, label: translations.settings },
+     { href: '/profile', icon: UserCircle, label: translations.profile }, // Added Profile
   ];
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  }
 
   return (
     <SidebarProvider defaultOpen>
@@ -168,14 +188,14 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
             <div className="md:hidden">
                 <SidebarTrigger />
             </div>
-            <div className="flex-1"> {/* This div can be used to align items to the right or fill space */}
+            <div className="flex-1"> 
             </div>
-             {/* Placeholder for user menu or other header items, aligned to the right */}
-            <Link href={`/${locale}/settings`}>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                    <Settings className="h-5 w-5" />
-                    <span className="sr-only">Settings</span>
-                </Button>
+            <Link href={`/${locale}/profile`} className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={currentUser?.name ? `https://placehold.co/40x40.png?text=${getInitials(currentUser.name)}` : undefined} alt={currentUser?.name || "User Avatar"} />
+                  <AvatarFallback>{getInitials(currentUser?.name)}</AvatarFallback>
+                </Avatar>
+                 <span className="text-sm font-medium hidden sm:inline">{currentUser?.name || 'User'}</span>
             </Link>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">

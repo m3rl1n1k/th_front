@@ -2,6 +2,7 @@
 'use server';
 import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings } from './definitions';
 import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from './auth'; // Import getCurrentUser
 
 // In-memory store for mock data
 let MOCK_DB: MockDb = {
@@ -44,10 +45,37 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
   MOCK_DB.users[userIndex].settings = {
     ...MOCK_DB.users[userIndex].settings,
     ...newSettings,
-  } as UserSettings; // Ensure settings is not undefined after partial update
+  } as UserSettings; 
 
   revalidatePath('/settings');
-  revalidatePath('/transactions'); // Revalidate transactions page as it will use this setting
+  revalidatePath('/transactions'); 
+  return MOCK_DB.users[userIndex];
+}
+
+// --- User Profile Actions ---
+export async function updateUserProfile(userId: string, data: { name?: string }): Promise<User | null> {
+  const userIndex = MOCK_DB.users.findIndex(u => u.id === userId);
+  if (userIndex === -1) {
+    console.error(`User with id ${userId} not found for profile update.`);
+    return null;
+  }
+
+  let updated = false;
+  if (data.name !== undefined && MOCK_DB.users[userIndex].name !== data.name) {
+    MOCK_DB.users[userIndex].name = data.name;
+    updated = true;
+  }
+
+  if (updated) {
+    // Also update the MOCK_USER in auth.ts if it's the same user, to reflect changes immediately
+    // This is a bit of a hack for the mock setup. In a real app, session data would be the source of truth.
+    const currentUser = await getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      currentUser.name = data.name; // This directly mutates the object used by getCurrentUser in auth.ts
+    }
+    revalidatePath('/profile');
+    revalidatePath('/(app)/layout', 'layout'); // Revalidate layout to update sidebar if name is shown there
+  }
   return MOCK_DB.users[userIndex];
 }
 
@@ -74,7 +102,6 @@ export async function updateMainCategory(id: string, data: Partial<Omit<MainCate
 
 export async function deleteMainCategory(id: string): Promise<void> {
   MOCK_DB.mainCategories = MOCK_DB.mainCategories.filter(mc => mc.id !== id || mc.userId !== MOCK_USER_ID);
-  // Also delete associated subcategories
   MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID);
   revalidatePath('/categories');
 }
@@ -131,7 +158,6 @@ export async function updateWallet(id: string, data: Partial<Omit<Wallet, 'id' |
 
 export async function deleteWallet(id: string): Promise<void> {
   MOCK_DB.wallets = MOCK_DB.wallets.filter(w => w.id !== id || w.userId !== MOCK_USER_ID);
-  // Consider implications for transactions/transfers linked to this wallet
   revalidatePath('/wallets');
 }
 
@@ -170,12 +196,15 @@ export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Pro
   const newTransfer: Transfer = { ...data, id: `tr${Date.now()}`, userId: MOCK_USER_ID };
   MOCK_DB.transfers.push(newTransfer);
   revalidatePath('/transfers');
-  // In a real app, you'd also update wallet balances here
   return newTransfer;
 }
 
 export async function deleteTransfer(id: string): Promise<void> {
   MOCK_DB.transfers = MOCK_DB.transfers.filter(t => t.id !== id || t.userId !== MOCK_USER_ID);
   revalidatePath('/transfers');
-  // In a real app, you'd also revert wallet balance changes here
+}
+
+// Helper to reset DB for testing if needed - not for production
+export async function resetMockDb(initialDbState: MockDb): Promise<void> {
+  MOCK_DB = JSON.parse(JSON.stringify(initialDbState)); // Deep copy to avoid reference issues
 }

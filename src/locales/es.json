@@ -17,6 +17,7 @@
     "wallets": "Billeteras",
     "transfers": "Transferencias",
     "settings": "Configuración",
+    "profile": "Perfil",
     "logout": "Cerrar Sesión"
   },
   "settingsPage": {
@@ -29,5 +30,17 @@
     "successToastDescription": "Tu configuración ha sido guardada exitosamente.",
     "errorToastTitle": "Error al Actualizar Configuración",
     "errorToastDescription": "No se pudo guardar tu configuración. Por favor, inténtalo de nuevo."
+  },
+  "profilePage": {
+    "title": "Perfil de Usuario",
+    "description": "Ver y actualizar tu información de perfil.",
+    "nameLabel": "Nombre Completo",
+    "namePlaceholder": "Ingresa tu nombre completo",
+    "emailLabel": "Correo Electrónico",
+    "saveButton": "Guardar Perfil",
+    "successToastTitle": "Perfil Actualizado",
+    "successToastDescription": "Tu perfil ha sido actualizado exitosamente.",
+    "errorToastTitle": "Error al Actualizar Perfil",
+    "errorToastDescription": "No se pudo actualizar tu perfil. Por favor, inténtalo de nuevo."
   }
 }

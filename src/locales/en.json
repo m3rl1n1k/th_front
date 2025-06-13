@@ -17,6 +17,7 @@
     "wallets": "Wallets",
     "transfers": "Transfers",
     "settings": "Settings",
+    "profile": "Profile",
     "logout": "Logout"
   },
   "settingsPage": {
@@ -29,5 +30,17 @@
     "successToastDescription": "Your settings have been successfully saved.",
     "errorToastTitle": "Error Updating Settings",
     "errorToastDescription": "Could not save your settings. Please try again."
+  },
+  "profilePage": {
+    "title": "User Profile",
+    "description": "View and update your profile information.",
+    "nameLabel": "Full Name",
+    "namePlaceholder": "Enter your full name",
+    "emailLabel": "Email Address",
+    "saveButton": "Save Profile",
+    "successToastTitle": "Profile Updated",
+    "successToastDescription": "Your profile has been successfully updated.",
+    "errorToastTitle": "Error Updating Profile",
+    "errorToastDescription": "Could not update your profile. Please try again."
   }
 }
