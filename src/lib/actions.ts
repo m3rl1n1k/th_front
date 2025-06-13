@@ -28,11 +28,14 @@ let MOCK_DB: MockDb = {
     { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347' },
     { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4' },
     { id: 'mc3', userId: 'user-123', name: 'Housing', color: '#2E8B57' },
+    { id: 'mc4', userId: 'user-123', name: 'Entertainment', color: '#8A2BE2'}
   ],
   subCategories: [
     { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A' },
     { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072' },
     { id: 'sc3', userId: 'user-123', mainCategoryId: 'mc2', name: 'Gas', color: '#B0C4DE' },
+    { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent', color: '#90EE90' },
+    { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB'}
   ],
   wallets: [
     { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 5000, type: 'Bank Account' },
@@ -43,14 +46,17 @@ let MOCK_DB: MockDb = {
   transactions: [
     { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 55.75, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' },
     { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 40.00, createdAt: new Date('2023-10-03'), description: 'Fuel' },
-    { id: 't3', userId: 'user-123', subCategoryId: 'sc2', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 3000.00, createdAt: new Date('2023-10-05'), description: 'Salary' },
+    { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 3000.00, createdAt: new Date('2023-10-05'), description: 'Salary' }, // Uncategorized income
+    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 22.50, createdAt: new Date(), description: 'More groceries this month' },
+    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 30.00, createdAt: new Date(), description: 'More fuel this month' },
+
   ],
   transfers: [
     { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 100, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' }
   ],
   budgets: [
-    { id: 'b1', userId: 'user-123', mainCategoryId: 'mc1', plannedAmount: 500, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
-    { id: 'b2', userId: 'user-123', mainCategoryId: 'mc2', plannedAmount: 150, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
+    { id: 'b1', userId: 'user-123', subCategoryId: 'sc1', plannedAmount: 200, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, // Budget for Groceries
+    { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 100, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, // Budget for Gas
   ],
   sharedCapitalSessions: [],
 };
@@ -217,6 +223,7 @@ export async function deleteMainCategory(id: string): Promise<void> {
     MOCK_DB.mainCategories = MOCK_DB.mainCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
     MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID); 
     revalidatePath('/categories');
+    revalidatePath('/budgets'); // Budgets might be affected if they were linked to main categories indirectly
   } catch (error) {
     console.error('Failed to delete main category:', error);
     throw error;
@@ -256,6 +263,7 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
     const newCategory: SubCategory = { ...data, id: `sc${Date.now()}`, userId: MOCK_USER_ID };
     MOCK_DB.subCategories.push(newCategory);
     revalidatePath('/categories');
+    revalidatePath('/budgets'); // Budgets are now linked to sub-categories
     return newCategory;
   } catch (error) {
     console.error('Failed to create sub category:', error);
@@ -271,6 +279,7 @@ export async function updateSubCategory(id: string, data: Partial<Omit<SubCatego
     if (index === -1) return null;
     MOCK_DB.subCategories[index] = { ...MOCK_DB.subCategories[index], ...data };
     revalidatePath('/categories');
+    revalidatePath('/budgets'); // Budgets are now linked to sub-categories
     return MOCK_DB.subCategories[index];
   } catch (error) {
     console.error('Failed to update sub category:', error);
@@ -283,7 +292,10 @@ export async function deleteSubCategory(id: string): Promise<void> {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
     MOCK_DB.subCategories = MOCK_DB.subCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
+    // Also delete budgets associated with this sub-category
+    MOCK_DB.budgets = MOCK_DB.budgets.filter(b => b.subCategoryId !== id || b.userId !== MOCK_USER_ID);
     revalidatePath('/categories');
+    revalidatePath('/budgets');
   } catch (error) {
     console.error('Failed to delete sub category:', error);
     throw error;
@@ -484,7 +496,12 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
   if (month && year) {
     budgets = budgets.filter(b => b.month === month && b.year === year);
   }
-  return budgets.sort((a, b) => new Date(a.year, a.month - 1).getTime() - new Date(b.year, b.month - 1).getTime() || a.mainCategoryId.localeCompare(b.mainCategoryId));
+  // Sort by year, then month, then subCategoryId
+  return budgets.sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    if (a.month !== b.month) return a.month - b.month;
+    return a.subCategoryId.localeCompare(b.subCategoryId);
+  });
 }
 
 export async function createBudget(data: Omit<Budget, 'id' | 'userId' | 'createdAt'>): Promise<Budget> {

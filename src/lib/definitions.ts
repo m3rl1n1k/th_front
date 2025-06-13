@@ -74,7 +74,7 @@ export interface Transfer {
 export interface Budget {
   id: string;
   userId: string;
-  mainCategoryId: string;
+  subCategoryId: string; // Changed from mainCategoryId
   plannedAmount: number;
   month: number; // 1-12
   year: number;
@@ -101,3 +101,4 @@ export type MockDb = {
   budgets: Budget[];
   sharedCapitalSessions: SharedCapitalSession[];
 };
+

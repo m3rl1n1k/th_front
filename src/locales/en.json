@@ -6,6 +6,7 @@
     "totalBalance": "Total Balance",
     "monthlyIncome": "Monthly Income",
     "monthlyExpenses": "Monthly Expenses",
+    "recentTransactions": "Recent Transactions",
     "recentActivity": "Recent Activity",
     "recentActivityDescription": "Latest financial movements.",
     "noRecentActivity": "No recent activity to display.",
@@ -102,6 +103,8 @@
     "editBudgetDescription": "Update the details for your budget.",
     "mainCategoryLabel": "Main Category",
     "mainCategoryPlaceholder": "Select a main category",
+    "subCategoryLabel": "Sub-Category",
+    "subCategoryPlaceholder": "Select a sub-category",
     "plannedAmountLabel": "Planned Amount",
     "monthLabel": "Month",
     "monthPlaceholder": "Select month",
@@ -177,6 +180,8 @@
     "reportTitle": "Financial Report",
     "noReport": "No report generated yet. Click the button above to generate one.",
     "errorTitle": "Report Generation Failed",
-    "errorDescription": "Could not generate the report: {error}"
+    "errorDescription": "Could not generate the report: {error}",
+    "summary": "Summary",
+    "suggestions": "Suggestions"
   }
 }

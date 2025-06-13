@@ -21,18 +21,21 @@ export default async function BudgetsPage({ /* params: { locale } */ }: { /* par
   const subCategories: SubCategory[] = await getSubCategories();
 
   const mainCategoryMap = new Map(mainCategories.map(mc => [mc.id, mc]));
-  const subCategoryToMainCategoryMap = new Map(subCategories.map(sc => [sc.id, sc.mainCategoryId]));
+  const subCategoryMap = new Map(subCategories.map(sc => [sc.id, sc]));
 
   const augmentedBudgets: AugmentedBudget[] = budgets.map(budget => {
     let actualSpent = 0;
-    const budgetMainCategory = mainCategoryMap.get(budget.mainCategoryId);
+    const budgetSubCategory = subCategoryMap.get(budget.subCategoryId);
+    let parentMainCategoryName = 'N/A';
 
-    if (budgetMainCategory) {
+    if (budgetSubCategory) {
+      const parentMainCategory = mainCategoryMap.get(budgetSubCategory.mainCategoryId);
+      parentMainCategoryName = parentMainCategory?.name || 'N/A';
+
       const relevantTransactions = transactions.filter(transaction => {
         if (transaction.type !== 'Expense') return false;
-
-        const mainCategoryIdForTx = subCategoryToMainCategoryMap.get(transaction.subCategoryId);
-        if (mainCategoryIdForTx !== budget.mainCategoryId) return false;
+        // Check if transaction's subCategory matches the budget's subCategory
+        if (transaction.subCategoryId !== budget.subCategoryId) return false;
 
         const txDate = new Date(transaction.createdAt);
         const txMonth = txDate.getMonth() + 1; // getMonth is 0-indexed
@@ -46,7 +49,8 @@ export default async function BudgetsPage({ /* params: { locale } */ }: { /* par
     return {
       ...budget,
       actualSpent,
-      mainCategoryName: budgetMainCategory?.name || 'N/A',
+      subCategoryName: budgetSubCategory?.name || 'N/A',
+      parentMainCategoryName: parentMainCategoryName,
     };
   });
 

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { Budget, MainCategory } from '@/lib/definitions';
+import type { Budget } from '@/lib/definitions'; // MainCategory removed, SubCategory might be needed if passed directly
 import {
   Table,
   TableBody,
@@ -23,7 +23,8 @@ import { Progress } from '@/components/ui/progress';
 
 export interface AugmentedBudget extends Budget {
   actualSpent: number;
-  mainCategoryName: string;
+  subCategoryName: string;
+  parentMainCategoryName: string; // Added
 }
 
 interface BudgetListProps {
@@ -95,7 +96,10 @@ export function BudgetList({ initialBudgets, translations, locale }: BudgetListP
                 return (
                   <TableRow key={budget.id}>
                     <TableCell>{monthYear}</TableCell>
-                    <TableCell className="font-medium">{budget.mainCategoryName}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{budget.subCategoryName}</div>
+                      <div className="text-xs text-muted-foreground">{budget.parentMainCategoryName}</div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col space-y-1">
                         <div className="flex justify-between text-sm">
@@ -129,8 +133,9 @@ export function BudgetList({ initialBudgets, translations, locale }: BudgetListP
         isOpen={!!itemToDelete}
         onOpenChange={(open) => !open && setItemToDelete(null)}
         onConfirm={handleDelete}
-        itemName={`${translations.title.toLowerCase()} for ${itemToDelete?.mainCategoryName || ''} for ${getMonthName(itemToDelete?.month || 1, locale)} ${itemToDelete?.year}`}
+        itemName={`${translations.title.toLowerCase()} for ${itemToDelete?.subCategoryName || ''} (${itemToDelete?.parentMainCategoryName || ''}) for ${getMonthName(itemToDelete?.month || 1, locale)} ${itemToDelete?.year}`}
       />
     </>
   );
 }
+

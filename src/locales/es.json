@@ -102,6 +102,8 @@
     "editBudgetDescription": "Actualiza los detalles de tu presupuesto.",
     "mainCategoryLabel": "Categoría Principal",
     "mainCategoryPlaceholder": "Selecciona una categoría principal",
+    "subCategoryLabel": "Subcategoría",
+    "subCategoryPlaceholder": "Selecciona una subcategoría",
     "plannedAmountLabel": "Monto Planificado",
     "monthLabel": "Mes",
     "monthPlaceholder": "Selecciona mes",
@@ -177,6 +179,8 @@
     "reportTitle": "Informe Financiero",
     "noReport": "Aún no se ha generado ningún informe. Haz clic en el botón de arriba para generar uno.",
     "errorTitle": "Falló la Generación del Informe",
-    "errorDescription": "No se pudo generar el informe: {error}"
+    "errorDescription": "No se pudo generar el informe: {error}",
+    "summary": "Resumen",
+    "suggestions": "Sugerencias"
   }
 }
