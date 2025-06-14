@@ -111,9 +111,10 @@ export function TransactionForm({
     defaultValues: initialData
       ? {
           ...initialData,
-          type: initialData.type as TransactionType, // Ensure type matches
+          type: initialData.type as TransactionType, 
           subCategoryId: initialData.subCategoryId === undefined || initialData.subCategoryId === null ? NO_CATEGORY_VALUE : initialData.subCategoryId,
           createdAt: new Date(initialData.createdAt),
+          walletId: initialData.walletId, // Ensure walletId is set from initialData
         }
       : {
           type: defaultType,
@@ -349,4 +350,3 @@ export function TransactionForm({
     </Card>
   );
 }
-
