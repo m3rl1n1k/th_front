@@ -66,24 +66,24 @@ let MOCK_DB: MockDb = {
     { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB', icon: 'Ticket'}
   ],
   wallets: [
-    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 500000, type: 'Bank Account', icon: 'Landmark' }, // 5000.00
-    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 30000, type: 'Cash', icon: 'Wallet' }, // 300.00
-    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 588968, type: 'Bank Account', icon: 'PiggyBank' }, // 5889.68
-    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 70000, type: 'Cash', icon: 'Euro' }, // 700.00
+    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 500000, type: 'Bank Account', icon: 'Landmark' }, 
+    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 30000, type: 'Cash', icon: 'Wallet' }, 
+    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 588968, type: 'Bank Account', icon: 'PiggyBank' }, 
+    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 70000, type: 'Cash', icon: 'Euro' }, 
   ],
   transactions: [
-    { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 5575, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' }, // 55.75
-    { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 4000, createdAt: new Date('2023-10-03'), description: 'Fuel' }, // 40.00
-    { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 300000, createdAt: new Date('2023-10-05'), description: 'Salary' }, // 3000.00
-    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'Weekly', amount: 2250, createdAt: new Date(new Date().setDate(new Date().getDate() - 10)), description: 'Weekly Snack Box' }, // 22.50
-    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'Daily', amount: 500, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), description: 'Daily Coffee' }, // 5.00
+    { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 5575, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' }, 
+    { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 4000, createdAt: new Date('2023-10-03'), description: 'Fuel' }, 
+    { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 300000, createdAt: new Date('2023-10-05'), description: 'Salary' }, 
+    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'Weekly', amount: 2250, createdAt: new Date(new Date().setDate(new Date().getDate() - 10)), description: 'Weekly Snack Box' }, 
+    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'Daily', amount: 500, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), description: 'Daily Coffee' }, 
   ],
   transfers: [
-    { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 10000, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' } // 100.00
+    { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 10000, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' } 
   ],
   budgets: [
-    { id: 'b1', userId: 'user-123', subCategoryId: 'sc1', plannedAmount: 20000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, // 200.00
-    { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 10000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, // 100.00
+    { id: 'b1', userId: 'user-123', subCategoryId: 'sc1', plannedAmount: 20000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, 
+    { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 10000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, 
   ],
   sharedCapitalSessions: [],
   feedbacks: [],
@@ -227,8 +227,13 @@ export async function getMainCategories(): Promise<MainCategory[]> {
         }));
   }
 
-  if (error || resultData === null) {
+  if (error) {
+    console.error(`${apiCallLogPrefix} resulted in error (Status: ${error.status}, Message: ${error.message}). Falling back to mock data.`);
     return mockFallback();
+  }
+  if (resultData === null) { // Handles 204 No Content or explicit null from API
+      console.info(`${apiCallLogPrefix} returned null or 204 No Content. Returning empty list.`);
+      return [];
   }
   
   try {
@@ -240,11 +245,14 @@ export async function getMainCategories(): Promise<MainCategory[]> {
         actualDataArray = resultData.categories;
       } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
         actualDataArray = resultData.data;
+      } else { // If it's an object but not matching known wrappers, treat as empty/error
+        console.warn(`${apiCallLogPrefix} returned object but not a recognized list wrapper. Data:`, resultData);
+        return [];
       }
     }
 
     if (!Array.isArray(actualDataArray)) {
-      console.warn(`${apiCallLogPrefix} returned data in an unexpected format (Type: ${typeof actualDataArray}). Returning empty list.`);
+      console.warn(`${apiCallLogPrefix} returned data in an unexpected format (Type: ${typeof actualDataArray}, Data: ${JSON.stringify(actualDataArray)}). Returning empty list.`);
       return [];
     }
 
@@ -372,8 +380,13 @@ export async function getWallets(): Promise<Wallet[]> {
     return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID).map(w => ({...w, initialAmount: w.initialAmount / 100}));
   };
 
-  if (error || resultData === null) {
+  if (error) {
+    console.error(`getWallets: API call resulted in error (Status: ${error.status}, Message: ${error.message}). Falling back to mock data.`);
     return mockFallback();
+  }
+  if (resultData === null) {
+      console.info(`getWallets: API call returned null or 204 No Content. Returning empty list.`);
+      return [];
   }
   try {
     let actualDataArray = resultData;
@@ -382,11 +395,14 @@ export async function getWallets(): Promise<Wallet[]> {
         actualDataArray = resultData.wallets;
       } else if (resultData.data && Array.isArray(resultData.data)) {
          actualDataArray = resultData.data;
+      } else {
+        console.warn(`getWallets: API returned object but not a recognized list wrapper. Data:`, resultData);
+        return [];
       }
     }
 
     if (!Array.isArray(actualDataArray)) {
-      console.warn(`getWallets: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
+      console.warn(`getWallets: API returned non-array data. Type: ${typeof actualDataArray}, Data: ${JSON.stringify(actualDataArray)}. Returning empty array.`);
       return [];
     }
     return (actualDataArray as Wallet[]).map(w => ({...w, initialAmount: w.initialAmount / 100}));
@@ -447,8 +463,13 @@ export async function getTransactions(): Promise<Transaction[]> {
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   };
 
-  if (error || resultData === null) {
+  if (error) {
+    console.error(`getTransactions: API call resulted in error (Status: ${error.status}, Message: ${error.message}). Falling back to mock data.`);
     return mockFallback();
+  }
+  if (resultData === null) {
+    console.info(`getTransactions: API call returned null or 204 No Content. Returning empty list.`);
+    return [];
   }
 
   try {
@@ -458,11 +479,14 @@ export async function getTransactions(): Promise<Transaction[]> {
         actualDataArray = resultData.transactions;
       } else if (resultData.data && Array.isArray(resultData.data)) {
         actualDataArray = resultData.data;
+      } else {
+        console.warn(`getTransactions: API returned object but not a recognized list wrapper. Data:`, resultData);
+        return [];
       }
     }
 
     if (!Array.isArray(actualDataArray)) {
-      console.warn(`getTransactions: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
+      console.warn(`getTransactions: API returned non-array data. Type: ${typeof actualDataArray}, Data: ${JSON.stringify(actualDataArray)}. Returning empty array.`);
       return [];
     }
     return (actualDataArray as any[]).map((t: any) => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
@@ -540,8 +564,13 @@ export async function getTransfers(): Promise<Transfer[]> {
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   };
 
-  if (error || resultData === null) {
-    return mockFallback();
+  if (error) {
+     console.error(`getTransfers: API call resulted in error (Status: ${error.status}, Message: ${error.message}). Falling back to mock data.`);
+     return mockFallback();
+  }
+  if (resultData === null) {
+    console.info(`getTransfers: API call returned null or 204 No Content. Returning empty list.`);
+    return [];
   }
   try {
     let actualDataArray = resultData;
@@ -550,11 +579,14 @@ export async function getTransfers(): Promise<Transfer[]> {
         actualDataArray = resultData.transfers;
       } else if (resultData.data && Array.isArray(resultData.data)) {
         actualDataArray = resultData.data;
+      } else {
+        console.warn(`getTransfers: API returned object but not a recognized list wrapper. Data:`, resultData);
+        return [];
       }
     }
 
     if (!Array.isArray(actualDataArray)) {
-      console.warn(`getTransfers: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
+      console.warn(`getTransfers: API returned non-array data. Type: ${typeof actualDataArray}, Data: ${JSON.stringify(actualDataArray)}. Returning empty array.`);
       return [];
     }
     return (actualDataArray as any[]).map((t: any) => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
@@ -604,8 +636,13 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
       .sort((a, b) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
   };
 
-  if (error || resultData === null) {
+  if (error) {
+    console.error(`getBudgets: API call resulted in error (Status: ${error.status}, Message: ${error.message}). Falling back to mock data.`);
     return mockFallback();
+  }
+  if (resultData === null) {
+    console.info(`getBudgets: API call returned null or 204 No Content. Returning empty list.`);
+    return [];
   }
   try {
     let actualDataArray = resultData;
@@ -614,11 +651,14 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
         actualDataArray = resultData.budgets;
       } else if (resultData.data && Array.isArray(resultData.data)) {
         actualDataArray = resultData.data;
+      } else {
+        console.warn(`getBudgets: API returned object but not a recognized list wrapper. Data:`, resultData);
+        return [];
       }
     }
 
     if (!Array.isArray(actualDataArray)) {
-      console.warn(`getBudgets: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
+      console.warn(`getBudgets: API returned non-array data. Type: ${typeof actualDataArray}, Data: ${JSON.stringify(actualDataArray)}. Returning empty array.`);
       return [];
     }
     return (actualDataArray as any[]).map(b => ({...b, plannedAmount: b.plannedAmount / 100, createdAt: new Date(b.createdAt)}))
@@ -713,8 +753,13 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
     return mockData;
   };
 
-  if (error || resultData === null) {
+  if (error) {
+    console.error(`getFeedbacks: API call resulted in error (Status: ${error.status}, Message: ${error.message}). Falling back to mock data.`);
     return mockFallback();
+  }
+  if (resultData === null) {
+    console.info(`getFeedbacks: API call returned null or 204 No Content. Returning empty list.`);
+    return [];
   }
   try {
       let actualDataArray = resultData;
@@ -723,11 +768,14 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
           actualDataArray = resultData.feedbacks;
         } else if (resultData.data && Array.isArray(resultData.data)) {
           actualDataArray = resultData.data;
+        } else {
+            console.warn(`getFeedbacks: API returned object but not a recognized list wrapper. Data:`, resultData);
+            return [];
         }
       }
 
       if (!Array.isArray(actualDataArray)) {
-        console.warn(`getFeedbacks: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
+        console.warn(`getFeedbacks: API returned non-array data. Type: ${typeof actualDataArray}, Data: ${JSON.stringify(actualDataArray)}. Returning empty array.`);
         return [];
       }
       return (actualDataArray as any[]).map(f => ({...f, createdAt: new Date(f.createdAt)}))
@@ -801,12 +849,19 @@ export async function getWalletTypes(): Promise<WalletType[]> {
     return defaultTypes;
   }
   try {
-    // Expecting data in format: [ { types: { "TYPENAME": id, ... } } ]
+    // Expecting data in format: [ { types: { "TYPENAME": id, ... } } ] or an object { types: { ... } }
+    let typesObject;
     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
-      const typeKeys = Object.keys(data[0].types);
-      return typeKeys.map(formatApiTypeName) as WalletType[];
+      typesObject = data[0].types;
+    } else if (typeof data === 'object' && data !== null && typeof data.types === 'object') {
+      typesObject = data.types;
     } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) { // Fallback for simple array of strings
       return data.map(formatApiTypeName) as WalletType[];
+    }
+    
+    if (typesObject) {
+      const typeKeys = Object.keys(typesObject);
+      return typeKeys.map(formatApiTypeName) as WalletType[];
     }
     console.warn('Wallet types API response format not recognized, returning default types.', data);
     return defaultTypes;
@@ -824,15 +879,22 @@ export async function getTransactionTypes(): Promise<TransactionType[]> {
     return defaultTypes;
   }
   try {
+    let typesObject;
     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
-      const typeKeys = Object.keys(data[0].types);
-      return typeKeys
-        .map(formatApiTypeName)
-        .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
+       typesObject = data[0].types;
+    } else if (typeof data === 'object' && data !== null && typeof data.types === 'object') {
+       typesObject = data.types;
     } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) { // Fallback for simple array of strings
       return (data as string[])
         .map(formatApiTypeName)
         .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
+    }
+    
+    if (typesObject) {
+       const typeKeys = Object.keys(typesObject);
+        return typeKeys
+          .map(formatApiTypeName)
+          .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
     }
     console.warn('Transaction types API response format not recognized, returning default types.', data);
     return defaultTypes;

@@ -29,11 +29,10 @@ export default function LoginPage() {
       if (user) {
         toast({
           title: 'Login Successful',
-          description: `Welcome back, ${user.name || user.email}!`,
+          description: `Welcome back, ${user.login || user.name || user.email}!`,
         });
         router.push('/dashboard'); 
       } else {
-        // The login function itself should throw an error or return a specific error message
         // This path might be taken if login returns null without an error,
         // which should be revised in the login function itself.
         const errorMessage = "Invalid email or password.";
