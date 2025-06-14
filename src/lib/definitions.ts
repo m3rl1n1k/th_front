@@ -8,7 +8,7 @@ export interface UserSettings {
   showAverageSpendingCard?: boolean;
   showExpenseChartCard?: boolean;
   showRecentActivityCard?: boolean;
-  geminiApiKey?: string; 
+  geminiApiKey?: string;
 }
 
 export interface User {
@@ -25,7 +25,7 @@ export type TransactionFrequency = 'One-time' | 'Daily' | 'Weekly' | 'Monthly' |
 export interface Transaction {
   id: string;
   userId: string;
-  subCategoryId?: string; 
+  subCategoryId?: string;
   walletId: string;
   type: TransactionType;
   frequency: TransactionFrequency;
@@ -38,18 +38,18 @@ export interface MainCategory {
   id: string;
   userId: string;
   name: string;
-  color: string; 
-  icon?: string; 
-  subCategories?: SubCategory[]; 
+  color: string;
+  icon?: string;
+  subCategories?: SubCategory[];
 }
 
 export interface SubCategory {
   id:string;
   userId: string;
-  mainCategoryId: string; 
+  mainCategoryId: string;
   name: string;
-  color: string; 
-  icon?: string; 
+  color: string;
+  icon?: string;
 }
 
 export type WalletType = 'Cash' | 'Bank Account' | 'Credit Card' | 'E-Wallet';
@@ -58,10 +58,10 @@ export interface Wallet {
   id: string;
   userId: string;
   name: string;
-  currency: string; 
-  initialAmount: number; 
+  currency: string;
+  initialAmount: number;
   type: WalletType;
-  icon?: string; 
+  icon?: string;
 }
 
 export interface Transfer {
@@ -77,9 +77,9 @@ export interface Transfer {
 export interface Budget {
   id: string;
   userId: string;
-  subCategoryId: string; 
+  subCategoryId: string;
   plannedAmount: number;
-  month: number; 
+  month: number;
   year: number;
   createdAt: Date;
 }
@@ -113,15 +113,86 @@ export const feedbackTypes: FeedbackType[] = ['Technical Issue', 'Error Report',
 
 
 // Mock data types
-export type MockDb = {
+export interface MockDb {
   users: User[];
-  mainCategories: MainCategory[]; 
-  subCategories: SubCategory[]; 
+  mainCategories: MainCategory[];
+  subCategories: SubCategory[];
   wallets: Wallet[];
   transactions: Transaction[];
   transfers: Transfer[];
   budgets: Budget[];
   sharedCapitalSessions: SharedCapitalSession[];
-  feedbacks: FeedbackItem[]; 
+  feedbacks: FeedbackItem[];
 };
 
+// In-memory store for mock data (amounts are in cents)
+export let MOCK_DB: MockDb = {
+  users: [{
+    id: 'user-123',
+    email: 'user@example.com',
+    name: 'Test User',
+    login: 'testuser',
+    settings: {
+      transactionsPerPage: 10,
+      defaultCurrency: 'USD',
+      showTotalBalanceCard: true,
+      showMonthlyIncomeCard: true,
+      showMonthlyExpensesCard: true,
+      showAverageSpendingCard: true,
+      showExpenseChartCard: true,
+      showRecentActivityCard: true,
+    }
+  }],
+  mainCategories: [
+    { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347', icon: 'Utensils',
+      subCategories: [
+        { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A', icon: 'ShoppingCart' },
+        { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072', icon: 'Utensils' },
+      ]
+    },
+    { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4', icon: 'Car',
+      subCategories: [
+        { id: 'sc3', userId: 'user-123', mainCategoryId: 'mc2', name: 'Gas', color: '#B0C4DE', icon: 'Fuel' },
+      ]
+    },
+    { id: 'mc3', userId: 'user-123', name: 'Housing', color: '#2E8B57', icon: 'Home',
+      subCategories: [
+         { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent', color: '#90EE90', icon: 'Home' },
+      ]
+    },
+    { id: 'mc4', userId: 'user-123', name: 'Entertainment', color: '#8A2BE2', icon: 'Film',
+      subCategories: [
+        { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB', icon: 'Ticket'}
+      ]
+    }
+  ],
+  subCategories: [
+    { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A', icon: 'ShoppingCart' },
+    { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072', icon: 'Utensils' },
+    { id: 'sc3', userId: 'user-123', mainCategoryId: 'mc2', name: 'Gas', color: '#B0C4DE', icon: 'Fuel' },
+    { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent', color: '#90EE90', icon: 'Home' },
+    { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB', icon: 'Ticket'}
+  ],
+  wallets: [
+    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 500000, type: 'Bank Account', icon: 'Landmark' },
+    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 30000, type: 'Cash', icon: 'Wallet' },
+    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 588968, type: 'Bank Account', icon: 'PiggyBank' },
+    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 70000, type: 'Cash', icon: 'Euro' },
+  ],
+  transactions: [
+    { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 5575, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' },
+    { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 4000, createdAt: new Date('2023-10-03'), description: 'Fuel' },
+    { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 300000, createdAt: new Date('2023-10-05'), description: 'Salary' },
+    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'Weekly', amount: 2250, createdAt: new Date(new Date().setDate(new Date().getDate() - 10)), description: 'Weekly Snack Box' },
+    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'Daily', amount: 500, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), description: 'Daily Coffee' },
+  ],
+  transfers: [
+    { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 10000, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' }
+  ],
+  budgets: [
+    { id: 'b1', userId: 'user-123', subCategoryId: 'sc1', plannedAmount: 20000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
+    { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 10000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
+  ],
+  sharedCapitalSessions: [],
+  feedbacks: [],
+};

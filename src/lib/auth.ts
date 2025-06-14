@@ -1,8 +1,10 @@
+
 // This is a mock authentication module.
 // In a real application, you would implement JWT-based authentication or similar.
 'use server'; // Ensure this runs on the server
 
 import type { User } from './definitions';
+import { MOCK_DB } from './definitions'; // Import MOCK_DB from definitions
 import { cookies } from 'next/headers';
 import {
   API_AUTH_LOGIN,
@@ -36,6 +38,8 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promis
           const parsedError = JSON.parse(errorBody);
           if (parsedError && parsedError.message) {
               errorMessage = parsedError.message;
+          } else if (parsedError && errorBody) {
+            errorMessage = errorBody;
           }
       } catch (e) {
           if (errorBody) errorMessage = errorBody;
@@ -60,6 +64,7 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promis
 }
 
 async function fetchAndStoreUserData(token: string): Promise<User | null> {
+  // This function is now less critical if auth is disabled, but kept for potential re-enabling
   try {
     const user = await fetchAuthAPI(API_AUTH_ME, {
       method: 'GET',
@@ -94,6 +99,11 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
 
 
 export async function getCurrentUser(): Promise<User | null> {
+  // --- Temporarily disabled auth: Always return mock user ---
+  const mockUser = MOCK_DB.users.find(u => u.email === 'user@example.com');
+  return mockUser || MOCK_DB.users[0] || null;
+  // --- Original logic below, commented out ---
+  /*
   const cookieStore = cookies();
   const userDataString = cookieStore.get(USER_DATA_COOKIE_NAME)?.value;
 
@@ -113,16 +123,20 @@ export async function getCurrentUser(): Promise<User | null> {
     return await fetchAndStoreUserData(token);
   }
   return null;
+  */
 }
 
 export async function login(email: string, password_not_used: string): Promise<User | null> {
-  // The backend expects 'username' for the email field
+  // --- Temporarily disabled auth: Return mock user directly ---
+  const mockUser = MOCK_DB.users.find(u => u.email === 'user@example.com');
+  return mockUser || MOCK_DB.users[0] || null;
+  // --- Original logic below, commented out ---
+  /*
   const response = await fetchAuthAPI(API_AUTH_LOGIN, {
     method: 'POST',
-    body: JSON.stringify({ username: email, password: password_not_used }),
+    body: JSON.stringify({ username: email, password: password_not_used }), // email from form is sent as 'username'
   });
 
-  // The API response for login is just { "token": "your_jwt_token" }
   if (response && response.token) {
     const token = response.token;
     const cookieStore = cookies();
@@ -133,17 +147,21 @@ export async function login(email: string, password_not_used: string): Promise<U
       path: '/',
       maxAge: 60 * 60 * 24 * 30 // 30 days
     });
-    // After successful login and token storage, fetch the user data
     return await fetchAndStoreUserData(token);
   } else {
-    // This case should ideally be caught by fetchAuthAPI if the response is not ok (e.g. 401)
-    // Or if the response is ok but doesn't contain a token.
-    console.error('Login API call successful but no token received in response, or other issue.');
+    console.error('Login API call successful but no token received or other issue.');
     throw new Error('Login failed: No token received or invalid response structure.');
   }
+  */
 }
 
 export async function logout(): Promise<void> {
+  // --- Temporarily disabled auth: Clear cookies if any, but mostly a no-op for app state ---
+  const cookieStore = cookies();
+  cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
+  cookieStore.delete(USER_DATA_COOKIE_NAME);
+  // --- Original logic below, commented out ---
+  /*
   const cookieStore = cookies();
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
 
@@ -161,14 +179,25 @@ export async function logout(): Promise<void> {
 
   cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
   cookieStore.delete(USER_DATA_COOKIE_NAME);
+  */
 }
 
 export async function isAuthenticated(): Promise<boolean> {
+  // --- Temporarily disabled auth: Always return true ---
+  return true;
+  // --- Original logic below, commented out ---
+  /*
   const user = await getCurrentUser();
   return user !== null;
+  */
 }
 
 export async function getAuthToken(): Promise<string | null> {
+   // --- Temporarily disabled auth: Return a mock token or null, doesn't really matter much now ---
+  return "mock-auth-token-disabled-auth";
+  // --- Original logic below, commented out ---
+  /*
   const cookieStore = cookies();
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
+  */
 }

@@ -1,6 +1,7 @@
 
 'use server';
 import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType, TransactionType } from './definitions';
+import { MOCK_DB } from './definitions'; // Import MOCK_DB from definitions
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth';
 import { cookies as nextCookies } from 'next/headers';
@@ -16,78 +17,6 @@ import {
 } from './apiConstants';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
-
-// In-memory store for mock data (amounts are in cents)
-let MOCK_DB: MockDb = {
-  users: [{
-    id: 'user-123',
-    email: 'user@example.com',
-    name: 'Test User',
-    login: 'testuser',
-    settings: {
-      transactionsPerPage: 10,
-      defaultCurrency: 'USD',
-      showTotalBalanceCard: true,
-      showMonthlyIncomeCard: true,
-      showMonthlyExpensesCard: true,
-      showAverageSpendingCard: true,
-      showExpenseChartCard: true,
-      showRecentActivityCard: true,
-    }
-  }],
-  mainCategories: [
-    { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347', icon: 'Utensils',
-      subCategories: [
-        { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A', icon: 'ShoppingCart' },
-        { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072', icon: 'Utensils' },
-      ]
-    },
-    { id: 'mc2', userId: 'user-123', name: 'Transport', color: '#4682B4', icon: 'Car',
-      subCategories: [
-        { id: 'sc3', userId: 'user-123', mainCategoryId: 'mc2', name: 'Gas', color: '#B0C4DE', icon: 'Fuel' },
-      ]
-    },
-    { id: 'mc3', userId: 'user-123', name: 'Housing', color: '#2E8B57', icon: 'Home',
-      subCategories: [
-         { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent', color: '#90EE90', icon: 'Home' },
-      ]
-    },
-    { id: 'mc4', userId: 'user-123', name: 'Entertainment', color: '#8A2BE2', icon: 'Film',
-      subCategories: [
-        { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB', icon: 'Ticket'}
-      ]
-    }
-  ],
-  subCategories: [
-    { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A', icon: 'ShoppingCart' },
-    { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072', icon: 'Utensils' },
-    { id: 'sc3', userId: 'user-123', mainCategoryId: 'mc2', name: 'Gas', color: '#B0C4DE', icon: 'Fuel' },
-    { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent', color: '#90EE90', icon: 'Home' },
-    { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB', icon: 'Ticket'}
-  ],
-  wallets: [
-    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 500000, type: 'Bank Account', icon: 'Landmark' }, 
-    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 30000, type: 'Cash', icon: 'Wallet' }, 
-    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 588968, type: 'Bank Account', icon: 'PiggyBank' }, 
-    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 70000, type: 'Cash', icon: 'Euro' }, 
-  ],
-  transactions: [
-    { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 5575, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' }, 
-    { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 4000, createdAt: new Date('2023-10-03'), description: 'Fuel' }, 
-    { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 300000, createdAt: new Date('2023-10-05'), description: 'Salary' }, 
-    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'Weekly', amount: 2250, createdAt: new Date(new Date().setDate(new Date().getDate() - 10)), description: 'Weekly Snack Box' }, 
-    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'Daily', amount: 500, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), description: 'Daily Coffee' }, 
-  ],
-  transfers: [
-    { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 10000, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' } 
-  ],
-  budgets: [
-    { id: 'b1', userId: 'user-123', subCategoryId: 'sc1', plannedAmount: 20000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, 
-    { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 10000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, 
-  ],
-  sharedCapitalSessions: [],
-  feedbacks: [],
-};
 
 // --- Helper for API calls ---
 async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ data: any | null, error: { message: string, status?: number } | null }> {
@@ -222,7 +151,7 @@ export async function getMainCategories(): Promise<MainCategory[]> {
         .filter(mc => mc.userId === MOCK_USER_ID)
         .map(mc => ({
           ...mc,
-          subCategories: Array.isArray(mc.subCategories) ? mc.subCategories.filter(sc => sc.userId === MOCK_USER_ID) : 
+          subCategories: Array.isArray(mc.subCategories) ? mc.subCategories.filter(sc => sc.userId === MOCK_USER_ID) :
                          MOCK_DB.subCategories.filter(sc => sc.mainCategoryId === mc.id && sc.userId === MOCK_USER_ID)
         }));
   }
@@ -231,11 +160,11 @@ export async function getMainCategories(): Promise<MainCategory[]> {
     console.error(`${apiCallLogPrefix} resulted in error (Status: ${error.status}, Message: ${error.message}). Falling back to mock data.`);
     return mockFallback();
   }
-  if (resultData === null) { // Handles 204 No Content or explicit null from API
+  if (resultData === null) {
       console.info(`${apiCallLogPrefix} returned null or 204 No Content. Returning empty list.`);
       return [];
   }
-  
+
   try {
     let actualDataArray = resultData;
     if (typeof resultData === 'object' && !Array.isArray(resultData)) {
@@ -243,9 +172,9 @@ export async function getMainCategories(): Promise<MainCategory[]> {
         actualDataArray = resultData.mainCategories;
       } else if (resultData.categories && Array.isArray(resultData.categories)) {
         actualDataArray = resultData.categories;
-      } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
+      } else if (resultData.data && Array.isArray(resultData.data)) {
         actualDataArray = resultData.data;
-      } else { // If it's an object but not matching known wrappers, treat as empty/error
+      } else {
         console.warn(`${apiCallLogPrefix} returned object but not a recognized list wrapper. Data:`, resultData);
         return [];
       }
@@ -301,7 +230,7 @@ export async function deleteMainCategory(id: string): Promise<void> {
 
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryIdFilter?: string): Promise<SubCategory[]> {
-  const allMainCategories = await getMainCategories(); 
+  const allMainCategories = await getMainCategories();
   if (!Array.isArray(allMainCategories)) {
       console.warn("getMainCategories did not return an array for getSubCategories. Returning empty list.");
       return [];
@@ -313,7 +242,7 @@ export async function getSubCategories(mainCategoryIdFilter?: string): Promise<S
     if (foundMain && Array.isArray(foundMain.subCategories)) {
       subCategoriesResult = foundMain.subCategories;
     } else {
-      subCategoriesResult = []; 
+      subCategoriesResult = [];
     }
   } else {
     allMainCategories.forEach(mc => {
@@ -330,7 +259,7 @@ export async function getSubCategories(mainCategoryIdFilter?: string): Promise<S
 export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>): Promise<SubCategory> {
   const apiData = {
     name: data.name,
-    main_category: data.mainCategoryId, 
+    main_category: data.mainCategoryId,
     color: data.color,
     icon: data.icon,
   };
@@ -347,7 +276,7 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
 export async function updateSubCategory(id: string, data: Partial<Omit<SubCategory, 'id' | 'userId'>>): Promise<SubCategory | null> {
   const apiData: any = { name: data.name, color: data.color, icon: data.icon };
   if (data.mainCategoryId) {
-    apiData.main_category = data.mainCategoryId; 
+    apiData.main_category = data.mainCategoryId;
   }
   const {data: resultData, error} = await fetchAPI(API_SUB_CATEGORIES_ID(id), { method: 'PUT', body: JSON.stringify(apiData) });
   if (error) {
@@ -374,7 +303,7 @@ export async function deleteSubCategory(id: string): Promise<void> {
 export async function getWallets(): Promise<Wallet[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const { data: resultData, error } = await fetchAPI(API_WALLETS);
-  
+
   const mockFallback = (): Wallet[] => {
     console.warn(`getWallets: API call failed or returned unexpected data. Falling back to mock data.`);
     return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID).map(w => ({...w, initialAmount: w.initialAmount / 100}));
@@ -415,7 +344,7 @@ export async function getWallets(): Promise<Wallet[]> {
 export async function createWallet(data: Omit<Wallet, 'id' | 'userId'>): Promise<Wallet> {
   const payload = { ...data, initialAmount: Math.round(data.initialAmount * 100) };
   const {data: resultData, error} = await fetchAPI(API_WALLETS, {method: 'POST', body: JSON.stringify(payload)});
-  if (error || !resultData) {
+   if (error || !resultData) {
      console.error('Failed to create wallet via API:', error?.message);
      throw new Error(error?.message || "API Error creating wallet");
   }
@@ -743,7 +672,7 @@ export async function stopSharedCapitalSession(): Promise<SharedCapitalSession |
 export async function getFeedbacks(): Promise<FeedbackItem[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const { data: resultData, error } = await fetchAPI(API_FEEDBACKS);
-  
+
   const mockData = MOCK_DB.feedbacks
     .filter(f => f.userId === MOCK_USER_ID)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -814,14 +743,14 @@ export async function updateFeedbackStatus(id: string, status: FeedbackStatus): 
 
 // --- Locale Actions ---
 export async function setLocaleCookie(locale: string, currentPath: string) {
-  const cookieStore = nextCookies(); 
+  const cookieStore = nextCookies();
   cookieStore.set('NEXT_LOCALE', locale, {
     path: '/',
     maxAge: 365 * 24 * 60 * 60, // 1 year
     sameSite: 'lax',
   });
-  revalidatePath(currentPath); 
-  revalidatePath('/', 'layout'); 
+  revalidatePath(currentPath);
+  revalidatePath('/', 'layout');
 }
 
 
@@ -853,12 +782,12 @@ export async function getWalletTypes(): Promise<WalletType[]> {
     let typesObject;
     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
       typesObject = data[0].types;
-    } else if (typeof data === 'object' && data !== null && typeof data.types === 'object') {
+    } else if (typeof data === 'object' && data !== null && data.types && typeof data.types === 'object') {
       typesObject = data.types;
     } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) { // Fallback for simple array of strings
       return data.map(formatApiTypeName) as WalletType[];
     }
-    
+
     if (typesObject) {
       const typeKeys = Object.keys(typesObject);
       return typeKeys.map(formatApiTypeName) as WalletType[];
@@ -882,14 +811,14 @@ export async function getTransactionTypes(): Promise<TransactionType[]> {
     let typesObject;
     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
        typesObject = data[0].types;
-    } else if (typeof data === 'object' && data !== null && typeof data.types === 'object') {
+    } else if (typeof data === 'object' && data !== null && data.types && typeof data.types === 'object') {
        typesObject = data.types;
     } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) { // Fallback for simple array of strings
       return (data as string[])
         .map(formatApiTypeName)
         .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
     }
-    
+
     if (typesObject) {
        const typeKeys = Object.keys(typesObject);
         return typeKeys
