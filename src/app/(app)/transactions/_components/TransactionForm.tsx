@@ -26,7 +26,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { Transaction, TransactionType, TransactionFrequency, Wallet, SubCategory, MainCategory } from '@/lib/definitions';
+import type { Transaction, TransactionType, TransactionFrequency, Wallet, SubCategory, MainCategory, TransactionTypeOption } from '@/lib/definitions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
@@ -56,8 +56,8 @@ interface TransactionFormProps {
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
   defaultWalletId?: string;
-  availableTransactionTypes: Array<{ key: TransactionType; label: string; }>;
-  translations: { // Added translations prop
+  availableTransactionTypes: TransactionTypeOption[];
+  translations: { 
     typeLabel: string;
     amountLabel: string;
     categoryLabel: string;
@@ -81,9 +81,9 @@ interface TransactionFormProps {
     createButton: string;
     successUpdateToastTitle: string;
     successCreateToastTitle: string;
-    successToastDescription: string; // Expects {amount} and {action}
+    successToastDescription: string; 
     errorToastTitle: string;
-    errorToastDescription: string; // Expects {error}
+    errorToastDescription: string; 
     errorFallbackDescription: string;
     frequencyTypes: Record<TransactionFrequency, string>;
   };
@@ -97,11 +97,14 @@ export function TransactionForm({
   mainCategories,
   defaultWalletId,
   availableTransactionTypes,
-  translations, // Destructure translations
+  translations, 
 }: TransactionFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const defaultType = availableTransactionTypes.find(opt => opt.label === 'Expense')?.label || 
+                      (availableTransactionTypes.length > 0 ? availableTransactionTypes[0].label : undefined);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
@@ -112,9 +115,7 @@ export function TransactionForm({
           createdAt: new Date(initialData.createdAt),
         }
       : {
-          type: availableTransactionTypes.find(item => item.key === 'Expense') 
-                ? 'Expense' 
-                : (availableTransactionTypes.length > 0 ? availableTransactionTypes[0].key : undefined),
+          type: defaultType,
           frequency: 'One-time',
           createdAt: new Date(),
           amount: 0,
@@ -175,9 +176,9 @@ export function TransactionForm({
                         <SelectTrigger><SelectValue placeholder={translations.typePlaceholder} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableTransactionTypes.map(({ key, label }) => (
-                          <SelectItem key={key} value={key}>
-                            {label}
+                        {availableTransactionTypes.map((option) => (
+                          <SelectItem key={option.key} value={option.label}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

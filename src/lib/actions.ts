@@ -1,6 +1,6 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType, TransactionType } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType, TransactionType, TransactionTypeOption } from './definitions';
 import { MOCK_DB, _dangerouslyResetMockDbContent, type MockDb } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth';
@@ -801,11 +801,12 @@ export async function getWalletTypes(): Promise<WalletType[]> {
   }
 }
 
-export async function getTransactionTypes(): Promise<Array<{ key: TransactionType; label: string; }>> {
+export async function getTransactionTypes(): Promise<TransactionTypeOption[]> {
   const { data, error } = await fetchAPI(API_TRANSACTION_TYPES);
-  const defaultTypes: Array<{ key: TransactionType; label: string; }> = [
-    { key: 'Income', label: 'Income' },
-    { key: 'Expense', label: 'Expense' }
+
+  const defaultTypes: TransactionTypeOption[] = [
+    { key: 1, label: 'Income' },
+    { key: 2, label: 'Expense' }
   ];
 
   if (error || !data) {
@@ -814,33 +815,36 @@ export async function getTransactionTypes(): Promise<Array<{ key: TransactionTyp
   }
 
   try {
-    let rawTypes: string[] = [];
+    let typesObject: Record<string, string> | undefined;
 
-    if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
-       rawTypes = Object.keys(data[0].types);
-    } else if (typeof data === 'object' && data !== null && data.types && typeof data.types === 'object') {
-       rawTypes = Object.keys(data.types);
-    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
-      rawTypes = data as string[];
+    // Check various possible structures for the API response
+    if (Array.isArray(data) && data.length > 0 && typeof data[0]?.types === 'object' && data[0].types !== null) {
+      typesObject = data[0].types;
+    } else if (typeof data === 'object' && data !== null && typeof data.types === 'object' && data.types !== null) {
+      typesObject = data.types;
     } else {
       console.warn('Transaction types API response format not recognized, returning default types.', data);
       return defaultTypes;
     }
 
-    return rawTypes
-      .map(typeString => {
-        const formattedType = formatApiTypeName(typeString);
-        // Ensure the key conforms to TransactionType
-        if (formattedType === 'Income' || formattedType === 'Expense') {
-          return { key: formattedType as TransactionType, label: formattedType };
-        }
-        return null;
-      })
-      .filter(item => item !== null) as Array<{ key: TransactionType; label: string; }>;
+    const processedTypes = Object.entries(typesObject)
+        .map(([key, value]) => {
+          const label = formatApiTypeName(value); // e.g. 'INCOME' → 'Income'
+          const numericKey = parseInt(key, 10);
+          if (!isNaN(numericKey) && (label === 'Income' || label === 'Expense')) {
+            return {
+              key: numericKey,
+              label: label as TransactionType
+            };
+          }
+          return null;
+        })
+        .filter((item): item is TransactionTypeOption => item !== null);
+
+    return processedTypes.length > 0 ? processedTypes : defaultTypes;
 
   } catch (e) {
     console.error('Error processing transaction types from API:', e);
     return defaultTypes;
   }
 }
-

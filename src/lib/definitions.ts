@@ -15,11 +15,13 @@ export interface User {
   id: string;
   email: string;
   name?: string;
-  login?: string; // Added login/username field
+  login?: string;
   settings?: UserSettings;
 }
 
 export type TransactionType = 'Income' | 'Expense';
+export type TransactionTypeOption = { key: number; label: TransactionType };
+
 export type TransactionFrequency = 'One-time' | 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
 
 export interface Transaction {
@@ -168,7 +170,7 @@ const initialMockDbState: MockDb = {
     { id: 'mc3', userId: 'user-123', name: 'Housing', color: '#2E8B57', icon: 'Home',
       subCategories: [
          { id: 'sc4', userId: 'user-123', mainCategoryId: 'mc3', name: 'Rent/Mortgage', color: '#90EE90', icon: 'Home' },
-         { id: 'sc3_2', userId: 'user-123', mainCategoryId: 'mc3', name: 'Home Maintenance', color: '#98FB98', icon: 'Wrench' }, // Wrench is not in icon-names, use a valid one or add it
+         { id: 'sc3_2', userId: 'user-123', mainCategoryId: 'mc3', name: 'Home Maintenance', color: '#98FB98', icon: 'Wrench' },
       ]
     },
     { id: 'mc4', userId: 'user-123', name: 'Entertainment', color: '#8A2BE2', icon: 'Film',
@@ -178,29 +180,29 @@ const initialMockDbState: MockDb = {
         { id: 'sc4_3', userId: 'user-123', mainCategoryId: 'mc4', name: 'Hobbies', color: '#DA70D6', icon: 'Palette' },
       ]
     },
-    { id: 'mc5', userId: 'user-123', name: 'Utilities', color: '#FFD700', icon: 'Lightbulb', // Zap
+    { id: 'mc5', userId: 'user-123', name: 'Utilities', color: '#FFD700', icon: 'Lightbulb',
       subCategories: [
-        { id: 'sc5_1', userId: 'user-123', mainCategoryId: 'mc5', name: 'Electricity', color: '#FFFACD', icon: 'Zap' }, // Zap not in list, use Lightbulb
+        { id: 'sc5_1', userId: 'user-123', mainCategoryId: 'mc5', name: 'Electricity', color: '#FFFACD', icon: 'Lightbulb' },
         { id: 'sc5_2', userId: 'user-123', mainCategoryId: 'mc5', name: 'Internet & Cable', color: '#FAFAD2', icon: 'Wifi' },
-        { id: 'sc5_3', userId: 'user-123', mainCategoryId: 'mc5', name: 'Water', color: '#F0E68C', icon: 'Waves' }, // Waves
+        { id: 'sc5_3', userId: 'user-123', mainCategoryId: 'mc5', name: 'Water', color: '#F0E68C', icon: 'Waves' },
       ]
     },
-     { id: 'mc6', userId: 'user-123', name: 'Healthcare', color: '#DC143C', icon: 'Heart', // Stethoscope
+     { id: 'mc6', userId: 'user-123', name: 'Healthcare', color: '#DC143C', icon: 'Heart',
       subCategories: [
-        { id: 'sc6_1', userId: 'user-123', mainCategoryId: 'mc6', name: 'Doctor Visits', color: '#FFB6C1', icon: 'Stethoscope' }, // Stethoscope not in list
-        { id: 'sc6_2', userId: 'user-123', mainCategoryId: 'mc6', name: 'Pharmacy', color: '#FFA07A', icon: 'Pill' }, // Pill not in list
+        { id: 'sc6_1', userId: 'user-123', mainCategoryId: 'mc6', name: 'Doctor Visits', color: '#FFB6C1', icon: 'Heart' },
+        { id: 'sc6_2', userId: 'user-123', mainCategoryId: 'mc6', name: 'Pharmacy', color: '#FFA07A', icon: 'Pill' },
       ]
     },
-    { id: 'mc7', userId: 'user-123', name: 'Personal Care', color: '#00CED1', icon: 'PersonStanding', // PersonStanding not in list
+    { id: 'mc7', userId: 'user-123', name: 'Personal Care', color: '#00CED1', icon: 'ShoppingBag',
       subCategories: [
-        { id: 'sc7_1', userId: 'user-123', mainCategoryId: 'mc7', name: 'Haircuts', color: '#AFEEEE', icon: 'Scissors' }, // Scissors not in list
+        { id: 'sc7_1', userId: 'user-123', mainCategoryId: 'mc7', name: 'Haircuts', color: '#AFEEEE', icon: 'Scissors' },
         { id: 'sc7_2', userId: 'user-123', mainCategoryId: 'mc7', name: 'Toiletries', color: '#40E0D0', icon: 'ShoppingBag' },
       ]
     },
     { id: 'mc8', userId: 'user-123', name: 'Income Categories', color: '#32CD32', icon: 'Briefcase',
       subCategories: [
         { id: 'sc8_1', userId: 'user-123', mainCategoryId: 'mc8', name: 'Salary', color: '#98FB98', icon: 'DollarSign' },
-        { id: 'sc8_2', userId: 'user-123', mainCategoryId: 'mc8', name: 'Freelance Income', color: '#90EE90', icon: 'Laptop' }, // Laptop not in list
+        { id: 'sc8_2', userId: 'user-123', mainCategoryId: 'mc8', name: 'Freelance Income', color: '#90EE90', icon: 'Briefcase' },
       ]
     }
   ],
