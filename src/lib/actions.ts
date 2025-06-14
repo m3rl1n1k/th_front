@@ -1,6 +1,6 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType, TransactionType } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth';
 import { cookies as nextCookies } from 'next/headers';
@@ -17,7 +17,7 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
 
-// In-memory store for mock data (to be replaced by API calls)
+// In-memory store for mock data (amounts are in cents)
 let MOCK_DB: MockDb = {
   users: [{
     id: 'user-123',
@@ -66,24 +66,24 @@ let MOCK_DB: MockDb = {
     { id: 'sc5', userId: 'user-123', mainCategoryId: 'mc4', name: 'Movies', color: '#9370DB', icon: 'Ticket'}
   ],
   wallets: [
-    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 5000, type: 'Bank Account', icon: 'Landmark' },
-    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 300, type: 'Cash', icon: 'Wallet' },
-    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 5889.68, type: 'Bank Account', icon: 'PiggyBank' },
-    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 700, type: 'Cash', icon: 'Euro' },
+    { id: 'w1', userId: 'user-123', name: 'Main Bank', currency: 'USD', initialAmount: 500000, type: 'Bank Account', icon: 'Landmark' }, // 5000.00
+    { id: 'w2', userId: 'user-123', name: 'Cash', currency: 'USD', initialAmount: 30000, type: 'Cash', icon: 'Wallet' }, // 300.00
+    { id: 'w3', userId: 'user-123', name: 'Savings PLN', currency: 'PLN', initialAmount: 588968, type: 'Bank Account', icon: 'PiggyBank' }, // 5889.68
+    { id: 'w4', userId: 'user-123', name: 'Euro Cash', currency: 'EUR', initialAmount: 70000, type: 'Cash', icon: 'Euro' }, // 700.00
   ],
   transactions: [
-    { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 55.75, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' },
-    { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 40.00, createdAt: new Date('2023-10-03'), description: 'Fuel' },
-    { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 3000.00, createdAt: new Date('2023-10-05'), description: 'Salary' },
-    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'Weekly', amount: 22.50, createdAt: new Date(new Date().setDate(new Date().getDate() - 10)), description: 'Weekly Snack Box' },
-    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'Daily', amount: 5.00, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), description: 'Daily Coffee' },
+    { id: 't1', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'One-time', amount: 5575, createdAt: new Date('2023-10-01'), description: 'Weekly groceries' }, // 55.75
+    { id: 't2', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'One-time', amount: 4000, createdAt: new Date('2023-10-03'), description: 'Fuel' }, // 40.00
+    { id: 't3', userId: 'user-123', walletId: 'w1', type: 'Income', frequency: 'Monthly', amount: 300000, createdAt: new Date('2023-10-05'), description: 'Salary' }, // 3000.00
+    { id: 't4', userId: 'user-123', subCategoryId: 'sc1', walletId: 'w1', type: 'Expense', frequency: 'Weekly', amount: 2250, createdAt: new Date(new Date().setDate(new Date().getDate() - 10)), description: 'Weekly Snack Box' }, // 22.50
+    { id: 't5', userId: 'user-123', subCategoryId: 'sc3', walletId: 'w2', type: 'Expense', frequency: 'Daily', amount: 500, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), description: 'Daily Coffee' }, // 5.00
   ],
   transfers: [
-    { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 100, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' }
+    { id: 'tr1', userId: 'user-123', fromWalletId: 'w1', toWalletId: 'w2', amount: 10000, createdAt: new Date('2023-10-02'), description: 'ATM Withdrawal' } // 100.00
   ],
   budgets: [
-    { id: 'b1', userId: 'user-123', subCategoryId: 'sc1', plannedAmount: 200, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
-    { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 100, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() },
+    { id: 'b1', userId: 'user-123', subCategoryId: 'sc1', plannedAmount: 20000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, // 200.00
+    { id: 'b2', userId: 'user-123', subCategoryId: 'sc3', plannedAmount: 10000, month: new Date().getMonth() + 1, year: new Date().getFullYear(), createdAt: new Date() }, // 100.00
   ],
   sharedCapitalSessions: [],
   feedbacks: [],
@@ -227,21 +227,21 @@ export async function getMainCategories(): Promise<MainCategory[]> {
         }));
   }
 
-  if (error || resultData === null) { // Check for null explicitly
+  if (error || resultData === null) {
     return mockFallback();
   }
   
   try {
     let actualDataArray = resultData;
-    // Check if data is wrapped in an object like { "mainCategories": [...] } or { "categories": [...] }
     if (typeof resultData === 'object' && !Array.isArray(resultData)) {
       if (resultData.mainCategories && Array.isArray(resultData.mainCategories)) {
         actualDataArray = resultData.mainCategories;
       } else if (resultData.categories && Array.isArray(resultData.categories)) {
         actualDataArray = resultData.categories;
+      } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
+        actualDataArray = resultData.data;
       }
     }
-
 
     if (!Array.isArray(actualDataArray)) {
       console.warn(`${apiCallLogPrefix} returned data in an unexpected format (Type: ${typeof actualDataArray}). Returning empty list.`);
@@ -294,7 +294,7 @@ export async function deleteMainCategory(id: string): Promise<void> {
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryIdFilter?: string): Promise<SubCategory[]> {
   const allMainCategories = await getMainCategories(); 
-  if (!Array.isArray(allMainCategories)) { // Ensure allMainCategories is an array
+  if (!Array.isArray(allMainCategories)) {
       console.warn("getMainCategories did not return an array for getSubCategories. Returning empty list.");
       return [];
   }
@@ -369,7 +369,7 @@ export async function getWallets(): Promise<Wallet[]> {
   
   const mockFallback = (): Wallet[] => {
     console.warn(`getWallets: API call failed or returned unexpected data. Falling back to mock data.`);
-    return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID);
+    return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID).map(w => ({...w, initialAmount: w.initialAmount / 100}));
   };
 
   if (error || resultData === null) {
@@ -377,15 +377,19 @@ export async function getWallets(): Promise<Wallet[]> {
   }
   try {
     let actualDataArray = resultData;
-    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.wallets && Array.isArray(resultData.wallets)) {
-      actualDataArray = resultData.wallets;
+    if (typeof resultData === 'object' && !Array.isArray(resultData)) {
+      if (resultData.wallets && Array.isArray(resultData.wallets)) {
+        actualDataArray = resultData.wallets;
+      } else if (resultData.data && Array.isArray(resultData.data)) {
+         actualDataArray = resultData.data;
+      }
     }
 
     if (!Array.isArray(actualDataArray)) {
       console.warn(`getWallets: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return actualDataArray as Wallet[];
+    return (actualDataArray as Wallet[]).map(w => ({...w, initialAmount: w.initialAmount / 100}));
   } catch (processingError: any) {
     console.error(`getWallets: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
     return mockFallback();
@@ -393,25 +397,30 @@ export async function getWallets(): Promise<Wallet[]> {
 }
 
 export async function createWallet(data: Omit<Wallet, 'id' | 'userId'>): Promise<Wallet> {
-  const {data: resultData, error} = await fetchAPI(API_WALLETS, {method: 'POST', body: JSON.stringify(data)});
+  const payload = { ...data, initialAmount: Math.round(data.initialAmount * 100) };
+  const {data: resultData, error} = await fetchAPI(API_WALLETS, {method: 'POST', body: JSON.stringify(payload)});
   if (error || !resultData) {
      console.error('Failed to create wallet via API:', error?.message);
      throw new Error(error?.message || "API Error creating wallet");
   }
   revalidatePath('/wallets');
   revalidatePath('/capital');
-  return resultData as Wallet;
+  return {...resultData, initialAmount: resultData.initialAmount / 100 } as Wallet;
 }
 
 export async function updateWallet(id: string, data: Partial<Omit<Wallet, 'id' | 'userId'>>): Promise<Wallet | null> {
-  const {data: resultData, error} = await fetchAPI(API_WALLETS_ID(id), {method: 'PUT', body: JSON.stringify(data)});
+  const payload = { ...data };
+  if (typeof payload.initialAmount === 'number') {
+    payload.initialAmount = Math.round(payload.initialAmount * 100);
+  }
+  const {data: resultData, error} = await fetchAPI(API_WALLETS_ID(id), {method: 'PUT', body: JSON.stringify(payload)});
   if (error) {
     console.error('Failed to update wallet via API:', error.message);
     return null;
   }
   revalidatePath('/wallets');
   revalidatePath('/capital');
-  return resultData as Wallet | null;
+  return resultData ? {...resultData, initialAmount: resultData.initialAmount / 100} as Wallet | null : null;
 }
 
 export async function deleteWallet(id: string): Promise<void> {
@@ -434,7 +443,7 @@ export async function getTransactions(): Promise<Transaction[]> {
     console.warn(`getTransactions: API call failed or returned unexpected data. Falling back to mock data.`);
      return MOCK_DB.transactions
       .filter(t => t.userId === MOCK_USER_ID)
-      .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
+      .map(t => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   };
 
@@ -444,15 +453,19 @@ export async function getTransactions(): Promise<Transaction[]> {
 
   try {
     let actualDataArray = resultData;
-    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.transactions && Array.isArray(resultData.transactions)) {
-      actualDataArray = resultData.transactions;
+    if (typeof resultData === 'object' && !Array.isArray(resultData)) {
+      if (resultData.transactions && Array.isArray(resultData.transactions)) {
+        actualDataArray = resultData.transactions;
+      } else if (resultData.data && Array.isArray(resultData.data)) {
+        actualDataArray = resultData.data;
+      }
     }
 
     if (!Array.isArray(actualDataArray)) {
       console.warn(`getTransactions: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return (actualDataArray as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
+    return (actualDataArray as any[]).map((t: any) => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
                          .sort((a: Transaction, b: Transaction) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (processingError: any) {
     console.error(`getTransactions: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
@@ -461,7 +474,8 @@ export async function getTransactions(): Promise<Transaction[]> {
 }
 
 export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>): Promise<Transaction> {
-  const {data: resultData, error} = await fetchAPI(API_TRANSACTIONS, {method: 'POST', body: JSON.stringify({...data, createdAt: data.createdAt.toISOString()})});
+  const payload = { ...data, amount: Math.round(data.amount * 100), createdAt: data.createdAt.toISOString() };
+  const {data: resultData, error} = await fetchAPI(API_TRANSACTIONS, {method: 'POST', body: JSON.stringify(payload)});
    if (error || !resultData) {
      console.error('Failed to create transaction via API:', error?.message);
      throw new Error(error?.message || "API Error creating transaction");
@@ -469,11 +483,18 @@ export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
-  return {...resultData, createdAt: new Date(resultData.createdAt)} as Transaction;
+  return {...resultData, amount: resultData.amount / 100, createdAt: new Date(resultData.createdAt)} as Transaction;
 }
 
 export async function updateTransaction(id: string, data: Partial<Omit<Transaction, 'id' | 'userId'>>): Promise<Transaction | null> {
-  const {data: resultData, error} = await fetchAPI(API_TRANSACTIONS_ID(id), {method: 'PUT', body: JSON.stringify(data.createdAt ? {...data, createdAt: new Date(data.createdAt).toISOString()} : data)});
+  const payload = { ...data };
+  if (typeof payload.amount === 'number') {
+    payload.amount = Math.round(payload.amount * 100);
+  }
+  if (payload.createdAt) {
+    payload.createdAt = new Date(payload.createdAt).toISOString() as any; // Type assertion
+  }
+  const {data: resultData, error} = await fetchAPI(API_TRANSACTIONS_ID(id), {method: 'PUT', body: JSON.stringify(payload)});
   if (error) {
     console.error('Failed to update transaction via API:', error.message);
     return null;
@@ -481,7 +502,7 @@ export async function updateTransaction(id: string, data: Partial<Omit<Transacti
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
-  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt)} as Transaction | null : null;
+  return resultData ? {...resultData, amount: resultData.amount / 100, createdAt: new Date(resultData.createdAt)} as Transaction | null : null;
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
@@ -502,7 +523,7 @@ export async function stopRecurringTransaction(transactionId: string): Promise<T
     return null;
   }
   revalidatePath('/transactions');
-  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt)} as Transaction | null : null;
+  return resultData ? {...resultData, amount: resultData.amount / 100, createdAt: new Date(resultData.createdAt)} as Transaction | null : null;
 }
 
 
@@ -515,7 +536,7 @@ export async function getTransfers(): Promise<Transfer[]> {
      console.warn(`getTransfers: API call failed or returned unexpected data. Falling back to mock data.`);
      return MOCK_DB.transfers
       .filter(t => t.userId === MOCK_USER_ID)
-      .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
+      .map(t => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   };
 
@@ -524,15 +545,19 @@ export async function getTransfers(): Promise<Transfer[]> {
   }
   try {
     let actualDataArray = resultData;
-    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.transfers && Array.isArray(resultData.transfers)) {
-      actualDataArray = resultData.transfers;
+    if (typeof resultData === 'object' && !Array.isArray(resultData)) {
+       if (resultData.transfers && Array.isArray(resultData.transfers)) {
+        actualDataArray = resultData.transfers;
+      } else if (resultData.data && Array.isArray(resultData.data)) {
+        actualDataArray = resultData.data;
+      }
     }
 
     if (!Array.isArray(actualDataArray)) {
       console.warn(`getTransfers: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return (actualDataArray as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
+    return (actualDataArray as any[]).map((t: any) => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
                      .sort((a: Transfer,b: Transfer) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (processingError: any) {
     console.error(`getTransfers: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
@@ -541,14 +566,15 @@ export async function getTransfers(): Promise<Transfer[]> {
 }
 
 export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Promise<Transfer> {
-   const {data: resultData, error} = await fetchAPI(API_TRANSFERS, {method: 'POST', body: JSON.stringify({...data, createdAt: data.createdAt.toISOString()})});
+   const payload = { ...data, amount: Math.round(data.amount * 100), createdAt: data.createdAt.toISOString() };
+   const {data: resultData, error} = await fetchAPI(API_TRANSFERS, {method: 'POST', body: JSON.stringify(payload)});
    if (error || !resultData) {
      console.error('Failed to create transfer via API:', error?.message);
      throw new Error(error?.message || "API Error creating transfer");
   }
   revalidatePath('/transfers');
   revalidatePath('/capital');
-  return {...resultData, createdAt: new Date(resultData.createdAt)} as Transfer;
+  return {...resultData, amount: resultData.amount / 100, createdAt: new Date(resultData.createdAt)} as Transfer;
 }
 
 export async function deleteTransfer(id: string): Promise<void> {
@@ -572,8 +598,10 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
 
   const mockFallback = (): Budget[] => {
     console.warn(`getBudgets: API call failed or returned unexpected data. Falling back to mock data.`);
-    return MOCK_DB.budgets.filter(b => b.userId === MOCK_USER_ID && (month ? b.month === month : true) && (year ? b.year === year : true))
-                                 .sort((a, b) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
+    return MOCK_DB.budgets
+      .filter(b => b.userId === MOCK_USER_ID && (month ? b.month === month : true) && (year ? b.year === year : true))
+      .map(b => ({...b, plannedAmount: b.plannedAmount / 100, createdAt: new Date(b.createdAt)}))
+      .sort((a, b) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
   };
 
   if (error || resultData === null) {
@@ -581,15 +609,19 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
   }
   try {
     let actualDataArray = resultData;
-    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.budgets && Array.isArray(resultData.budgets)) {
-      actualDataArray = resultData.budgets;
+    if (typeof resultData === 'object' && !Array.isArray(resultData)) {
+      if (resultData.budgets && Array.isArray(resultData.budgets)) {
+        actualDataArray = resultData.budgets;
+      } else if (resultData.data && Array.isArray(resultData.data)) {
+        actualDataArray = resultData.data;
+      }
     }
 
     if (!Array.isArray(actualDataArray)) {
       console.warn(`getBudgets: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return (actualDataArray as any[]).map(b => ({...b, createdAt: new Date(b.createdAt)}))
+    return (actualDataArray as any[]).map(b => ({...b, plannedAmount: b.plannedAmount / 100, createdAt: new Date(b.createdAt)}))
                                  .sort((a: Budget, b: Budget) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
   } catch (processingError: any) {
      console.error(`getBudgets: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
@@ -598,23 +630,28 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
 }
 
 export async function createBudget(data: Omit<Budget, 'id' | 'userId' | 'createdAt'>): Promise<Budget> {
-  const {data: resultData, error} = await fetchAPI(API_BUDGETS, {method: 'POST', body: JSON.stringify(data)});
+  const payload = { ...data, plannedAmount: Math.round(data.plannedAmount * 100) };
+  const {data: resultData, error} = await fetchAPI(API_BUDGETS, {method: 'POST', body: JSON.stringify(payload)});
   if (error || !resultData) {
      console.error('Failed to create budget via API:', error?.message);
      throw new Error(error?.message || "API Error creating budget");
   }
   revalidatePath('/budgets');
-  return {...resultData, createdAt: new Date(resultData.createdAt)} as Budget;
+  return {...resultData, plannedAmount: resultData.plannedAmount / 100, createdAt: new Date(resultData.createdAt)} as Budget;
 }
 
 export async function updateBudget(id: string, data: Partial<Omit<Budget, 'id' | 'userId' | 'createdAt'>>): Promise<Budget | null> {
-  const {data: resultData, error} = await fetchAPI(API_BUDGETS_ID(id), {method: 'PUT', body: JSON.stringify(data)});
+  const payload = { ...data };
+  if (typeof payload.plannedAmount === 'number') {
+    payload.plannedAmount = Math.round(payload.plannedAmount * 100);
+  }
+  const {data: resultData, error} = await fetchAPI(API_BUDGETS_ID(id), {method: 'PUT', body: JSON.stringify(payload)});
   if (error) {
     console.error('Failed to update budget via API:', error.message);
     return null;
   }
   revalidatePath('/budgets');
-  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt)} as Budget | null : null;
+  return resultData ? {...resultData, plannedAmount: resultData.plannedAmount / 100, createdAt: new Date(resultData.createdAt)} as Budget | null : null;
 }
 
 export async function deleteBudget(id: string): Promise<void> {
@@ -681,8 +718,12 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
   }
   try {
       let actualDataArray = resultData;
-      if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.feedbacks && Array.isArray(resultData.feedbacks)) {
-        actualDataArray = resultData.feedbacks;
+      if (typeof resultData === 'object' && !Array.isArray(resultData)) {
+        if (resultData.feedbacks && Array.isArray(resultData.feedbacks)) {
+          actualDataArray = resultData.feedbacks;
+        } else if (resultData.data && Array.isArray(resultData.data)) {
+          actualDataArray = resultData.data;
+        }
       }
 
       if (!Array.isArray(actualDataArray)) {
@@ -760,13 +801,14 @@ export async function getWalletTypes(): Promise<WalletType[]> {
     return defaultTypes;
   }
   try {
+    // Expecting data in format: [ { types: { "TYPENAME": id, ... } } ]
     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
       const typeKeys = Object.keys(data[0].types);
       return typeKeys.map(formatApiTypeName) as WalletType[];
-    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
-      return data as WalletType[];
+    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) { // Fallback for simple array of strings
+      return data.map(formatApiTypeName) as WalletType[];
     }
-    console.warn('Wallet types API response format not recognized, returning default types.');
+    console.warn('Wallet types API response format not recognized, returning default types.', data);
     return defaultTypes;
   } catch (e) {
     console.error('Error processing wallet types from API:', e);
@@ -787,10 +829,12 @@ export async function getTransactionTypes(): Promise<TransactionType[]> {
       return typeKeys
         .map(formatApiTypeName)
         .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
-    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
-      return (data as string[]).filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
+    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) { // Fallback for simple array of strings
+      return (data as string[])
+        .map(formatApiTypeName)
+        .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
     }
-    console.warn('Transaction types API response format not recognized, returning default types.');
+    console.warn('Transaction types API response format not recognized, returning default types.', data);
     return defaultTypes;
   } catch (e) {
     console.error('Error processing transaction types from API:', e);
