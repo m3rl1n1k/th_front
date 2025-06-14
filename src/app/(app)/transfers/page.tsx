@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cookies } from 'next/headers';
 
 export default async function TransfersPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const userSettings = await getUserSettings();
   const defaultCurrency = userSettings?.defaultCurrency || 'USD';

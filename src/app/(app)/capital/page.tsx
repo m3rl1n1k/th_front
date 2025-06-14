@@ -7,7 +7,7 @@ import type { Wallet, SharedCapitalSession } from '@/lib/definitions';
 import { cookies } from 'next/headers'; // Import cookies
 
 export default async function CapitalPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tc = t.capitalPage;

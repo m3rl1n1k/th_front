@@ -8,7 +8,7 @@ import { getWallets } from '@/lib/actions';
 import { cookies } from 'next/headers';
 
 export default async function WalletsPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const wallets = await getWallets();
 

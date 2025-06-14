@@ -10,7 +10,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers'; // Import cookies
 
 export default async function ProfilePage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tp = t.profilePage; 

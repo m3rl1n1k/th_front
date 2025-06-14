@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { cookies } from 'next/headers'; // Import cookies
 
 export default async function AiReportsPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tar = t.aiReportsPage;

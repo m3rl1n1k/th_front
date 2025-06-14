@@ -8,7 +8,7 @@ import type { FeedbackItem, FeedbackType } from '@/lib/definitions';
 import { feedbackTypes } from '@/lib/definitions'; // Import feedbackTypes
 
 export default async function ViewFeedbackPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tvf = t.viewFeedbackPage;

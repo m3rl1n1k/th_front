@@ -13,12 +13,12 @@ export const metadata: Metadata = {
   description: 'Manage your finances with ease.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const currentLocale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
 
   return (

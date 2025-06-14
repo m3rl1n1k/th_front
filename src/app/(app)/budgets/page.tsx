@@ -12,7 +12,7 @@ import type { Transaction, SubCategory, Budget, MainCategory } from '@/lib/defin
 import { cookies } from 'next/headers'; // Import cookies
 
 export default async function BudgetsPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;

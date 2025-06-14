@@ -17,7 +17,7 @@ async function getBudgetById(id: string): Promise<Budget | null> {
 
 export default async function EditBudgetPage({ params }: { params: { id: string } }) {
   const { id } = params;
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
   const tb = t.budgetsPage;

@@ -72,7 +72,7 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
     });
 
     if (user && !user.error) {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -83,14 +83,14 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
       return user as User;
     } else {
       console.error('Failed to fetch user data from /auth/me:', user?.message);
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
       cookieStore.delete(USER_DATA_COOKIE_NAME);
       return null;
     }
   } catch (error) {
     console.error('Error fetching user data from /auth/me:', error);
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
     cookieStore.delete(USER_DATA_COOKIE_NAME);
     return null;
@@ -104,7 +104,7 @@ export async function getCurrentUser(): Promise<User | null> {
   return mockUser || MOCK_DB.users[0] || null;
   // --- Original logic below, commented out ---
   /*
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const userDataString = cookieStore.get(USER_DATA_COOKIE_NAME)?.value;
 
   if (userDataString) {
@@ -139,7 +139,7 @@ export async function login(email: string, password_not_used: string): Promise<U
 
   if (response && response.token) {
     const token = response.token;
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set(AUTH_TOKEN_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -157,12 +157,12 @@ export async function login(email: string, password_not_used: string): Promise<U
 
 export async function logout(): Promise<void> {
   // --- Temporarily disabled auth: Clear cookies if any, but mostly a no-op for app state ---
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
   cookieStore.delete(USER_DATA_COOKIE_NAME);
   // --- Original logic below, commented out ---
   /*
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
 
   if (token) {
@@ -197,7 +197,7 @@ export async function getAuthToken(): Promise<string | null> {
   return "mock-auth-token-disabled-auth";
   // --- Original logic below, commented out ---
   /*
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
   */
 }

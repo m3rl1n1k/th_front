@@ -9,7 +9,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const currentLocale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(currentLocale); 
   

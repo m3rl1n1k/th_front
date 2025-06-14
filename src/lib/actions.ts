@@ -745,7 +745,7 @@ export async function updateFeedbackStatus(id: string, status: FeedbackStatus): 
 
 // --- Locale Actions ---
 export async function setLocaleCookie(locale: string, currentPath: string) {
-  const cookieStore = nextCookies();
+  const cookieStore = await nextCookies();
   cookieStore.set('NEXT_LOCALE', locale, {
     path: '/',
     maxAge: 365 * 24 * 60 * 60, // 1 year
