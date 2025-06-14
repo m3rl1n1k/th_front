@@ -18,7 +18,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 const AUTH_TOKEN_COOKIE_NAME = 'authToken';
 const USER_DATA_COOKIE_NAME = 'userData';
 
-// Helper to make auth API calls
+// Helper to make auth API calls (remains for potential partial use or future re-enablement)
 async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promise<any> {
   const fullUrl = `${API_BASE_URL}${endpoint}`;
   try {
@@ -54,23 +54,16 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promis
     }
     return response.json();
   } catch (networkError: any) {
-    // This block catches errors from the fetch() call itself (e.g., network down, DNS issues, CORS preflight failure)
     console.error(`Auth API Fetch Error for ${fullUrl}:`, networkError.message);
-    // Re-throw a more specific error or the original one, adding context.
     const error = new Error(`Network error when attempting to fetch ${fullUrl}. Is the backend server running and accessible? Original error: ${networkError.message}`) as any;
-    error.cause = networkError; // Preserve original error if needed
+    error.cause = networkError;
     throw error;
   }
 }
 
+// This function is generally not called when auth is "off" via getCurrentUser bypass
 async function fetchAndStoreUserData(token: string): Promise<User | null> {
-  // For demo mode with auth bypass, we don't need to fetch from API if MOCK_DB is primary
-  // However, if a real token login *were* to happen, this would be the path.
-  // For consistency, we'll still try to fetch from MOCK_DB based on token if needed,
-  // but getCurrentUser will prioritize the direct MOCK_DB access.
-  
-  // This function is more relevant if a real login happens and we need to get user data.
-  // For the current demo user setup, getCurrentUser() will bypass this.
+  console.warn("fetchAndStoreUserData called - this should be bypassed in 'auth off' mode if getCurrentUser is correctly mocked.");
   try {
     const user = await fetchAuthAPI(API_AUTH_ME, {
       method: 'GET',
@@ -90,15 +83,15 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
     } else {
       console.error('Failed to fetch user data from /auth/me:', user?.message);
       const cookieStore = await cookies();
-      cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
-      cookieStore.delete(USER_DATA_COOKIE_NAME);
+      await cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
+      await cookieStore.delete(USER_DATA_COOKIE_NAME);
       return null;
     }
   } catch (error) {
     console.error('Error fetching user data from /auth/me:', error);
     const cookieStore = await cookies();
-    cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
-    cookieStore.delete(USER_DATA_COOKIE_NAME);
+    await cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
+    await cookieStore.delete(USER_DATA_COOKIE_NAME);
     return null;
   }
 }
@@ -106,71 +99,42 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
 
 export async function getCurrentUser(): Promise<User | null> {
   // For demo purposes, return the mock user directly, bypassing API calls.
-  // This ensures no fetch is needed for page access.
   const user = MOCK_DB.users.find(u => u.id === 'user-123');
   return user || null;
 }
 
 export async function login(email: string, password_not_used: string): Promise<User | null> {
-  // The login form will still attempt to call this.
-  // For a true "no fetch" demo, this would also need to be mocked.
-  // However, since isAuthenticated() is true, middleware should redirect from /login,
-  // making this function less likely to be hit directly by the user.
-  // If called, it *will* attempt a real API call as per current setup.
-  console.warn("Login function called. In full demo mode, this would typically be bypassed or fully mocked if no backend is available.");
-  
-  const response = await fetchAuthAPI(API_AUTH_LOGIN, {
-    method: 'POST',
-    body: JSON.stringify({ email: email, password: password_not_used }),
-  });
-
-  if (response && response.token) {
-    const token = response.token;
-    const cookieStore = await cookies();
-    cookieStore.set(AUTH_TOKEN_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30 // 30 days
-    });
-    // After real login, fetch and store user data associated with the token
-    return await fetchAndStoreUserData(token);
-  } else if (email === 'user@example.com' && password_not_used === 'password') {
-    // Fallback to mock user if API fails but credentials match the demo ones
-    console.warn("Login API failed, but demo credentials match. Returning mock user.");
-    const user = MOCK_DB.users.find(u => u.email === email);
+  // For demo purposes with auth "off", "login" the mock user if email matches.
+  // This function should ideally not be reached if isAuthenticated() is true and middleware handles redirection.
+  if (email === 'user@example.com') {
+    const user = MOCK_DB.users.find(u => u.id === 'user-123');
     if (user) {
       const cookieStore = await cookies();
-      cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), { /* options */ });
-      // Optionally set a dummy auth token for demo if needed elsewhere
-      cookieStore.set(AUTH_TOKEN_COOKIE_NAME, "demo-auth-token", { /* options */ });
+      // Set a dummy user data cookie and auth token for completeness if any client-side logic expects them
+      cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7 // 7 days
+      });
+      cookieStore.set(AUTH_TOKEN_COOKIE_NAME, "demo-auth-token-bypassed", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7
+      });
       return user;
     }
-    return null;
-  } else {
-    console.error('Login API call successful but no token received or other issue.');
-    throw new Error('Login failed: No token received or invalid response structure.');
   }
+  console.error('Demo login attempt failed for:', email, ' This page should not be reachable if auth is off.');
+  throw new Error('Invalid demo credentials or setup issue. Login page should be inaccessible when auth is bypassed.');
 }
 
 export async function logout(): Promise<void> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
-
-  if (token && token !== "demo-auth-token") { // Don't try to logout a demo token from API
-    try {
-      // If you have a backend logout endpoint, call it here
-      // Example:
-      // await fetchAuthAPI(API_AUTH_LOGOUT, {
-      //   method: 'POST',
-      //   headers: { 'Authorization': `Bearer ${token}` },
-      // });
-    } catch (error) {
-      console.error('Error during API logout (ignoring):', error);
-    }
-  }
-
+  // No API call for logout in demo mode, just clear cookies.
   cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
   cookieStore.delete(USER_DATA_COOKIE_NAME);
 }
@@ -181,8 +145,8 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 export async function getAuthToken(): Promise<string | null> {
+  // In demo mode with auth off, no real token is used or needed from cookies for API.
+  // This might return a dummy token if set by the demo login.
   const cookieStore = await cookies();
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
 }
-
-    
