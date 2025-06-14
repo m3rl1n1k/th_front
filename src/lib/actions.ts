@@ -1,7 +1,7 @@
 
 'use server';
 import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType, TransactionType } from './definitions';
-import { _dangerouslyResetMockDbContent, type MockDb } from './definitions'; // Import MOCK_DB and _dangerouslyResetMockDbContent
+import { MOCK_DB, _dangerouslyResetMockDbContent, type MockDb } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth';
 import { cookies as nextCookies } from 'next/headers';
@@ -62,8 +62,8 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
     return { data: responseData, error: null };
 
   } catch (networkError: any) {
-    console.warn(`Network/Fetch Error for ${endpoint}:`, networkError.message);
-    return { data: null, error: { message: networkError.message || 'Network request failed' } };
+    console.warn(`Network/Fetch Error for ${endpoint}: ${networkError.message}. Returning 'null' data and no error, which will lead to empty data being used by callers.`);
+    return { data: null, error: null }; // On fetch failure, return null data and no error
   }
 }
 
@@ -71,14 +71,11 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
 // --- User Settings Actions ---
 export async function getUserSettings(): Promise<UserSettings | undefined> {
   try {
-    const user = await getCurrentUser(); // This will return the mock user when auth is off
+    const user = await getCurrentUser();
     return user?.settings;
   } catch (error) {
     console.warn('Failed to fetch user settings (mock):', error);
-    // Fallback to directly accessing MOCK_DB if getCurrentUser has issues during dev
-    const { MOCK_DB } = await import('./definitions');
-    const MOCK_USER_ID = 'user-123';
-    const user = MOCK_DB.users.find(u => u.id === MOCK_USER_ID);
+    const user = MOCK_DB.users.find(u => u.id === 'user-123');
     return user?.settings;
   }
 }
@@ -87,7 +84,6 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
   try {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
-    const { MOCK_DB } = await import('./definitions');
     const userIndex = MOCK_DB.users.findIndex(u => u.id === MOCK_USER_ID);
     if (userIndex === -1) throw new Error("User not found");
 
@@ -110,7 +106,6 @@ export async function updateUserProfile(userId: string, data: { name?: string })
   try {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID || MOCK_USER_ID !== userId) throw new Error("Unauthorized or user mismatch");
-    const { MOCK_DB } = await import('./definitions');
     const userIndex = MOCK_DB.users.findIndex(u => u.id === userId);
     if (userIndex === -1) throw new Error("User not found");
 
@@ -149,7 +144,6 @@ export async function getMainCategories(): Promise<MainCategory[]> {
 
   const mockFallback = async (): Promise<MainCategory[]> => {
       console.warn(`${apiCallLogPrefix} failed or returned unexpected data. Falling back to mock data.`);
-      const { MOCK_DB } = await import('./definitions');
       return MOCK_DB.mainCategories
         .filter(mc => mc.userId === MOCK_USER_ID)
         .map(mc => ({
@@ -164,12 +158,13 @@ export async function getMainCategories(): Promise<MainCategory[]> {
     return mockFallback();
   }
   if (resultData === null) {
-      console.info(`${apiCallLogPrefix} returned null or 204 No Content. Returning empty list.`);
+      console.info(`${apiCallLogPrefix} returned null data (e.g. 204 No Content or fetch failure). Returning empty list.`);
       return [];
   }
 
   try {
     let actualDataArray = resultData;
+    // Check if resultData is an object and has a common wrapper key for the list
     if (typeof resultData === 'object' && !Array.isArray(resultData)) {
       if (resultData.mainCategories && Array.isArray(resultData.mainCategories)) {
         actualDataArray = resultData.mainCategories;
@@ -179,7 +174,7 @@ export async function getMainCategories(): Promise<MainCategory[]> {
         actualDataArray = resultData.data;
       } else {
         console.warn(`${apiCallLogPrefix} returned object but not a recognized list wrapper. Data:`, resultData);
-        return [];
+        return []; // Return empty if structure is unrecognized
       }
     }
 
@@ -188,6 +183,7 @@ export async function getMainCategories(): Promise<MainCategory[]> {
       return [];
     }
 
+    // Ensure subCategories is always an array
     return (actualDataArray as MainCategory[]).map(mc => ({
       ...mc,
       subCategories: Array.isArray(mc.subCategories) ? mc.subCategories : []
@@ -233,8 +229,8 @@ export async function deleteMainCategory(id: string): Promise<void> {
 
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryIdFilter?: string): Promise<SubCategory[]> {
-  const allMainCategories = await getMainCategories();
-  if (!Array.isArray(allMainCategories)) {
+  const allMainCategories = await getMainCategories(); // This will now always return an array
+  if (!Array.isArray(allMainCategories)) { // Defensive check, though getMainCategories should ensure it
       console.warn("getMainCategories did not return an array for getSubCategories. Returning empty list.");
       return [];
   }
@@ -245,9 +241,11 @@ export async function getSubCategories(mainCategoryIdFilter?: string): Promise<S
     if (foundMain && Array.isArray(foundMain.subCategories)) {
       subCategoriesResult = foundMain.subCategories;
     } else {
+      // If main category not found or subCategories is not an array, result remains empty
       subCategoriesResult = [];
     }
   } else {
+    // If no filter, collect all subcategories from all main categories
     allMainCategories.forEach(mc => {
       if (mc.subCategories && Array.isArray(mc.subCategories)) {
         subCategoriesResult.push(...mc.subCategories);
@@ -262,7 +260,7 @@ export async function getSubCategories(mainCategoryIdFilter?: string): Promise<S
 export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>): Promise<SubCategory> {
   const apiData = {
     name: data.name,
-    main_category: data.mainCategoryId,
+    main_category: data.mainCategoryId, // Use main_category as per API doc
     color: data.color,
     icon: data.icon,
   };
@@ -279,7 +277,7 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
 export async function updateSubCategory(id: string, data: Partial<Omit<SubCategory, 'id' | 'userId'>>): Promise<SubCategory | null> {
   const apiData: any = { name: data.name, color: data.color, icon: data.icon };
   if (data.mainCategoryId) {
-    apiData.main_category = data.mainCategoryId;
+    apiData.main_category = data.mainCategoryId; // Use main_category
   }
   const {data: resultData, error} = await fetchAPI(API_SUB_CATEGORIES_ID(id), { method: 'PUT', body: JSON.stringify(apiData) });
   if (error) {
@@ -309,7 +307,6 @@ export async function getWallets(): Promise<Wallet[]> {
 
   const mockFallback = async (): Promise<Wallet[]> => {
     console.warn(`getWallets: API call failed or returned unexpected data. Falling back to mock data.`);
-    const { MOCK_DB } = await import('./definitions');
     return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID).map(w => ({...w, initialAmount: w.initialAmount / 100}));
   };
 
@@ -318,7 +315,7 @@ export async function getWallets(): Promise<Wallet[]> {
     return mockFallback();
   }
   if (resultData === null) {
-      console.info(`getWallets: API call returned null or 204 No Content. Returning empty list.`);
+      console.info(`getWallets: API call returned null data (e.g. 204 No Content or fetch failure). Returning empty list.`);
       return [];
   }
   try {
@@ -326,7 +323,7 @@ export async function getWallets(): Promise<Wallet[]> {
     if (typeof resultData === 'object' && !Array.isArray(resultData)) {
       if (resultData.wallets && Array.isArray(resultData.wallets)) {
         actualDataArray = resultData.wallets;
-      } else if (resultData.data && Array.isArray(resultData.data)) {
+      } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
          actualDataArray = resultData.data;
       } else {
         console.warn(`getWallets: API returned object but not a recognized list wrapper. Data:`, resultData);
@@ -390,7 +387,6 @@ export async function getTransactions(): Promise<Transaction[]> {
 
   const mockFallback = async (): Promise<Transaction[]> => {
     console.warn(`getTransactions: API call failed or returned unexpected data. Falling back to mock data.`);
-    const { MOCK_DB } = await import('./definitions');
      return MOCK_DB.transactions
       .filter(t => t.userId === MOCK_USER_ID)
       .map(t => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
@@ -402,7 +398,7 @@ export async function getTransactions(): Promise<Transaction[]> {
     return mockFallback();
   }
   if (resultData === null) {
-    console.info(`getTransactions: API call returned null or 204 No Content. Returning empty list.`);
+    console.info(`getTransactions: API call returned null data (e.g. 204 No Content or fetch failure). Returning empty list.`);
     return [];
   }
 
@@ -411,7 +407,7 @@ export async function getTransactions(): Promise<Transaction[]> {
     if (typeof resultData === 'object' && !Array.isArray(resultData)) {
       if (resultData.transactions && Array.isArray(resultData.transactions)) {
         actualDataArray = resultData.transactions;
-      } else if (resultData.data && Array.isArray(resultData.data)) {
+      } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
         actualDataArray = resultData.data;
       } else {
         console.warn(`getTransactions: API returned object but not a recognized list wrapper. Data:`, resultData);
@@ -441,6 +437,7 @@ export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
+  revalidatePath('/standard-reports');
   return {...resultData, amount: resultData.amount / 100, createdAt: new Date(resultData.createdAt)} as Transaction;
 }
 
@@ -460,6 +457,7 @@ export async function updateTransaction(id: string, data: Partial<Omit<Transacti
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
+  revalidatePath('/standard-reports');
   return resultData ? {...resultData, amount: resultData.amount / 100, createdAt: new Date(resultData.createdAt)} as Transaction | null : null;
 }
 
@@ -472,6 +470,7 @@ export async function deleteTransaction(id: string): Promise<void> {
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
+  revalidatePath('/standard-reports');
 }
 
 export async function stopRecurringTransaction(transactionId: string): Promise<Transaction | null> {
@@ -492,7 +491,6 @@ export async function getTransfers(): Promise<Transfer[]> {
 
   const mockFallback = async (): Promise<Transfer[]> => {
      console.warn(`getTransfers: API call failed or returned unexpected data. Falling back to mock data.`);
-     const { MOCK_DB } = await import('./definitions');
      return MOCK_DB.transfers
       .filter(t => t.userId === MOCK_USER_ID)
       .map(t => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
@@ -504,7 +502,7 @@ export async function getTransfers(): Promise<Transfer[]> {
      return mockFallback();
   }
   if (resultData === null) {
-    console.info(`getTransfers: API call returned null or 204 No Content. Returning empty list.`);
+    console.info(`getTransfers: API call returned null data (e.g. 204 No Content or fetch failure). Returning empty list.`);
     return [];
   }
   try {
@@ -512,7 +510,7 @@ export async function getTransfers(): Promise<Transfer[]> {
     if (typeof resultData === 'object' && !Array.isArray(resultData)) {
        if (resultData.transfers && Array.isArray(resultData.transfers)) {
         actualDataArray = resultData.transfers;
-      } else if (resultData.data && Array.isArray(resultData.data)) {
+      } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
         actualDataArray = resultData.data;
       } else {
         console.warn(`getTransfers: API returned object but not a recognized list wrapper. Data:`, resultData);
@@ -565,7 +563,6 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
 
   const mockFallback = async (): Promise<Budget[]> => {
     console.warn(`getBudgets: API call failed or returned unexpected data. Falling back to mock data.`);
-    const { MOCK_DB } = await import('./definitions');
     return MOCK_DB.budgets
       .filter(b => b.userId === MOCK_USER_ID && (month ? b.month === month : true) && (year ? b.year === year : true))
       .map(b => ({...b, plannedAmount: b.plannedAmount / 100, createdAt: new Date(b.createdAt)}))
@@ -577,7 +574,7 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
     return mockFallback();
   }
   if (resultData === null) {
-    console.info(`getBudgets: API call returned null or 204 No Content. Returning empty list.`);
+    console.info(`getBudgets: API call returned null data (e.g. 204 No Content or fetch failure). Returning empty list.`);
     return [];
   }
   try {
@@ -585,7 +582,7 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
     if (typeof resultData === 'object' && !Array.isArray(resultData)) {
       if (resultData.budgets && Array.isArray(resultData.budgets)) {
         actualDataArray = resultData.budgets;
-      } else if (resultData.data && Array.isArray(resultData.data)) {
+      } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
         actualDataArray = resultData.data;
       } else {
         console.warn(`getBudgets: API returned object but not a recognized list wrapper. Data:`, resultData);
@@ -644,7 +641,7 @@ export async function getSharedCapitalSession(): Promise<SharedCapitalSession | 
   const {data: resultData, error} = await fetchAPI(API_SHARED_CAPITAL_SESSION);
   if (error) {
      console.warn(`getSharedCapitalSession: API call failed (Error: ${error?.message}). Mock DB has no active session.`);
-     return null;
+     return null; // Return null if API call failed
   }
   if (!resultData) return null;
   try {
@@ -682,7 +679,6 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
 
   const mockFallback = async (): Promise<FeedbackItem[]> => {
     console.warn(`getFeedbacks: API call failed or returned unexpected data. Falling back to mock data.`);
-    const { MOCK_DB } = await import('./definitions');
     return MOCK_DB.feedbacks
         .filter(f => f.userId === MOCK_USER_ID)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -693,7 +689,7 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
     return mockFallback();
   }
   if (resultData === null) {
-    console.info(`getFeedbacks: API call returned null or 204 No Content. Returning empty list.`);
+    console.info(`getFeedbacks: API call returned null data (e.g. 204 No Content or fetch failure). Returning empty list.`);
     return [];
   }
   try {
@@ -701,7 +697,7 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
       if (typeof resultData === 'object' && !Array.isArray(resultData)) {
         if (resultData.feedbacks && Array.isArray(resultData.feedbacks)) {
           actualDataArray = resultData.feedbacks;
-        } else if (resultData.data && Array.isArray(resultData.data)) {
+        } else if (resultData.data && Array.isArray(resultData.data)) { // Common wrapper
           actualDataArray = resultData.data;
         } else {
             console.warn(`getFeedbacks: API returned object but not a recognized list wrapper. Data:`, resultData);
@@ -762,7 +758,6 @@ export async function setLocaleCookie(locale: string, currentPath: string) {
 
 // Helper to reset DB for testing if needed - not for production
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
-  // Call the function from definitions.ts to reset the MOCK_DB content
   _dangerouslyResetMockDbContent(initialDbState);
 }
 
@@ -785,7 +780,6 @@ export async function getWalletTypes(): Promise<WalletType[]> {
     return defaultTypes;
   }
   try {
-    // Expecting data in format: [ { types: { "TYPENAME": id, ... } } ] or an object { types: { ... } }
     let typesObject;
     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
       typesObject = data[0].types;
@@ -839,4 +833,3 @@ export async function getTransactionTypes(): Promise<TransactionType[]> {
     return defaultTypes;
   }
 }
-
