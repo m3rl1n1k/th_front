@@ -41,7 +41,7 @@ export default async function TransactionsPage() {
     <>
       <PageHeader title={tt.title} description={tt.description}>
         <Button asChild>
-          <Link href={`/${locale}/transactions/new`}>
+          <Link href="/transactions/new">
             <PlusCircle className="mr-2 h-4 w-4" /> {tt.addTransactionButton}
           </Link>
         </Button>
@@ -78,3 +78,4 @@ export default async function TransactionsPage() {
     </>
   );
 }
+
