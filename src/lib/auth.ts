@@ -64,6 +64,13 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promis
 }
 
 async function fetchAndStoreUserData(token: string): Promise<User | null> {
+  // For demo mode with auth bypass, we don't need to fetch from API if MOCK_DB is primary
+  // However, if a real token login *were* to happen, this would be the path.
+  // For consistency, we'll still try to fetch from MOCK_DB based on token if needed,
+  // but getCurrentUser will prioritize the direct MOCK_DB access.
+  
+  // This function is more relevant if a real login happens and we need to get user data.
+  // For the current demo user setup, getCurrentUser() will bypass this.
   try {
     const user = await fetchAuthAPI(API_AUTH_ME, {
       method: 'GET',
@@ -98,31 +105,23 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
 
 
 export async function getCurrentUser(): Promise<User | null> {
-  const cookieStore = await cookies();
-  const userDataString = cookieStore.get(USER_DATA_COOKIE_NAME)?.value;
-
-  if (userDataString) {
-    try {
-      const userData: User = JSON.parse(userDataString);
-      return userData;
-    } catch (e) {
-      console.error("Failed to parse user data from cookie", e);
-      cookieStore.delete(USER_DATA_COOKIE_NAME);
-      cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
-    }
-  }
-
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
-  if (token) {
-    return await fetchAndStoreUserData(token);
-  }
-  return null;
+  // For demo purposes, return the mock user directly, bypassing API calls.
+  // This ensures no fetch is needed for page access.
+  const user = MOCK_DB.users.find(u => u.id === 'user-123');
+  return user || null;
 }
 
 export async function login(email: string, password_not_used: string): Promise<User | null> {
+  // The login form will still attempt to call this.
+  // For a true "no fetch" demo, this would also need to be mocked.
+  // However, since isAuthenticated() is true, middleware should redirect from /login,
+  // making this function less likely to be hit directly by the user.
+  // If called, it *will* attempt a real API call as per current setup.
+  console.warn("Login function called. In full demo mode, this would typically be bypassed or fully mocked if no backend is available.");
+  
   const response = await fetchAuthAPI(API_AUTH_LOGIN, {
     method: 'POST',
-    body: JSON.stringify({ email: email, password: password_not_used }), // Use "email" key
+    body: JSON.stringify({ email: email, password: password_not_used }),
   });
 
   if (response && response.token) {
@@ -135,7 +134,20 @@ export async function login(email: string, password_not_used: string): Promise<U
       path: '/',
       maxAge: 60 * 60 * 24 * 30 // 30 days
     });
+    // After real login, fetch and store user data associated with the token
     return await fetchAndStoreUserData(token);
+  } else if (email === 'user@example.com' && password_not_used === 'password') {
+    // Fallback to mock user if API fails but credentials match the demo ones
+    console.warn("Login API failed, but demo credentials match. Returning mock user.");
+    const user = MOCK_DB.users.find(u => u.email === email);
+    if (user) {
+      const cookieStore = await cookies();
+      cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), { /* options */ });
+      // Optionally set a dummy auth token for demo if needed elsewhere
+      cookieStore.set(AUTH_TOKEN_COOKIE_NAME, "demo-auth-token", { /* options */ });
+      return user;
+    }
+    return null;
   } else {
     console.error('Login API call successful but no token received or other issue.');
     throw new Error('Login failed: No token received or invalid response structure.');
@@ -146,7 +158,7 @@ export async function logout(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
 
-  if (token) {
+  if (token && token !== "demo-auth-token") { // Don't try to logout a demo token from API
     try {
       // If you have a backend logout endpoint, call it here
       // Example:
@@ -164,8 +176,8 @@ export async function logout(): Promise<void> {
 }
 
 export async function isAuthenticated(): Promise<boolean> {
-  const user = await getCurrentUser();
-  return user !== null;
+  // For demo purposes, always return true to bypass API calls for page access.
+  return true;
 }
 
 export async function getAuthToken(): Promise<string | null> {
@@ -173,3 +185,4 @@ export async function getAuthToken(): Promise<string | null> {
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
 }
 
+    
