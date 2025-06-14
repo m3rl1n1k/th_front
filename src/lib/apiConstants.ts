@@ -2,7 +2,7 @@
 // src/lib/apiConstants.ts
 
 // Auth
-export const API_AUTH_LOGIN = '/auth/login';
+export const API_AUTH_LOGIN = '/login_check'; // Changed from '/auth/login'
 export const API_AUTH_ME = '/auth/me';
 // If you had a logout endpoint for the API:
 // export const API_AUTH_LOGOUT = '/auth/logout';
@@ -45,3 +45,4 @@ export const API_SHARED_CAPITAL_SESSION = '/shared-capital/session';
 // Feedback
 export const API_FEEDBACKS = '/feedbacks';
 export const API_FEEDBACKS_ID_STATUS = (id: string) => `/feedbacks/${id}/status`;
+
