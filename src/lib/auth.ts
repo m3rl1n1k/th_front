@@ -34,7 +34,9 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promis
       let errorMessage = `Auth API request failed: ${response.statusText}`;
       try {
           const parsedError = JSON.parse(errorBody);
-          if (parsedError && parsedError.message) {
+          if (parsedError && parsedError.detail) { // Symfony often uses "detail"
+              errorMessage = parsedError.detail;
+          } else if (parsedError && parsedError.message) {
               errorMessage = parsedError.message;
           } else if (parsedError && errorBody) {
             errorMessage = errorBody;
@@ -105,6 +107,10 @@ export async function getCurrentUser(): Promise<User | null> {
       console.error('Error parsing user data from cookie:', error);
       await cookieStore.delete(USER_DATA_COOKIE_NAME);
       await cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
+      // Try fetching with token if available
+      if (token) {
+        return fetchAndStoreUserData(token);
+      }
       return null;
     }
   }
@@ -116,13 +122,13 @@ export async function getCurrentUser(): Promise<User | null> {
   return null;
 }
 
-// Changed first parameter from 'email' to 'identifier'
-export async function login(identifier: string, password_input: string): Promise<User | null> {
+// Changed first parameter from 'identifier' to 'email_input'
+export async function login(email_input: string, password_input: string): Promise<User | null> {
   try {
     const response = await fetchAuthAPI(API_AUTH_LOGIN, {
       method: 'POST',
-      // The key remains 'email' as per backend API, but its value is from the 'identifier' (username) field
-      body: JSON.stringify({ email: identifier, password: password_input }), 
+      // Send the email_input value under the key 'username'
+      body: JSON.stringify({ username: email_input, password: password_input }), 
     });
 
     if (response && response.token) {

@@ -15,8 +15,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [username, setUsername] = useState('user@example.com'); // Default to 'user@example.com'
-  const [password, setPassword] = useState('password'); // Default to 'password'
+  const [email, setEmail] = useState('user@example.com'); // Changed from username to email
+  const [password, setPassword] = useState('password'); 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,8 +25,8 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null); 
     try {
-      // Pass the username state variable to the login function
-      const user = await login(username, password); 
+      // Pass the email state variable to the login function
+      const user = await login(email, password); 
       if (user) {
         toast({
           title: 'Login Successful',
@@ -34,7 +34,7 @@ export default function LoginPage() {
         });
         router.push('/dashboard'); 
       } else {
-        const errorMessage = "Invalid username or password.";
+        const errorMessage = "Invalid email or password."; // Adjusted error message
         setError(errorMessage);
         toast({
           title: 'Login Failed',
@@ -55,8 +55,12 @@ export default function LoginPage() {
         errorMessage = `Could not connect to the server at ${apiUrl}. Please ensure the backend server is running and accessible. Original error: ${err.message}`;
       } else if (err.status === 401) {
         errorTitle = 'Authentication Failed';
-        errorMessage = 'Invalid username or password. Please check your credentials.';
+        errorMessage = 'Invalid email or password. Please check your credentials.';
+      } else if (err.status === 400 && err.message && err.message.toLowerCase().includes('key "username" must be provided')) {
+        errorTitle = 'Login Configuration Issue';
+        errorMessage = 'There seems to be a mismatch in login field configuration. Please contact support.';
       }
+
 
       setError(errorMessage);
       toast({
@@ -82,13 +86,13 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label> 
+              <Label htmlFor="email">Email</Label> 
               <Input
-                id="username"
-                type="text" 
-                placeholder="Enter your username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email" // Changed from username
+                type="email" // Changed from text
+                placeholder="Enter your email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
