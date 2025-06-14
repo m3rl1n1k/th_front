@@ -13,7 +13,6 @@ import {
   API_BUDGETS, API_BUDGETS_ID,
   API_SHARED_CAPITAL_SESSION,
   API_FEEDBACKS, API_FEEDBACKS_ID_STATUS
-  // API_USERS_ME_SETTINGS, API_USERS_ME_PROFILE, API_USERS_ME_CHANGE_PASSWORD // Not used directly in this file for now but could be
 } from './apiConstants';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
@@ -213,34 +212,44 @@ export async function changePassword(userId: string, currentPassword: string, ne
 
 // --- Main Category Actions ---
 export async function getMainCategories(): Promise<MainCategory[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  const apiCallLogPrefix = 'getMainCategories: API call';
   const result = await fetchAPI(API_MAIN_CATEGORIES);
 
-  if (result.error || !result.data) {
-    console.warn(`getMainCategories: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  if (result.error) {
+    console.warn(`${apiCallLogPrefix} failed (Error: ${result.error.message}). Falling back to mock data.`);
+    // Mock data fallback, reconstructs subCategories from flat list for safety
     return MOCK_DB.mainCategories
       .filter(mc => mc.userId === MOCK_USER_ID)
       .map(mc => ({
         ...mc,
-        subCategories: MOCK_DB.subCategories.filter(sc => sc.mainCategoryId === mc.id && sc.userId === MOCK_USER_ID)
+        // Ensure subCategories in mock are also arrays
+        subCategories: Array.isArray(mc.subCategories) ? mc.subCategories.filter(sc => sc.userId === MOCK_USER_ID) : 
+                       MOCK_DB.subCategories.filter(sc => sc.mainCategoryId === mc.id && sc.userId === MOCK_USER_ID)
       }));
   }
-  try {
-    // Assuming the API returns MainCategory[] where each MainCategory might have its subCategories nested.
-    // If subCategories are not nested, you might need another call or adjust the API.
-    // For now, let's assume they are nested as per API documentation update.
-    return result.data as MainCategory[];
-  } catch (processingError: any) {
-    console.error(`getMainCategories: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-    return MOCK_DB.mainCategories
-      .filter(mc => mc.userId === MOCK_USER_ID)
-      .map(mc => ({
-        ...mc,
-        subCategories: MOCK_DB.subCategories.filter(sc => sc.mainCategoryId === mc.id && sc.userId === MOCK_USER_ID)
-      }));
+
+  // If API call was successful (no error from fetchAPI)
+  if (result.data === null) {
+    // API explicitly returned null (e.g. for an empty list), or fetchAPI handled 204
+    console.warn(`${apiCallLogPrefix} resulted in null data. Interpreting as empty list.`);
+    return [];
   }
+
+  if (Array.isArray(result.data)) {
+    // Data is an array, process it.
+    return (result.data as MainCategory[]).map(mc => ({
+      ...mc,
+      // Ensure subCategories from API response are also arrays or default to empty array.
+      subCategories: Array.isArray(mc.subCategories) ? mc.subCategories : []
+    }));
+  }
+
+  // If data is not null and not an array, it's an unexpected format.
+  console.warn(`${apiCallLogPrefix} returned data in an unexpected format (Type: ${typeof result.data}, Value: ${JSON.stringify(result.data)}). Returning empty list.`);
+  return []; // Default to empty array for unexpected data types.
 }
+
 
 export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId' | 'subCategories'>): Promise<MainCategory> {
   const apiData = { name: data.name, color: data.color, icon: data.icon };
@@ -276,28 +285,34 @@ export async function deleteMainCategory(id: string): Promise<void> {
 
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryIdFilter?: string): Promise<SubCategory[]> {
-  const allMainCategories = await getMainCategories(); // This now fetches main cats with nested sub-cats
-  let subCategories: SubCategory[] = [];
+  const allMainCategories = await getMainCategories(); // This will now always be an array.
+  let subCategoriesResult: SubCategory[] = [];
 
   if (mainCategoryIdFilter) {
     const foundMain = allMainCategories.find(mc => mc.id === mainCategoryIdFilter);
-    subCategories = foundMain?.subCategories || [];
+    // Ensure foundMain and its subCategories exist and subCategories is an array
+    if (foundMain && Array.isArray(foundMain.subCategories)) {
+      subCategoriesResult = foundMain.subCategories;
+    } else {
+      subCategoriesResult = []; // Default to empty if not found or subCategories not an array
+    }
   } else {
     allMainCategories.forEach(mc => {
-      if (mc.subCategories) {
-        subCategories.push(...mc.subCategories);
+      // Ensure mc.subCategories exists and is an array before spreading
+      if (mc.subCategories && Array.isArray(mc.subCategories)) {
+        subCategoriesResult.push(...mc.subCategories);
       }
     });
   }
-  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123'; // Ensure userId consistency if needed from API
-  return subCategories.map(sc => ({ ...sc, userId: sc.userId || MOCK_USER_ID }));
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  return subCategoriesResult.map(sc => ({ ...sc, userId: sc.userId || MOCK_USER_ID }));
 }
 
 
 export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>): Promise<SubCategory> {
   const apiData = {
     name: data.name,
-    main_category: data.mainCategoryId, // Adjusted for API
+    main_category: data.mainCategoryId, 
     color: data.color,
     icon: data.icon,
   };
@@ -314,7 +329,7 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
 export async function updateSubCategory(id: string, data: Partial<Omit<SubCategory, 'id' | 'userId'>>): Promise<SubCategory | null> {
   const apiData: any = { name: data.name, color: data.color, icon: data.icon };
   if (data.mainCategoryId) {
-    apiData.main_category = data.mainCategoryId; // Adjusted for API
+    apiData.main_category = data.mainCategoryId; 
   }
   const result = await fetchAPI(API_SUB_CATEGORIES_ID(id), { method: 'PUT', body: JSON.stringify(apiData) });
   if (result.error) {
@@ -346,6 +361,10 @@ export async function getWallets(): Promise<Wallet[]> {
     return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID);
   }
   try {
+     if (!Array.isArray(result.data)) {
+      console.warn(`getWallets: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+      return [];
+    }
     return result.data as Wallet[];
   } catch (processingError: any) {
     console.error(`getWallets: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
@@ -401,6 +420,10 @@ export async function getTransactions(): Promise<Transaction[]> {
   }
 
   try {
+    if (!Array.isArray(result.data)) {
+      console.warn(`getTransactions: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+      return [];
+    }
     return (result.data as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
                          .sort((a: Transaction, b: Transaction) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (processingError: any) {
@@ -471,6 +494,10 @@ export async function getTransfers(): Promise<Transfer[]> {
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
   try {
+    if (!Array.isArray(result.data)) {
+      console.warn(`getTransfers: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+      return [];
+    }
     return (result.data as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
                      .sort((a: Transfer,b: Transfer) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (processingError: any) {
@@ -517,6 +544,10 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
                                  .sort((a, b) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
   }
   try {
+     if (!Array.isArray(result.data)) {
+      console.warn(`getBudgets: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+      return [];
+    }
     return (result.data as any[]).map(b => ({...b, createdAt: new Date(b.createdAt)}))
                                  .sort((a: Budget, b: Budget) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
   } catch (processingError: any) {
@@ -605,6 +636,10 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
     return mockData;
   }
   try {
+      if (!Array.isArray(result.data)) {
+        console.warn(`getFeedbacks: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+        return [];
+      }
       return (result.data as any[]).map(f => ({...f, createdAt: new Date(f.createdAt)}))
                                    .sort((a:FeedbackItem, b:FeedbackItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch(processingError: any) {
@@ -641,18 +676,18 @@ export async function updateFeedbackStatus(id: string, status: FeedbackStatus): 
 
 // --- Locale Actions ---
 export async function setLocaleCookie(locale: string, currentPath: string) {
-  const cookieStore = nextCookies(); // nextCookies() is synchronous
+  const cookieStore = nextCookies(); 
   cookieStore.set('NEXT_LOCALE', locale, {
     path: '/',
-    maxAge: 365 * 24 * 60 * 60,
+    maxAge: 365 * 24 * 60 * 60, // 1 year
     sameSite: 'lax',
   });
-  revalidatePath(currentPath);
-  revalidatePath('/', 'layout');
+  revalidatePath(currentPath); // Revalidate the current path
+  revalidatePath('/', 'layout'); // Revalidate the root layout to update locale props
 }
 
 
 // Helper to reset DB for testing if needed - not for production
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
-  MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
+  MOCK_DB = JSON.parse(JSON.stringify(initialDbState)); // Deep copy
 }
