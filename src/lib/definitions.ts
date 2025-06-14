@@ -125,8 +125,7 @@ export interface MockDb {
   feedbacks: FeedbackItem[];
 };
 
-// In-memory store for mock data (amounts are in cents)
-export let MOCK_DB: MockDb = {
+const initialMockDbState: MockDb = {
   users: [{
     id: 'user-123',
     email: 'user@example.com',
@@ -196,3 +195,34 @@ export let MOCK_DB: MockDb = {
   sharedCapitalSessions: [],
   feedbacks: [],
 };
+
+// In-memory store for mock data
+export let MOCK_DB: MockDb = JSON.parse(JSON.stringify(initialMockDbState));
+
+// Function to reset MOCK_DB to its initial state by mutating its properties.
+// This is "dangerous" because it directly mutates the global MOCK_DB object.
+export function _dangerouslyResetMockDbContent(newState?: MockDb): void {
+  const stateToResetTo = newState || initialMockDbState;
+  // Clear existing arrays/objects and repopulate to avoid reassigning MOCK_DB itself
+  (Object.keys(MOCK_DB) as Array<keyof MockDb>).forEach(key => {
+    if (Array.isArray(MOCK_DB[key])) {
+      (MOCK_DB[key] as any[]) = [];
+    } else if (typeof MOCK_DB[key] === 'object' && MOCK_DB[key] !== null) {
+      // For non-array objects, if any top-level (not needed for current MOCK_DB structure)
+      // You might need a more sophisticated clear if structure is complex
+    }
+  });
+
+  // Deep copy new state into MOCK_DB properties
+  const deepCopiedState = JSON.parse(JSON.stringify(stateToResetTo));
+  (Object.keys(deepCopiedState) as Array<keyof MockDb>).forEach(key => {
+    MOCK_DB[key] = deepCopiedState[key] as any;
+  });
+
+   // Optionally, remove keys from MOCK_DB that are not in deepCopiedState
+   (Object.keys(MOCK_DB) as Array<keyof MockDb>).forEach(key => {
+    if (!(key in deepCopiedState)) {
+      delete MOCK_DB[key];
+    }
+  });
+}

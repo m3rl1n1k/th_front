@@ -1,7 +1,7 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType, TransactionType } from './definitions';
-import { MOCK_DB } from './definitions'; // Import MOCK_DB from definitions
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType, TransactionType } from './definitions';
+import { _dangerouslyResetMockDbContent, type MockDb } from './definitions'; // Import MOCK_DB and _dangerouslyResetMockDbContent
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth';
 import { cookies as nextCookies } from 'next/headers';
@@ -71,10 +71,12 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
 // --- User Settings Actions ---
 export async function getUserSettings(): Promise<UserSettings | undefined> {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(); // This will return the mock user when auth is off
     return user?.settings;
   } catch (error) {
     console.warn('Failed to fetch user settings (mock):', error);
+    // Fallback to directly accessing MOCK_DB if getCurrentUser has issues during dev
+    const { MOCK_DB } = await import('./definitions');
     const MOCK_USER_ID = 'user-123';
     const user = MOCK_DB.users.find(u => u.id === MOCK_USER_ID);
     return user?.settings;
@@ -85,7 +87,7 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
   try {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
-
+    const { MOCK_DB } = await import('./definitions');
     const userIndex = MOCK_DB.users.findIndex(u => u.id === MOCK_USER_ID);
     if (userIndex === -1) throw new Error("User not found");
 
@@ -108,7 +110,7 @@ export async function updateUserProfile(userId: string, data: { name?: string })
   try {
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID || MOCK_USER_ID !== userId) throw new Error("Unauthorized or user mismatch");
-
+    const { MOCK_DB } = await import('./definitions');
     const userIndex = MOCK_DB.users.findIndex(u => u.id === userId);
     if (userIndex === -1) throw new Error("User not found");
 
@@ -145,8 +147,9 @@ export async function getMainCategories(): Promise<MainCategory[]> {
   const apiCallLogPrefix = 'getMainCategories: API call';
   const { data: resultData, error } = await fetchAPI(API_MAIN_CATEGORIES);
 
-  const mockFallback = (): MainCategory[] => {
+  const mockFallback = async (): Promise<MainCategory[]> => {
       console.warn(`${apiCallLogPrefix} failed or returned unexpected data. Falling back to mock data.`);
+      const { MOCK_DB } = await import('./definitions');
       return MOCK_DB.mainCategories
         .filter(mc => mc.userId === MOCK_USER_ID)
         .map(mc => ({
@@ -304,8 +307,9 @@ export async function getWallets(): Promise<Wallet[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const { data: resultData, error } = await fetchAPI(API_WALLETS);
 
-  const mockFallback = (): Wallet[] => {
+  const mockFallback = async (): Promise<Wallet[]> => {
     console.warn(`getWallets: API call failed or returned unexpected data. Falling back to mock data.`);
+    const { MOCK_DB } = await import('./definitions');
     return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID).map(w => ({...w, initialAmount: w.initialAmount / 100}));
   };
 
@@ -384,8 +388,9 @@ export async function getTransactions(): Promise<Transaction[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const { data: resultData, error } = await fetchAPI(API_TRANSACTIONS);
 
-  const mockFallback = (): Transaction[] => {
+  const mockFallback = async (): Promise<Transaction[]> => {
     console.warn(`getTransactions: API call failed or returned unexpected data. Falling back to mock data.`);
+    const { MOCK_DB } = await import('./definitions');
      return MOCK_DB.transactions
       .filter(t => t.userId === MOCK_USER_ID)
       .map(t => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
@@ -485,8 +490,9 @@ export async function getTransfers(): Promise<Transfer[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const { data: resultData, error } = await fetchAPI(API_TRANSFERS);
 
-  const mockFallback = (): Transfer[] => {
+  const mockFallback = async (): Promise<Transfer[]> => {
      console.warn(`getTransfers: API call failed or returned unexpected data. Falling back to mock data.`);
+     const { MOCK_DB } = await import('./definitions');
      return MOCK_DB.transfers
       .filter(t => t.userId === MOCK_USER_ID)
       .map(t => ({ ...t, amount: t.amount / 100, createdAt: new Date(t.createdAt) }))
@@ -557,8 +563,9 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
   }
   const { data: resultData, error } = await fetchAPI(`${API_BUDGETS}${query}`);
 
-  const mockFallback = (): Budget[] => {
+  const mockFallback = async (): Promise<Budget[]> => {
     console.warn(`getBudgets: API call failed or returned unexpected data. Falling back to mock data.`);
+    const { MOCK_DB } = await import('./definitions');
     return MOCK_DB.budgets
       .filter(b => b.userId === MOCK_USER_ID && (month ? b.month === month : true) && (year ? b.year === year : true))
       .map(b => ({...b, plannedAmount: b.plannedAmount / 100, createdAt: new Date(b.createdAt)}))
@@ -673,13 +680,12 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const { data: resultData, error } = await fetchAPI(API_FEEDBACKS);
 
-  const mockData = MOCK_DB.feedbacks
-    .filter(f => f.userId === MOCK_USER_ID)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  const mockFallback = (): FeedbackItem[] => {
+  const mockFallback = async (): Promise<FeedbackItem[]> => {
     console.warn(`getFeedbacks: API call failed or returned unexpected data. Falling back to mock data.`);
-    return mockData;
+    const { MOCK_DB } = await import('./definitions');
+    return MOCK_DB.feedbacks
+        .filter(f => f.userId === MOCK_USER_ID)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   };
 
   if (error) {
@@ -756,7 +762,8 @@ export async function setLocaleCookie(locale: string, currentPath: string) {
 
 // Helper to reset DB for testing if needed - not for production
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
-  MOCK_DB = JSON.parse(JSON.stringify(initialDbState)); // Deep copy
+  // Call the function from definitions.ts to reset the MOCK_DB content
+  _dangerouslyResetMockDbContent(initialDbState);
 }
 
 // Helper to format API type names (e.g., BANK_ACCOUNT -> Bank Account)
@@ -832,3 +839,4 @@ export async function getTransactionTypes(): Promise<TransactionType[]> {
     return defaultTypes;
   }
 }
+
