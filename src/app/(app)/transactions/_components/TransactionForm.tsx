@@ -249,12 +249,20 @@ export function TransactionForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{translations.walletLabel}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value} 
+                      disabled={isSubmitting}
+                    >
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder={translations.walletPlaceholder} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {wallets.map((wallet) => <SelectItem key={wallet.id} value={wallet.id}>{wallet.name} ({wallet.currency})</SelectItem>)}
+                        {wallets.map((wallet) => (
+                          <SelectItem key={wallet.id} value={wallet.id}>
+                            {wallet.name} ({wallet.currency})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
