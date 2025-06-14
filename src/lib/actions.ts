@@ -216,38 +216,44 @@ export async function getMainCategories(): Promise<MainCategory[]> {
   const apiCallLogPrefix = 'getMainCategories: API call';
   const result = await fetchAPI(API_MAIN_CATEGORIES);
 
-  if (result.error) {
-    console.warn(`${apiCallLogPrefix} failed (Error: ${result.error.message}). Falling back to mock data.`);
-    // Mock data fallback, reconstructs subCategories from flat list for safety
-    return MOCK_DB.mainCategories
-      .filter(mc => mc.userId === MOCK_USER_ID)
-      .map(mc => ({
-        ...mc,
-        // Ensure subCategories in mock are also arrays
-        subCategories: Array.isArray(mc.subCategories) ? mc.subCategories.filter(sc => sc.userId === MOCK_USER_ID) : 
-                       MOCK_DB.subCategories.filter(sc => sc.mainCategoryId === mc.id && sc.userId === MOCK_USER_ID)
-      }));
+  const mockFallback = () => {
+      console.warn(`${apiCallLogPrefix} failed or returned unexpected data. Falling back to mock data.`);
+      return MOCK_DB.mainCategories
+        .filter(mc => mc.userId === MOCK_USER_ID)
+        .map(mc => ({
+          ...mc,
+          subCategories: Array.isArray(mc.subCategories) ? mc.subCategories.filter(sc => sc.userId === MOCK_USER_ID) : 
+                         MOCK_DB.subCategories.filter(sc => sc.mainCategoryId === mc.id && sc.userId === MOCK_USER_ID)
+        }));
   }
 
-  // If API call was successful (no error from fetchAPI)
-  if (result.data === null) {
-    // API explicitly returned null (e.g. for an empty list), or fetchAPI handled 204
-    console.warn(`${apiCallLogPrefix} resulted in null data. Interpreting as empty list.`);
-    return [];
+  if (result.error || !result.data) {
+    return mockFallback();
   }
+  
+  try {
+    let actualDataArray = result.data;
+    // Check if data is wrapped in an object like { "mainCategories": [...] }
+    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.mainCategories) {
+      actualDataArray = result.data.mainCategories;
+    } else if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.categories) { // Added for "categories" key
+      actualDataArray = result.data.categories;
+    }
 
-  if (Array.isArray(result.data)) {
-    // Data is an array, process it.
-    return (result.data as MainCategory[]).map(mc => ({
+
+    if (!Array.isArray(actualDataArray)) {
+      console.warn(`${apiCallLogPrefix} returned data in an unexpected format after checking for wrappers (Type: ${typeof actualDataArray}). Returning empty list.`);
+      return [];
+    }
+
+    return (actualDataArray as MainCategory[]).map(mc => ({
       ...mc,
-      // Ensure subCategories from API response are also arrays or default to empty array.
       subCategories: Array.isArray(mc.subCategories) ? mc.subCategories : []
     }));
+  } catch (processingError: any) {
+     console.error(`${apiCallLogPrefix} error processing data (Error: ${processingError.message}). Falling back to mock data.`);
+     return mockFallback();
   }
-
-  // If data is not null and not an array, it's an unexpected format.
-  console.warn(`${apiCallLogPrefix} returned data in an unexpected format (Type: ${typeof result.data}, Value: ${JSON.stringify(result.data)}). Returning empty list.`);
-  return []; // Default to empty array for unexpected data types.
 }
 
 
@@ -285,20 +291,18 @@ export async function deleteMainCategory(id: string): Promise<void> {
 
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryIdFilter?: string): Promise<SubCategory[]> {
-  const allMainCategories = await getMainCategories(); // This will now always be an array.
+  const allMainCategories = await getMainCategories(); 
   let subCategoriesResult: SubCategory[] = [];
 
   if (mainCategoryIdFilter) {
     const foundMain = allMainCategories.find(mc => mc.id === mainCategoryIdFilter);
-    // Ensure foundMain and its subCategories exist and subCategories is an array
     if (foundMain && Array.isArray(foundMain.subCategories)) {
       subCategoriesResult = foundMain.subCategories;
     } else {
-      subCategoriesResult = []; // Default to empty if not found or subCategories not an array
+      subCategoriesResult = []; 
     }
   } else {
     allMainCategories.forEach(mc => {
-      // Ensure mc.subCategories exists and is an array before spreading
       if (mc.subCategories && Array.isArray(mc.subCategories)) {
         subCategoriesResult.push(...mc.subCategories);
       }
@@ -354,22 +358,31 @@ export async function deleteSubCategory(id: string): Promise<void> {
 
 // --- Wallet Actions ---
 export async function getWallets(): Promise<Wallet[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const result = await fetchAPI(API_WALLETS);
-  if (result.error || !result.data) {
-    console.warn(`getWallets: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  
+  const mockFallback = () => {
+    console.warn(`getWallets: API call failed or returned unexpected data. Falling back to mock data.`);
     return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID);
+  };
+
+  if (result.error || !result.data) {
+    return mockFallback();
   }
   try {
-     if (!Array.isArray(result.data)) {
-      console.warn(`getWallets: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+    let actualDataArray = result.data;
+    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.wallets) {
+      actualDataArray = result.data.wallets;
+    }
+
+    if (!Array.isArray(actualDataArray)) {
+      console.warn(`getWallets: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return result.data as Wallet[];
+    return actualDataArray as Wallet[];
   } catch (processingError: any) {
     console.error(`getWallets: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-    return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID);
+    return mockFallback();
   }
 }
 
@@ -408,31 +421,36 @@ export async function deleteWallet(id: string): Promise<void> {
 
 // --- Transaction Actions ---
 export async function getTransactions(): Promise<Transaction[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const result = await fetchAPI(API_TRANSACTIONS);
 
-  if (result.error || !result.data) {
-    console.warn(`getTransactions: API call failed or returned no data (Error: ${result.error?.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-    return MOCK_DB.transactions
+  const mockFallback = () => {
+    console.warn(`getTransactions: API call failed or returned unexpected data. Falling back to mock data.`);
+     return MOCK_DB.transactions
       .filter(t => t.userId === MOCK_USER_ID)
       .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+  };
+
+  if (result.error || !result.data) {
+    return mockFallback();
   }
 
   try {
-    if (!Array.isArray(result.data)) {
-      console.warn(`getTransactions: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+    let actualDataArray = result.data;
+    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.transactions) {
+      actualDataArray = result.data.transactions;
+    }
+
+    if (!Array.isArray(actualDataArray)) {
+      console.warn(`getTransactions: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return (result.data as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
+    return (actualDataArray as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
                          .sort((a: Transaction, b: Transaction) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (processingError: any) {
     console.error(`getTransactions: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-    return MOCK_DB.transactions
-      .filter(t => t.userId === MOCK_USER_ID)
-      .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
-      .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return mockFallback();
   }
 }
 
@@ -457,7 +475,7 @@ export async function updateTransaction(id: string, data: Partial<Omit<Transacti
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
-  return {...result.data, createdAt: new Date(result.data.createdAt)} as Transaction | null;
+  return result.data ? {...result.data, createdAt: new Date(result.data.createdAt)} as Transaction | null : null;
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
@@ -484,29 +502,35 @@ export async function stopRecurringTransaction(transactionId: string): Promise<T
 
 // --- Transfer Actions ---
 export async function getTransfers(): Promise<Transfer[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const result = await fetchAPI(API_TRANSFERS);
-  if (result.error || !result.data) {
-    console.warn(`getTransfers: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-    return MOCK_DB.transfers
+
+  const mockFallback = () => {
+     console.warn(`getTransfers: API call failed or returned unexpected data. Falling back to mock data.`);
+     return MOCK_DB.transfers
       .filter(t => t.userId === MOCK_USER_ID)
       .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+  };
+
+  if (result.error || !result.data) {
+    return mockFallback();
   }
   try {
-    if (!Array.isArray(result.data)) {
-      console.warn(`getTransfers: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+    let actualDataArray = result.data;
+    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.transfers) {
+      actualDataArray = result.data.transfers;
+    }
+
+    if (!Array.isArray(actualDataArray)) {
+      console.warn(`getTransfers: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return (result.data as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
+    return (actualDataArray as any[]).map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) }))
                      .sort((a: Transfer,b: Transfer) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (processingError: any) {
     console.error(`getTransfers: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-    return MOCK_DB.transfers
-      .filter(t => t.userId === MOCK_USER_ID)
-      .map(t => ({ ...t, createdAt: new Date(t.createdAt) }))
-      .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return mockFallback();
   }
 }
 
@@ -517,6 +541,7 @@ export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Pro
      throw new Error(result.error?.message || "API Error creating transfer");
   }
   revalidatePath('/transfers');
+  revalidatePath('/capital');
   return {...result.data, createdAt: new Date(result.data.createdAt)} as Transfer;
 }
 
@@ -527,34 +552,42 @@ export async function deleteTransfer(id: string): Promise<void> {
     throw new Error(result.error.message);
   }
   revalidatePath('/transfers');
+  revalidatePath('/capital');
 }
 
 // --- Budget Actions ---
 export async function getBudgets(month?: number, year?: number): Promise<Budget[]> {
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   let query = '';
   if (month && year) {
     query = `?month=${month}&year=${year}`;
   }
   const result = await fetchAPI(`${API_BUDGETS}${query}`);
 
-  if (result.error || !result.data) {
-    console.warn(`getBudgets: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  const mockFallback = () => {
+    console.warn(`getBudgets: API call failed or returned unexpected data. Falling back to mock data.`);
     return MOCK_DB.budgets.filter(b => b.userId === MOCK_USER_ID && (month ? b.month === month : true) && (year ? b.year === year : true))
                                  .sort((a, b) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
+  };
+
+  if (result.error || !result.data) {
+    return mockFallback();
   }
   try {
-     if (!Array.isArray(result.data)) {
-      console.warn(`getBudgets: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+    let actualDataArray = result.data;
+    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.budgets) {
+      actualDataArray = result.data.budgets;
+    }
+
+    if (!Array.isArray(actualDataArray)) {
+      console.warn(`getBudgets: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
       return [];
     }
-    return (result.data as any[]).map(b => ({...b, createdAt: new Date(b.createdAt)}))
+    return (actualDataArray as any[]).map(b => ({...b, createdAt: new Date(b.createdAt)}))
                                  .sort((a: Budget, b: Budget) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
   } catch (processingError: any) {
      console.error(`getBudgets: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
-    const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-    return MOCK_DB.budgets.filter(b => b.userId === MOCK_USER_ID && (month ? b.month === month : true) && (year ? b.year === year : true))
-                                 .sort((a, b) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
+    return mockFallback();
   }
 }
 
@@ -625,26 +658,36 @@ export async function stopSharedCapitalSession(): Promise<SharedCapitalSession |
 
 // --- Feedback Actions ---
 export async function getFeedbacks(): Promise<FeedbackItem[]> {
-  const result = await fetchAPI(API_FEEDBACKS);
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
+  const result = await fetchAPI(API_FEEDBACKS);
+  
   const mockData = MOCK_DB.feedbacks
     .filter(f => f.userId === MOCK_USER_ID)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  if (result.error || !result.data) {
-    console.warn(`getFeedbacks: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
+  const mockFallback = () => {
+    console.warn(`getFeedbacks: API call failed or returned unexpected data. Falling back to mock data.`);
     return mockData;
+  };
+
+  if (result.error || !result.data) {
+    return mockFallback();
   }
   try {
-      if (!Array.isArray(result.data)) {
-        console.warn(`getFeedbacks: API returned non-array data. Type: ${typeof result.data}. Returning empty array.`);
+      let actualDataArray = result.data;
+      if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.feedbacks) {
+        actualDataArray = result.data.feedbacks;
+      }
+
+      if (!Array.isArray(actualDataArray)) {
+        console.warn(`getFeedbacks: API returned non-array data. Type: ${typeof actualDataArray}. Returning empty array.`);
         return [];
       }
-      return (result.data as any[]).map(f => ({...f, createdAt: new Date(f.createdAt)}))
+      return (actualDataArray as any[]).map(f => ({...f, createdAt: new Date(f.createdAt)}))
                                    .sort((a:FeedbackItem, b:FeedbackItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch(processingError: any) {
       console.error(`getFeedbacks: Error processing API data (Error: ${processingError.message}). Falling back to mock data.`);
-      return mockData;
+      return mockFallback();
   }
 }
 
@@ -682,8 +725,8 @@ export async function setLocaleCookie(locale: string, currentPath: string) {
     maxAge: 365 * 24 * 60 * 60, // 1 year
     sameSite: 'lax',
   });
-  revalidatePath(currentPath); // Revalidate the current path
-  revalidatePath('/', 'layout'); // Revalidate the root layout to update locale props
+  revalidatePath(currentPath); 
+  revalidatePath('/', 'layout'); 
 }
 
 
@@ -691,3 +734,4 @@ export async function setLocaleCookie(locale: string, currentPath: string) {
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState)); // Deep copy
 }
+
