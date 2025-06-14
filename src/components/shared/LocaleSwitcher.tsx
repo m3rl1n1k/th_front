@@ -21,6 +21,7 @@ interface LocaleSwitcherProps {
 const locales = [
   { code: 'en', name: 'English' },
   { code: 'es', name: 'Español' },
+  { code: 'uk', name: 'Українська' },
 ];
 
 export function LocaleSwitcher({ currentLocale }: LocaleSwitcherProps) {

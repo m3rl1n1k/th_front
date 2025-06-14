@@ -1,3 +1,4 @@
+
 import 'server-only';
 
 // Define a type for our translation files structure for better type safety
@@ -28,6 +29,7 @@ interface Translations {
 const translationsModules = {
   en: () => import('@/locales/en.json').then((module) => module.default),
   es: () => import('@/locales/es.json').then((module) => module.default),
+  uk: () => import('@/locales/uk.json').then((module) => module.default),
 };
 
 export async function getTranslations(locale: string): Promise<Translations> {

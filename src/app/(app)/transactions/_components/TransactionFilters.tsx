@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, XCircle } from 'lucide-react';
 import { format, isValid, type Locale } from 'date-fns';
-import { enUS, es } from 'date-fns/locale'; 
+import { enUS, es, uk } from 'date-fns/locale'; 
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +41,7 @@ interface TransactionFiltersProps {
 const dateFnsLocales: { [key: string]: Locale } = {
   en: enUS,
   es: es,
+  uk: uk,
 };
 
 export function TransactionFilters({
@@ -235,4 +236,3 @@ export function TransactionFilters({
     </Accordion>
   );
 }
-

@@ -18,7 +18,7 @@ import { deleteTransaction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { format, isToday, isYesterday, parseISO, startOfDay, compareDesc } from 'date-fns';
-import { enUS, es } from 'date-fns/locale'; 
+import { enUS, es, uk } from 'date-fns/locale'; 
 import type { Locale } from 'date-fns'; 
 import { Card } from '@/components/ui/card';
 import { ArrowDownCircle, ArrowUpCircle, ListX } from 'lucide-react';
@@ -46,6 +46,7 @@ interface GroupedTransactions {
 const dateFnsLocalesMap: { [key: string]: Locale } = {
   en: enUS,
   es: es,
+  uk: uk,
 };
 
 export function TransactionList({
@@ -231,7 +232,7 @@ export function TransactionList({
                         </TableCell>
                         <TableCell className="text-right">
                           <DataTableActions
-                            onEdit={() => router.push(`/${locale}/transactions/edit/${transaction.id}`)}
+                            onEdit={() => router.push(`/transactions/edit/${transaction.id}`)} // Removed locale prefix
                             onDelete={() => setItemToDelete(transaction)}
                           />
                         </TableCell>

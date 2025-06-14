@@ -97,7 +97,7 @@ export function BudgetForm({
             ? translations.successUpdateToastDescription.replace('{categoryName}', categoryName).replace('{monthYear}', monthYear)
             : translations.successCreateToastDescription.replace('{categoryName}', categoryName).replace('{monthYear}', monthYear),
         });
-        router.push(`/${locale}/budgets`);
+        router.push('/budgets'); // Removed locale prefix
         router.refresh(); 
       } else {
         throw new Error('Failed to save budget');

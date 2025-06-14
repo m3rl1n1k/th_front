@@ -124,7 +124,7 @@ export function BudgetList({ initialBudgets, translations, locale, defaultCurren
                     </TableCell>
                     <TableCell className="text-right">
                       <DataTableActions
-                        onEdit={() => router.push(`/${locale}/budgets/edit/${budget.id}`)}
+                        onEdit={() => router.push(`/budgets/edit/${budget.id}`)} // Removed locale prefix
                         onDelete={() => setItemToDelete(budget)}
                       />
                     </TableCell>

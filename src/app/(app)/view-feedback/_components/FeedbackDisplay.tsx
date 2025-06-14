@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Clock, PlayCircle, CheckCircle2, MoreVertical, ChevronDown } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { enUS, es } from 'date-fns/locale';
+import { enUS, es, uk } from 'date-fns/locale';
 import type { FeedbackItem, FeedbackStatus, FeedbackType, feedbackStatuses } from '@/lib/definitions';
 import { updateFeedbackStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ import { useRouter } from 'next/navigation';
 const dateLocales: { [key: string]: Locale } = {
   en: enUS,
   es: es,
+  uk: uk,
 };
 
 interface FeedbackDisplayProps {
@@ -143,4 +144,3 @@ export function FeedbackDisplay({ groupedFeedbacks, translations, locale }: Feed
     </Accordion>
   );
 }
-
