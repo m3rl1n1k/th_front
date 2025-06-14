@@ -80,6 +80,7 @@ export function TransactionForm({
           ...initialData,
           subCategoryId: initialData.subCategoryId === undefined || initialData.subCategoryId === null ? NO_CATEGORY_VALUE : initialData.subCategoryId,
           createdAt: new Date(initialData.createdAt),
+          // walletId will be correctly sourced from initialData due to spread
         }
       : {
           type: 'Expense', // Default, but Select will show available types
@@ -88,7 +89,7 @@ export function TransactionForm({
           amount: 0,
           description: '',
           subCategoryId: NO_CATEGORY_VALUE,
-          walletId: defaultWalletId,
+          walletId: defaultWalletId, // This sets the default for new transactions
         },
   });
 
@@ -124,7 +125,7 @@ export function TransactionForm({
   return (
     <Card className="max-w-2xl mx-auto shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline">{initialData ? 'Edit Transaction' : 'Create New Transaction'}</CardTitle>
+        <CardTitle className="font-headline text-xl md:text-2xl">{initialData ? 'Edit Transaction' : 'Create New Transaction'}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -155,7 +156,7 @@ export function TransactionForm({
                   <FormItem>
                     <FormLabel>Amount</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="0.00" {...field} disabled={isSubmitting} />
+                      <Input type="number" placeholder="0.00" {...field} disabled={isSubmitting} className="text-sm"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -276,7 +277,7 @@ export function TransactionForm({
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., Dinner with friends, Monthly rent" {...field} disabled={isSubmitting} />
+                    <Textarea placeholder="e.g., Dinner with friends, Monthly rent" {...field} disabled={isSubmitting} className="text-sm" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
