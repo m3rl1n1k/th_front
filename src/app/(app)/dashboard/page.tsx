@@ -5,19 +5,12 @@ import { getTransactions, getMainCategories, getSubCategories, getWallets, getUs
 import type { Transaction, MainCategory, SubCategory, Wallet, UserSettings } from '@/lib/definitions';
 import type { ChartConfig } from '@/components/ui/chart';
 import { DashboardExpenseChart } from './_components/DashboardExpenseChart';
-import { AverageExpenseCard } from './_components/AverageExpenseCard'; 
+import { AverageExpenseCard } from './_components/AverageExpenseCard';
 import { StatCard } from './_components/StatCard';
 import { DashboardRecentActivitySection } from './_components/DashboardRecentActivitySection';
 import { dashboardVisibilityLocalStorageKeys } from '@/app/(app)/settings/_components/SettingsForm';
-import { differenceInDays, differenceInCalendarMonths } from 'date-fns';
-import { cookies } from 'next/headers'; // Import cookies
-
-// Mock data - replace with actual data fetching
-const summaryData = {
-  totalBalance: 12530.75,
-  totalIncome: 5200.00,
-  totalExpenses: 2800.50,
-};
+import { differenceInDays, differenceInCalendarMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { cookies } from 'next/headers';
 
 interface ExpenseByCategory {
   mainCategoryName: string;
@@ -29,7 +22,7 @@ export default async function DashboardPage() {
   const cookieStore = cookies();
   const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
   const t = await getTranslations(locale);
-  const td = t.dashboard; 
+  const td = t.dashboard;
   const userSettings = await getUserSettings();
   const defaultCurrency = userSettings?.defaultCurrency || 'USD';
 
@@ -37,6 +30,22 @@ export default async function DashboardPage() {
   const mainCategories = await getMainCategories();
   const subCategories = await getSubCategories();
   const wallets = await getWallets();
+
+  // Calculate Dashboard Stats
+  const totalBalance = wallets.reduce((sum, wallet) => sum + wallet.initialAmount, 0);
+
+  const now = new Date();
+  const currentMonthStart = startOfMonth(now);
+  const currentMonthEnd = endOfMonth(now);
+
+  const monthlyIncome = transactions
+    .filter(tx => tx.type === 'Income' && isWithinInterval(new Date(tx.createdAt), { start: currentMonthStart, end: currentMonthEnd }))
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const monthlyExpenses = transactions
+    .filter(tx => tx.type === 'Expense' && isWithinInterval(new Date(tx.createdAt), { start: currentMonthStart, end: currentMonthEnd }))
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
 
   const mainCategoryMap = new Map(mainCategories.map(mc => [mc.id, mc]));
   const subCategoryToMainCategoryMap = new Map(subCategories.map(sc => [sc.id, sc.mainCategoryId]));
@@ -72,9 +81,9 @@ export default async function DashboardPage() {
       color: item.fill,
     };
   });
-  chartConfig["totalAmount"] = { 
+  chartConfig["totalAmount"] = {
     label: td.totalExpensesLabel || "Total Expenses",
-    color: "hsl(var(--primary))", 
+    color: "hsl(var(--primary))",
   };
 
   const recentTransactions = transactions.slice(0, 10);
@@ -92,7 +101,7 @@ export default async function DashboardPage() {
     const totalDaysActive = Math.max(1, differenceInDays(lastExpenseDate, firstExpenseDate) + 1);
     const totalWeeksActive = Math.max(1, Math.ceil(totalDaysActive / 7));
     const totalMonthsActive = Math.max(1, differenceInCalendarMonths(lastExpenseDate, firstExpenseDate) + 1);
-    
+
     avgDailyExpense = totalExpensesSum / totalDaysActive;
     avgWeeklyExpense = totalExpensesSum / totalWeeksActive;
     avgMonthlyExpense = totalExpensesSum / totalMonthsActive;
@@ -101,39 +110,39 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader title={td.title} description={td.description} />
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <StatCard 
-            title={td.totalBalance} 
-            value={summaryData.totalBalance} 
-            iconName="DollarSign" 
-            currencyCode={defaultCurrency} 
-            locale={locale} 
+        <StatCard
+            title={td.totalBalance}
+            value={totalBalance}
+            iconName="DollarSign"
+            currencyCode={defaultCurrency}
+            locale={locale}
             dataAiHint="piggy bank"
             localStorageKey={dashboardVisibilityLocalStorageKeys.showTotalBalanceCard}
             initialVisible={userSettings?.showTotalBalanceCard !== false}
         />
-        <StatCard 
-            title={td.monthlyIncome} 
-            value={summaryData.totalIncome} 
-            iconName="Users" 
-            currencyCode={defaultCurrency} 
-            locale={locale} 
+        <StatCard
+            title={td.monthlyIncome}
+            value={monthlyIncome}
+            iconName="Users" // Icon seems misaligned with 'income', might want to change to 'TrendingUp' or similar
+            currencyCode={defaultCurrency}
+            locale={locale}
             dataAiHint="money rain"
             localStorageKey={dashboardVisibilityLocalStorageKeys.showMonthlyIncomeCard}
             initialVisible={userSettings?.showMonthlyIncomeCard !== false}
         />
-        <StatCard 
-            title={td.monthlyExpenses} 
-            value={summaryData.totalExpenses} 
-            iconName="CreditCard" 
-            currencyCode={defaultCurrency} 
-            locale={locale} 
+        <StatCard
+            title={td.monthlyExpenses}
+            value={monthlyExpenses}
+            iconName="CreditCard"
+            currencyCode={defaultCurrency}
+            locale={locale}
             dataAiHint="empty wallet"
             localStorageKey={dashboardVisibilityLocalStorageKeys.showMonthlyExpensesCard}
             initialVisible={userSettings?.showMonthlyExpensesCard !== false}
         />
-        <AverageExpenseCard 
+        <AverageExpenseCard
             avgDaily={avgDailyExpense}
             avgWeekly={avgWeeklyExpense}
             avgMonthly={avgMonthlyExpense}

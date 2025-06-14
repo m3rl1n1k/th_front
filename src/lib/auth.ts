@@ -1,15 +1,20 @@
-
 // This is a mock authentication module.
 // In a real application, you would implement JWT-based authentication or similar.
 'use server'; // Ensure this runs on the server
 
-import type { User, UserSettings } from './definitions';
-import { cookies } from 'next/headers'; 
+import type { User } from './definitions';
+import { cookies } from 'next/headers';
+import {
+  API_AUTH_LOGIN,
+  API_AUTH_ME
+  // API_AUTH_LOGOUT // If you have this endpoint
+} from './apiConstants';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'; 
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
 
 const AUTH_TOKEN_COOKIE_NAME = 'authToken';
-const USER_DATA_COOKIE_NAME = 'userData'; 
+const USER_DATA_COOKIE_NAME = 'userData';
 
 // Helper to make auth API calls
 async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promise<any> {
@@ -40,7 +45,7 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promis
     error.status = response.status;
     throw error;
   }
-   if (response.status === 204) { 
+   if (response.status === 204) {
     return null;
   }
   return response.json();
@@ -48,19 +53,19 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promis
 
 async function fetchAndStoreUserData(token: string): Promise<User | null> {
   try {
-    const user = await fetchAuthAPI('/auth/me', {
+    const user = await fetchAuthAPI(API_AUTH_ME, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` },
     });
 
-    if (user && !user.error) { 
+    if (user && !user.error) {
       const cookieStore = cookies();
       cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7 
+        maxAge: 60 * 60 * 24 * 7
       });
       return user as User;
     } else {
@@ -94,7 +99,7 @@ export async function getCurrentUser(): Promise<User | null> {
       cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
     }
   }
-  
+
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
   if (token) {
     return await fetchAndStoreUserData(token);
@@ -103,12 +108,12 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function login(email: string, password_not_used: string): Promise<User | null> {
-  const response = await fetchAuthAPI('/auth/login', { 
+  const response = await fetchAuthAPI(API_AUTH_LOGIN, {
     method: 'POST',
-    body: JSON.stringify({ username: email, password: password_not_used }), 
+    body: JSON.stringify({ username: email, password: password_not_used }),
   });
 
-  if (response && response.token) { 
+  if (response && response.token) {
     const token = response.token;
     const cookieStore = cookies();
     cookieStore.set(AUTH_TOKEN_COOKIE_NAME, token, {
@@ -116,10 +121,13 @@ export async function login(email: string, password_not_used: string): Promise<U
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 30 
+      maxAge: 60 * 60 * 24 * 30
     });
     return await fetchAndStoreUserData(token);
   } else {
+    // If login itself fails, fetchAuthAPI will throw.
+    // This else block handles cases where the API call might be successful (e.g., 200 OK)
+    // but the expected 'token' is not in the response.
     console.error('Login API call successful but no token received in response.');
     throw new Error('Login successful but no token received.');
   }
@@ -132,7 +140,7 @@ export async function logout(): Promise<void> {
   if (token) {
     try {
       // Inform the backend about logout, if an endpoint exists and is configured.
-      // await fetchAuthAPI('/auth/logout', {
+      // await fetchAuthAPI(API_AUTH_LOGOUT, { // Uncomment if you have API_AUTH_LOGOUT
       //   method: 'POST',
       //   headers: { 'Authorization': `Bearer ${token}` },
       // });
@@ -154,4 +162,3 @@ export async function getAuthToken(): Promise<string | null> {
   const cookieStore = cookies();
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
 }
-
