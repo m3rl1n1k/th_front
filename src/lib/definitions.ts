@@ -15,6 +15,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  login?: string; // Added login/username field
   settings?: UserSettings;
 }
 
@@ -39,13 +40,13 @@ export interface MainCategory {
   name: string;
   color: string; 
   icon?: string; 
-  subCategories?: SubCategory[]; // Added to support nested subcategories from API
+  subCategories?: SubCategory[]; 
 }
 
 export interface SubCategory {
   id:string;
   userId: string;
-  mainCategoryId: string; // This will be populated from main_category from API if needed
+  mainCategoryId: string; 
   name: string;
   color: string; 
   icon?: string; 
@@ -114,8 +115,8 @@ export const feedbackTypes: FeedbackType[] = ['Technical Issue', 'Error Report',
 // Mock data types
 export type MockDb = {
   users: User[];
-  mainCategories: MainCategory[]; // MainCategory will now potentially hold subCategories for mock consistency
-  subCategories: SubCategory[]; // This might become less directly used if all subcats are nested
+  mainCategories: MainCategory[]; 
+  subCategories: SubCategory[]; 
   wallets: Wallet[];
   transactions: Transaction[];
   transfers: Transfer[];
@@ -123,3 +124,4 @@ export type MockDb = {
   sharedCapitalSessions: SharedCapitalSession[];
   feedbacks: FeedbackItem[]; 
 };
+

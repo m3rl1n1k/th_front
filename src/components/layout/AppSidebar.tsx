@@ -20,7 +20,7 @@ import {
   FileText,
   Globe,
   ListChecks,
-  AreaChart // Icon for Reports group
+  AreaChart 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logout, getCurrentUser } from '@/lib/auth';
@@ -48,13 +48,13 @@ import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
 
 
 interface NavItemProps {
-  href?: string; // Optional for parent items
+  href?: string; 
   icon: React.ElementType;
   label: string;
   currentPath: string;
   subItems?: { href: string; label: string }[];
-  onClick?: () => void; // For items that toggle submenus
-  isParentOpen?: boolean; // For parent items to control chevron
+  onClick?: () => void; 
+  isParentOpen?: boolean; 
 }
 
 const NavItem = ({ href, icon: Icon, label, currentPath, subItems, onClick, isParentOpen }: NavItemProps) => {
@@ -81,7 +81,7 @@ const NavItem = ({ href, icon: Icon, label, currentPath, subItems, onClick, isPa
             <SidebarMenuSub>
                 {subItems.map(subItem => (
                     <SidebarMenuSubItem key={subItem.href}>
-                        <Link href={subItem.href}>
+                        <Link href={subItem.href} asChild> 
                             <SidebarMenuSubButton isActive={currentPath.startsWith(subItem.href)} aria-label={subItem.label}>
                                 {subItem.label}
                             </SidebarMenuSubButton>
@@ -117,9 +117,9 @@ interface AppSidebarProps {
     transfers: string;
     budgets: string;
     capital: string;
-    reports: string; // New top-level group
+    reports: string; 
     aiReports: string;
-    standardReports: string; // New sub-item
+    standardReports: string; 
     feedback: string;
     viewFeedback: string;
     settings: string;
@@ -144,7 +144,6 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
   }, [pathname]);
 
   useEffect(() => {
-    // Open reports accordion if a sub-item is active
     if (pathname.startsWith('/ai-reports') || pathname.startsWith('/standard-reports')) {
       setIsReportsOpen(true);
     }
@@ -184,10 +183,14 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
      { href: '/profile', icon: UserCircle, label: translations.profile },
   ];
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const getInitials = (loginOrName?: string) => {
+    if (!loginOrName) return 'U';
+    return loginOrName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   }
+  
+  const displayName = currentUser?.login || currentUser?.name || 'User';
+  const avatarInitials = getInitials(displayName);
+
 
   return (
     <SidebarProvider>
@@ -230,10 +233,10 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
               <LocaleSwitcher currentLocale={locale} />
               <Link href={'/profile'} className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={currentUser?.name ? `https://placehold.co/40x40.png?text=${getInitials(currentUser.name)}` : undefined} alt={currentUser?.name || "User Avatar"} />
-                    <AvatarFallback>{getInitials(currentUser?.name)}</AvatarFallback>
+                    <AvatarImage src={currentUser?.login ? `https://placehold.co/40x40.png?text=${avatarInitials}` : undefined} alt={displayName} />
+                    <AvatarFallback>{avatarInitials}</AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium hidden sm:inline">{currentUser?.name || 'User'}</span>
+                  <span className="text-sm font-medium hidden sm:inline">{displayName}</span>
               </Link>
             </div>
         </header>
@@ -244,3 +247,4 @@ export function AppSidebar({ children, locale, translations }: AppSidebarProps) 
     </SidebarProvider>
   );
 }
+

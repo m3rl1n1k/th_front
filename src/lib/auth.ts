@@ -53,7 +53,7 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
       headers: { 'Authorization': `Bearer ${token}` },
     });
 
-    if (user && !user.error) { // Assuming API returns user object directly, not nested under 'user'
+    if (user && !user.error) { 
       const cookieStore = cookies();
       cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), {
         httpOnly: true,
@@ -64,9 +64,7 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
       });
       return user as User;
     } else {
-      // Token might be valid but /auth/me failed for some reason
       console.error('Failed to fetch user data from /auth/me:', user?.message);
-      // Clear potentially invalid token and user data
       const cookieStore = cookies();
       cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
       cookieStore.delete(USER_DATA_COOKIE_NAME);
@@ -94,27 +92,22 @@ export async function getCurrentUser(): Promise<User | null> {
       console.error("Failed to parse user data from cookie", e);
       cookieStore.delete(USER_DATA_COOKIE_NAME);
       cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
-      // Fall through to token check
     }
   }
   
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
   if (token) {
-    // If no user data cookie, but token exists, try to fetch user data
     return await fetchAndStoreUserData(token);
   }
   return null;
 }
 
 export async function login(email: string, password_not_used: string): Promise<User | null> {
-  // This function now expects the API to throw an error for failed login.
-  // The error will be caught by the handleSubmit in LoginPage.
   const response = await fetchAuthAPI('/auth/login', { 
     method: 'POST',
-    body: JSON.stringify({ email, password: password_not_used }), 
+    body: JSON.stringify({ username: email, password: password_not_used }), 
   });
 
-  // According to user, API returns only a token in the response data itself, e.g. { "token": "..." }
   if (response && response.token) { 
     const token = response.token;
     const cookieStore = cookies();
@@ -125,11 +118,8 @@ export async function login(email: string, password_not_used: string): Promise<U
       path: '/',
       maxAge: 60 * 60 * 24 * 30 
     });
-    // After successful login and token storage, fetch user details
     return await fetchAndStoreUserData(token);
   } else {
-    // This case should ideally not be reached if fetchAuthAPI throws on error.
-    // If API returns 200 OK but no token, it's an unexpected success response.
     console.error('Login API call successful but no token received in response.');
     throw new Error('Login successful but no token received.');
   }
@@ -164,3 +154,4 @@ export async function getAuthToken(): Promise<string | null> {
   const cookieStore = cookies();
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
 }
+

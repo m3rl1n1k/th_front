@@ -13,6 +13,7 @@ let MOCK_DB: MockDb = {
     id: 'user-123',
     email: 'user@example.com',
     name: 'Test User',
+    login: 'testuser', // Added login field
     settings: {
       transactionsPerPage: 10,
       defaultCurrency: 'USD',
@@ -24,7 +25,7 @@ let MOCK_DB: MockDb = {
       showRecentActivityCard: true,
     }
   }],
-  mainCategories: [ // Mock data now includes nested subCategories
+  mainCategories: [ 
     { id: 'mc1', userId: 'user-123', name: 'Food', color: '#FF6347', icon: 'Utensils', 
       subCategories: [
         { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A', icon: 'ShoppingCart' },
@@ -47,7 +48,6 @@ let MOCK_DB: MockDb = {
       ]
     }
   ],
-  // subCategories is still here for mock consistency if needed, but primary source is nested
   subCategories: [ 
     { id: 'sc1', userId: 'user-123', mainCategoryId: 'mc1', name: 'Groceries', color: '#FFA07A', icon: 'ShoppingCart' },
     { id: 'sc2', userId: 'user-123', mainCategoryId: 'mc1', name: 'Restaurants', color: '#FA8072', icon: 'Utensils' },
@@ -105,7 +105,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
         if (parsedError && parsedError.message) {
             errorMessage = parsedError.message;
         } else if (parsedError) {
-            errorMessage = JSON.stringify(parsedError); // Fallback if no message field
+            errorMessage = JSON.stringify(parsedError); 
         } else {
              errorMessage = errorBody || response.statusText;
         }
@@ -144,10 +144,6 @@ export async function getUserSettings(): Promise<UserSettings | undefined> {
 
 export async function updateUserSettings(newSettings: Partial<UserSettings>): Promise<User | null> {
   try {
-    // In a real app, this would be an API call:
-    // const result = await fetchAPI('/users/me/settings', { method: 'PUT', body: JSON.stringify(newSettings) });
-    // if (result.error || !result.data) throw new Error(result.error?.message || "Failed to update settings via API");
-    // MOCK implementation:
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated");
 
@@ -171,10 +167,6 @@ export async function updateUserSettings(newSettings: Partial<UserSettings>): Pr
 // --- User Profile Actions ---
 export async function updateUserProfile(userId: string, data: { name?: string }): Promise<User | null> {
   try {
-    // API Call: PUT /api/users/me/profile
-    // const result = await fetchAPI('/users/me/profile', { method: 'PUT', body: JSON.stringify(data) });
-    // if (result.error || !result.data) throw new Error(result.error?.message || "Failed to update profile via API");
-    // MOCK Implementation:
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID || MOCK_USER_ID !== userId) throw new Error("Unauthorized or user mismatch");
 
@@ -195,17 +187,12 @@ export async function updateUserProfile(userId: string, data: { name?: string })
 }
 
 export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{success: boolean, message: string}> {
-  // API Call: POST /api/users/me/change-password
-  // const result = await fetchAPI('/users/me/change-password', { method: 'POST', body: JSON.stringify({currentPassword, newPassword}) });
-  // if (result.error) return { success: false, message: result.error.message };
-  // return { success: true, message: result.data?.message || "Password changed successfully." };
-  // MOCK Implementation:
   console.log(`Attempting to change password for user ${userId}. Current: ${currentPassword}, New: ${newPassword}`);
   const MOCK_USER_ID = (await getCurrentUser())?.id;
   if (!MOCK_USER_ID || MOCK_USER_ID !== userId) {
     return { success: false, message: "Unauthorized or user mismatch." };
   }
-  if (currentPassword === "password123_wrong") { // Example of incorrect current password for mock
+  if (currentPassword === "password123_wrong") { 
      return { success: false, message: "Incorrect current password." };
   }
   console.log(`Mock password change successful for user ${userId}.`);
@@ -215,24 +202,21 @@ export async function changePassword(userId: string, currentPassword: string, ne
 
 // --- Main Category Actions ---
 export async function getMainCategories(): Promise<MainCategory[]> {
-  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123'; // Fallback for unauthenticated scenarios if any
-  // Mock data now includes nested subcategories, mimicking the new API structure
+  const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123'; 
+  const result = await fetchAPI('/main/categories'); 
+  
   const mockData = MOCK_DB.mainCategories
     .filter(mc => mc.userId === MOCK_USER_ID)
     .map(mc => ({
       ...mc,
       subCategories: MOCK_DB.subCategories.filter(sc => sc.mainCategoryId === mc.id && sc.userId === MOCK_USER_ID)
     }));
-  
-  // API call updated to /main/categories
-  const result = await fetchAPI('/main/categories'); 
+
   if (result.error || !result.data) {
     console.warn(`getMainCategories: API call failed (Error: ${result.error?.message}). Falling back to mock data.`);
     return mockData;
   }
   try {
-    // API is expected to return MainCategory[] where each can have subCategories nested
-    // The definition of MainCategory already includes `subCategories?: SubCategory[]`
     return result.data as MainCategory[];
   } catch (processingError: any) {
     console.error(`getMainCategories: Error processing data from API (Error: ${processingError.message}). Falling back to mock data.`);
@@ -241,18 +225,16 @@ export async function getMainCategories(): Promise<MainCategory[]> {
 }
 
 export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId' | 'subCategories'>): Promise<MainCategory> {
-  // API Call: POST /main/categories
   const apiData = { name: data.name, color: data.color, icon: data.icon };
   const result = await fetchAPI('/main/categories', { method: 'POST', body: JSON.stringify(apiData) });
   if (result.error || !result.data) {
     console.error('Failed to create main category via API:', result.error?.message);
-    // Fallback to mock for now, or throw error
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated for mock operation");
     const newCategory: MainCategory = { ...data, id: `mc${Date.now()}`, userId: MOCK_USER_ID, subCategories: [] };
     MOCK_DB.mainCategories.push(newCategory);
     revalidatePath('/categories');
-    return newCategory; // Return mock data on API failure
+    return newCategory; 
   }
   revalidatePath('/categories');
   return result.data as MainCategory;
@@ -263,7 +245,7 @@ export async function updateMainCategory(id: string, data: Partial<Omit<MainCate
   const result = await fetchAPI(`/main/categories/${id}`, { method: 'PUT', body: JSON.stringify(apiData) });
   if (result.error) {
     console.error('Failed to update main category via API:', result.error.message);
-    return null; // Or handle mock update as fallback
+    return null; 
   }
   revalidatePath('/categories');
   return result.data as MainCategory | null;
@@ -273,13 +255,7 @@ export async function deleteMainCategory(id: string): Promise<void> {
   const result = await fetchAPI(`/main/categories/${id}`, { method: 'DELETE' });
   if (result.error) {
     console.error('Failed to delete main category via API:', result.error.message);
-    // Optionally implement mock fallback or throw
-    // Mock fallback:
-    // const MOCK_USER_ID = (await getCurrentUser())?.id;
-    // if (!MOCK_USER_ID) throw new Error("User not authenticated for mock operation");
-    // MOCK_DB.mainCategories = MOCK_DB.mainCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
-    // MOCK_DB.subCategories = MOCK_DB.subCategories.filter(sc => sc.mainCategoryId !== id || sc.userId !== MOCK_USER_ID);
-    throw new Error(result.error.message); // Re-throw for now
+    throw new Error(result.error.message); 
   }
   revalidatePath('/categories');
   revalidatePath('/budgets'); 
@@ -289,7 +265,6 @@ export async function deleteMainCategory(id: string): Promise<void> {
 export async function getSubCategories(mainCategoryId?: string): Promise<SubCategory[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
 
-  // Fetch all main categories (which include nested subcategories)
   const allMainCategories = await getMainCategories(); 
 
   let subCategories: SubCategory[] = [];
@@ -298,33 +273,29 @@ export async function getSubCategories(mainCategoryId?: string): Promise<SubCate
     const foundMain = allMainCategories.find(mc => mc.id === mainCategoryId);
     subCategories = foundMain?.subCategories || [];
   } else {
-    // Flatten all subcategories from all main categories
     allMainCategories.forEach(mc => {
       if (mc.subCategories) {
         subCategories.push(...mc.subCategories);
       }
     });
   }
-  // Ensure subcategories also have userId if filtering by it is needed client-side, though API should handle it
   return subCategories.map(sc => ({ ...sc, userId: MOCK_USER_ID })); 
 }
 
 export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>): Promise<SubCategory> {
   const apiData = {
     name: data.name,
-    main_category: data.mainCategoryId, // API expects main_category
+    main_category: data.mainCategoryId, 
     color: data.color,
     icon: data.icon,
   };
   const result = await fetchAPI('/sub/categories', { method: 'POST', body: JSON.stringify(apiData) });
   if (result.error || !result.data) {
     console.error('Failed to create sub category via API:', result.error?.message);
-    // Fallback to mock
     const MOCK_USER_ID = (await getCurrentUser())?.id;
     if (!MOCK_USER_ID) throw new Error("User not authenticated for mock operation");
     const newCategory: SubCategory = { ...data, id: `sc${Date.now()}`, userId: MOCK_USER_ID };
     MOCK_DB.subCategories.push(newCategory);
-    // Also update the parent main category's subCategories array in MOCK_DB
     const parentMain = MOCK_DB.mainCategories.find(mc => mc.id === data.mainCategoryId);
     if (parentMain) {
         if (!parentMain.subCategories) parentMain.subCategories = [];
@@ -342,7 +313,7 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
 export async function updateSubCategory(id: string, data: Partial<Omit<SubCategory, 'id' | 'userId'>>): Promise<SubCategory | null> {
   const apiData: any = { name: data.name, color: data.color, icon: data.icon };
   if (data.mainCategoryId) {
-    apiData.main_category = data.mainCategoryId; // API expects main_category
+    apiData.main_category = data.mainCategoryId; 
   }
   const result = await fetchAPI(`/sub/categories/${id}`, { method: 'PUT', body: JSON.stringify(apiData) });
   if (result.error) {
@@ -360,8 +331,6 @@ export async function deleteSubCategory(id: string): Promise<void> {
     console.error('Failed to delete sub category via API:', result.error.message);
     throw new Error(result.error.message);
   }
-  // MOCK_DB.subCategories = MOCK_DB.subCategories.filter(c => c.id !== id || c.userId !== MOCK_USER_ID);
-  // MOCK_DB.budgets = MOCK_DB.budgets.filter(b => b.subCategoryId !== id || b.userId !== MOCK_USER_ID);
   revalidatePath('/categories');
   revalidatePath('/budgets');
 }
@@ -478,7 +447,7 @@ export async function deleteTransaction(id: string): Promise<void> {
 }
 
 export async function stopRecurringTransaction(transactionId: string): Promise<Transaction | null> {
-  const result = await fetchAPI(`/transactions/${transactionId}/stop-recurring`, {method: 'POST'}); // Or PUT
+  const result = await fetchAPI(`/transactions/${transactionId}/stop-recurring`, {method: 'POST'}); 
   if (result.error) {
     console.error('Failed to stop recurring transaction via API:', result.error.message);
     return null;
@@ -588,9 +557,9 @@ export async function getSharedCapitalSession(): Promise<SharedCapitalSession | 
   const result = await fetchAPI('/shared-capital/session');
   if (result.error) {
      console.warn(`getSharedCapitalSession: API call failed (Error: ${result.error?.message}). Mock DB has no active session.`);
-     return null; // Mock DB usually empty, so API error means null
+     return null; 
   }
-  if (!result.data) return null; // API returned 204 or null explicitly
+  if (!result.data) return null; 
   try {
       return {...result.data, createdAt: new Date(result.data.createdAt), updatedAt: new Date(result.data.updatedAt)} as SharedCapitalSession;
   } catch(e) {
@@ -613,10 +582,9 @@ export async function stopSharedCapitalSession(): Promise<SharedCapitalSession |
    const result = await fetchAPI('/shared-capital/session', {method: 'DELETE'});
    if (result.error) {
     console.error('Failed to stop shared capital session via API:', result.error.message);
-    return null; // API might return 204 on success which fetchAPI handles as data:null
+    return null; 
   }
   revalidatePath('/capital');
-  // If API returns 204, result.data will be null. If it returns the updated (inactive) session:
   return result.data ? {...result.data, createdAt: new Date(result.data.createdAt), updatedAt: new Date(result.data.updatedAt)} as SharedCapitalSession : null;
 }
 
@@ -644,11 +612,10 @@ export async function getFeedbacks(): Promise<FeedbackItem[]> {
 export async function addFeedback(
   feedbackData: Omit<FeedbackItem, 'id' | 'userId' | 'createdAt' | 'status'>
 ): Promise<FeedbackItem> {
-  const currentUser = await getCurrentUser(); // Ensures user is authenticated for API call
+  const currentUser = await getCurrentUser(); 
   if (!currentUser) {
     throw new Error("User not authenticated to submit feedback.");
   }
-  // API doesn't need userId or createdAt, status is defaulted by backend
   const result = await fetchAPI('/feedbacks', {method: 'POST', body: JSON.stringify(feedbackData)});
   if (result.error || !result.data) {
     console.error('Failed to add feedback via API:', result.error?.message);
@@ -685,3 +652,4 @@ export async function setLocaleCookie(locale: string, currentPath: string) {
 export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState));
 }
+
