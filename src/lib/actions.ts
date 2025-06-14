@@ -62,7 +62,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<{ 
     return { data: responseData, error: null };
 
   } catch (networkError: any) {
-    console.warn(`Network/Fetch Error for ${endpoint}: ${networkError.message}. Returning 'null' data and no error, which will lead to empty data being used by callers.`);
+    console.warn(`Network/Fetch Error for ${endpoint}: ${networkError.message}. Returning 'null' data and null error, which will lead to empty data being used by callers.`);
     return { data: null, error: null }; // On fetch failure, return null data and no error
   }
 }
@@ -801,35 +801,46 @@ export async function getWalletTypes(): Promise<WalletType[]> {
   }
 }
 
-export async function getTransactionTypes(): Promise<TransactionType[]> {
+export async function getTransactionTypes(): Promise<Array<{ key: TransactionType; label: string; }>> {
   const { data, error } = await fetchAPI(API_TRANSACTION_TYPES);
-  const defaultTypes: TransactionType[] = ['Income', 'Expense'];
+  const defaultTypes: Array<{ key: TransactionType; label: string; }> = [
+    { key: 'Income', label: 'Income' },
+    { key: 'Expense', label: 'Expense' }
+  ];
+
   if (error || !data) {
     console.warn('Failed to fetch transaction types from API, returning default types:', error?.message);
     return defaultTypes;
   }
+
   try {
-    let typesObject;
+    let rawTypes: string[] = [];
+
     if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
-       typesObject = data[0].types;
+       rawTypes = Object.keys(data[0].types);
     } else if (typeof data === 'object' && data !== null && data.types && typeof data.types === 'object') {
-       typesObject = data.types;
-    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) { // Fallback for simple array of strings
-      return (data as string[])
-        .map(formatApiTypeName)
-        .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
+       rawTypes = Object.keys(data.types);
+    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
+      rawTypes = data as string[];
+    } else {
+      console.warn('Transaction types API response format not recognized, returning default types.', data);
+      return defaultTypes;
     }
 
-    if (typesObject) {
-       const typeKeys = Object.keys(typesObject);
-        return typeKeys
-          .map(formatApiTypeName)
-          .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
-    }
-    console.warn('Transaction types API response format not recognized, returning default types.', data);
-    return defaultTypes;
+    return rawTypes
+      .map(typeString => {
+        const formattedType = formatApiTypeName(typeString);
+        // Ensure the key conforms to TransactionType
+        if (formattedType === 'Income' || formattedType === 'Expense') {
+          return { key: formattedType as TransactionType, label: formattedType };
+        }
+        return null;
+      })
+      .filter(item => item !== null) as Array<{ key: TransactionType; label: string; }>;
+
   } catch (e) {
     console.error('Error processing transaction types from API:', e);
     return defaultTypes;
   }
 }
+

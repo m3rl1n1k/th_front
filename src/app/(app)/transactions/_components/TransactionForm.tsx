@@ -57,7 +57,7 @@ interface TransactionFormProps {
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
   defaultWalletId?: string;
-  availableTransactionTypes: string[]; // Added prop
+  availableTransactionTypes: Array<{ key: TransactionType; label: string; }>;
 }
 
 export function TransactionForm({
@@ -67,7 +67,7 @@ export function TransactionForm({
   subCategories,
   mainCategories,
   defaultWalletId,
-  availableTransactionTypes, // Use prop
+  availableTransactionTypes,
 }: TransactionFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -83,7 +83,9 @@ export function TransactionForm({
           // walletId will be correctly sourced from initialData due to spread
         }
       : {
-          type: availableTransactionTypes.includes('Expense') ? 'Expense' : (availableTransactionTypes[0] as TransactionType),
+          type: availableTransactionTypes.find(item => item.key === 'Expense') 
+                ? 'Expense' 
+                : (availableTransactionTypes.length > 0 ? availableTransactionTypes[0].key : undefined),
           frequency: 'One-time',
           createdAt: new Date(),
           amount: 0,
@@ -142,7 +144,11 @@ export function TransactionForm({
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableTransactionTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                        {availableTransactionTypes.map(({ key, label }) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -298,3 +304,4 @@ export function TransactionForm({
     </Card>
   );
 }
+
