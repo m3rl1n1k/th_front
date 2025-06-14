@@ -33,7 +33,7 @@ import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const transactionTypes: TransactionType[] = ['Income', 'Expense'];
+// Hardcoded transactionTypes removed, will be passed as prop
 const transactionFrequencies: TransactionFrequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
 const NO_CATEGORY_VALUE = "_NONE_"; 
@@ -41,7 +41,7 @@ const NO_CATEGORY_VALUE = "_NONE_";
 const transactionFormSchema = z.object({
   subCategoryId: z.string().optional(),
   walletId: z.string().min(1, { message: 'Wallet is required.' }),
-  type: z.enum(transactionTypes as [TransactionType, ...TransactionType[]], { required_error: 'Transaction type is required.' }),
+  type: z.enum(['Income', 'Expense'] as [TransactionType, ...TransactionType[]], { required_error: 'Transaction type is required.' }),
   frequency: z.enum(transactionFrequencies as [TransactionFrequency, ...TransactionFrequency[]], { required_error: 'Frequency is required.' }),
   amount: z.coerce.number().positive({ message: 'Amount must be positive.' }),
   createdAt: z.date({ required_error: 'Date is required.' }),
@@ -57,6 +57,7 @@ interface TransactionFormProps {
   subCategories: SubCategory[];
   mainCategories: MainCategory[];
   defaultWalletId?: string;
+  availableTransactionTypes: string[]; // Added prop
 }
 
 export function TransactionForm({
@@ -66,6 +67,7 @@ export function TransactionForm({
   subCategories,
   mainCategories,
   defaultWalletId,
+  availableTransactionTypes, // Use prop
 }: TransactionFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -80,7 +82,7 @@ export function TransactionForm({
           createdAt: new Date(initialData.createdAt),
         }
       : {
-          type: 'Expense',
+          type: 'Expense', // Default, but Select will show available types
           frequency: 'One-time',
           createdAt: new Date(),
           amount: 0,
@@ -134,12 +136,12 @@ export function TransactionForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {transactionTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                        {availableTransactionTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -169,8 +171,7 @@ export function TransactionForm({
                   <FormLabel>Category (Optional)</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value} // Direct value from form state
-                    defaultValue={field.value} // Default value from form state
+                    value={field.value || NO_CATEGORY_VALUE} 
                     disabled={isSubmitting}
                   >
                     <FormControl>
@@ -208,7 +209,7 @@ export function TransactionForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Wallet</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select wallet" /></SelectTrigger>
                       </FormControl>
@@ -255,7 +256,7 @@ export function TransactionForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Frequency</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select frequency" /></SelectTrigger>
                     </FormControl>

@@ -30,15 +30,17 @@ import { walletIconNames, type WalletIconName } from '@/lib/icon-names';
 import { DynamicIcon } from '@/components/shared/DynamicIcon';
 import * as LucideIcons from 'lucide-react';
 
-const walletTypes: WalletType[] = ['Cash', 'Bank Account', 'Credit Card', 'E-Wallet'];
+// Hardcoded walletTypes removed, types will be passed as a prop
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']; // Add more as needed
 
+// The Zod schema still defines the expected string values for WalletType.
+// The dynamically fetched types should align with these values after formatting.
 const walletFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   currency: z.string().min(3, { message: 'Currency must be selected.' }),
   initialAmount: z.coerce.number().min(0, { message: 'Amount must be non-negative.' }),
-  type: z.enum(walletTypes as [WalletType, ...WalletType[]], { required_error: 'Wallet type is required.' }),
-  icon: z.string().optional(), // Allow any string, or use z.enum(walletIconNames) for strictness
+  type: z.enum(['Cash', 'Bank Account', 'Credit Card', 'E-Wallet'] as [WalletType, ...WalletType[]], { required_error: 'Wallet type is required.' }),
+  icon: z.string().optional(), 
 });
 
 type WalletFormValues = z.infer<typeof walletFormSchema>;
@@ -46,9 +48,10 @@ type WalletFormValues = z.infer<typeof walletFormSchema>;
 interface WalletFormProps {
   initialData?: Wallet | null;
   onSubmitAction: (data: WalletFormValues) => Promise<Wallet | null>;
+  availableWalletTypes: string[]; // Added prop
 }
 
-export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
+export function WalletForm({ initialData, onSubmitAction, availableWalletTypes }: WalletFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -67,8 +70,8 @@ export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
           name: '',
           currency: 'USD',
           initialAmount: 0,
-          type: undefined,
-          icon: walletIconNames[0], // Default to the first icon in the list
+          type: availableWalletTypes.includes('Cash') ? 'Cash' : availableWalletTypes[0] as WalletType, // Default to 'Cash' or first available
+          icon: walletIconNames[0], 
         },
   });
 
@@ -82,7 +85,7 @@ export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
           description: `Wallet "${result.name}" has been successfully ${initialData ? 'updated' : 'created'}.`,
         });
         router.push('/wallets');
-        router.refresh(); // Ensure the list is updated
+        router.refresh(); 
       } else {
         throw new Error('Failed to save wallet');
       }
@@ -126,14 +129,14 @@ export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select wallet type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {walletTypes.map((type) => (
+                        {availableWalletTypes.map((type) => (
                           <SelectItem key={type} value={type}>
                             {type}
                           </SelectItem>
@@ -150,7 +153,7 @@ export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Currency</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select currency" />
@@ -190,7 +193,7 @@ export function WalletForm({ initialData, onSubmitAction }: WalletFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Icon</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                     <FormControl>
                       <SelectTrigger>
                         <div className="flex items-center gap-2">

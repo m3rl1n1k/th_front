@@ -1,19 +1,19 @@
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { TransactionForm } from '../_components/TransactionForm';
-import { createTransaction, getWallets, getSubCategories, getMainCategories } from '@/lib/actions';
-import type { Wallet } from '@/lib/definitions'; // Import Wallet type
+import { createTransaction, getWallets, getSubCategories, getMainCategories, getTransactionTypes } from '@/lib/actions'; // Added getTransactionTypes
+import type { Wallet } from '@/lib/definitions'; 
 
 export default async function NewTransactionPage() {
   const wallets = await getWallets();
   const subCategories = await getSubCategories();
   const mainCategories = await getMainCategories();
+  const availableTransactionTypes = await getTransactionTypes(); // Fetch types
 
-  // Find the "Main Bank" wallet to pass as default
   const mainBankWallet = wallets.find(wallet => wallet.name.toLowerCase() === 'main bank');
   const defaultWalletId = mainBankWallet?.id;
 
-  if (wallets.length === 0) { // Changed condition to only check for wallets
+  if (wallets.length === 0) { 
     return (
       <>
         <PageHeader title="Create New Transaction" description="Record a new income or expense." />
@@ -34,7 +34,8 @@ export default async function NewTransactionPage() {
         wallets={wallets}
         subCategories={subCategories}
         mainCategories={mainCategories}
-        defaultWalletId={defaultWalletId} // Pass the defaultWalletId
+        defaultWalletId={defaultWalletId} 
+        availableTransactionTypes={availableTransactionTypes} // Pass types
       />
     </>
   );

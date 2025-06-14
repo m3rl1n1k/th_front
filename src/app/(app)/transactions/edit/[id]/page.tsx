@@ -1,6 +1,7 @@
+
 import { PageHeader } from '@/components/shared/PageHeader';
 import { TransactionForm } from '../../_components/TransactionForm';
-import { getTransactions, updateTransaction, getWallets, getSubCategories, getMainCategories } from '@/lib/actions';
+import { getTransactions, updateTransaction, getWallets, getSubCategories, getMainCategories, getTransactionTypes } from '@/lib/actions'; // Added getTransactionTypes
 import { notFound } from 'next/navigation';
 import type { Transaction } from '@/lib/definitions';
 
@@ -15,6 +16,7 @@ export default async function EditTransactionPage({ params }: { params: { id: st
   const wallets = await getWallets();
   const subCategories = await getSubCategories();
   const mainCategories = await getMainCategories();
+  const availableTransactionTypes = await getTransactionTypes(); // Fetch types
 
   if (!transaction) {
     notFound();
@@ -34,6 +36,7 @@ export default async function EditTransactionPage({ params }: { params: { id: st
         wallets={wallets}
         subCategories={subCategories}
         mainCategories={mainCategories}
+        availableTransactionTypes={availableTransactionTypes} // Pass types
       />
     </>
   );

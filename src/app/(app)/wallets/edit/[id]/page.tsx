@@ -1,6 +1,7 @@
+
 import { PageHeader } from '@/components/shared/PageHeader';
 import { WalletForm } from '../../_components/WalletForm';
-import { getWallets, updateWallet } from '@/lib/actions'; // Assuming getWalletById doesn't exist, filter from getWallets
+import { getWallets, updateWallet, getWalletTypes } from '@/lib/actions'; // Added getWalletTypes
 import { notFound } from 'next/navigation';
 import type { Wallet } from '@/lib/definitions';
 
@@ -12,6 +13,7 @@ async function getWalletById(id: string): Promise<Wallet | null> {
 
 export default async function EditWalletPage({ params }: { params: { id: string } }) {
   const wallet = await getWalletById(params.id);
+  const availableWalletTypes = await getWalletTypes();
 
   if (!wallet) {
     notFound();
@@ -25,7 +27,11 @@ export default async function EditWalletPage({ params }: { params: { id: string 
   return (
     <>
       <PageHeader title="Edit Wallet" description={`Update details for ${wallet.name}.`} />
-      <WalletForm initialData={wallet} onSubmitAction={handleSubmit} />
+      <WalletForm 
+        initialData={wallet} 
+        onSubmitAction={handleSubmit} 
+        availableWalletTypes={availableWalletTypes}
+      />
     </>
   );
 }

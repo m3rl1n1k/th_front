@@ -1,14 +1,14 @@
 
 'use server';
-import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType } from './definitions';
+import type { MainCategory, SubCategory, Transaction, Wallet, Transfer, MockDb, User, UserSettings, Budget, SharedCapitalSession, TransactionFrequency, FeedbackItem, FeedbackStatus, FeedbackType, WalletType } from './definitions';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser, getAuthToken } from './auth';
 import { cookies as nextCookies } from 'next/headers';
 import {
   API_MAIN_CATEGORIES, API_MAIN_CATEGORIES_ID,
   API_SUB_CATEGORIES, API_SUB_CATEGORIES_ID,
-  API_WALLETS, API_WALLETS_ID,
-  API_TRANSACTIONS, API_TRANSACTIONS_ID, API_TRANSACTIONS_STOP_RECURRING,
+  API_WALLETS, API_WALLETS_ID, API_WALLET_TYPES,
+  API_TRANSACTIONS, API_TRANSACTIONS_ID, API_TRANSACTIONS_STOP_RECURRING, API_TRANSACTION_TYPES,
   API_TRANSFERS, API_TRANSFERS_ID,
   API_BUDGETS, API_BUDGETS_ID,
   API_SHARED_CAPITAL_SESSION,
@@ -214,9 +214,9 @@ export async function changePassword(userId: string, currentPassword: string, ne
 export async function getMainCategories(): Promise<MainCategory[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
   const apiCallLogPrefix = 'getMainCategories: API call';
-  const result = await fetchAPI(API_MAIN_CATEGORIES);
+  const { data: resultData, error } = await fetchAPI(API_MAIN_CATEGORIES);
 
-  const mockFallback = () => {
+  const mockFallback = (): MainCategory[] => {
       console.warn(`${apiCallLogPrefix} failed or returned unexpected data. Falling back to mock data.`);
       return MOCK_DB.mainCategories
         .filter(mc => mc.userId === MOCK_USER_ID)
@@ -227,22 +227,24 @@ export async function getMainCategories(): Promise<MainCategory[]> {
         }));
   }
 
-  if (result.error || !result.data) {
+  if (error || resultData === null) { // Check for null explicitly
     return mockFallback();
   }
   
   try {
-    let actualDataArray = result.data;
-    // Check if data is wrapped in an object like { "mainCategories": [...] }
-    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.mainCategories) {
-      actualDataArray = result.data.mainCategories;
-    } else if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.categories) { // Added for "categories" key
-      actualDataArray = result.data.categories;
+    let actualDataArray = resultData;
+    // Check if data is wrapped in an object like { "mainCategories": [...] } or { "categories": [...] }
+    if (typeof resultData === 'object' && !Array.isArray(resultData)) {
+      if (resultData.mainCategories && Array.isArray(resultData.mainCategories)) {
+        actualDataArray = resultData.mainCategories;
+      } else if (resultData.categories && Array.isArray(resultData.categories)) {
+        actualDataArray = resultData.categories;
+      }
     }
 
 
     if (!Array.isArray(actualDataArray)) {
-      console.warn(`${apiCallLogPrefix} returned data in an unexpected format after checking for wrappers (Type: ${typeof actualDataArray}). Returning empty list.`);
+      console.warn(`${apiCallLogPrefix} returned data in an unexpected format (Type: ${typeof actualDataArray}). Returning empty list.`);
       return [];
     }
 
@@ -259,31 +261,31 @@ export async function getMainCategories(): Promise<MainCategory[]> {
 
 export async function createMainCategory(data: Omit<MainCategory, 'id' | 'userId' | 'subCategories'>): Promise<MainCategory> {
   const apiData = { name: data.name, color: data.color, icon: data.icon };
-  const result = await fetchAPI(API_MAIN_CATEGORIES, { method: 'POST', body: JSON.stringify(apiData) });
-  if (result.error || !result.data) {
-    console.error('Failed to create main category via API:', result.error?.message);
-    throw new Error(result.error?.message || "API Error creating main category");
+  const {data: resultData, error} = await fetchAPI(API_MAIN_CATEGORIES, { method: 'POST', body: JSON.stringify(apiData) });
+  if (error || !resultData) {
+    console.error('Failed to create main category via API:', error?.message);
+    throw new Error(error?.message || "API Error creating main category");
   }
   revalidatePath('/categories');
-  return result.data as MainCategory;
+  return resultData as MainCategory;
 }
 
 export async function updateMainCategory(id: string, data: Partial<Omit<MainCategory, 'id' | 'userId' | 'subCategories'>>): Promise<MainCategory | null> {
   const apiData = { name: data.name, color: data.color, icon: data.icon };
-  const result = await fetchAPI(API_MAIN_CATEGORIES_ID(id), { method: 'PUT', body: JSON.stringify(apiData) });
-  if (result.error) {
-    console.error('Failed to update main category via API:', result.error.message);
+  const {data: resultData, error} = await fetchAPI(API_MAIN_CATEGORIES_ID(id), { method: 'PUT', body: JSON.stringify(apiData) });
+  if (error) {
+    console.error('Failed to update main category via API:', error.message);
     return null;
   }
   revalidatePath('/categories');
-  return result.data as MainCategory | null;
+  return resultData as MainCategory | null;
 }
 
 export async function deleteMainCategory(id: string): Promise<void> {
-  const result = await fetchAPI(API_MAIN_CATEGORIES_ID(id), { method: 'DELETE' });
-  if (result.error) {
-    console.error('Failed to delete main category via API:', result.error.message);
-    throw new Error(result.error.message);
+  const { error } = await fetchAPI(API_MAIN_CATEGORIES_ID(id), { method: 'DELETE' });
+  if (error) {
+    console.error('Failed to delete main category via API:', error.message);
+    throw new Error(error.message);
   }
   revalidatePath('/categories');
   revalidatePath('/budgets');
@@ -292,6 +294,10 @@ export async function deleteMainCategory(id: string): Promise<void> {
 // --- Sub Category Actions ---
 export async function getSubCategories(mainCategoryIdFilter?: string): Promise<SubCategory[]> {
   const allMainCategories = await getMainCategories(); 
+  if (!Array.isArray(allMainCategories)) { // Ensure allMainCategories is an array
+      console.warn("getMainCategories did not return an array for getSubCategories. Returning empty list.");
+      return [];
+  }
   let subCategoriesResult: SubCategory[] = [];
 
   if (mainCategoryIdFilter) {
@@ -320,14 +326,14 @@ export async function createSubCategory(data: Omit<SubCategory, 'id' | 'userId'>
     color: data.color,
     icon: data.icon,
   };
-  const result = await fetchAPI(API_SUB_CATEGORIES, { method: 'POST', body: JSON.stringify(apiData) });
-  if (result.error || !result.data) {
-    console.error('Failed to create sub category via API:', result.error?.message);
-     throw new Error(result.error?.message || "API Error creating sub category");
+  const {data: resultData, error} = await fetchAPI(API_SUB_CATEGORIES, { method: 'POST', body: JSON.stringify(apiData) });
+  if (error || !resultData) {
+    console.error('Failed to create sub category via API:', error?.message);
+     throw new Error(error?.message || "API Error creating sub category");
   }
   revalidatePath('/categories');
   revalidatePath('/budgets');
-  return result.data as SubCategory;
+  return resultData as SubCategory;
 }
 
 export async function updateSubCategory(id: string, data: Partial<Omit<SubCategory, 'id' | 'userId'>>): Promise<SubCategory | null> {
@@ -335,21 +341,21 @@ export async function updateSubCategory(id: string, data: Partial<Omit<SubCatego
   if (data.mainCategoryId) {
     apiData.main_category = data.mainCategoryId; 
   }
-  const result = await fetchAPI(API_SUB_CATEGORIES_ID(id), { method: 'PUT', body: JSON.stringify(apiData) });
-  if (result.error) {
-    console.error('Failed to update sub category via API:', result.error.message);
+  const {data: resultData, error} = await fetchAPI(API_SUB_CATEGORIES_ID(id), { method: 'PUT', body: JSON.stringify(apiData) });
+  if (error) {
+    console.error('Failed to update sub category via API:', error.message);
     return null;
   }
   revalidatePath('/categories');
   revalidatePath('/budgets');
-  return result.data as SubCategory | null;
+  return resultData as SubCategory | null;
 }
 
 export async function deleteSubCategory(id: string): Promise<void> {
-  const result = await fetchAPI(API_SUB_CATEGORIES_ID(id), { method: 'DELETE' });
-  if (result.error) {
-    console.error('Failed to delete sub category via API:', result.error.message);
-    throw new Error(result.error.message);
+  const { error } = await fetchAPI(API_SUB_CATEGORIES_ID(id), { method: 'DELETE' });
+  if (error) {
+    console.error('Failed to delete sub category via API:', error.message);
+    throw new Error(error.message);
   }
   revalidatePath('/categories');
   revalidatePath('/budgets');
@@ -359,20 +365,20 @@ export async function deleteSubCategory(id: string): Promise<void> {
 // --- Wallet Actions ---
 export async function getWallets(): Promise<Wallet[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-  const result = await fetchAPI(API_WALLETS);
+  const { data: resultData, error } = await fetchAPI(API_WALLETS);
   
-  const mockFallback = () => {
+  const mockFallback = (): Wallet[] => {
     console.warn(`getWallets: API call failed or returned unexpected data. Falling back to mock data.`);
     return MOCK_DB.wallets.filter(w => w.userId === MOCK_USER_ID);
   };
 
-  if (result.error || !result.data) {
+  if (error || resultData === null) {
     return mockFallback();
   }
   try {
-    let actualDataArray = result.data;
-    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.wallets) {
-      actualDataArray = result.data.wallets;
+    let actualDataArray = resultData;
+    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.wallets && Array.isArray(resultData.wallets)) {
+      actualDataArray = resultData.wallets;
     }
 
     if (!Array.isArray(actualDataArray)) {
@@ -387,32 +393,32 @@ export async function getWallets(): Promise<Wallet[]> {
 }
 
 export async function createWallet(data: Omit<Wallet, 'id' | 'userId'>): Promise<Wallet> {
-  const result = await fetchAPI(API_WALLETS, {method: 'POST', body: JSON.stringify(data)});
-  if (result.error || !result.data) {
-     console.error('Failed to create wallet via API:', result.error?.message);
-     throw new Error(result.error?.message || "API Error creating wallet");
+  const {data: resultData, error} = await fetchAPI(API_WALLETS, {method: 'POST', body: JSON.stringify(data)});
+  if (error || !resultData) {
+     console.error('Failed to create wallet via API:', error?.message);
+     throw new Error(error?.message || "API Error creating wallet");
   }
   revalidatePath('/wallets');
   revalidatePath('/capital');
-  return result.data as Wallet;
+  return resultData as Wallet;
 }
 
 export async function updateWallet(id: string, data: Partial<Omit<Wallet, 'id' | 'userId'>>): Promise<Wallet | null> {
-  const result = await fetchAPI(API_WALLETS_ID(id), {method: 'PUT', body: JSON.stringify(data)});
-  if (result.error) {
-    console.error('Failed to update wallet via API:', result.error.message);
+  const {data: resultData, error} = await fetchAPI(API_WALLETS_ID(id), {method: 'PUT', body: JSON.stringify(data)});
+  if (error) {
+    console.error('Failed to update wallet via API:', error.message);
     return null;
   }
   revalidatePath('/wallets');
   revalidatePath('/capital');
-  return result.data as Wallet | null;
+  return resultData as Wallet | null;
 }
 
 export async function deleteWallet(id: string): Promise<void> {
-  const result = await fetchAPI(API_WALLETS_ID(id), {method: 'DELETE'});
-  if (result.error) {
-    console.error('Failed to delete wallet via API:', result.error.message);
-    throw new Error(result.error.message);
+  const { error } = await fetchAPI(API_WALLETS_ID(id), {method: 'DELETE'});
+  if (error) {
+    console.error('Failed to delete wallet via API:', error.message);
+    throw new Error(error.message);
   }
   revalidatePath('/wallets');
   revalidatePath('/capital');
@@ -422,9 +428,9 @@ export async function deleteWallet(id: string): Promise<void> {
 // --- Transaction Actions ---
 export async function getTransactions(): Promise<Transaction[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-  const result = await fetchAPI(API_TRANSACTIONS);
+  const { data: resultData, error } = await fetchAPI(API_TRANSACTIONS);
 
-  const mockFallback = () => {
+  const mockFallback = (): Transaction[] => {
     console.warn(`getTransactions: API call failed or returned unexpected data. Falling back to mock data.`);
      return MOCK_DB.transactions
       .filter(t => t.userId === MOCK_USER_ID)
@@ -432,14 +438,14 @@ export async function getTransactions(): Promise<Transaction[]> {
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   };
 
-  if (result.error || !result.data) {
+  if (error || resultData === null) {
     return mockFallback();
   }
 
   try {
-    let actualDataArray = result.data;
-    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.transactions) {
-      actualDataArray = result.data.transactions;
+    let actualDataArray = resultData;
+    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.transactions && Array.isArray(resultData.transactions)) {
+      actualDataArray = resultData.transactions;
     }
 
     if (!Array.isArray(actualDataArray)) {
@@ -455,34 +461,34 @@ export async function getTransactions(): Promise<Transaction[]> {
 }
 
 export async function createTransaction(data: Omit<Transaction, 'id' | 'userId'>): Promise<Transaction> {
-  const result = await fetchAPI(API_TRANSACTIONS, {method: 'POST', body: JSON.stringify({...data, createdAt: data.createdAt.toISOString()})});
-   if (result.error || !result.data) {
-     console.error('Failed to create transaction via API:', result.error?.message);
-     throw new Error(result.error?.message || "API Error creating transaction");
+  const {data: resultData, error} = await fetchAPI(API_TRANSACTIONS, {method: 'POST', body: JSON.stringify({...data, createdAt: data.createdAt.toISOString()})});
+   if (error || !resultData) {
+     console.error('Failed to create transaction via API:', error?.message);
+     throw new Error(error?.message || "API Error creating transaction");
   }
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
-  return {...result.data, createdAt: new Date(result.data.createdAt)} as Transaction;
+  return {...resultData, createdAt: new Date(resultData.createdAt)} as Transaction;
 }
 
 export async function updateTransaction(id: string, data: Partial<Omit<Transaction, 'id' | 'userId'>>): Promise<Transaction | null> {
-  const result = await fetchAPI(API_TRANSACTIONS_ID(id), {method: 'PUT', body: JSON.stringify(data.createdAt ? {...data, createdAt: new Date(data.createdAt).toISOString()} : data)});
-  if (result.error) {
-    console.error('Failed to update transaction via API:', result.error.message);
+  const {data: resultData, error} = await fetchAPI(API_TRANSACTIONS_ID(id), {method: 'PUT', body: JSON.stringify(data.createdAt ? {...data, createdAt: new Date(data.createdAt).toISOString()} : data)});
+  if (error) {
+    console.error('Failed to update transaction via API:', error.message);
     return null;
   }
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
   revalidatePath('/budgets');
-  return result.data ? {...result.data, createdAt: new Date(result.data.createdAt)} as Transaction | null : null;
+  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt)} as Transaction | null : null;
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-  const result = await fetchAPI(API_TRANSACTIONS_ID(id), {method: 'DELETE'});
-  if (result.error) {
-    console.error('Failed to delete transaction via API:', result.error.message);
-    throw new Error(result.error.message);
+  const { error } = await fetchAPI(API_TRANSACTIONS_ID(id), {method: 'DELETE'});
+  if (error) {
+    console.error('Failed to delete transaction via API:', error.message);
+    throw new Error(error.message);
   }
   revalidatePath('/transactions');
   revalidatePath('/dashboard');
@@ -490,22 +496,22 @@ export async function deleteTransaction(id: string): Promise<void> {
 }
 
 export async function stopRecurringTransaction(transactionId: string): Promise<Transaction | null> {
-  const result = await fetchAPI(API_TRANSACTIONS_STOP_RECURRING(transactionId), {method: 'POST'});
-  if (result.error) {
-    console.error('Failed to stop recurring transaction via API:', result.error.message);
+  const {data: resultData, error} = await fetchAPI(API_TRANSACTIONS_STOP_RECURRING(transactionId), {method: 'POST'});
+  if (error) {
+    console.error('Failed to stop recurring transaction via API:', error.message);
     return null;
   }
   revalidatePath('/transactions');
-  return result.data ? {...result.data, createdAt: new Date(result.data.createdAt)} as Transaction | null : null;
+  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt)} as Transaction | null : null;
 }
 
 
 // --- Transfer Actions ---
 export async function getTransfers(): Promise<Transfer[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-  const result = await fetchAPI(API_TRANSFERS);
+  const { data: resultData, error } = await fetchAPI(API_TRANSFERS);
 
-  const mockFallback = () => {
+  const mockFallback = (): Transfer[] => {
      console.warn(`getTransfers: API call failed or returned unexpected data. Falling back to mock data.`);
      return MOCK_DB.transfers
       .filter(t => t.userId === MOCK_USER_ID)
@@ -513,13 +519,13 @@ export async function getTransfers(): Promise<Transfer[]> {
       .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
   };
 
-  if (result.error || !result.data) {
+  if (error || resultData === null) {
     return mockFallback();
   }
   try {
-    let actualDataArray = result.data;
-    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.transfers) {
-      actualDataArray = result.data.transfers;
+    let actualDataArray = resultData;
+    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.transfers && Array.isArray(resultData.transfers)) {
+      actualDataArray = resultData.transfers;
     }
 
     if (!Array.isArray(actualDataArray)) {
@@ -535,21 +541,21 @@ export async function getTransfers(): Promise<Transfer[]> {
 }
 
 export async function createTransfer(data: Omit<Transfer, 'id' | 'userId'>): Promise<Transfer> {
-   const result = await fetchAPI(API_TRANSFERS, {method: 'POST', body: JSON.stringify({...data, createdAt: data.createdAt.toISOString()})});
-   if (result.error || !result.data) {
-     console.error('Failed to create transfer via API:', result.error?.message);
-     throw new Error(result.error?.message || "API Error creating transfer");
+   const {data: resultData, error} = await fetchAPI(API_TRANSFERS, {method: 'POST', body: JSON.stringify({...data, createdAt: data.createdAt.toISOString()})});
+   if (error || !resultData) {
+     console.error('Failed to create transfer via API:', error?.message);
+     throw new Error(error?.message || "API Error creating transfer");
   }
   revalidatePath('/transfers');
   revalidatePath('/capital');
-  return {...result.data, createdAt: new Date(result.data.createdAt)} as Transfer;
+  return {...resultData, createdAt: new Date(resultData.createdAt)} as Transfer;
 }
 
 export async function deleteTransfer(id: string): Promise<void> {
-  const result = await fetchAPI(API_TRANSFERS_ID(id), {method: 'DELETE'});
-  if (result.error) {
-    console.error('Failed to delete transfer via API:', result.error.message);
-    throw new Error(result.error.message);
+  const { error } = await fetchAPI(API_TRANSFERS_ID(id), {method: 'DELETE'});
+  if (error) {
+    console.error('Failed to delete transfer via API:', error.message);
+    throw new Error(error.message);
   }
   revalidatePath('/transfers');
   revalidatePath('/capital');
@@ -562,21 +568,21 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
   if (month && year) {
     query = `?month=${month}&year=${year}`;
   }
-  const result = await fetchAPI(`${API_BUDGETS}${query}`);
+  const { data: resultData, error } = await fetchAPI(`${API_BUDGETS}${query}`);
 
-  const mockFallback = () => {
+  const mockFallback = (): Budget[] => {
     console.warn(`getBudgets: API call failed or returned unexpected data. Falling back to mock data.`);
     return MOCK_DB.budgets.filter(b => b.userId === MOCK_USER_ID && (month ? b.month === month : true) && (year ? b.year === year : true))
                                  .sort((a, b) => (a.year !== b.year) ? a.year - b.year : (a.month !== b.month) ? a.month - b.month : a.subCategoryId.localeCompare(b.subCategoryId));
   };
 
-  if (result.error || !result.data) {
+  if (error || resultData === null) {
     return mockFallback();
   }
   try {
-    let actualDataArray = result.data;
-    if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.budgets) {
-      actualDataArray = result.data.budgets;
+    let actualDataArray = resultData;
+    if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.budgets && Array.isArray(resultData.budgets)) {
+      actualDataArray = resultData.budgets;
     }
 
     if (!Array.isArray(actualDataArray)) {
@@ -592,44 +598,44 @@ export async function getBudgets(month?: number, year?: number): Promise<Budget[
 }
 
 export async function createBudget(data: Omit<Budget, 'id' | 'userId' | 'createdAt'>): Promise<Budget> {
-  const result = await fetchAPI(API_BUDGETS, {method: 'POST', body: JSON.stringify(data)});
-  if (result.error || !result.data) {
-     console.error('Failed to create budget via API:', result.error?.message);
-     throw new Error(result.error?.message || "API Error creating budget");
+  const {data: resultData, error} = await fetchAPI(API_BUDGETS, {method: 'POST', body: JSON.stringify(data)});
+  if (error || !resultData) {
+     console.error('Failed to create budget via API:', error?.message);
+     throw new Error(error?.message || "API Error creating budget");
   }
   revalidatePath('/budgets');
-  return {...result.data, createdAt: new Date(result.data.createdAt)} as Budget;
+  return {...resultData, createdAt: new Date(resultData.createdAt)} as Budget;
 }
 
 export async function updateBudget(id: string, data: Partial<Omit<Budget, 'id' | 'userId' | 'createdAt'>>): Promise<Budget | null> {
-  const result = await fetchAPI(API_BUDGETS_ID(id), {method: 'PUT', body: JSON.stringify(data)});
-  if (result.error) {
-    console.error('Failed to update budget via API:', result.error.message);
+  const {data: resultData, error} = await fetchAPI(API_BUDGETS_ID(id), {method: 'PUT', body: JSON.stringify(data)});
+  if (error) {
+    console.error('Failed to update budget via API:', error.message);
     return null;
   }
   revalidatePath('/budgets');
-  return result.data ? {...result.data, createdAt: new Date(result.data.createdAt)} as Budget | null : null;
+  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt)} as Budget | null : null;
 }
 
 export async function deleteBudget(id: string): Promise<void> {
-  const result = await fetchAPI(API_BUDGETS_ID(id), {method: 'DELETE'});
-  if (result.error) {
-    console.error('Failed to delete budget via API:', result.error.message);
-    throw new Error(result.error.message);
+  const { error } = await fetchAPI(API_BUDGETS_ID(id), {method: 'DELETE'});
+  if (error) {
+    console.error('Failed to delete budget via API:', error.message);
+    throw new Error(error.message);
   }
   revalidatePath('/budgets');
 }
 
 // --- Shared Capital Actions ---
 export async function getSharedCapitalSession(): Promise<SharedCapitalSession | null> {
-  const result = await fetchAPI(API_SHARED_CAPITAL_SESSION);
-  if (result.error) {
-     console.warn(`getSharedCapitalSession: API call failed (Error: ${result.error?.message}). Mock DB has no active session.`);
+  const {data: resultData, error} = await fetchAPI(API_SHARED_CAPITAL_SESSION);
+  if (error) {
+     console.warn(`getSharedCapitalSession: API call failed (Error: ${error?.message}). Mock DB has no active session.`);
      return null;
   }
-  if (!result.data) return null;
+  if (!resultData) return null;
   try {
-      return {...result.data, createdAt: new Date(result.data.createdAt), updatedAt: new Date(result.data.updatedAt)} as SharedCapitalSession;
+      return {...resultData, createdAt: new Date(resultData.createdAt), updatedAt: new Date(resultData.updatedAt)} as SharedCapitalSession;
   } catch(e) {
       console.error("Error processing shared capital session data", e);
       return null;
@@ -637,46 +643,46 @@ export async function getSharedCapitalSession(): Promise<SharedCapitalSession | 
 }
 
 export async function startSharedCapitalSession(partnerEmail: string): Promise<SharedCapitalSession> {
-  const result = await fetchAPI(API_SHARED_CAPITAL_SESSION, {method: 'POST', body: JSON.stringify({partnerEmail})});
-  if (result.error || !result.data) {
-    console.error('Failed to start shared capital session via API:', result.error?.message);
-    throw new Error(result.error?.message || "API Error starting session");
+  const {data: resultData, error} = await fetchAPI(API_SHARED_CAPITAL_SESSION, {method: 'POST', body: JSON.stringify({partnerEmail})});
+  if (error || !resultData) {
+    console.error('Failed to start shared capital session via API:', error?.message);
+    throw new Error(error?.message || "API Error starting session");
   }
   revalidatePath('/capital');
-  return {...result.data, createdAt: new Date(result.data.createdAt), updatedAt: new Date(result.data.updatedAt)} as SharedCapitalSession;
+  return {...resultData, createdAt: new Date(resultData.createdAt), updatedAt: new Date(resultData.updatedAt)} as SharedCapitalSession;
 }
 
 export async function stopSharedCapitalSession(): Promise<SharedCapitalSession | null> {
-   const result = await fetchAPI(API_SHARED_CAPITAL_SESSION, {method: 'DELETE'});
-   if (result.error) {
-    console.error('Failed to stop shared capital session via API:', result.error.message);
+   const {data: resultData, error} = await fetchAPI(API_SHARED_CAPITAL_SESSION, {method: 'DELETE'});
+   if (error) {
+    console.error('Failed to stop shared capital session via API:', error.message);
     return null;
   }
   revalidatePath('/capital');
-  return result.data ? {...result.data, createdAt: new Date(result.data.createdAt), updatedAt: new Date(result.data.updatedAt)} as SharedCapitalSession : null;
+  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt), updatedAt: new Date(resultData.updatedAt)} as SharedCapitalSession : null;
 }
 
 // --- Feedback Actions ---
 export async function getFeedbacks(): Promise<FeedbackItem[]> {
   const MOCK_USER_ID = (await getCurrentUser())?.id || 'user-123';
-  const result = await fetchAPI(API_FEEDBACKS);
+  const { data: resultData, error } = await fetchAPI(API_FEEDBACKS);
   
   const mockData = MOCK_DB.feedbacks
     .filter(f => f.userId === MOCK_USER_ID)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const mockFallback = () => {
+  const mockFallback = (): FeedbackItem[] => {
     console.warn(`getFeedbacks: API call failed or returned unexpected data. Falling back to mock data.`);
     return mockData;
   };
 
-  if (result.error || !result.data) {
+  if (error || resultData === null) {
     return mockFallback();
   }
   try {
-      let actualDataArray = result.data;
-      if (result.data && typeof result.data === 'object' && !Array.isArray(result.data) && result.data.feedbacks) {
-        actualDataArray = result.data.feedbacks;
+      let actualDataArray = resultData;
+      if (typeof resultData === 'object' && !Array.isArray(resultData) && resultData.feedbacks && Array.isArray(resultData.feedbacks)) {
+        actualDataArray = resultData.feedbacks;
       }
 
       if (!Array.isArray(actualDataArray)) {
@@ -698,23 +704,23 @@ export async function addFeedback(
   if (!currentUser) {
     throw new Error("User not authenticated to submit feedback.");
   }
-  const result = await fetchAPI(API_FEEDBACKS, {method: 'POST', body: JSON.stringify(feedbackData)});
-  if (result.error || !result.data) {
-    console.error('Failed to add feedback via API:', result.error?.message);
-    throw new Error(result.error?.message || "API Error submitting feedback");
+  const {data: resultData, error} = await fetchAPI(API_FEEDBACKS, {method: 'POST', body: JSON.stringify(feedbackData)});
+  if (error || !resultData) {
+    console.error('Failed to add feedback via API:', error?.message);
+    throw new Error(error?.message || "API Error submitting feedback");
   }
   revalidatePath('/view-feedback');
-  return {...result.data, createdAt: new Date(result.data.createdAt)} as FeedbackItem;
+  return {...resultData, createdAt: new Date(resultData.createdAt)} as FeedbackItem;
 }
 
 export async function updateFeedbackStatus(id: string, status: FeedbackStatus): Promise<FeedbackItem | null> {
-  const result = await fetchAPI(API_FEEDBACKS_ID_STATUS(id), {method: 'PUT', body: JSON.stringify({status})});
-  if (result.error) {
-    console.error(`Failed to update feedback status for ${id} via API:`, result.error.message);
+  const {data: resultData, error} = await fetchAPI(API_FEEDBACKS_ID_STATUS(id), {method: 'PUT', body: JSON.stringify({status})});
+  if (error) {
+    console.error(`Failed to update feedback status for ${id} via API:`, error.message);
     return null;
   }
   revalidatePath('/view-feedback');
-  return result.data ? {...result.data, createdAt: new Date(result.data.createdAt)} as FeedbackItem : null;
+  return resultData ? {...resultData, createdAt: new Date(resultData.createdAt)} as FeedbackItem : null;
 }
 
 // --- Locale Actions ---
@@ -735,3 +741,59 @@ export async function resetMockDb(initialDbState: MockDb): Promise<void> {
   MOCK_DB = JSON.parse(JSON.stringify(initialDbState)); // Deep copy
 }
 
+// Helper to format API type names (e.g., BANK_ACCOUNT -> Bank Account)
+function formatApiTypeName(apiName: string): string {
+  if (!apiName || typeof apiName !== 'string') return 'Unknown';
+  return apiName
+    .toLowerCase()
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// --- Wallet & Transaction Type Fetching ---
+export async function getWalletTypes(): Promise<WalletType[]> {
+  const { data, error } = await fetchAPI(API_WALLET_TYPES);
+  const defaultTypes: WalletType[] = ['Cash', 'Bank Account', 'Credit Card', 'E-Wallet'];
+  if (error || !data) {
+    console.warn('Failed to fetch wallet types from API, returning default types:', error?.message);
+    return defaultTypes;
+  }
+  try {
+    if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
+      const typeKeys = Object.keys(data[0].types);
+      return typeKeys.map(formatApiTypeName) as WalletType[];
+    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
+      return data as WalletType[];
+    }
+    console.warn('Wallet types API response format not recognized, returning default types.');
+    return defaultTypes;
+  } catch (e) {
+    console.error('Error processing wallet types from API:', e);
+    return defaultTypes;
+  }
+}
+
+export async function getTransactionTypes(): Promise<TransactionType[]> {
+  const { data, error } = await fetchAPI(API_TRANSACTION_TYPES);
+  const defaultTypes: TransactionType[] = ['Income', 'Expense'];
+  if (error || !data) {
+    console.warn('Failed to fetch transaction types from API, returning default types:', error?.message);
+    return defaultTypes;
+  }
+  try {
+    if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].types === 'object') {
+      const typeKeys = Object.keys(data[0].types);
+      return typeKeys
+        .map(formatApiTypeName)
+        .filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
+    } else if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
+      return (data as string[]).filter(type => type === 'Income' || type === 'Expense') as TransactionType[];
+    }
+    console.warn('Transaction types API response format not recognized, returning default types.');
+    return defaultTypes;
+  } catch (e) {
+    console.error('Error processing transaction types from API:', e);
+    return defaultTypes;
+  }
+}

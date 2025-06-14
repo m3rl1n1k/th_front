@@ -1,3 +1,4 @@
+
 // src/lib/apiConstants.ts
 
 // Auth
@@ -22,11 +23,13 @@ export const API_SUB_CATEGORIES_ID = (id: string) => `/sub/categories/${id}`;
 // Wallets
 export const API_WALLETS = '/wallets';
 export const API_WALLETS_ID = (id: string) => `/wallets/${id}`;
+export const API_WALLET_TYPES = '/wallets/types'; // New
 
 // Transactions
 export const API_TRANSACTIONS = '/transactions';
 export const API_TRANSACTIONS_ID = (id: string) => `/transactions/${id}`;
 export const API_TRANSACTIONS_STOP_RECURRING = (id: string) => `/transactions/${id}/stop-recurring`;
+export const API_TRANSACTION_TYPES = '/transactions/types'; // New
 
 // Transfers
 export const API_TRANSFERS = '/transfers';
