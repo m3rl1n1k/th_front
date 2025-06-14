@@ -4,7 +4,8 @@
 'use server'; // Ensure this runs on the server
 
 import type { User } from './definitions';
-import { MOCK_DB } from './definitions';
+// MOCK_DB import is removed as we are not using a mock user directly here for auth decisions.
+// However, it might be used by other parts of the app, so actions.ts will keep its MOCK_DB import.
 import { cookies } from 'next/headers';
 import {
   API_AUTH_LOGIN,
@@ -117,7 +118,6 @@ export async function getCurrentUser(): Promise<User | null> {
 
   if (token) {
     // If no user data cookie but token exists, try fetching user data
-    // This could happen if cookies were cleared partially or on first load after login
     return fetchAndStoreUserData(token);
   }
 
@@ -128,7 +128,7 @@ export async function login(email: string, password_input: string): Promise<User
   try {
     const response = await fetchAuthAPI(API_AUTH_LOGIN, {
       method: 'POST',
-      body: JSON.stringify({ email: email, password: password_input }), // Ensure this matches backend expectations
+      body: JSON.stringify({ email: email, password: password_input }),
     });
 
     if (response && response.token) {
@@ -148,8 +148,6 @@ export async function login(email: string, password_input: string): Promise<User
     }
   } catch (error: any) {
     console.error('Login API call failed:', error.message);
-    // Rethrow or handle specific errors (e.g., 401 for invalid credentials)
-    // The error object from fetchAuthAPI should already have a message.
     throw error;
   }
 }
@@ -171,3 +169,4 @@ export async function getAuthToken(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
 }
+
