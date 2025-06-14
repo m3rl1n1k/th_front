@@ -4,19 +4,19 @@
 'use server'; // Ensure this runs on the server
 
 import type { User, UserSettings } from './definitions';
-import { cookies } from 'next/headers'; // For handling cookies
+import { cookies } from 'next/headers'; 
 
-// TODO: USER: Replace with your actual API base URL, ideally from an environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'; // Example
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api'; 
 
 const AUTH_TOKEN_COOKIE_NAME = 'authToken';
-const USER_DATA_COOKIE_NAME = 'userData'; // To store non-sensitive user data
+const USER_DATA_COOKIE_NAME = 'userData'; 
 
 // Helper to make auth API calls
-async function fetchAuthAPI(endpoint: string, options: RequestInit = {}) {
+async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promise<any> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json', // Ensure server knows we expect JSON
       ...options.headers,
     },
     ...options,
@@ -24,103 +24,114 @@ async function fetchAuthAPI(endpoint: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Auth API Error (${response.status}) on ${endpoint}: ${errorBody}`);
-    if (response.status === 401 || response.status === 403) {
-      return { error: true, status: response.status, message: errorBody || response.statusText };
+    let errorMessage = `Auth API request failed: ${response.statusText}`;
+    try {
+        const parsedError = JSON.parse(errorBody);
+        if (parsedError && parsedError.message) {
+            errorMessage = parsedError.message;
+        }
+    } catch (e) {
+        // If errorBody is not JSON, use the text itself or a generic message
+        if (errorBody) errorMessage = errorBody;
     }
-    throw new Error(`Auth API request failed: ${response.statusText} - ${errorBody}`);
+    console.error(`Auth API Error (${response.status}) on ${endpoint}: ${errorMessage}`);
+    // Throw an error that includes the status and message from the API response
+    const error = new Error(errorMessage) as any;
+    error.status = response.status;
+    throw error;
   }
-   if (response.status === 204) { // No Content
+   if (response.status === 204) { 
     return null;
   }
   return response.json();
 }
 
-
-export async function getCurrentUser(): Promise<User | null> {
-  const cookieStore = cookies();
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
-  const userDataString = cookieStore.get(USER_DATA_COOKIE_NAME)?.value;
-
-  if (userDataString) {
-    try {
-      const userData: User = JSON.parse(userDataString);
-      // Optionally, you might want to re-validate the token with the backend here
-      // or just trust the cookie for a certain period.
-      // For simplicity, we'll trust it if it exists.
-      return userData;
-    } catch (e) {
-      console.error("Failed to parse user data from cookie", e);
-      // Clear potentially corrupted cookies
-      cookieStore.delete(USER_DATA_COOKIE_NAME);
-      cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
-      return null;
-    }
-  }
-  
-  if (token) {
-    try {
-      const user = await fetchAuthAPI('/auth/me', { // TODO: USER: Replace with your /me endpoint
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (user && !user.error) {
-        cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 60 * 60 * 24 * 7 // Example: 7 days
-        });
-        return user;
-      } else {
-        // Token is invalid or API error
-        cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
-        cookieStore.delete(USER_DATA_COOKIE_NAME);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error fetching current user from API:', error);
-      cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
-      cookieStore.delete(USER_DATA_COOKIE_NAME);
-      return null;
-    }
-  }
-  return null;
-}
-
-export async function login(email: string, password_not_used: string): Promise<User | null> {
+async function fetchAndStoreUserData(token: string): Promise<User | null> {
   try {
-    const response = await fetchAuthAPI('/auth/login', { // TODO: USER: Replace with your login endpoint
-      method: 'POST',
-      body: JSON.stringify({ email, password: password_not_used }), // Send password to actual API
+    const user = await fetchAuthAPI('/auth/me', {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` },
     });
 
-    if (response && response.token && response.user && !response.error) {
-      const { user, token } = response;
+    if (user && !user.error) { // Assuming API returns user object directly, not nested under 'user'
       const cookieStore = cookies();
-      cookieStore.set(AUTH_TOKEN_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30 // Example: 30 days
-      });
       cookieStore.set(USER_DATA_COOKIE_NAME, JSON.stringify(user), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7 // Example: 7 days
+        maxAge: 60 * 60 * 24 * 7 
       });
       return user as User;
     } else {
-      console.error('Login failed:', response?.message || 'Invalid credentials or API error');
+      // Token might be valid but /auth/me failed for some reason
+      console.error('Failed to fetch user data from /auth/me:', user?.message);
+      // Clear potentially invalid token and user data
+      const cookieStore = cookies();
+      cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
+      cookieStore.delete(USER_DATA_COOKIE_NAME);
       return null;
     }
   } catch (error) {
-    console.error('Error during login API call:', error);
+    console.error('Error fetching user data from /auth/me:', error);
+    const cookieStore = cookies();
+    cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
+    cookieStore.delete(USER_DATA_COOKIE_NAME);
     return null;
+  }
+}
+
+
+export async function getCurrentUser(): Promise<User | null> {
+  const cookieStore = cookies();
+  const userDataString = cookieStore.get(USER_DATA_COOKIE_NAME)?.value;
+
+  if (userDataString) {
+    try {
+      const userData: User = JSON.parse(userDataString);
+      return userData;
+    } catch (e) {
+      console.error("Failed to parse user data from cookie", e);
+      cookieStore.delete(USER_DATA_COOKIE_NAME);
+      cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
+      // Fall through to token check
+    }
+  }
+  
+  const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
+  if (token) {
+    // If no user data cookie, but token exists, try to fetch user data
+    return await fetchAndStoreUserData(token);
+  }
+  return null;
+}
+
+export async function login(email: string, password_not_used: string): Promise<User | null> {
+  // This function now expects the API to throw an error for failed login.
+  // The error will be caught by the handleSubmit in LoginPage.
+  const response = await fetchAuthAPI('/auth/login', { 
+    method: 'POST',
+    body: JSON.stringify({ email, password: password_not_used }), 
+  });
+
+  // According to user, API returns only a token in the response data itself, e.g. { "token": "..." }
+  if (response && response.token) { 
+    const token = response.token;
+    const cookieStore = cookies();
+    cookieStore.set(AUTH_TOKEN_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30 
+    });
+    // After successful login and token storage, fetch user details
+    return await fetchAndStoreUserData(token);
+  } else {
+    // This case should ideally not be reached if fetchAuthAPI throws on error.
+    // If API returns 200 OK but no token, it's an unexpected success response.
+    console.error('Login API call successful but no token received in response.');
+    throw new Error('Login successful but no token received.');
   }
 }
 
@@ -128,18 +139,17 @@ export async function logout(): Promise<void> {
   const cookieStore = cookies();
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
 
-  // Optionally call API logout endpoint if your backend has one
-  // if (token) {
-  //   try {
-  //     await fetchAuthAPI('/auth/logout', { // TODO: USER: Replace with your logout endpoint
-  //       method: 'POST',
-  //       headers: { 'Authorization': `Bearer ${token}` },
-  //     });
-  //   } catch (error) {
-  //     console.error('Error during API logout:', error);
-  //     // Proceed with client-side logout even if API call fails
-  //   }
-  // }
+  if (token) {
+    try {
+      // Inform the backend about logout, if an endpoint exists and is configured.
+      // await fetchAuthAPI('/auth/logout', {
+      //   method: 'POST',
+      //   headers: { 'Authorization': `Bearer ${token}` },
+      // });
+    } catch (error) {
+      console.error('Error during API logout (ignoring):', error);
+    }
+  }
 
   cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
   cookieStore.delete(USER_DATA_COOKIE_NAME);

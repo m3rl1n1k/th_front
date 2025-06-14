@@ -8,7 +8,7 @@ export interface UserSettings {
   showAverageSpendingCard?: boolean;
   showExpenseChartCard?: boolean;
   showRecentActivityCard?: boolean;
-  geminiApiKey?: string; // Added for AI settings
+  geminiApiKey?: string; 
 }
 
 export interface User {
@@ -24,7 +24,7 @@ export type TransactionFrequency = 'One-time' | 'Daily' | 'Weekly' | 'Monthly' |
 export interface Transaction {
   id: string;
   userId: string;
-  subCategoryId?: string; // Made optional
+  subCategoryId?: string; 
   walletId: string;
   type: TransactionType;
   frequency: TransactionFrequency;
@@ -37,17 +37,18 @@ export interface MainCategory {
   id: string;
   userId: string;
   name: string;
-  color: string; // hex code
-  icon?: string; // Name of a lucide-react icon
+  color: string; 
+  icon?: string; 
+  subCategories?: SubCategory[]; // Added to support nested subcategories from API
 }
 
 export interface SubCategory {
   id:string;
   userId: string;
-  mainCategoryId: string;
+  mainCategoryId: string; // This will be populated from main_category from API if needed
   name: string;
-  color: string; // hex code
-  icon?: string; // Name of a lucide-react icon
+  color: string; 
+  icon?: string; 
 }
 
 export type WalletType = 'Cash' | 'Bank Account' | 'Credit Card' | 'E-Wallet';
@@ -56,12 +57,10 @@ export interface Wallet {
   id: string;
   userId: string;
   name: string;
-  currency: string; // e.g., USD, EUR
-  initialAmount: number; // Use 'initialAmount' to avoid confusion with current balance which might be calculated
+  currency: string; 
+  initialAmount: number; 
   type: WalletType;
-  icon?: string; // Name of a lucide-react icon
-  // Current balance can be calculated by summing transactions or stored and updated.
-  // For simplicity in CRUD, we might just store initialAmount.
+  icon?: string; 
 }
 
 export interface Transfer {
@@ -77,9 +76,9 @@ export interface Transfer {
 export interface Budget {
   id: string;
   userId: string;
-  subCategoryId: string; // Changed from mainCategoryId
+  subCategoryId: string; 
   plannedAmount: number;
-  month: number; // 1-12
+  month: number; 
   year: number;
   createdAt: Date;
 }
@@ -107,8 +106,7 @@ export interface FeedbackItem {
   status: FeedbackStatus;
   createdAt: Date;
 }
-// Assuming FeedbackType is defined in submit-feedback-flow and imported where needed,
-// or should be defined here. For now, using a generic string for simplicity if not strictly typed.
+
 export type FeedbackType = 'Technical Issue' | 'Error Report' | 'Suggestion' | 'General Feedback' | 'Other';
 export const feedbackTypes: FeedbackType[] = ['Technical Issue', 'Error Report', 'Suggestion', 'General Feedback', 'Other'];
 
@@ -116,13 +114,12 @@ export const feedbackTypes: FeedbackType[] = ['Technical Issue', 'Error Report',
 // Mock data types
 export type MockDb = {
   users: User[];
-  mainCategories: MainCategory[];
-  subCategories: SubCategory[];
+  mainCategories: MainCategory[]; // MainCategory will now potentially hold subCategories for mock consistency
+  subCategories: SubCategory[]; // This might become less directly used if all subcats are nested
   wallets: Wallet[];
   transactions: Transaction[];
   transfers: Transfer[];
   budgets: Budget[];
   sharedCapitalSessions: SharedCapitalSession[];
-  feedbacks: FeedbackItem[]; // Added for storing feedback
+  feedbacks: FeedbackItem[]; 
 };
-

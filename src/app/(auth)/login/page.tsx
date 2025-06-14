@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // useParams removed
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,17 +13,17 @@ import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  // const params = useParams(); // useParams removed
   const { toast } = useToast();
   
   const [email, setEmail] = useState('user@example.com');
   const [password, setPassword] = useState('password'); 
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // const localeToUse = typeof params.locale === 'string' ? params.locale : 'en'; // Locale logic removed
+    setError(null); 
     try {
       const user = await login(email, password);
       if (user) {
@@ -31,18 +31,25 @@ export default function LoginPage() {
           title: 'Login Successful',
           description: `Welcome back, ${user.name || user.email}!`,
         });
-        router.push('/dashboard'); // Redirect to non-prefixed path
+        router.push('/dashboard'); 
       } else {
+        // The login function itself should throw an error or return a specific error message
+        // This path might be taken if login returns null without an error,
+        // which should be revised in the login function itself.
+        const errorMessage = "Invalid email or password.";
+        setError(errorMessage);
         toast({
           title: 'Login Failed',
-          description: 'Invalid email or password.',
+          description: errorMessage,
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (err: any) {
+      const errorMessage = err.message || 'An unexpected error occurred during login.';
+      setError(errorMessage);
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred.',
+        title: 'Login Error',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -85,6 +92,7 @@ export default function LoginPage() {
                 disabled={isLoading}
               />
             </div>
+            {/* {error && <p className="text-sm text-destructive">{error}</p>} */}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
