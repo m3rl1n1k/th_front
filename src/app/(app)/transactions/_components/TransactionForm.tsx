@@ -83,7 +83,7 @@ export function TransactionForm({
           // walletId will be correctly sourced from initialData due to spread
         }
       : {
-          type: 'Expense', // Default, but Select will show available types
+          type: availableTransactionTypes.includes('Expense') ? 'Expense' : (availableTransactionTypes[0] as TransactionType),
           frequency: 'One-time',
           createdAt: new Date(),
           amount: 0,
