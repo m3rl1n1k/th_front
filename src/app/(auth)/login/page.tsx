@@ -15,17 +15,18 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [email, setEmail] = useState('user@example.com');
+  const [username, setUsername] = useState('demouser'); // Changed from email, default to 'demouser'
   const [password, setPassword] = useState('password'); 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); // Local error state if needed for inline errors
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null); 
     try {
-      const user = await login(email, password);
+      // Pass the username state variable to the login function
+      const user = await login(username, password); 
       if (user) {
         toast({
           title: 'Login Successful',
@@ -33,9 +34,7 @@ export default function LoginPage() {
         });
         router.push('/dashboard'); 
       } else {
-        // This path might be taken if login returns null without an error,
-        // which should be revised in the login function itself to throw an error for consistency.
-        const errorMessage = "Invalid email or password.";
+        const errorMessage = "Invalid username or password.";
         setError(errorMessage);
         toast({
           title: 'Login Failed',
@@ -47,7 +46,6 @@ export default function LoginPage() {
       let errorMessage = err.message || 'An unexpected error occurred during login.';
       let errorTitle = 'Login Error';
 
-      // Check if the error message indicates a network failure
       const lowerCaseErrorMessage = errorMessage.toLowerCase();
       if (lowerCaseErrorMessage.includes('failed to fetch') || 
           lowerCaseErrorMessage.includes('networkerror') ||
@@ -57,11 +55,10 @@ export default function LoginPage() {
         errorMessage = `Could not connect to the server at ${apiUrl}. Please ensure the backend server is running and accessible. Original error: ${err.message}`;
       } else if (err.status === 401) {
         errorTitle = 'Authentication Failed';
-        errorMessage = 'Invalid email or password. Please check your credentials.';
+        errorMessage = 'Invalid username or password. Please check your credentials.';
       }
 
-
-      setError(errorMessage); // Set local error state if you display errors directly in the form
+      setError(errorMessage);
       toast({
         title: errorTitle,
         description: errorMessage,
@@ -85,13 +82,13 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label> 
               <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text" // Changed from email to text
+                placeholder="Enter your username" // Changed placeholder
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -107,9 +104,6 @@ export default function LoginPage() {
                 disabled={isLoading}
               />
             </div>
-            {/* Example of inline error display if needed:
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            */}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>

@@ -4,15 +4,12 @@
 'use server'; // Ensure this runs on the server
 
 import type { User } from './definitions';
-// MOCK_DB import is removed as we are not using a mock user directly here for auth decisions.
-// However, it might be used by other parts of the app, so actions.ts will keep its MOCK_DB import.
+import { MOCK_DB } from './definitions'; // MOCK_DB is used for getCurrentUser when auth is "off"
 import { cookies } from 'next/headers';
 import {
   API_AUTH_LOGIN,
   API_AUTH_ME
-  // API_AUTH_LOGOUT // If you have this endpoint
 } from './apiConstants';
-
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
 
@@ -95,7 +92,6 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
   }
 }
 
-
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value;
@@ -104,12 +100,9 @@ export async function getCurrentUser(): Promise<User | null> {
   if (userDataCookie) {
     try {
       const user = JSON.parse(userDataCookie);
-      // Optionally: re-validate token or user data periodically if token is also present
-      // For now, if userDataCookie exists, assume it's valid for this session.
       return user as User;
     } catch (error) {
       console.error('Error parsing user data from cookie:', error);
-      // Clear potentially corrupted cookies
       await cookieStore.delete(USER_DATA_COOKIE_NAME);
       await cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
       return null;
@@ -117,18 +110,19 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 
   if (token) {
-    // If no user data cookie but token exists, try fetching user data
     return fetchAndStoreUserData(token);
   }
 
-  return null; // No token, no user data cookie
+  return null;
 }
 
-export async function login(email: string, password_input: string): Promise<User | null> {
+// Changed first parameter from 'email' to 'identifier'
+export async function login(identifier: string, password_input: string): Promise<User | null> {
   try {
     const response = await fetchAuthAPI(API_AUTH_LOGIN, {
       method: 'POST',
-      body: JSON.stringify({ email: email, password: password_input }),
+      // The key remains 'email' as per backend API, but its value is from the 'identifier' (username) field
+      body: JSON.stringify({ email: identifier, password: password_input }), 
     });
 
     if (response && response.token) {
@@ -140,7 +134,6 @@ export async function login(email: string, password_input: string): Promise<User
         path: '/',
         maxAge: 60 * 60 * 24 * 7 // 7 days
       });
-      // After setting token, fetch and store user data
       return fetchAndStoreUserData(response.token);
     } else {
       console.error('Login failed: No token received from API.');
@@ -154,8 +147,6 @@ export async function login(email: string, password_input: string): Promise<User
 
 export async function logout(): Promise<void> {
   const cookieStore = await cookies();
-  // Optionally call backend logout endpoint if it exists and is necessary
-  // await fetchAuthAPI(API_AUTH_LOGOUT, { method: 'POST' });
   cookieStore.delete(AUTH_TOKEN_COOKIE_NAME);
   cookieStore.delete(USER_DATA_COOKIE_NAME);
 }
@@ -169,4 +160,3 @@ export async function getAuthToken(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value || null;
 }
-
