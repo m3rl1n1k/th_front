@@ -15,8 +15,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [username, setUsername] = useState('demouser'); // Changed from email, default to 'demouser'
-  const [password, setPassword] = useState('password'); 
+  const [username, setUsername] = useState('user@example.com'); // Default to 'user@example.com'
+  const [password, setPassword] = useState('password'); // Default to 'password'
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,8 +85,8 @@ export default function LoginPage() {
               <Label htmlFor="username">Username</Label> 
               <Input
                 id="username"
-                type="text" // Changed from email to text
-                placeholder="Enter your username" // Changed placeholder
+                type="text" 
+                placeholder="Enter your username" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -98,6 +98,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
