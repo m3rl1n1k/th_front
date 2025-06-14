@@ -18,37 +18,45 @@ const USER_DATA_COOKIE_NAME = 'userData';
 
 // Helper to make auth API calls
 async function fetchAuthAPI(endpoint: string, options: RequestInit = {}): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json', // Ensure server knows we expect JSON
-      ...options.headers,
-    },
-    ...options,
-  });
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  try {
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    let errorMessage = `Auth API request failed: ${response.statusText}`;
-    try {
-        const parsedError = JSON.parse(errorBody);
-        if (parsedError && parsedError.message) {
-            errorMessage = parsedError.message;
-        }
-    } catch (e) {
-        // If errorBody is not JSON, use the text itself or a generic message
-        if (errorBody) errorMessage = errorBody;
+    if (!response.ok) {
+      const errorBody = await response.text();
+      let errorMessage = `Auth API request failed: ${response.statusText}`;
+      try {
+          const parsedError = JSON.parse(errorBody);
+          if (parsedError && parsedError.message) {
+              errorMessage = parsedError.message;
+          }
+      } catch (e) {
+          if (errorBody) errorMessage = errorBody;
+      }
+      console.error(`Auth API Error (${response.status}) on ${fullUrl}: ${errorMessage}`);
+      const error = new Error(errorMessage) as any;
+      error.status = response.status;
+      throw error;
     }
-    console.error(`Auth API Error (${response.status}) on ${endpoint}: ${errorMessage}`);
-    // Throw an error that includes the status and message from the API response
-    const error = new Error(errorMessage) as any;
-    error.status = response.status;
+    if (response.status === 204) {
+      return null;
+    }
+    return response.json();
+  } catch (networkError: any) {
+    // This block catches errors from the fetch() call itself (e.g., network down, DNS issues, CORS preflight failure)
+    console.error(`Auth API Fetch Error for ${fullUrl}:`, networkError.message);
+    // Re-throw a more specific error or the original one, adding context.
+    const error = new Error(`Network error when attempting to fetch ${fullUrl}. Is the backend server running and accessible? Original error: ${networkError.message}`) as any;
+    error.cause = networkError; // Preserve original error if needed
     throw error;
   }
-   if (response.status === 204) {
-    return null;
-  }
-  return response.json();
 }
 
 async function fetchAndStoreUserData(token: string): Promise<User | null> {
@@ -65,7 +73,7 @@ async function fetchAndStoreUserData(token: string): Promise<User | null> {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7
+        maxAge: 60 * 60 * 24 * 7 // 7 days
       });
       return user as User;
     } else {
@@ -108,11 +116,13 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function login(email: string, password_not_used: string): Promise<User | null> {
+  // The backend expects 'username' for the email field
   const response = await fetchAuthAPI(API_AUTH_LOGIN, {
     method: 'POST',
     body: JSON.stringify({ username: email, password: password_not_used }),
   });
 
+  // The API response for login is just { "token": "your_jwt_token" }
   if (response && response.token) {
     const token = response.token;
     const cookieStore = cookies();
@@ -121,15 +131,15 @@ export async function login(email: string, password_not_used: string): Promise<U
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 30
+      maxAge: 60 * 60 * 24 * 30 // 30 days
     });
+    // After successful login and token storage, fetch the user data
     return await fetchAndStoreUserData(token);
   } else {
-    // If login itself fails, fetchAuthAPI will throw.
-    // This else block handles cases where the API call might be successful (e.g., 200 OK)
-    // but the expected 'token' is not in the response.
-    console.error('Login API call successful but no token received in response.');
-    throw new Error('Login successful but no token received.');
+    // This case should ideally be caught by fetchAuthAPI if the response is not ok (e.g. 401)
+    // Or if the response is ok but doesn't contain a token.
+    console.error('Login API call successful but no token received in response, or other issue.');
+    throw new Error('Login failed: No token received or invalid response structure.');
   }
 }
 
@@ -139,8 +149,8 @@ export async function logout(): Promise<void> {
 
   if (token) {
     try {
-      // Inform the backend about logout, if an endpoint exists and is configured.
-      // await fetchAuthAPI(API_AUTH_LOGOUT, { // Uncomment if you have API_AUTH_LOGOUT
+      // If you have a backend logout endpoint, call it here
+      // await fetchAuthAPI(API_AUTH_LOGOUT, {
       //   method: 'POST',
       //   headers: { 'Authorization': `Bearer ${token}` },
       // });

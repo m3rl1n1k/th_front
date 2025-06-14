@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('user@example.com');
   const [password, setPassword] = useState('password'); 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // Local error state if needed for inline errors
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +34,7 @@ export default function LoginPage() {
         router.push('/dashboard'); 
       } else {
         // This path might be taken if login returns null without an error,
-        // which should be revised in the login function itself.
+        // which should be revised in the login function itself to throw an error for consistency.
         const errorMessage = "Invalid email or password.";
         setError(errorMessage);
         toast({
@@ -44,10 +44,26 @@ export default function LoginPage() {
         });
       }
     } catch (err: any) {
-      const errorMessage = err.message || 'An unexpected error occurred during login.';
-      setError(errorMessage);
+      let errorMessage = err.message || 'An unexpected error occurred during login.';
+      let errorTitle = 'Login Error';
+
+      // Check if the error message indicates a network failure
+      const lowerCaseErrorMessage = errorMessage.toLowerCase();
+      if (lowerCaseErrorMessage.includes('failed to fetch') || 
+          lowerCaseErrorMessage.includes('networkerror') ||
+          lowerCaseErrorMessage.includes('network error')) {
+        errorTitle = 'Network Error';
+        const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
+        errorMessage = `Could not connect to the server at ${apiUrl}. Please ensure the backend server is running and accessible. Original error: ${err.message}`;
+      } else if (err.status === 401) {
+        errorTitle = 'Authentication Failed';
+        errorMessage = 'Invalid email or password. Please check your credentials.';
+      }
+
+
+      setError(errorMessage); // Set local error state if you display errors directly in the form
       toast({
-        title: 'Login Error',
+        title: errorTitle,
         description: errorMessage,
         variant: 'destructive',
       });
@@ -91,7 +107,9 @@ export default function LoginPage() {
                 disabled={isLoading}
               />
             </div>
-            {/* {error && <p className="text-sm text-destructive">{error}</p>} */}
+            {/* Example of inline error display if needed:
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            */}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
