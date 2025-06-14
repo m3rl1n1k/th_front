@@ -33,7 +33,6 @@ import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Hardcoded transactionTypes removed, will be passed as prop
 const transactionFrequencies: TransactionFrequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
 const NO_CATEGORY_VALUE = "_NONE_"; 
@@ -58,6 +57,36 @@ interface TransactionFormProps {
   mainCategories: MainCategory[];
   defaultWalletId?: string;
   availableTransactionTypes: Array<{ key: TransactionType; label: string; }>;
+  translations: { // Added translations prop
+    typeLabel: string;
+    amountLabel: string;
+    categoryLabel: string;
+    walletLabel: string;
+    dateLabel: string;
+    frequencyLabel: string;
+    descriptionLabel: string;
+    typePlaceholder: string;
+    amountPlaceholder: string;
+    categoryPlaceholder: string;
+    walletPlaceholder: string;
+    datePlaceholder: string;
+    frequencyPlaceholder: string;
+    descriptionPlaceholder: string;
+    noCategoryOption: string;
+    unassignedSubCategoriesHeader: string;
+    cancelButton: string;
+    savingButton: string;
+    creatingButton: string;
+    saveChangesButton: string;
+    createButton: string;
+    successUpdateToastTitle: string;
+    successCreateToastTitle: string;
+    successToastDescription: string; // Expects {amount} and {action}
+    errorToastTitle: string;
+    errorToastDescription: string; // Expects {error}
+    errorFallbackDescription: string;
+    frequencyTypes: Record<TransactionFrequency, string>;
+  };
 }
 
 export function TransactionForm({
@@ -68,6 +97,7 @@ export function TransactionForm({
   mainCategories,
   defaultWalletId,
   availableTransactionTypes,
+  translations, // Destructure translations
 }: TransactionFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -80,7 +110,6 @@ export function TransactionForm({
           ...initialData,
           subCategoryId: initialData.subCategoryId === undefined || initialData.subCategoryId === null ? NO_CATEGORY_VALUE : initialData.subCategoryId,
           createdAt: new Date(initialData.createdAt),
-          // walletId will be correctly sourced from initialData due to spread
         }
       : {
           type: availableTransactionTypes.find(item => item.key === 'Expense') 
@@ -91,7 +120,7 @@ export function TransactionForm({
           amount: 0,
           description: '',
           subCategoryId: NO_CATEGORY_VALUE,
-          walletId: defaultWalletId, // This sets the default for new transactions
+          walletId: defaultWalletId, 
         },
   });
 
@@ -105,18 +134,20 @@ export function TransactionForm({
       const result = await onSubmitAction(payload);
       if (result) {
         toast({
-          title: initialData ? 'Transaction Updated' : 'Transaction Created',
-          description: `Transaction of ${payload.amount} has been successfully ${initialData ? 'updated' : 'created'}.`,
+          title: initialData ? translations.successUpdateToastTitle : translations.successCreateToastTitle,
+          description: translations.successToastDescription
+            .replace('{amount}', payload.amount.toString())
+            .replace('{action}', initialData ? 'updated' : 'created'),
         });
         router.push('/transactions');
         router.refresh();
       } else {
-        throw new Error('Failed to save transaction');
+        throw new Error(translations.errorFallbackDescription);
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: `An error occurred: ${error instanceof Error ? error.message : String(error)}`,
+        title: translations.errorToastTitle,
+        description: translations.errorToastDescription.replace('{error}', error instanceof Error ? error.message : String(error)),
         variant: 'destructive',
       });
     } finally {
@@ -127,7 +158,7 @@ export function TransactionForm({
   return (
     <Card className="max-w-2xl mx-auto shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-xl md:text-2xl">{initialData ? 'Edit Transaction' : 'Create New Transaction'}</CardTitle>
+        {/* Title is handled by PageHeader in parent page */}
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -138,10 +169,10 @@ export function TransactionForm({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{translations.typeLabel}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={translations.typePlaceholder} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {availableTransactionTypes.map(({ key, label }) => (
@@ -160,9 +191,9 @@ export function TransactionForm({
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount</FormLabel>
+                    <FormLabel>{translations.amountLabel}</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="0.00" {...field} disabled={isSubmitting} className="text-sm"/>
+                      <Input type="number" placeholder={translations.amountPlaceholder} {...field} disabled={isSubmitting} className="text-sm"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,17 +206,17 @@ export function TransactionForm({
               name="subCategoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category (Optional)</FormLabel>
+                  <FormLabel>{translations.categoryLabel}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value || NO_CATEGORY_VALUE} 
                     disabled={isSubmitting}
                   >
                     <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select category (Optional)" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={translations.categoryPlaceholder} /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value={NO_CATEGORY_VALUE}>No Category</SelectItem>
+                      <SelectItem value={NO_CATEGORY_VALUE}>{translations.noCategoryOption}</SelectItem>
                       {mainCategories.map(mc => (
                         <React.Fragment key={mc.id}>
                           <SelectItem value={mc.id} disabled className="font-bold text-muted-foreground">{mc.name}</SelectItem>
@@ -196,7 +227,7 @@ export function TransactionForm({
                       ))}
                        {subCategories.filter(sc => !mainCategories.some(mc => mc.id === sc.mainCategoryId)).length > 0 && (
                          <React.Fragment>
-                            <SelectItem value="unassigned-header" disabled className="font-bold text-muted-foreground">Unassigned Sub-Categories</SelectItem>
+                            <SelectItem value="unassigned-header" disabled className="font-bold text-muted-foreground">{translations.unassignedSubCategoriesHeader}</SelectItem>
                              {subCategories.filter(sc => !mainCategories.some(mc => mc.id === sc.mainCategoryId)).map((sc) => (
                                 <SelectItem key={sc.id} value={sc.id} className="pl-6">{sc.name}</SelectItem>
                              ))}
@@ -215,10 +246,10 @@ export function TransactionForm({
                 name="walletId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Wallet</FormLabel>
+                    <FormLabel>{translations.walletLabel}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Select wallet" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={translations.walletPlaceholder} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {wallets.map((wallet) => <SelectItem key={wallet.id} value={wallet.id}>{wallet.name} ({wallet.currency})</SelectItem>)}
@@ -233,7 +264,7 @@ export function TransactionForm({
                 name="createdAt"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>{translations.dateLabel}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -242,7 +273,7 @@ export function TransactionForm({
                             className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
                             disabled={isSubmitting}
                           >
-                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                            {field.value ? format(field.value, 'PPP') : <span>{translations.datePlaceholder}</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -262,13 +293,17 @@ export function TransactionForm({
               name="frequency"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Frequency</FormLabel>
+                  <FormLabel>{translations.frequencyLabel}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                     <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select frequency" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={translations.frequencyPlaceholder} /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {transactionFrequencies.map((freq) => <SelectItem key={freq} value={freq}>{freq}</SelectItem>)}
+                      {transactionFrequencies.map((freq) => (
+                        <SelectItem key={freq} value={freq}>
+                          {translations.frequencyTypes?.[freq] || freq}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -281,9 +316,9 @@ export function TransactionForm({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>{translations.descriptionLabel}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="e.g., Dinner with friends, Monthly rent" {...field} disabled={isSubmitting} className="text-sm" />
+                    <Textarea placeholder={translations.descriptionPlaceholder} {...field} disabled={isSubmitting} className="text-sm" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -292,10 +327,10 @@ export function TransactionForm({
 
             <div className="flex justify-end space-x-3 pt-4">
               <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
-                Cancel
+                {translations.cancelButton}
               </Button>
               <Button type="submit" disabled={isSubmitting || wallets.length === 0}>
-                {isSubmitting ? (initialData ? 'Saving...' : 'Creating...') : (initialData ? 'Save Changes' : 'Create Transaction')}
+                {isSubmitting ? (initialData ? translations.savingButton : translations.creatingButton) : (initialData ? translations.saveChangesButton : translations.createButton)}
               </Button>
             </div>
           </form>
@@ -304,4 +339,3 @@ export function TransactionForm({
     </Card>
   );
 }
-
