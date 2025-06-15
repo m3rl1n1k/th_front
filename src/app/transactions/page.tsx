@@ -39,18 +39,18 @@ export default function TransactionsPage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
-  const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]); // Stores flat list of subcategories for filter
+  const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
   
   const [rawTransactions, setRawTransactions] = useState<Transaction[] | null>(null);
   
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true); // For main/sub categories
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
   const [filters, setFilters] = useState<{
     startDate?: Date;
     endDate?: Date;
-    categoryId?: string; // This will be subCategory.id
+    categoryId?: string; 
     typeId?: string;
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
@@ -77,7 +77,7 @@ export default function TransactionsPage() {
         .finally(() => setIsLoadingTypes(false));
 
       setIsLoadingCategories(true);
-      getMainCategories(token) // Fetch main categories
+      getMainCategories(token)
         .then(data => {
           const subCategories = data.flatMap(mainCat => mainCat.subCategories || []);
           setAllSubCategories(subCategories);
@@ -101,7 +101,7 @@ export default function TransactionsPage() {
       const params: Record<string, string> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
-      if (filters.categoryId) params.categoryId = filters.categoryId; // Pass subCategory.id as categoryId
+      if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
       
       getTransactionsList(token, params)
@@ -110,7 +110,10 @@ export default function TransactionsPage() {
         })
         .catch((error: any) => {
           console.error("Failed to fetch transactions", error);
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+          // toast is handled by api.ts for 401, other errors can be handled here
+           if (error.code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+          }
           setRawTransactions([]);
         })
         .finally(() => setIsLoadingTransactions(false));
@@ -119,15 +122,15 @@ export default function TransactionsPage() {
       setIsLoadingTransactions(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, filters]); // Removed `t` and `toast` to prevent re-fetch on lang change
+  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId]); 
 
   useEffect(() => {
-    fetchTransactions(); // Initial fetch
+    fetchTransactions();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token]); // Only re-fetch if auth state changes
+  }, [isAuthenticated, token]);
 
   const processedTransactions = useMemo(() => {
-    if (!rawTransactions || transactionTypes.length === 0) { // Categories not directly needed here for processing if tx.subCategory.name is used
+    if (!rawTransactions || transactionTypes.length === 0) {
       return [];
     }
     return rawTransactions.map(tx => {
@@ -136,8 +139,7 @@ export default function TransactionsPage() {
       return {
         ...tx,
         typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'),
-        // categoryName is now directly from tx.subCategory.name or tx.source
-        categoryName: tx.subCategory?.name || tx.source || null 
+        categoryName: tx.subCategory?.name || null 
       };
     });
   }, [rawTransactions, transactionTypes, t]);
@@ -174,21 +176,20 @@ export default function TransactionsPage() {
 
   const handleClearFilters = () => {
     setFilters({});
-    // We need to trigger fetchTransactions after filters are cleared
-    // Since state updates are async, we pass an empty filter object directly
-    // or call fetchTransactions in a useEffect that depends on a "cleared" state.
-    // For simplicity, let's refetch based on the now-empty `filters` state.
-    // The fetchTransactions hook depends on `filters`, so this state change will trigger it.
-    // However, to make it explicit on button click:
+    // Refetch with empty filters
+    // This relies on fetchTransactions being re-called due to filter state change
+    // To be more explicit on button click and ensure it fires after state update:
     if (isAuthenticated && token) {
       setIsLoadingTransactions(true);
-      getTransactionsList(token, {}) // Fetch with empty params
+      getTransactionsList(token, {})
         .then(result => {
           setRawTransactions(result.transactions || []);
         })
         .catch((error: any) => {
           console.error("Failed to fetch transactions", error);
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+           if (error.code !== 401) {
+             toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+           }
           setRawTransactions([]);
         })
         .finally(() => setIsLoadingTransactions(false));
@@ -243,9 +244,8 @@ export default function TransactionsPage() {
               typeIcon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
           }
 
-          const detailsText = tx.description || tx.source || t('noDetailsPlaceholder');
-          // Use tx.categoryName which is now tx.subCategory.name or tx.source
-          const categoryText = tx.categoryName ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) : t('notApplicable');
+          const detailsText = tx.description || t('noDetailsPlaceholder');
+          const categoryText = tx.categoryName ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) : "-";
 
           return (
             <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
@@ -255,8 +255,8 @@ export default function TransactionsPage() {
               <TableCell className="py-3 px-4 align-top text-center">
                 {typeIcon}
               </TableCell>
-              <TableCell className="py-3 px-4 align-top text-sm">
-                {detailsText}
+              <TableCell className="text-right py-3 px-4 align-top text-sm">
+                <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
               </TableCell>
               <TableCell className="py-3 px-4 align-top text-sm">
                 {tx.wallet.name}
@@ -264,8 +264,8 @@ export default function TransactionsPage() {
               <TableCell className="py-3 px-4 align-top text-sm">
                 {categoryText}
               </TableCell>
-              <TableCell className="text-right py-3 px-4 align-top text-sm">
-                <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
+              <TableCell className="py-3 px-4 align-top text-sm">
+                {detailsText}
               </TableCell>
             </TableRow>
           );
@@ -397,10 +397,10 @@ export default function TransactionsPage() {
                       <TableRow>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
-                        <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -424,10 +424,10 @@ export default function TransactionsPage() {
                       <TableRow>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
-                        <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
