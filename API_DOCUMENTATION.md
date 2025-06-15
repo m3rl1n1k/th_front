@@ -89,7 +89,7 @@ Retrieves the profile information for the currently authenticated user.
       "email": "user@example.com",
       "memberSince": "2023-01-15T10:00:00Z",
       "userCurrency": {
-        "code": "USD" 
+        "code": "USD"
       }
     }
     ```
@@ -103,7 +103,7 @@ Updates the profile information for the currently authenticated user.
     {
       "login": "new_user_login_name",
       "email": "new_email@example.com",
-      "userCurrencyCode": "EUR" 
+      "userCurrencyCode": "EUR"
     }
     ```
 *   **Success Response (200 OK)**: Returns the updated user profile (same format as `GET /users/me`).
@@ -173,7 +173,7 @@ Retrieves available transaction recurrence frequencies for forms.
 *   **Failure Response (401 Unauthorized)**
 
 #### `GET /transactions/categories`
-Retrieves a flat list of available transaction categories (subcategories) for form dropdowns.
+Retrieves a flat list of available transaction categories (subcategories) for form dropdowns. *(Deprecated in favor of GET /main/categories for hierarchical data)*
 *   **Request Body**: None (token in header)
 *   **Success Response (200 OK)**:
     ```json
@@ -197,9 +197,9 @@ Creates a new transaction.
       "description": "Groceries for the week", // string, optional
       "typeId": "2", // string, required (ID from GET /transactions/types)
       "date": "2024-07-28", // string, YYYY-MM-DD, required
-      "isRecurring": false, // boolean, required
       "wallet_id": 1, // integer ID, required
-      "category_id": 101 // integer ID (refers to a subCategory ID), optional (null if not provided)
+      "category_id": 101, // integer ID (refers to a subCategory ID), optional (null if not provided)
+      "frequencyId": "1" // string, required (ID from GET /transactions/frequency)
     }
     ```
 *   **Success Response (201 Created)**: Returns the created transaction object.
@@ -209,14 +209,14 @@ Creates a new transaction.
       "amount": { "amount": 5000, "currency": { "code": "USD" } },
       "currency": { "code": "USD" },
       "exchangeRate": 1,
-      "type": 2, 
+      "type": 2,
       "description": "Groceries for the week",
       "wallet": { "id": 1, "name": "Main" },
       "subCategory": { "id": 101, "name": "Groceries"}, // subCategory object, null if not provided
       "user": { "id": 1 },
       "source": "manual", // or other source if applicable
       "date": "2024-07-28T14:30:00Z",
-      "isRecurring": false
+      "frequencyId": "1" // Or the actual frequency identifier stored by backend
     }
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
@@ -240,14 +240,15 @@ Retrieves a list of transactions for the authenticated user. The response should
           "amount": { "amount": 5000, "currency": { "code": "USD" } },
           "currency": { "code": "USD" },
           "exchangeRate": 1,
-          "type": 2, 
+          "type": 2,
           "description": "Groceries",
           "wallet": { "id": 1, "name": "Main" },
           "subCategory": { "id": 101, "name": "Groceries"}, // null if not set
           "user": { "id": 1 },
           "source": "store_x",
           "date": "2024-07-28T14:30:00Z",
-          "isRecurring": false
+          "isRecurring": false, // This field might change if frequencyId is adopted
+          "frequencyId": "1" // Example if backend starts returning this
         }
       ]
     }
@@ -263,7 +264,7 @@ Retrieves a specific transaction by its ID.
 #### `PUT /transactions/{id}`
 Updates a specific transaction.
 
-*   **Request Body**: Similar to `POST /transactions`, containing fields to update. `category_id` can be `null`.
+*   **Request Body**: Similar to `POST /transactions`, containing fields to update. `category_id` can be `null`. `frequencyId` should be provided.
 *   **Success Response (200 OK)**: Updated transaction object.
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
 
@@ -319,7 +320,7 @@ Retrieves available wallet types mapping.
 Retrieves main categories along with their subcategories.
 *   **Success Response (200 OK)**:
     ```json
-    { 
+    {
       "categories": [
         {
           "id": 1,
@@ -417,13 +418,18 @@ Consider these when designing your database and PHP classes/objects.
 *   `subcategory_id` (int, nullable, foreign key to SubCategory)
 *   `source` (string, nullable)
 *   `transaction_date` (datetime)
-*   `is_recurring` (boolean)
+*   `frequency_id` (string/int, foreign key or reference to Frequency.id from /transactions/frequency)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
 ### TransactionType (Conceptual, might be an ENUM or simple mapping in code)
 *   `id` (int, e.g., 1, 2)
 *   `name` (string, e.g., "INCOME", "EXPENSE")
+
+### FrequencyType (Conceptual, based on GET /transactions/frequency)
+* `id` (string/int, e.g., "1", "5")
+* `name` (string, e.g., "ONE_TIME", "MONTHLY")
+
 
 ### Wallet
 *   `id` (int, primary key)
@@ -479,3 +485,4 @@ Consider these when designing your database and PHP classes/objects.
 
 This documentation provides a starting point. Adapt and expand it based on the full feature set of FinanceFlow.
 
+    

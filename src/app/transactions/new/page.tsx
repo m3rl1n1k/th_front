@@ -12,7 +12,7 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -23,18 +23,13 @@ import {
   createTransaction,
   getTransactionFrequencies,
   getWalletsList,
-  getMainCategories // Changed from getTransactionCategoriesFlat
+  getMainCategories 
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, SubCategory as ApiSubCategory } from '@/types';
+import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory } from '@/types';
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-
-interface FormCategory {
-  id: string;
-  name: string;
-}
 
 export default function NewTransactionPage() {
   const { token, isAuthenticated, user } = useAuth();
@@ -45,7 +40,7 @@ export default function NewTransactionPage() {
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [frequencies, setFrequencies] = useState<Frequency[]>([]);
   const [wallets, setWallets] = useState<WalletDetails[]>([]);
-  const [categories, setCategories] = useState<FormCategory[]>([]);
+  const [mainCategoriesHierarchical, setMainCategoriesHierarchical] = useState<ApiMainCategory[]>([]);
 
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
@@ -58,7 +53,7 @@ export default function NewTransactionPage() {
     typeId: z.string().min(1, { message: t('typeRequired') }),
     date: z.date({ required_error: t('dateRequired') }),
     walletId: z.string().min(1, { message: t('walletRequiredError') }),
-    categoryId: z.string().optional().nullable(), // Made categoryId optional
+    categoryId: z.string().optional().nullable(), 
     frequencyId: z.string().min(1, { message: t('frequencyRequiredError')}),
   });
 
@@ -72,7 +67,7 @@ export default function NewTransactionPage() {
       typeId: '', 
       date: new Date(),
       walletId: '',
-      categoryId: null, // Default to null for optional category
+      categoryId: null, 
       frequencyId: '', 
     },
   });
@@ -105,21 +100,14 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingWallets(false));
       
       setIsLoadingCategories(true);
-      getMainCategories(token) // Using getMainCategories
+      getMainCategories(token) 
         .then(mainCategoriesResponse => {
-           const allSubCategories: ApiSubCategory[] = Array.isArray(mainCategoriesResponse) 
-            ? mainCategoriesResponse.flatMap(mainCat => mainCat.subCategories || []) 
-            : [];
-          const formattedCategories: FormCategory[] = allSubCategories.map(subCat => ({
-            id: String(subCat.id),
-            name: subCat.name
-          }));
-          setCategories(formattedCategories);
+          setMainCategoriesHierarchical(Array.isArray(mainCategoriesResponse) ? mainCategoriesResponse : []);
         })
         .catch(error => {
           console.error("Failed to fetch categories from /main/categories", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-          setCategories([]);
+          setMainCategoriesHierarchical([]);
         })
         .finally(() => setIsLoadingCategories(false));
       
@@ -148,7 +136,6 @@ export default function NewTransactionPage() {
       const defaultOneTimeFrequency = frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME');
 
       const currentFormValues = getValues();
-
       const newDefaults: Partial<NewTransactionFormData> = {};
 
       if (!currentFormValues.walletId && defaultWallet) {
@@ -160,13 +147,12 @@ export default function NewTransactionPage() {
       if (!currentFormValues.frequencyId && defaultOneTimeFrequency) {
         newDefaults.frequencyId = defaultOneTimeFrequency.id;
       }
-      // categoryId remains null by default from form init
 
       if (Object.keys(newDefaults).length > 0) {
-        reset({
-          ...currentFormValues,
+        reset(prev => ({
+          ...prev,
           ...newDefaults,
-        });
+        }));
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -179,18 +165,15 @@ export default function NewTransactionPage() {
       return;
     }
 
-    const selectedFrequency = frequencies.find(f => f.id === data.frequencyId);
-    const isRecurring = selectedFrequency ? selectedFrequency.name.toUpperCase() !== 'ONE_TIME' : false;
-
     try {
       const payload = {
         amount: Math.round(data.amount * 100), 
         description: data.description || null,
         typeId: data.typeId, 
         date: format(data.date, 'yyyy-MM-dd'),
-        isRecurring: isRecurring, 
         wallet_id: parseInt(data.walletId), 
-        category_id: data.categoryId ? parseInt(data.categoryId) : null, // Handle optional categoryId
+        category_id: data.categoryId ? parseInt(data.categoryId) : null,
+        frequencyId: data.frequencyId, // Send frequencyId instead of isRecurring
       };
       await createTransaction(payload, token);
       toast({
@@ -306,19 +289,24 @@ export default function NewTransactionPage() {
                     render={({ field }) => (
                       <Select
                         onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                        value={field.value || "none"} // Handle null value for "No Category"
-                        disabled={isLoadingCategories || categories.length === 0}
+                        value={field.value || "none"} 
+                        disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
                       >
                         <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
                           <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
                           <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryOptionalPlaceholder')} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-72 overflow-y-auto">
                           <SelectItem value="none">{t('noCategoryOption')}</SelectItem>
-                          {categories.map(cat => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                               {t(`categoryName_${cat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: cat.name })}
-                            </SelectItem>
+                          {mainCategoriesHierarchical.map(mainCat => (
+                            <SelectGroup key={mainCat.id}>
+                              <SelectLabel>{t(`categoryName_${mainCat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: mainCat.name })}</SelectLabel>
+                              {mainCat.subCategories && mainCat.subCategories.map(subCat => (
+                                <SelectItem key={subCat.id} value={String(subCat.id)}>
+                                  {t(`categoryName_${subCat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: subCat.name })}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
                           ))}
                         </SelectContent>
                       </Select>
@@ -420,3 +408,4 @@ export default function NewTransactionPage() {
   );
 }
 
+    
