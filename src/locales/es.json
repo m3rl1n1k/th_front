@@ -17,7 +17,10 @@
   "loginFailedDesc": "Por favor, verifica tus credenciales o inténtalo de nuevo más tarde.",
   "logoutSuccessTitle": "Sesión Cerrada",
   "tokenSetTitle": "Token Establecido",
-  "tokenSetDesc": "El Token JWT se ha establecido correctamente.",
+  "tokenSetDesc": "El Token JWT ha sido enviado para validación.",
+  "tokenUpdatedDesc": "Se intentó procesar el token. Verifica si hay errores de perfil.",
+  "tokenClearedTitle": "Token Eliminado",
+  "revertedToDevModeDesc": "Revertido a la autenticación de modo desarrollo por defecto.",
   "manualTokenTitle": "Establecer Token JWT Manualmente",
   "manualTokenDescription": "Para fines de desarrollo, puedes establecer tu token JWT aquí.",
   "jwtToken": "Token JWT",
@@ -107,6 +110,8 @@
   "nameLabel": "Nombre",
   "emailLabel": "Correo Electrónico",
   "saveChangesButton": "Guardar Cambios",
-  "cancelButton": "Cancelar"
+  "cancelButton": "Cancelar",
+  "profileFetchErrorTitle": "Error al Obtener Perfil",
+  "profileFetchErrorDesc": "No se pudo validar el token proporcionado."
 }
-    
+

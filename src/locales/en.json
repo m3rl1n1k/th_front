@@ -17,7 +17,10 @@
   "loginFailedDesc": "Please check your credentials or try again later.",
   "logoutSuccessTitle": "Logged Out",
   "tokenSetTitle": "Token Set",
-  "tokenSetDesc": "JWT Token has been set successfully.",
+  "tokenSetDesc": "JWT Token has been submitted for validation.",
+  "tokenUpdatedDesc": "Token processing attempted. Check for profile errors if any.",
+  "tokenClearedTitle": "Token Cleared",
+  "revertedToDevModeDesc": "Reverted to default dev mode authentication.",
   "manualTokenTitle": "Set JWT Token Manually",
   "manualTokenDescription": "For development purposes, you can set your JWT token here.",
   "jwtToken": "JWT Token",
@@ -107,6 +110,8 @@
   "nameLabel": "Name",
   "emailLabel": "Email",
   "saveChangesButton": "Save Changes",
-  "cancelButton": "Cancel"
+  "cancelButton": "Cancel",
+  "profileFetchErrorTitle": "Profile Fetch Error",
+  "profileFetchErrorDesc": "Could not validate the provided token."
 }
     
