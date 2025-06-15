@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
-import { getTransactionTypes, getTransactionsList, getTransactionCategories } from '@/lib/api';
+import { getTransactionTypes, getTransactionsList, getMainCategories } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { 
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, Category } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, SubCategory, MainCategory } from '@/types';
 import { useGlobalLoader } from '@/context/global-loader-context';
 
 interface GroupedTransactions {
@@ -39,17 +39,18 @@ export default function TransactionsPage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]); // Stores flat list of subcategories for filter
+  
   const [rawTransactions, setRawTransactions] = useState<Transaction[] | null>(null);
   
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true); // For main/sub categories
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
   const [filters, setFilters] = useState<{
     startDate?: Date;
     endDate?: Date;
-    categoryId?: string;
+    categoryId?: string; // This will be subCategory.id
     typeId?: string;
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
@@ -76,17 +77,15 @@ export default function TransactionsPage() {
         .finally(() => setIsLoadingTypes(false));
 
       setIsLoadingCategories(true);
-      getTransactionCategories(token)
+      getMainCategories(token) // Fetch main categories
         .then(data => {
-           const formattedCategories = Object.entries(data.categories).map(([id, name]) => ({
-            id: id,
-            name: name as string
-          }));
-          setCategories(formattedCategories);
+          const subCategories = data.flatMap(mainCat => mainCat.subCategories || []);
+          setAllSubCategories(subCategories);
         })
         .catch(error => {
-          console.error("Failed to fetch categories", error);
+          console.error("Failed to fetch main categories", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          setAllSubCategories([]);
         })
         .finally(() => setIsLoadingCategories(false));
     } else {
@@ -94,7 +93,7 @@ export default function TransactionsPage() {
       setIsLoadingCategories(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, toast]); // Removed t from here
+  }, [token, isAuthenticated, toast]);
 
   const fetchTransactions = useCallback(() => {
     if (isAuthenticated && token) {
@@ -102,7 +101,7 @@ export default function TransactionsPage() {
       const params: Record<string, string> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
-      if (filters.categoryId) params.categoryId = filters.categoryId; // This should use subCategory.id if API expects that
+      if (filters.categoryId) params.categoryId = filters.categoryId; // Pass subCategory.id as categoryId
       if (filters.typeId) params.typeId = filters.typeId;
       
       getTransactionsList(token, params)
@@ -120,27 +119,28 @@ export default function TransactionsPage() {
       setIsLoadingTransactions(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, filters, toast]); // Removed t from here
+  }, [isAuthenticated, token, filters]); // Removed `t` and `toast` to prevent re-fetch on lang change
 
   useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+    fetchTransactions(); // Initial fetch
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, token]); // Only re-fetch if auth state changes
 
   const processedTransactions = useMemo(() => {
-    if (!rawTransactions || transactionTypes.length === 0 || categories.length === 0) {
+    if (!rawTransactions || transactionTypes.length === 0) { // Categories not directly needed here for processing if tx.subCategory.name is used
       return [];
     }
     return rawTransactions.map(tx => {
       const typeDetails = transactionTypes.find(tt => tt.id === String(tx.type));
-      const categoryDetails = tx.subCategory?.id ? categories.find(cat => cat.id === String(tx.subCategory!.id)) : null;
       
       return {
         ...tx,
         typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'),
-        categoryName: categoryDetails ? categoryDetails.name : (tx.subCategory?.name || null)
+        // categoryName is now directly from tx.subCategory.name or tx.source
+        categoryName: tx.subCategory?.name || tx.source || null 
       };
     });
-  }, [rawTransactions, transactionTypes, categories, t]);
+  }, [rawTransactions, transactionTypes, t]);
   
   const currentTabTransactions = useMemo(() => {
     if (activeTab === "recurring") {
@@ -174,14 +174,27 @@ export default function TransactionsPage() {
 
   const handleClearFilters = () => {
     setFilters({});
-    // No need to set rawTransactions to null, fetchTransactions will be called by the effect below
+    // We need to trigger fetchTransactions after filters are cleared
+    // Since state updates are async, we pass an empty filter object directly
+    // or call fetchTransactions in a useEffect that depends on a "cleared" state.
+    // For simplicity, let's refetch based on the now-empty `filters` state.
+    // The fetchTransactions hook depends on `filters`, so this state change will trigger it.
+    // However, to make it explicit on button click:
+    if (isAuthenticated && token) {
+      setIsLoadingTransactions(true);
+      getTransactionsList(token, {}) // Fetch with empty params
+        .then(result => {
+          setRawTransactions(result.transactions || []);
+        })
+        .catch((error: any) => {
+          console.error("Failed to fetch transactions", error);
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+          setRawTransactions([]);
+        })
+        .finally(() => setIsLoadingTransactions(false));
+    }
   };
   
-  useEffect(() => {
-    // This effect will re-fetch transactions if filters are cleared (become empty object)
-    // or if any filter value changes.
-    fetchTransactions();
-  }, [filters, fetchTransactions]); 
 
   const handleAddNewTransaction = () => {
     router.push('/transactions/new');
@@ -191,7 +204,7 @@ export default function TransactionsPage() {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="h-60 text-center"> {/* Adjusted colSpan */}
+          <TableCell colSpan={6} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <RefreshCwIcon className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -204,7 +217,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground"> {/* Adjusted colSpan */}
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}</p>
@@ -218,22 +231,20 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={5} className="py-3 px-4 font-semibold text-foreground text-md"> {/* Adjusted colSpan */}
+          <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md">
             {format(parseISO(dateKey), "PPP")}
           </TableCell>
         </TableRow>
         {groups[dateKey].map(tx => {
-          const typeDetail = transactionTypes.find(tt => tt.id === String(tx.type));
           let typeIcon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
-          if (typeDetail) {
-              if (typeDetail.name.toUpperCase() === 'INCOME') {
-                  typeIcon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
-              } else if (typeDetail.name.toUpperCase() === 'EXPENSE') {
-                  typeIcon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
-              }
+          if (tx.typeName?.toUpperCase() === 'INCOME') {
+              typeIcon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
+          } else if (tx.typeName?.toUpperCase() === 'EXPENSE') {
+              typeIcon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
           }
 
           const detailsText = tx.description || tx.source || t('noDetailsPlaceholder');
+          // Use tx.categoryName which is now tx.subCategory.name or tx.source
           const categoryText = tx.categoryName ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) : t('notApplicable');
 
           return (
@@ -323,9 +334,9 @@ export default function TransactionsPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">{t('allCategories')}</SelectItem>
-                            {categories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                 {t(`categoryName_${cat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: cat.name })}
+                            {allSubCategories.map(subCat => (
+                              <SelectItem key={subCat.id} value={String(subCat.id)}>
+                                 {t(`categoryName_${subCat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: subCat.name })}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -432,3 +443,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
