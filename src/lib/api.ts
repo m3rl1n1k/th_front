@@ -46,24 +46,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   
   headers.set('Accept', 'application/json');
 
-  // Logging request details
-  console.log(`[API Request] URL: ${url}`);
-  console.log(`[API Request] Method: ${fetchOptions.method || 'GET'}`);
-  const headersObject: Record<string, string> = {};
-  headers.forEach((value, key) => {
-    headersObject[key] = value;
-  });
-  console.log('[API Request] Headers:', headersObject);
-  if (fetchOptions.body && !isFormData) {
-    try {
-      const bodyPreview = JSON.parse(fetchOptions.body as string);
-      console.log('[API Request] Body:', bodyPreview);
-    } catch (e) {
-      console.log('[API Request] Body (raw):', fetchOptions.body);
-    }
-  }
-
-
   const response = await fetch(url, {
     ...fetchOptions,
     headers,
@@ -114,3 +96,4 @@ export const getTransactionsList = (
 };
 
 export { request };
+
