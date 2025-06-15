@@ -23,7 +23,7 @@ import {
   createTransaction,
   getTransactionFrequencies,
   getWalletsList,
-  getMainCategories // Changed from getTransactionCategoriesFlat
+  getMainCategories
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -67,7 +67,7 @@ export default function NewTransactionPage() {
 
   type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, register } = useForm<NewTransactionFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting }, register, reset, getValues } = useForm<NewTransactionFormData>({
     resolver: zodResolver(NewTransactionSchema),
     defaultValues: {
       amount: undefined,
@@ -113,8 +113,8 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingWallets(false));
       
       setIsLoadingCategories(true);
-      getMainCategories(token) // Changed from getTransactionCategoriesFlat
-        .then(mainCategoriesResponse => { // mainCategoriesResponse is { categories: ApiMainCategory[] }
+      getMainCategories(token)
+        .then(mainCategoriesResponse => {
           const allSubCategories: ApiSubCategory[] = mainCategoriesResponse.flatMap(mainCat => mainCat.subCategories || []);
           const formattedCategories: FormCategory[] = allSubCategories.map(subCat => ({
             id: String(subCat.id),
@@ -144,6 +144,38 @@ export default function NewTransactionPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, t, toast]);
+
+  useEffect(() => {
+    if (!isLoadingWallets && !isLoadingTypes && !isLoadingFrequencies && 
+        wallets.length > 0 && transactionTypes.length > 0 && frequencies.length > 0) {
+      
+      const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main');
+      const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE');
+      const defaultOneTimeFrequency = frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME');
+
+      const currentFormValues = getValues();
+
+      const newDefaults: Partial<NewTransactionFormData> = {};
+
+      if (!currentFormValues.walletId && defaultWallet) {
+        newDefaults.walletId = String(defaultWallet.id);
+      }
+      if (!currentFormValues.typeId && defaultExpenseType) {
+        newDefaults.typeId = defaultExpenseType.id;
+      }
+      if (!currentFormValues.frequencyId && defaultOneTimeFrequency) {
+        newDefaults.frequencyId = defaultOneTimeFrequency.id;
+      }
+
+      if (Object.keys(newDefaults).length > 0) {
+        reset({
+          ...currentFormValues,
+          ...newDefaults,
+        });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingWallets, isLoadingTypes, isLoadingFrequencies, wallets, transactionTypes, frequencies, reset]);
 
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
@@ -227,7 +259,7 @@ export default function NewTransactionPage() {
                     render={({ field }) => (
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         disabled={isLoadingTypes || transactionTypes.length === 0}
                       >
                         <SelectTrigger id="typeId" className={errors.typeId ? 'border-destructive' : ''}>
@@ -256,7 +288,7 @@ export default function NewTransactionPage() {
                     render={({ field }) => (
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         disabled={isLoadingWallets || wallets.length === 0}
                       >
                         <SelectTrigger id="walletId" className={errors.walletId ? 'border-destructive' : ''}>
@@ -283,7 +315,7 @@ export default function NewTransactionPage() {
                     render={({ field }) => (
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         disabled={isLoadingCategories || categories.length === 0}
                       >
                         <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
@@ -357,7 +389,7 @@ export default function NewTransactionPage() {
                         render={({ field }) => (
                         <Select
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value}
                             disabled={isLoadingFrequencies || frequencies.length === 0}
                         >
                             <SelectTrigger id="frequencyId" className={errors.frequencyId ? 'border-destructive' : ''}>
