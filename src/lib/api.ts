@@ -11,10 +11,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
     
-    console.error('API Error:', errorData);
+    console.error('API Error Status:', response.status, 'Error Data:', errorData);
 
     if (response.status === 401) {
       if (typeof window !== 'undefined' && window.location.pathname !== '/set-token') {
+        // Prevent redirect loop if already on set-token or login page
+        console.log('Redirecting to /set-token due to 401');
         window.location.href = '/set-token';
       }
     }
@@ -103,7 +105,7 @@ export const createTransaction = (data: any, token: string): Promise<any> =>
 export const getTransactionsList = (
   token: string,
   params: Record<string, string | undefined> = {}
-): Promise<{ data: Transaction[]; meta: any }> => { // Expecting old structure
+): Promise<{ transactions: Transaction[] }> => { // Expecting new structure { transactions: [] }
   const definedParams: Record<string, string> = {};
   for (const key in params) {
     if (params[key] !== undefined) {
@@ -112,7 +114,11 @@ export const getTransactionsList = (
   }
   const queryString = new URLSearchParams(definedParams).toString();
   const url = queryString ? `${URLS.transactions}?${queryString}` : URLS.transactions;
-  return request(url, { method: 'GET', token });
+  // The API documentation mentioned `{ data: Transaction[]; meta: any }`
+  // but user sample provides `{ transactions: Transaction[] }`.
+  // Adjusting to user sample. If 'data' is the key, this needs to change.
+  return request<{ transactions: Transaction[] }>(url, { method: 'GET', token });
 };
+
 
 export { request };

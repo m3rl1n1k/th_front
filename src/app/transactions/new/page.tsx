@@ -21,18 +21,15 @@ import { useAuth } from '@/context/auth-context';
 import { getTransactionTypes, createTransaction } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransactionType } from '@/types';
+import type { TransactionType as AppTransactionType } from '@/types'; // Renamed to avoid conflict
 import { CalendarIcon, Save, ArrowLeft } from 'lucide-react';
 import { useGlobalLoader } from '@/context/global-loader-context';
 
 const recurrenceOptions = [
   { value: "0", labelKey: "recurrence_one_time" },
-  { value: "1", labelKey: "recurrence_daily" },
-  { value: "7", labelKey: "recurrence_weekly" },
-  { value: "14", labelKey: "recurrence_two_weeks" },
-  { value: "30", labelKey: "recurrence_monthly" },
-  { value: "180", labelKey: "recurrence_six_months" },
-  { value: "365", labelKey: "recurrence_yearly" },
+  // Add other recurrence options if the API supports them or if client-side logic handles them.
+  // For now, the API payload only has `isRecurring: boolean`.
+  // If more complex recurrence is needed, the API and this form need to be extended.
 ];
 
 export default function NewTransactionPage() {
@@ -40,16 +37,17 @@ export default function NewTransactionPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
+  const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const NewTransactionSchema = z.object({
     amount: z.coerce.number().positive({ message: t('amountPositiveError') }),
-    description: z.string().min(1, { message: t('descriptionRequired') }).max(100, { message: t('descriptionTooLongError')}),
-    typeId: z.string().min(1, { message: t('typeRequired') }),
+    description: z.string().max(255, { message: t('descriptionTooLongError')}).optional().nullable(), // Optional description
+    typeId: z.string().min(1, { message: t('typeRequired') }), // This will be string ID from AppTransactionType ("1", "2")
     date: z.date({ required_error: t('dateRequired') }),
-    recurrenceInterval: z.string().min(1, { message: t('recurrenceRequiredError')}),
+    isRecurring: z.boolean(), // Simplified to boolean based on API documentation
+    // currencyCode: z.string().min(3, "Currency code is required").default("USD"), // Add if currency can be selected
   });
 
   type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
@@ -59,9 +57,9 @@ export default function NewTransactionPage() {
     defaultValues: {
       amount: undefined,
       description: '',
-      typeId: '',
+      typeId: '', // Default to empty, user must select
       date: new Date(),
-      recurrenceInterval: "0", 
+      isRecurring: false,
     },
   });
 
@@ -71,10 +69,11 @@ export default function NewTransactionPage() {
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
-          const filteredTypes = Object.entries(data.types)
-            .filter(([key, value]) => value === "INCOME" || value === "EXPENSE")
-            .map(([key, value]) => ({ id: key, name: value }));
-          setTransactionTypes(filteredTypes);
+          const formattedTypes = Object.entries(data.types)
+            .map(([id, name]) => ({ id, name: name as string }));
+          setTransactionTypes(formattedTypes);
+          // Set default typeId if applicable, e.g., to EXPENSE ("2")
+          // For now, let user select.
         })
         .catch(error => {
           console.error("Failed to fetch transaction types", error);
@@ -98,12 +97,19 @@ export default function NewTransactionPage() {
     }
     setGlobalLoading(true);
     try {
+      // API expects amount in cents. New API structure amount is { amount: number, currency: { code: string } }
+      // The form collects `amount` as a float.
+      // The createTransaction API endpoint in API_DOCUMENTATION.md expects:
+      // { "amount": 5000, "description": "...", "typeId": "2", "date": "YYYY-MM-DD", "isRecurring": false }
+      // So, we need to ensure `typeId` is the string ID ("1", "2") that matches the fetched types.
+      // And amount is in cents.
       const payload = {
         amount: Math.round(data.amount * 100), 
-        description: data.description,
-        typeId: data.typeId,
+        description: data.description || null, // Send null if empty
+        typeId: data.typeId, // This is already "1" or "2" from the select
         date: format(data.date, 'yyyy-MM-dd'),
-        isRecurring: parseInt(data.recurrenceInterval, 10) > 0, 
+        isRecurring: data.isRecurring, 
+        // currency: data.currencyCode, // Add if currency selection is implemented
       };
       await createTransaction(payload, token);
       toast({
@@ -171,6 +177,7 @@ export default function NewTransactionPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {transactionTypes.map(type => (
+                            // type.id is string "1", "2"; type.name is "INCOME", "EXPENSE"
                             <SelectItem key={type.id} value={type.id}>
                               {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'])}
                             </SelectItem>
@@ -194,7 +201,7 @@ export default function NewTransactionPage() {
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                 <div className="space-y-2">
                   <Label htmlFor="date">{t('date')}</Label>
                   <Controller
@@ -227,30 +234,22 @@ export default function NewTransactionPage() {
                   {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="recurrenceInterval">{t('recurrenceIntervalLabel')}</Label>
-                  <Controller
-                    name="recurrenceInterval"
+                <div className="space-y-2 flex items-center gap-x-2 pt-6">
+                   <Controller
+                    name="isRecurring"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger id="recurrenceInterval" className={errors.recurrenceInterval ? 'border-destructive' : ''}>
-                          <SelectValue placeholder={t('recurrenceIntervalPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {recurrenceOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {t(option.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                       <Input
+                        id="isRecurring"
+                        type="checkbox"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="h-4 w-4"
+                      />
                     )}
                   />
-                  {errors.recurrenceInterval && <p className="text-sm text-destructive">{errors.recurrenceInterval.message}</p>}
+                  <Label htmlFor="isRecurring" className="cursor-pointer">{t('recurringTransaction')}</Label>
+                  {errors.isRecurring && <p className="text-sm text-destructive">{errors.isRecurring.message}</p>}
                 </div>
               </div>
               
