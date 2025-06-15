@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -8,7 +9,6 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,19 +16,28 @@ import { Calendar } from '@/components/ui/calendar';
 import { useAuth } from '@/context/auth-context';
 import { getTransactionTypes, createTransaction } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
-import { CalendarIcon, PlusCircle, Repeat } from 'lucide-react';
+import { CalendarIcon, PlusCircle, RefreshCwIcon } from 'lucide-react'; // Changed Repeat to RefreshCwIcon for recurrence
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { TransactionType } from '@/types';
 import { useGlobalLoader } from '@/context/global-loader-context';
 
+const recurrenceOptions = [
+  { value: 0, labelKey: 'recurrence_one_time' },
+  { value: 1, labelKey: 'recurrence_daily' },
+  { value: 7, labelKey: 'recurrence_weekly' },
+  { value: 14, labelKey: 'recurrence_two_weeks' },
+  { value: 30, labelKey: 'recurrence_monthly' },
+  { value: 180, labelKey: 'recurrence_six_months' },
+  { value: 364, labelKey: 'recurrence_yearly' },
+];
 
 const transactionSchema = z.object({
   amount: z.coerce.number().positive({ message: "Amount must be positive" }),
   description: z.string().min(1, { message: "descriptionRequired" }),
   typeId: z.string().min(1, { message: "typeRequired" }),
   date: z.date({ required_error: "dateRequired" }),
-  isRecurring: z.boolean().default(false),
+  recurrenceInterval: z.coerce.number().int().min(0).default(0),
 });
 
 type TransactionFormInputs = z.infer<typeof transactionSchema>;
@@ -45,9 +54,9 @@ export default function TransactionsPage() {
   const { control, register, handleSubmit, reset, formState: { errors } } = useForm<TransactionFormInputs>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      isRecurring: false,
       typeId: "2", // Default to EXPENSE (assuming "2" is its ID)
       date: new Date(),
+      recurrenceInterval: 0, // Default to "One-time"
     },
   });
 
@@ -79,18 +88,21 @@ export default function TransactionsPage() {
     setGlobalLoading(true);
 
     const payload = {
-      ...data,
       amount: Math.round(data.amount * 100), // Convert to cents
+      description: data.description,
+      typeId: data.typeId,
       date: format(data.date, 'yyyy-MM-dd'), // Format date for API
+      isRecurring: data.recurrenceInterval > 0,
+      // If API needed interval: recurrenceInterval: data.recurrenceInterval
     };
 
     try {
       await createTransaction(payload, token);
-      toast({ title: "Transaction Saved", description: "Your transaction has been successfully recorded." });
+      toast({ title: t('transactionSavedTitle'), description: t('transactionSavedDesc') });
       reset(); // Reset form after successful submission
     } catch (error: any) {
       console.error("Failed to create transaction", error);
-      toast({ variant: "destructive", title: "Failed to Save Transaction", description: error.message || "An unexpected error occurred." });
+      toast({ variant: "destructive", title: t('transactionFailedTitle'), description: error.message || t('unexpectedError') });
     } finally {
       setIsSubmitting(false);
       setGlobalLoading(false);
@@ -102,7 +114,6 @@ export default function TransactionsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-3xl font-bold text-foreground">{t('transactions')}</h1>
-          {/* Future: Button to open a modal or navigate to a separate "Add Transaction" page */}
         </div>
 
         <Card className="shadow-lg">
@@ -138,7 +149,7 @@ export default function TransactionsPage() {
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTypes}>
                         <SelectTrigger id="typeId" aria-invalid={errors.typeId ? "true" : "false"}>
-                          <SelectValue placeholder={isLoadingTypes ? t('loading') : "Select type"} />
+                          <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           {transactionTypes.map(type => (
@@ -159,7 +170,7 @@ export default function TransactionsPage() {
                 <Label htmlFor="description">{t('description')}</Label>
                 <Input
                   id="description"
-                  placeholder="e.g., Groceries, Salary"
+                  placeholder={t('descriptionPlaceholder')}
                   {...register('description')}
                   aria-invalid={errors.description ? "true" : "false"}
                 />
@@ -191,6 +202,7 @@ export default function TransactionsPage() {
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
+                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")} // Disable future dates
                             initialFocus
                           />
                         </PopoverContent>
@@ -200,25 +212,29 @@ export default function TransactionsPage() {
                   {errors.date && <p className="text-sm text-destructive">{t(errors.date.message as keyof ReturnType<typeof useTranslation>['translations'])}</p>}
                 </div>
 
-                {/* Recurring Transaction */}
-                <div className="space-y-2 md:pt-8 flex items-center">
+                {/* Recurrence Interval */}
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceInterval">{t('recurrenceIntervalLabel')}</Label>
                   <Controller
-                    name="isRecurring"
+                    name="recurrenceInterval"
                     control={control}
                     render={({ field }) => (
-                       <div className="flex items-center space-x-2">
-                        <Switch
-                          id="isRecurring"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          aria-label={t('recurringTransaction')}
-                        />
-                         <Label htmlFor="isRecurring" className="flex items-center cursor-pointer">
-                           <Repeat className="mr-2 h-4 w-4 text-muted-foreground" /> {t('recurringTransaction')}
-                         </Label>
-                       </div>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={String(field.value)}>
+                        <SelectTrigger id="recurrenceInterval" aria-invalid={errors.recurrenceInterval ? "true" : "false"}>
+                          <RefreshCwIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder={t('recurrenceIntervalPlaceholder')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {recurrenceOptions.map(option => (
+                            <SelectItem key={option.value} value={String(option.value)}>
+                              {t(option.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   />
+                  {errors.recurrenceInterval && <p className="text-sm text-destructive">{t(errors.recurrenceInterval.message as keyof ReturnType<typeof useTranslation>['translations'], {defaultValue: errors.recurrenceInterval.message})}</p>}
                 </div>
               </div>
 
@@ -239,10 +255,10 @@ export default function TransactionsPage() {
         <div className="mt-8">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
+              <CardTitle>{t('recentTransactionsTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Transaction list will be displayed here.</p>
+              <p className="text-muted-foreground">{t('transactionListPlaceholder')}</p>
             </CardContent>
           </Card>
         </div>
@@ -250,3 +266,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+

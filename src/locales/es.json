@@ -1,3 +1,4 @@
+
 {
   "appName": "FinanceFlow",
   "loading": "Cargando...",
@@ -49,5 +50,22 @@
   "currentLanguage": "Idioma Actual: {lang}",
   "changeLanguage": "Cambiar Idioma",
   "noDataAvailable": "Aún no hay datos disponibles.",
-  "errorFetchingData": "Error al cargar los datos. Por favor, inténtalo de nuevo."
+  "errorFetchingData": "Error al cargar los datos. Por favor, inténtalo de nuevo.",
+  "selectTypePlaceholder": "Seleccionar tipo",
+  "descriptionPlaceholder": "Ej: Comestibles, Salario",
+  "transactionSavedTitle": "Transacción Guardada",
+  "transactionSavedDesc": "Tu transacción ha sido registrada exitosamente.",
+  "transactionFailedTitle": "Error al Guardar Transacción",
+  "unexpectedError": "Ocurrió un error inesperado.",
+  "recentTransactionsTitle": "Transacciones Recientes",
+  "transactionListPlaceholder": "La lista de transacciones se mostrará aquí.",
+  "recurrence_one_time": "Una vez",
+  "recurrence_daily": "Diario",
+  "recurrence_weekly": "Semanal",
+  "recurrence_two_weeks": "Cada dos semanas",
+  "recurrence_monthly": "Mensual",
+  "recurrence_six_months": "Cada 6 meses",
+  "recurrence_yearly": "Anual",
+  "recurrenceIntervalLabel": "Recurrencia",
+  "recurrenceIntervalPlaceholder": "Seleccionar recurrencia"
 }
