@@ -22,13 +22,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_STORAGE_KEY = 'financeflow_jwt_token';
-const DUMMY_USER: User = { id: '0', login: 'Dev User', email: 'dev@example.com' };
+const DUMMY_USER: User = { 
+  id: '0', 
+  login: 'Dev User', 
+  email: 'dev@example.com',
+  memberSince: new Date().toISOString() // Add a default memberSince for dummy user
+};
 const DUMMY_TOKEN = 'dev-mode-active-dummy-token';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(DUMMY_USER);
   const [token, setToken] = useState<string | null>(DUMMY_TOKEN);
-  const [isLoading, setIsLoading] = useState(false); // Start as not loading
+  const [isLoading, setIsLoading] = useState(false); 
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -36,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserCallback = useCallback(async (currentToken: string) => {
     if (!currentToken || currentToken === DUMMY_TOKEN) {
       setUser(DUMMY_USER);
-      setToken(DUMMY_TOKEN); // Ensure dummy token if current is invalid or dummy
+      setToken(DUMMY_TOKEN); 
       setIsLoading(false);
       return;
     }
@@ -44,15 +49,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userData = await fetchUserProfile(currentToken);
       setUser(userData);
-      // Token is already set from outside (e.g. localStorage or setTokenManually)
     } catch (error) {
       console.error("Failed to fetch user profile with real token", error);
       toast({ variant: "destructive", title: "Profile Fetch Error", description: (error as ApiError).message || "Could not load profile with the provided token." });
-      // Revert to dummy state if fetching real user fails to maintain "auth off" experience
       setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
       if (typeof window !== 'undefined') {
-        localStorage.removeItem(TOKEN_STORAGE_KEY); // Remove invalid real token
+        localStorage.removeItem(TOKEN_STORAGE_KEY); 
       }
     } finally {
       setIsLoading(false);
@@ -60,13 +63,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   useEffect(() => {
-    // This effect allows a "real" token from localStorage to override the dummy token for API testing.
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
     if (storedToken && storedToken !== DUMMY_TOKEN) {
-      setToken(storedToken); // Set the real token
-      fetchUserCallback(storedToken); // Attempt to fetch user with this real token
+      setToken(storedToken); 
+      fetchUserCallback(storedToken); 
     } else {
-      // Default to dummy user/token if no real token is stored or if stored token is the dummy one
       setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
       setIsLoading(false);
@@ -82,13 +83,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = useCallback(() => {
-    setUser(DUMMY_USER); // Reset to dummy state
+    setUser(DUMMY_USER); 
     setToken(DUMMY_TOKEN);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(TOKEN_STORAGE_KEY); // Clear any potentially "real" token
+      localStorage.removeItem(TOKEN_STORAGE_KEY); 
     }
     toast({ title: "Dev Mode Logout", description: "Simulated logout. Redirecting..." });
-    router.push('/login'); // This will then redirect to dashboard due to login page changes
+    router.push('/login'); 
   }, [router, toast]);
 
   const setTokenManually = (newToken: string) => {
@@ -101,15 +102,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       fetchUserCallback(newToken).finally(() => setIsLoading(false));
       toast({ title: t('tokenSetTitle'), description: t('tokenSetDesc') });
     } else {
-      // Setting empty or dummy token, ensure dummy state
       setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
       if (typeof window !== 'undefined') {
-        localStorage.removeItem(TOKEN_STORAGE_KEY); // Remove if it was a real token
+        localStorage.removeItem(TOKEN_STORAGE_KEY); 
       }
       setIsLoading(false);
       toast({ title: "Token Reset", description: "Reverted to default dev mode authentication." });
-      // If they set the dummy token explicitly, we can just confirm it.
       if (newToken === DUMMY_TOKEN) {
         toast({ title: "Dev Mode Confirmed", description: "Using default dev mode authentication." });
       }
@@ -117,19 +116,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const fetchUser = async () => {
-    // This function is typically called if user data is missing but token exists.
-    // In "auth off" mode, we mostly rely on the dummy user.
-    // It will only try to fetch if a non-dummy token is present.
     if (token && token !== DUMMY_TOKEN) {
       await fetchUserCallback(token);
     } else {
-      setUser(DUMMY_USER); // Ensure dummy user is set
-      setToken(DUMMY_TOKEN); // Ensure dummy token is set
+      setUser(DUMMY_USER); 
+      setToken(DUMMY_TOKEN); 
       setIsLoading(false);
     }
   };
 
-  const isAuthenticated = true; // Auth is always "on" in this mode
+  const isAuthenticated = true; 
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, setTokenManually, fetchUser }}>

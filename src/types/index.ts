@@ -3,6 +3,7 @@ export interface User {
   id: string | number;
   login: string; // This is the username derived from email
   email: string;
+  memberSince?: string; // Optional: ISO Date string for when the user joined
   // Add other user properties as needed
 }
 

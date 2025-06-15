@@ -100,7 +100,13 @@
   "tokenMissingError": "Falta el token de autenticación. Por favor, inicia sesión.",
   "error": "Error",
   "saving": "Guardando...",
-  "backButton": "Volver"
+  "backButton": "Volver",
+  "editProfileButton": "Editar Perfil",
+  "editProfileDialogTitle": "Editar Tu Perfil",
+  "editProfileDialogDescription": "Realiza cambios en tu perfil aquí. Haz clic en guardar cuando hayas terminado.",
+  "nameLabel": "Nombre",
+  "emailLabel": "Correo Electrónico",
+  "saveChangesButton": "Guardar Cambios",
+  "cancelButton": "Cancelar"
 }
-
     

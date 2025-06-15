@@ -100,7 +100,13 @@
   "tokenMissingError": "Authentication token is missing. Please log in.",
   "error": "Error",
   "saving": "Saving...",
-  "backButton": "Back"
+  "backButton": "Back",
+  "editProfileButton": "Edit Profile",
+  "editProfileDialogTitle": "Edit Your Profile",
+  "editProfileDialogDescription": "Make changes to your profile here. Click save when you're done.",
+  "nameLabel": "Name",
+  "emailLabel": "Email",
+  "saveChangesButton": "Save Changes",
+  "cancelButton": "Cancel"
 }
-
     

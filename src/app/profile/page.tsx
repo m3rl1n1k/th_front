@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -10,6 +11,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UserCircle, Mail, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGlobalLoader } from '@/context/global-loader-context';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { format } from 'date-fns'; // Added for date formatting if not already present
 
 // Mock User Profile Data structure - replace with actual API call and type
 interface UserProfileData {
@@ -27,26 +32,19 @@ export default function ProfilePage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   useEffect(() => {
-    if (isAuthenticated && user) { // User data might already be in auth context
+    if (isAuthenticated && user) { 
       setGlobalLoading(true);
       setIsLoading(true);
-      // If detailed profile data needs to be fetched separately:
-      // fetchUserProfileApi(token).then(data => {
-      //   setProfileData(data);
-      // }).catch(err => console.error(err))
-      // .finally(() => setIsLoading(false));
       
-      // For now, using user data from auth context
       setProfileData({
-        name: user.login, // Assuming 'login' is the username/name
+        name: user.login, 
         email: user.email,
-        memberSince: new Date().toISOString(), // Placeholder, fetch actual if available
+        memberSince: user.memberSince || new Date().toISOString(), // Use actual if available, else placeholder
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`
       });
       setIsLoading(false);
       setGlobalLoading(false);
     } else if (isAuthenticated && !user) {
-        // if authenticated but user data is not yet available, fetch it.
         setGlobalLoading(true);
         setIsLoading(true);
         fetchUser().finally(() => {
@@ -83,6 +81,27 @@ export default function ProfilePage() {
     );
   }
 
+  const handleProfileUpdate = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // Add profile update logic here
+    // For now, just log and close dialog
+    console.log("Profile update submitted");
+    // Consider closing the dialog programmatically if needed after submission
+    // For this example, DialogClose button will handle it.
+    toast({ title: "Profile Update", description: "Update functionality is not yet implemented." });
+  };
+  
+  // Fallback for memberSince if it's missing or invalid
+  let formattedMemberSince = "N/A";
+  try {
+    if (profileData.memberSince) {
+      formattedMemberSince = format(new Date(profileData.memberSince), "MMMM d, yyyy");
+    }
+  } catch (error) {
+    console.warn("Invalid date for memberSince:", profileData.memberSince);
+  }
+
+
   return (
     <MainLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
@@ -113,16 +132,53 @@ export default function ProfilePage() {
                 <UserCircle className="mr-4 h-6 w-6 text-primary" />
                  <div>
                   <p className="text-xs text-muted-foreground">Member Since</p>
-                  <p className="text-md font-medium text-foreground">{format(new Date(profileData.memberSince), "MMMM d, yyyy")}</p>
+                  <p className="text-md font-medium text-foreground">{formattedMemberSince}</p>
                 </div>
               </div>
             </div>
-            <Button variant="outline" className="w-full mt-6">
-              <Edit3 className="mr-2 h-4 w-4" /> Edit Profile (Not Implemented)
-            </Button>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full mt-6">
+                  <Edit3 className="mr-2 h-4 w-4" /> {t('editProfileButton')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{t('editProfileDialogTitle')}</DialogTitle>
+                  <DialogDescription>
+                    {t('editProfileDialogDescription')}
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleProfileUpdate}>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        {t('nameLabel')}
+                      </Label>
+                      <Input id="name" defaultValue={profileData.name} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="email" className="text-right">
+                        {t('emailLabel')}
+                      </Label>
+                      <Input id="email" type="email" defaultValue={profileData.email} className="col-span-3" />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                       <Button type="button" variant="outline">{t('cancelButton')}</Button>
+                    </DialogClose>
+                    <Button type="submit">{t('saveChangesButton')}</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
           </CardContent>
         </Card>
       </div>
     </MainLayout>
   );
 }
+
