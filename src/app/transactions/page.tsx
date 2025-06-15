@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -82,7 +82,7 @@ export default function TransactionsPage() {
     }
   }, [token, isAuthenticated, t, toast]);
 
-  useEffect(() => {
+  const fetchTransactions = useCallback(() => {
     if (isAuthenticated && token) {
       setIsLoadingTransactions(true);
       const params: Record<string, string> = {};
@@ -90,7 +90,11 @@ export default function TransactionsPage() {
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
-      if (activeTab === "recurring") params.isRecurring = "true";
+      // Backend handles recurring filtering based on API docs if `isRecurring` param is sent
+      // For now, client-side filtering for 'recurring' tab is also in place if needed.
+      // If API supports isRecurring=true, that's preferred.
+      // if (activeTab === "recurring") params.isRecurring = "true"; 
+
 
       getTransactionsList(token, params)
         .then(result => {
@@ -106,7 +110,11 @@ export default function TransactionsPage() {
       setRawTransactions([]);
       setIsLoadingTransactions(false);
     }
-  }, [isAuthenticated, token, filters, activeTab, t, toast]);
+  }, [isAuthenticated, token, filters, t, toast]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]); // fetchTransactions is now memoized and includes filters in its deps
 
   const processedTransactions = useMemo(() => {
     if (!rawTransactions || transactionTypes.length === 0) {
@@ -148,12 +156,27 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    // Re-fetch is triggered by `filters` changing in the useEffect dependency array
+    fetchTransactions(); // Manually trigger fetch on apply
   };
 
   const handleClearFilters = () => {
     setFilters({});
+    // fetchTransactions will be called by the useEffect watching 'filters' if filters object reference changes.
+    // To ensure it runs, we can also call it directly:
+    // fetchTransactions(); // Or rely on the useEffect dependency on filters.
+    // If filters is reset to empty object, the effect watching `filters` might not re-run if the object reference doesn't change.
+    // It's safer to have fetchTransactions directly called if state is cleared to {} or to manage filters state to ensure a new object reference on clear.
+    // Forcing a re-fetch after clearing:
+    setRawTransactions(null); // This will trigger loading state and re-fetch in the main useEffect
+    setIsLoadingTransactions(true); // Manually set loading
   };
+  
+  useEffect(() => {
+    if (Object.keys(filters).length === 0 && rawTransactions === null) { // re-fetch if filters cleared and no data
+        fetchTransactions();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, rawTransactions]); // re-fetch if filters are cleared.
 
   const handleAddNewTransaction = () => {
     router.push('/transactions/new');
@@ -163,9 +186,11 @@ export default function TransactionsPage() {
     if (isLoadingTransactions || isLoadingTypes) {
       return (
         <TableRow>
-          <TableCell colSpan={4} className="h-40 text-center">
-            <RefreshCwIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
-            <p className="mt-2 text-muted-foreground">{t('loading')}</p>
+          <TableCell colSpan={4} className="h-60 text-center">
+            <div className="flex flex-col items-center justify-center">
+              <RefreshCwIcon className="h-10 w-10 animate-spin text-primary mb-3" />
+              <p className="text-lg text-muted-foreground">{t('loading')}</p>
+            </div>
           </TableCell>
         </TableRow>
       );
@@ -174,8 +199,12 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-            {t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}
+          <TableCell colSpan={4} className="py-16 text-center text-muted-foreground">
+            <div className="flex flex-col items-center justify-center">
+                <History className="h-12 w-12 text-gray-400 mb-3" />
+                <p className="text-xl font-medium">{t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}</p>
+                <p className="text-sm">{t('tryAdjustingFilters')}</p> 
+            </div>
           </TableCell>
         </TableRow>
       );
@@ -183,30 +212,32 @@ export default function TransactionsPage() {
 
     return sortedDateKeys.map(dateKey => {
       const transactionsForDate = groups[dateKey];
-      const formattedDate = format(parseISO(dateKey), "PPP");
+      const formattedDate = format(parseISO(dateKey), "PPP"); // e.g., July 28th, 2024
 
       return (
         <React.Fragment key={dateKey + '-group'}>
-          <TableRow key={dateKey} className="bg-muted/30 hover:bg-muted/40 sticky top-0 z-10">
-            <TableCell colSpan={4} className="py-2 px-4 font-semibold text-foreground">
+          <TableRow key={dateKey} className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
+            <TableCell colSpan={4} className="py-3 px-4 font-semibold text-foreground text-md">
               {formattedDate}
             </TableCell>
           </TableRow>
           {transactionsForDate.map(tx => (
-            <TableRow key={tx.id}>
-              <TableCell className="hidden md:table-cell w-24">
-                 {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+            <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
+              <TableCell className="hidden md:table-cell w-24 py-3 px-4 align-top">
+                 <span className="text-sm text-muted-foreground">{tx.date ? format(parseISO(tx.date), "p") : 'N/A'}</span>
               </TableCell>
-              <TableCell>
-                <div className="font-medium">{tx.description || t('noDescription')}</div>
-                <div className="text-xs text-muted-foreground md:hidden">
+              <TableCell className="py-3 px-4 align-top">
+                <div className="font-medium text-foreground">{tx.description || <span className="italic text-muted-foreground">{t('noDescription')}</span>}</div>
+                <div className="text-xs text-muted-foreground md:hidden mt-1">
                     {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
                 </div>
               </TableCell>
-              <TableCell>
-                {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
+              <TableCell className="py-3 px-4 align-top">
+                <span className={`text-sm ${tx.typeName === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
+                </span>
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right py-3 px-4 align-top">
                 <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
               </TableCell>
             </TableRow>
@@ -219,124 +250,126 @@ export default function TransactionsPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="font-headline text-3xl font-bold text-foreground">{t('transactions')}</h1>
-          <Button onClick={handleAddNewTransaction} className="w-full sm:w-auto">
+          <h1 className="font-headline text-4xl font-bold text-foreground">{t('transactions')}</h1>
+          <Button onClick={handleAddNewTransaction} className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow">
             <PlusCircle className="mr-2 h-5 w-5" />
             {t('addNewTransaction')}
           </Button>
         </div>
 
-        <Accordion type="single" collapsible className="w-full" defaultValue="">
-          <AccordionItem value="filters" className="border-b-0">
-            <Card className="shadow-lg">
-              <AccordionTrigger className="w-full px-6 py-4 hover:no-underline">
-                <div className="flex items-center text-xl font-semibold text-foreground">
-                  <ListFilter className="mr-3 h-6 w-6 text-primary" />
-                  {t('filterTransactionsTitle')}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <CardContent className="pt-2 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                    <div className="space-y-1">
-                      <Label htmlFor="startDate">{t('startDate')}</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button id="startDate" variant="outline" className="w-full justify-start text-left font-normal">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {filters.startDate ? format(filters.startDate, "PPP") : <span>{t('selectDate')}</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} />
-                        </PopoverContent>
-                      </Popover>
+        <Card className="shadow-xl border-border/60">
+          <Accordion type="single" collapsible className="w-full" defaultValue="filters">
+            <AccordionItem value="filters" className="border-b-0">
+                <AccordionTrigger className="w-full px-6 py-4 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/10 transition-colors rounded-t-lg">
+                  <div className="flex items-center text-xl font-semibold text-foreground">
+                    <ListFilter className="mr-3 h-6 w-6 text-primary" />
+                    {t('filterTransactionsTitle')}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="border-t border-border/60">
+                  <div className="p-6 space-y-6 bg-background rounded-b-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate" className="font-medium">{t('startDate')}</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button id="startDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
+                              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                              {filters.startDate ? format(filters.startDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate" className="font-medium">{t('endDate')}</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button id="endDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
+                              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                              {filters.endDate ? format(filters.endDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} disabled={(date) => filters.startDate ? date < filters.startDate : false}/>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
+                        <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)}>
+                          <SelectTrigger id="filterCategory" className="hover:border-primary transition-colors">
+                            <SelectValue placeholder={t('selectCategoryPlaceholder')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">{t('allCategories')}</SelectItem>
+                            {mockCategories.map(cat => (
+                              <SelectItem key={cat.id} value={cat.id}>{t(cat.nameKey as keyof ReturnType<typeof useTranslation>['translations'])}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="filterType" className="font-medium">{t('filterByType')}</Label>
+                        <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
+                          <SelectTrigger id="filterType" className="hover:border-primary transition-colors">
+                            <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">{t('allTypes')}</SelectItem>
+                            {transactionTypes.map(type => (
+                              <SelectItem key={type.id} value={type.id}>
+                                {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'])}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="endDate">{t('endDate')}</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button id="endDate" variant="outline" className="w-full justify-start text-left font-normal">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {filters.endDate ? format(filters.endDate, "PPP") : <span>{t('selectDate')}</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} disabled={(date) => filters.startDate ? date < filters.startDate : false}/>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="filterCategory">{t('filterByCategory')}</Label>
-                      <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)}>
-                        <SelectTrigger id="filterCategory">
-                          <SelectValue placeholder={t('selectCategoryPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">{t('allCategories')}</SelectItem>
-                          {mockCategories.map(cat => (
-                            <SelectItem key={cat.id} value={cat.id}>{t(cat.nameKey as keyof ReturnType<typeof useTranslation>['translations'])}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="filterType">{t('filterByType')}</Label>
-                      <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
-                        <SelectTrigger id="filterType">
-                          <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">{t('allTypes')}</SelectItem>
-                          {transactionTypes.map(type => (
-                            <SelectItem key={type.id} value={type.id}>
-                              {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'])}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex justify-end space-x-3 pt-4">
+                      <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes} className="shadow-sm hover:shadow-md transition-shadow">{t('clearFiltersButton')}</Button>
+                      <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes} className="shadow-sm hover:shadow-md transition-shadow">
+                        {(isLoadingTransactions || isLoadingTypes) && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
+                        {t('applyFiltersButton')}
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes}>{t('clearFiltersButton')}</Button>
-                    <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes}>
-                      {(isLoadingTransactions || isLoadingTypes) && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
-                      {t('applyFiltersButton')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
-        </Accordion>
+                </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </Card>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "all" | "recurring")} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-1/2 lg:w-1/3">
-            <TabsTrigger value="all" className="gap-2">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
+            <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
               <History className="h-5 w-5" />
               {t('allTransactionsTab')}
             </TabsTrigger>
-            <TabsTrigger value="recurring" className="gap-2">
+            <TabsTrigger value="recurring" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
               <RefreshCwIcon className="h-5 w-5" />
               {t('recurringTransactionsTab')}
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="all">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>{t('recentTransactionsTitle')}</CardTitle>
+
+          <TabsContent value="all" className="mt-6">
+            <Card className="shadow-xl border-border/60">
+              <CardHeader className="border-b border-border/60">
+                <CardTitle className="text-2xl font-semibold text-foreground">{t('recentTransactionsTitle')}</CardTitle>
+                <CardDescription>{t('viewAllYourTransactions')}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30 dark:bg-muted/10">
                       <TableRow>
-                        <TableHead className="hidden md:table-cell w-24">{t('time')}</TableHead>
-                        <TableHead>{t('description')}</TableHead>
-                        <TableHead>{t('transactionType')}</TableHead>
-                        <TableHead className="text-right">{t('amount')}</TableHead>
+                        <TableHead className="hidden md:table-cell w-28 px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('description')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('transactionType')}</TableHead>
+                        <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -347,20 +380,21 @@ export default function TransactionsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="recurring">
-             <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>{t('recurringTransactionsListTitle')}</CardTitle>
+          <TabsContent value="recurring" className="mt-6">
+             <Card className="shadow-xl border-border/60">
+              <CardHeader className="border-b border-border/60">
+                <CardTitle className="text-2xl font-semibold text-foreground">{t('recurringTransactionsListTitle')}</CardTitle>
+                <CardDescription>{t('viewYourRecurringTransactions')}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                    <Table>
-                     <TableHeader>
+                     <TableHeader className="bg-muted/30 dark:bg-muted/10">
                       <TableRow>
-                        <TableHead className="hidden md:table-cell w-24">{t('time')}</TableHead>
-                        <TableHead>{t('description')}</TableHead>
-                        <TableHead>{t('transactionType')}</TableHead>
-                        <TableHead className="text-right">{t('amount')}</TableHead>
+                        <TableHead className="hidden md:table-cell w-28 px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('description')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('transactionType')}</TableHead>
+                        <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -376,4 +410,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-

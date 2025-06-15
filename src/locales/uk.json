@@ -125,5 +125,8 @@
   "memberSinceLabel": "Учасник з",
   "notSet": "Не встановлено",
   "profileUpdateSuccessTitle": "Профіль оновлено",
-  "profileUpdateSuccessDesc": "Зміни у вашому профілі збережено (локально на даний момент)."
+  "profileUpdateSuccessDesc": "Зміни у вашому профілі збережено (локально на даний момент).",
+  "viewAllYourTransactions": "Переглядайте та керуйте всіма вашими записаними фінансовими операціями.",
+  "viewYourRecurringTransactions": "Відстежуйте та керуйте своїми повторюваними транзакціями.",
+  "tryAdjustingFilters": "Спробуйте змінити фільтри або додати нові транзакції."
 }

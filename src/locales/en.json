@@ -125,5 +125,8 @@
   "memberSinceLabel": "Member Since",
   "notSet": "Not Set",
   "profileUpdateSuccessTitle": "Profile Updated",
-  "profileUpdateSuccessDesc": "Your profile changes have been saved (locally for now)."
+  "profileUpdateSuccessDesc": "Your profile changes have been saved (locally for now).",
+  "viewAllYourTransactions": "View and manage all your recorded financial transactions.",
+  "viewYourRecurringTransactions": "Track and manage your repeating transactions.",
+  "tryAdjustingFilters": "Try adjusting your filters or add new transactions."
 }
