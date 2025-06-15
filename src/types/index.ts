@@ -4,6 +4,10 @@ export interface User {
   login: string;
   email: string;
   memberSince?: string;
+  userCurrency?: { // Added user's preferred currency
+    code: string;
+  };
+  // Roles removed as per requirement not to show them
 }
 
 // Updated Transaction interface to match the new API response
@@ -15,7 +19,7 @@ export interface Transaction {
       code: string;
     };
   };
-  currency: { // Top-level currency information
+  currency: { // Top-level currency information, might be redundant if amount.currency is always present
     code: string;
   };
   exchangeRate: number;
@@ -26,7 +30,6 @@ export interface Transaction {
     name: string;
   };
   subCategory: {
-    // Define if structure is known, otherwise keep as any or generic object
     id?: string | number;
     name?: string;
   } | null;
@@ -35,7 +38,7 @@ export interface Transaction {
   };
   source: string;
   date: string; // ISO 8601 date string
-  isRecurring?: boolean; // Keep for potential future use or client-side filtering logic
+  isRecurring?: boolean;
   typeName?: string; // To be populated client-side (e.g., "INCOME", "EXPENSE")
 }
 

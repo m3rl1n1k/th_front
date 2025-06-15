@@ -8,21 +8,21 @@ import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3 } from 'lucide-react';
+import { UserCircle, Mail, Edit3, Briefcase } from 'lucide-react'; // Added Briefcase for currency
 import { Button } from '@/components/ui/button';
 import { useGlobalLoader } from '@/context/global-loader-context';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns'; 
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
-
 interface UserProfileData {
-  name: string;
+  login: string; // Renamed from name to login to match User type
   email: string;
-  memberSince: string; 
-  profilePictureUrl?: string; 
+  memberSince: string;
+  profilePictureUrl?: string;
+  userCurrencyCode?: string; // Added for user's preferred currency
 }
 
 export default function ProfilePage() {
@@ -33,20 +33,33 @@ export default function ProfilePage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
   const { toast } = useToast();
 
+  // Form state for dialog
+  const [editLogin, setEditLogin] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editCurrencyCode, setEditCurrencyCode] = useState('');
+
+
   useEffect(() => {
-    if (isAuthenticated && user) { 
+    if (isAuthenticated && user) {
       setGlobalLoading(true);
       setIsLoading(true);
-      
-      setProfileData({
-        name: user.login, 
+
+      const newProfileData = {
+        login: user.login,
         email: user.email,
-        memberSince: user.memberSince || new Date().toISOString(), 
-        profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`
-      });
+        memberSince: user.memberSince || new Date().toISOString(),
+        profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`,
+        userCurrencyCode: user.userCurrency?.code || t('notSet'),
+      };
+      setProfileData(newProfileData);
+      setEditLogin(newProfileData.login);
+      setEditEmail(newProfileData.email);
+      setEditCurrencyCode(newProfileData.userCurrencyCode || '');
+
+
       setIsLoading(false);
       setGlobalLoading(false);
-    } else if (isAuthenticated && !user && token) { // Ensure token exists before fetching
+    } else if (isAuthenticated && !user && token) {
         setGlobalLoading(true);
         setIsLoading(true);
         fetchUser().finally(() => {
@@ -54,14 +67,14 @@ export default function ProfilePage() {
             setGlobalLoading(false);
         });
     } else if (!isAuthenticated) {
-      setIsLoading(false); // Not authenticated, not loading profile
+      setIsLoading(false);
       setGlobalLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, token, fetchUser, setGlobalLoading]);
+  }, [isAuthenticated, user, token, fetchUser, setGlobalLoading, t]);
 
 
-  if (isLoading || (!isAuthenticated && !token)) { // Show skeleton if loading or if not authenticated and no token (initial state)
+  if (isLoading || (!isAuthenticated && !token)) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -81,14 +94,18 @@ export default function ProfilePage() {
                 <UserCircle className="mr-3 h-5 w-5 text-muted-foreground" />
                 <Skeleton className="h-5 w-full" />
               </div>
+               <div className="flex items-center">
+                <Briefcase className="mr-3 h-5 w-5 text-muted-foreground" />
+                <Skeleton className="h-5 w-full" />
+              </div>
             </CardContent>
           </Card>
         </div>
       </MainLayout>
     );
   }
-  
-  if (!profileData && isAuthenticated) { // If authenticated but profileData is still null (e.g. fetch error)
+
+  if (!profileData && isAuthenticated) {
      return (
       <MainLayout>
         <div className="space-y-6">
@@ -101,9 +118,7 @@ export default function ProfilePage() {
       </MainLayout>
     );
   }
-  
-  // This case handles when user is null but token might be DUMMY_TOKEN (dev mode initial state)
-  // or if profileData is truly null after attempts to load.
+
   if (!profileData) {
     return (
        <MainLayout>
@@ -124,13 +139,28 @@ export default function ProfilePage() {
     )
   }
 
-
   const handleProfileUpdate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log("Profile update submitted");
-    toast({ title: "Profile Update", description: "Update functionality is not yet implemented." });
+    // Here you would typically make an API call to update the user's profile
+    // For now, we'll just log it and show a toast
+    const updatedData = {
+      login: editLogin,
+      email: editEmail,
+      userCurrencyCode: editCurrencyCode,
+    };
+    console.log("Profile update submitted:", updatedData);
+    // Update profileData state locally for immediate reflection (optimistic update)
+    setProfileData(prev => prev ? ({
+        ...prev,
+        login: updatedData.login,
+        email: updatedData.email,
+        userCurrencyCode: updatedData.userCurrencyCode || t('notSet')
+    }) : null);
+    
+    toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDesc') });
+    // Close dialog - DialogClose is used below
   };
-  
+
   let formattedMemberSince = "N/A";
   try {
     if (profileData.memberSince) {
@@ -140,38 +170,44 @@ export default function ProfilePage() {
     console.warn("Invalid date for memberSince:", profileData.memberSince);
   }
 
-
   return (
     <MainLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
         <h1 className="font-headline text-3xl font-bold text-foreground text-center">{t('userProfileTitle')}</h1>
-        
+
         <Card className="shadow-xl overflow-hidden">
           <div className="bg-gradient-to-br from-primary via-primary/80 to-accent h-32" />
           <CardHeader className="items-center text-center -mt-16">
             <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profileData.profilePictureUrl} alt={profileData.name} data-ai-hint="person portrait"/>
+              <AvatarImage src={profileData.profilePictureUrl} alt={profileData.login} data-ai-hint="person portrait"/>
               <AvatarFallback className="text-4xl">
-                {profileData.name.charAt(0).toUpperCase()}
+                {profileData.login.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <CardTitle className="font-headline text-2xl mt-4">{profileData.name}</CardTitle>
-            <CardDescription>{t('loggedInAs', { username: profileData.name })}</CardDescription>
+            <CardTitle className="font-headline text-2xl mt-4">{profileData.login}</CardTitle>
+            <CardDescription>{t('loggedInAs', { username: profileData.login })}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-4 pb-8 px-6">
             <div className="border-t border-border pt-6 space-y-4">
               <div className="flex items-center">
                 <Mail className="mr-4 h-6 w-6 text-primary" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="text-xs text-muted-foreground">{t('emailLabel')}</p>
                   <p className="text-md font-medium text-foreground">{profileData.email}</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <UserCircle className="mr-4 h-6 w-6 text-primary" />
                  <div>
-                  <p className="text-xs text-muted-foreground">Member Since</p>
+                  <p className="text-xs text-muted-foreground">{t('memberSinceLabel')}</p>
                   <p className="text-md font-medium text-foreground">{formattedMemberSince}</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <Briefcase className="mr-4 h-6 w-6 text-primary" />
+                 <div>
+                  <p className="text-xs text-muted-foreground">{t('preferredCurrencyLabel')}</p>
+                  <p className="text-md font-medium text-foreground">{profileData.userCurrencyCode || t('notSet')}</p>
                 </div>
               </div>
             </div>
@@ -192,32 +228,40 @@ export default function ProfilePage() {
                 <form onSubmit={handleProfileUpdate}>
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right">
-                        {t('nameLabel')}
+                      <Label htmlFor="login" className="text-right">
+                        {t('loginLabel')}
                       </Label>
-                      <Input id="name" defaultValue={profileData.name} className="col-span-3" />
+                      <Input id="login" value={editLogin} onChange={(e) => setEditLogin(e.target.value)} className="col-span-3" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="email" className="text-right">
                         {t('emailLabel')}
                       </Label>
-                      <Input id="email" type="email" defaultValue={profileData.email} className="col-span-3" />
+                      <Input id="email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="currencyCode" className="text-right">
+                        {t('currencyCodeLabel')}
+                      </Label>
+                      <Input id="currencyCode" value={editCurrencyCode} onChange={(e) => setEditCurrencyCode(e.target.value.toUpperCase())} className="col-span-3" placeholder="USD, EUR, PLN..." />
                     </div>
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
                        <Button type="button" variant="outline">{t('cancelButton')}</Button>
                     </DialogClose>
-                    <Button type="submit">{t('saveChangesButton')}</Button>
+                    {/* This button's type="submit" will trigger the form's onSubmit */}
+                    {/* Wrap with DialogClose to close dialog on successful submission from handleProfileUpdate */}
+                    <DialogClose asChild>
+                        <Button type="submit">{t('saveChangesButton')}</Button>
+                    </DialogClose>
                   </DialogFooter>
                 </form>
               </DialogContent>
             </Dialog>
-
           </CardContent>
         </Card>
       </div>
     </MainLayout>
   );
 }
-

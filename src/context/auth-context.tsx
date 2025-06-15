@@ -26,29 +26,30 @@ const DUMMY_USER: User = {
   id: '0',
   login: 'Dev User',
   email: 'dev@example.com',
-  memberSince: new Date().toISOString()
+  memberSince: new Date().toISOString(),
+  userCurrency: { code: 'USD' } // Added default currency for dummy user
 };
 const DUMMY_TOKEN = 'dev-mode-active-dummy-token';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useTranslation();
 
   const fetchUserCallback = useCallback(async (currentTokenValue: string) => {
+    setIsLoading(true); // Set loading true before this async operation
     if (currentTokenValue === DUMMY_TOKEN) {
       setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
       setIsLoading(false);
       return;
     }
-    // setIsLoading(true); // Set loading true before async operation - this is handled by callers or initial effect.
     try {
       const userData = await fetchUserProfile(currentTokenValue);
-      setUser(userData);
+      setUser(userData); // userData should include userCurrency
       setToken(currentTokenValue);
       toast({ title: t('tokenValidationSuccess') });
     } catch (error) {
@@ -58,15 +59,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: t('profileFetchErrorTitle'),
         description: `${t('profileFetchErrorDesc')} ${(error as ApiError).message || ''}`
       });
-      setUser(null);
-      setToken(currentTokenValue); // Keep token so user can see it in set-token page if redirect happens
+      setUser(null); // Clear user on error
+      setToken(currentTokenValue); 
     } finally {
       setIsLoading(false);
     }
   }, [t, toast]);
 
   useEffect(() => {
-    setIsLoading(true); // Ensure loading is true at the start of this effect
+    setIsLoading(true); 
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
     if (storedToken) {
       fetchUserCallback(storedToken);
@@ -76,14 +77,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(DUMMY_TOKEN);
         if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
       }
-      setIsLoading(false); // Set loading false if no token and not fetching
+      setIsLoading(false); 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array: runs only once on mount.
+  }, []); // Empty dependency array to run once on mount
 
   const login = useCallback(async (email: string) => {
     setIsLoading(true);
-    // Simulate API call for login for dev mode
     await new Promise(resolve => setTimeout(resolve, 500));
     setUser(DUMMY_USER);
     setToken(DUMMY_TOKEN);
@@ -95,14 +95,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     setIsLoading(true);
-    setUser(null); // More realistic logout
+    setUser(null);
     setToken(null);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(TOKEN_STORAGE_KEY); // Clear the token
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
     }
-    // Re-enable dummy token for next page load if not login/set-token for dev convenience
-    // This part is tricky; for now, let's just clear and redirect.
-    // The useEffect on mount will handle setting dummy token if appropriate.
     toast({ title: t('logoutSuccessTitle'), description: "You have been logged out." });
     setIsLoading(false);
     router.push('/login');
@@ -121,18 +118,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     } else {
       await fetchUserCallback(trimmedNewToken);
-      // fetchUserCallback handles setIsLoading(false)
     }
   }, [fetchUserCallback, toast, t]);
 
   const fetchUser = useCallback(async () => {
-    setIsLoading(true);
+    // setIsLoading(true); // This might be redundant if fetchUserCallback handles it
     const currentTokenValue = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
     if (currentTokenValue) {
       await fetchUserCallback(currentTokenValue);
-      // fetchUserCallback handles setIsLoading(false)
     } else {
-      // If no token, potentially set to dummy state or just ensure loading is false
       if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/set-token') {
           setUser(DUMMY_USER);
           setToken(DUMMY_TOKEN);
@@ -140,11 +134,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setToken(null);
       }
-      setIsLoading(false);
+      setIsLoading(false); // Ensure loading is false if no token to fetch with
     }
   }, [fetchUserCallback]);
 
-  const isAuthenticated = !!user && !!token; // Simpler check: if user and token exist
+  const isAuthenticated = !!user && !!token;
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, setTokenManually, fetchUser }}>
@@ -160,4 +154,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

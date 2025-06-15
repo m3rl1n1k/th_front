@@ -56,10 +56,14 @@ Logs in a user. The backend should associate the provided email with a username 
     ```json
     {
       "user": {
-        "id": 1, // User's unique ID
-        "login": "user_login_name", // Username to display
-        "email": "user@example.com"
-        // ... other user details if needed
+        "id": 1,
+        "login": "user_login_name",
+        "email": "user@example.com",
+        "userCurrency": {
+           "code": "USD"
+        },
+        "memberSince": "2023-01-15T10:00:00Z"
+        // roles are internal and not sent to client
       },
       "token": "your_jwt_token_here"
     }
@@ -84,8 +88,11 @@ Retrieves the profile information for the currently authenticated user.
       "id": 1,
       "login": "user_login_name",
       "email": "user@example.com",
-      "memberSince": "2023-01-15T10:00:00Z" // ISO 8601 date string
-      // ... other profile details
+      "memberSince": "2023-01-15T10:00:00Z", // ISO 8601 date string
+      "userCurrency": {
+        "code": "USD" // User's preferred currency code
+      }
+      // roles are internal and not sent to client
     }
     ```
 *   **Failure Response (401 Unauthorized)**
@@ -96,8 +103,9 @@ Updates the profile information for the currently authenticated user.
 *   **Request Body**:
     ```json
     {
-      "login": "new_user_login_name", // Example field
-      "email": "new_email@example.com" // Example field
+      "login": "new_user_login_name",
+      "email": "new_email@example.com",
+      "userCurrencyCode": "EUR" // Send only the currency code string
       // ... other updatable fields
     }
     ```
@@ -133,7 +141,6 @@ Retrieves available transaction types.
         "1": "INCOME",
         "2": "EXPENSE",
         "3": "TRANSFER"
-        // Add more types as needed. The key is the ID, value is the display name.
       }
     }
     ```
@@ -151,56 +158,59 @@ Creates a new transaction.
       "typeId": "2",           // ID of the transaction type (e.g., "2" for EXPENSE)
       "date": "2024-07-28",    // Date in YYYY-MM-DD format
       "isRecurring": false     // Boolean
-      // ... any other relevant fields like wallet_id, category_id, etc.
+      // ... any other relevant fields like wallet_id, category_id, currency_code for the transaction if different from user's default
     }
     ```
 *   **Success Response (201 Created)**: Returns the created transaction object.
     ```json
     {
-      "id": 123, // ID of the newly created transaction
-      "amount": 5000,
+      "id": 123,
+      "amount": { "amount": 5000, "currency": { "code": "USD" } }, // Updated structure
+      "currency": { "code": "USD" },
+      "exchangeRate": 1,
+      "type": 2, // Numeric type
       "description": "Groceries for the week",
-      "typeId": "2",
-      "typeName": "EXPENSE", // Optionally include type name
-      "date": "2024-07-28",
-      "isRecurring": false,
-      "createdAt": "2024-07-28T14:30:00Z" // ISO 8601
-      // ...
+      "wallet": { "id": 1, "name": "Main" },
+      "subCategory": null,
+      "user": { "id": 1 },
+      "source": "manual",
+      "date": "2024-07-28T14:30:00Z", // ISO 8601
+      "isRecurring": false
     }
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 #### `GET /transactions`
-Retrieves a list of transactions for the authenticated user. Implement pagination and filtering as needed.
+Retrieves a list of transactions for the authenticated user. The response should be `{"transactions": [...]}`.
 
 *   **Query Parameters (Examples)**:
     *   `page=1`
     *   `limit=20`
-    *   `typeId=1`
+    *   `typeId=1` (numeric)
     *   `startDate=2024-01-01`
     *   `endDate=2024-01-31`
 *   **Success Response (200 OK)**:
     ```json
     {
-      "data": [
+      "transactions": [ // Key is "transactions"
         {
           "id": 123,
-          "amount": 5000,
+          "amount": { "amount": 5000, "currency": { "code": "USD" } },
+          "currency": { "code": "USD" },
+          "exchangeRate": 1,
+          "type": 2, // Numeric type
           "description": "Groceries",
-          "typeId": "2",
-          "typeName": "EXPENSE",
-          "date": "2024-07-28",
-          "isRecurring": false,
-          "createdAt": "2024-07-28T14:30:00Z"
-        },
+          "wallet": { "id": 1, "name": "Main" },
+          "subCategory": null,
+          "user": { "id": 1 },
+          "source": "store_x",
+          "date": "2024-07-28T14:30:00Z",
+          "isRecurring": false
+        }
         // ... more transactions
-      ],
-      "meta": { // Pagination info
-        "currentPage": 1,
-        "totalPages": 5,
-        "perPage": 20,
-        "totalItems": 95
-      }
+      ]
+      // Meta/pagination info can be added here if needed, e.g., outside the "transactions" array
+      // "meta": { "currentPage": 1, "totalPages": 5, ... }
     }
     ```
 *   **Failure Response (401 Unauthorized)**
@@ -208,7 +218,7 @@ Retrieves a list of transactions for the authenticated user. Implement paginatio
 #### `GET /transactions/{id}`
 Retrieves a specific transaction by its ID.
 
-*   **Success Response (200 OK)**: Transaction object (same format as in the list).
+*   **Success Response (200 OK)**: Single transaction object (same format as in the list).
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `PUT /transactions/{id}`
@@ -233,25 +243,38 @@ Consider these when designing your database and PHP classes/objects.
 *   `login` (string, unique, used for display)
 *   `email` (string, unique)
 *   `password_hash` (string, if implementing direct password auth instead of email-only link)
+*   `user_currency_code` (string, e.g., "USD", "EUR")
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
+*   `roles` (array/json, e.g., `["ROLE_USER"]`, for internal use)
 
 ### Transaction
 *   `id` (int, primary key)
 *   `user_id` (int, foreign key to User)
-*   `amount` (int, cents)
-*   `description` (string)
-*   `type_id` (int, foreign key to TransactionType or string if IDs are like "1", "2")
-*   `transaction_date` (date)
+*   `amount_cents` (int)
+*   `currency_code` (string, e.g., "USD", related to this specific transaction)
+*   `exchange_rate` (decimal/float, if supporting multi-currency conversions)
+*   `description` (string, nullable)
+*   `type` (int, e.g., 1 for INCOME, 2 for EXPENSE)
+*   `wallet_id` (int, foreign key to Wallet)
+*   `subcategory_id` (int, nullable, foreign key to SubCategory)
+*   `source` (string, nullable)
+*   `transaction_date` (datetime)
 *   `is_recurring` (boolean)
-*   `wallet_id` (int, optional, foreign key to Wallet if implementing wallets)
-*   `category_id` (int, optional, foreign key to Category if implementing categories)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
-### TransactionType
-*   `id` (int or string, primary key, e.g., "1", "2")
+### TransactionType (Conceptual, might be an ENUM or simple mapping in code)
+*   `id` (int, e.g., 1, 2)
 *   `name` (string, e.g., "INCOME", "EXPENSE")
+
+### Wallet
+*   `id` (int, primary key)
+*   `user_id` (int, foreign key to User)
+*   `name` (string)
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+
 
 ## Further Considerations
 
@@ -276,4 +299,3 @@ Consider these when designing your database and PHP classes/objects.
     ```
 
 This documentation provides a starting point. Adapt and expand it based on the full feature set of FinanceFlow.
-```
