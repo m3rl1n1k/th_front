@@ -38,9 +38,9 @@ export interface Transaction {
   date: string; 
   isRecurring?: boolean;
   typeName?: string; 
-  walletId?: string; // For form
-  categoryId?: string; // For form
-  frequencyId?: string; // For form, if recurring
+  walletId?: string; 
+  categoryId?: string; 
+  frequencyId?: string; 
 }
 
 export interface TransactionType {
@@ -59,10 +59,16 @@ export interface Frequency {
   name: string;
 }
 
+// This type is for the form select, getWalletsList API returns WalletDetails
 export interface Wallet {
-  id: string | number;
+  id: string | number; // Make id string to match form value type
   name: string;
-  // For form selection primarily
+  amount: { // Add amount and currency for display in select
+    amount: number;
+    currency: {
+      code: string;
+    };
+  };
 }
 
 export interface WalletDetails {
@@ -75,14 +81,14 @@ export interface WalletDetails {
     };
   };
   number: string;
-  currency: { // Top-level currency for the wallet itself
+  currency: { 
     code: string;
   };
-  type: string; // e.g., "main", "deposit" - key for walletTypes
+  type: string; 
   user: {
     id: number;
   };
-  typeName?: string; // To be populated client-side using WalletTypeMap
+  typeName?: string; 
 }
 
 export interface Category {
@@ -90,14 +96,12 @@ export interface Category {
   name: string;
 }
 
-// Raw structure from API: { "main": "MAIN", ... }
 export type WalletTypeApiResponse = Record<string, string>;
 
-// Processed structure for easier use: { id: "main", name: "MAIN" }
 export interface WalletType {
   id: string;
   name: string;
 }
 
-// Map for quick lookup: { "main": "MAIN_translated_or_raw", ... }
 export type WalletTypeMap = Record<string, string>;
+

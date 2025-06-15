@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { 
@@ -28,23 +27,24 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransactionType as AppTransactionType, Frequency, Wallet, Category } from '@/types';
+import type { TransactionType as AppTransactionType, Frequency, WalletDetails, Category } from '@/types';
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
 import { useGlobalLoader } from '@/context/global-loader-context';
+import { CurrencyDisplay } from '@/components/common/currency-display';
 
 export default function NewTransactionPage() {
-  const { token, isAuthenticated, user } = useAuth(); // Added user here
+  const { token, isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
   
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [frequencies, setFrequencies] = useState<Frequency[]>([]);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [wallets, setWallets] = useState<WalletDetails[]>([]); // Use WalletDetails for richer info
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(false); // Only load if recurring
+  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
   const [isLoadingWallets, setIsLoadingWallets] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   
@@ -55,34 +55,30 @@ export default function NewTransactionPage() {
     description: z.string().max(255, { message: t('descriptionTooLongError')}).optional().nullable(),
     typeId: z.string().min(1, { message: t('typeRequired') }),
     date: z.date({ required_error: t('dateRequired') }),
-    isRecurring: z.boolean(),
     walletId: z.string().min(1, { message: t('walletRequiredError') }),
     categoryId: z.string().min(1, { message: t('categoryRequiredError') }),
-    frequencyId: z.string().optional(), // Optional, only relevant if isRecurring
+    frequencyId: z.string().min(1, { message: t('frequencyRequiredError')}),
   });
 
   type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, register, watch } = useForm<NewTransactionFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting }, register } = useForm<NewTransactionFormData>({
     resolver: zodResolver(NewTransactionSchema),
     defaultValues: {
       amount: undefined,
       description: '',
       typeId: '', 
       date: new Date(),
-      isRecurring: false,
       walletId: '',
       categoryId: '',
-      frequencyId: '',
+      frequencyId: '', // Default to empty, user must select
     },
   });
 
-  const isRecurringWatched = watch('isRecurring');
-
   useEffect(() => {
-    const overallLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || (isRecurringWatched && isLoadingFrequencies);
+    const overallLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || isLoadingFrequencies;
     setGlobalLoading(overallLoading);
-  }, [isLoadingTypes, isLoadingWallets, isLoadingCategories, isLoadingFrequencies, isRecurringWatched, setGlobalLoading]);
+  }, [isLoadingTypes, isLoadingWallets, isLoadingCategories, isLoadingFrequencies, setGlobalLoading]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -90,7 +86,8 @@ export default function NewTransactionPage() {
       getTransactionTypes(token)
         .then(data => {
           const formattedTypes = Object.entries(data.types)
-            .map(([id, name]) => ({ id, name: name as string }));
+            .map(([id, name]) => ({ id, name: name as string }))
+            .filter(type => type.name.toUpperCase() !== 'TRANSFER'); // Filter out TRANSFER type
           setTransactionTypes(formattedTypes);
         })
         .catch(error => {
@@ -100,10 +97,9 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingTypes(false));
 
       setIsLoadingWallets(true);
-      getWalletsList(token)
+      getWalletsList(token) // This should return WalletDetails[]
         .then(data => {
-           const formattedWallets = data.wallets.map(w => ({ id: String(w.id), name: w.name}));
-           setWallets(formattedWallets);
+           setWallets(data.wallets || []); // Assuming API returns {wallets: WalletDetails[]}
         })
         .catch(error => {
           console.error("Failed to fetch wallets", error);
@@ -112,7 +108,7 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingWallets(false));
       
       setIsLoadingCategories(true);
-      getTransactionCategories(token) // This uses mock data for now
+      getTransactionCategories(token) 
         .then(data => {
           const formattedCategories = Object.entries(data.categories)
             .map(([id, name]) => ({ id, name: name as string }));
@@ -123,12 +119,7 @@ export default function NewTransactionPage() {
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingCategories(false));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, t, toast]);
-
-  useEffect(() => {
-    if (isRecurringWatched && isAuthenticated && token) {
+      
       setIsLoadingFrequencies(true);
       getTransactionFrequencies(token)
         .then(data => {
@@ -141,12 +132,9 @@ export default function NewTransactionPage() {
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingFrequencies(false));
-    } else {
-      setFrequencies([]); // Clear frequencies if not recurring
-      setIsLoadingFrequencies(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRecurringWatched, token, isAuthenticated, t, toast]);
+  }, [token, isAuthenticated, t, toast]);
 
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
@@ -155,18 +143,23 @@ export default function NewTransactionPage() {
       return;
     }
     setGlobalLoading(true);
+
+    const selectedFrequency = frequencies.find(f => f.id === data.frequencyId);
+    // Assuming "ONE_TIME" or similar is the name for non-recurring. Adjust if API name is different.
+    // The API_DOCUMENTATION.md for /transactions/frequency is { periods: { "1": "ONE_TIME", ...} }
+    // So we might need to check against the "name" field of the frequency object.
+    const isRecurring = selectedFrequency ? selectedFrequency.name.toUpperCase() !== 'ONE_TIME' : false;
+
+
     try {
-      // API expects amount in cents
-      // API expects typeId as a string e.g. "2" for EXPENSE
       const payload = {
         amount: Math.round(data.amount * 100), 
         description: data.description || null,
         typeId: data.typeId, 
         date: format(data.date, 'yyyy-MM-dd'),
-        isRecurring: data.isRecurring,
-        wallet_id: parseInt(data.walletId), // API_DOCUMENTATION expects wallet_id, potentially numeric
-        category_id: parseInt(data.categoryId), // API_DOCUMENTATION expects category_id, potentially numeric
-        // frequencyId is not sent as per API spec, only isRecurring affects backend logic
+        isRecurring: isRecurring, 
+        wallet_id: parseInt(data.walletId), 
+        category_id: parseInt(data.categoryId),
       };
       await createTransaction(payload, token);
       toast({
@@ -182,12 +175,11 @@ export default function NewTransactionPage() {
         description: error.message || t('unexpectedError'),
       });
     } finally {
-      // Global loader is turned off by navigation events or the effect watching local loaders
-      // setGlobalLoading(false); // This line might be redundant if navigation events handle it
+      // Global loader is turned off by navigation events
     }
   };
   
-  const anyDataLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || (isRecurringWatched && isLoadingFrequencies);
+  const anyDataLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || isLoadingFrequencies;
 
   return (
     <MainLayout>
@@ -268,7 +260,7 @@ export default function NewTransactionPage() {
                         <SelectContent>
                           {wallets.map(wallet => (
                             <SelectItem key={wallet.id} value={String(wallet.id)}>
-                              {wallet.name}
+                              {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.amount.currency.code} />)
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -295,7 +287,7 @@ export default function NewTransactionPage() {
                         <SelectContent>
                           {categories.map(cat => (
                             <SelectItem key={cat.id} value={cat.id}>
-                              {cat.name}
+                               {t(`categoryName_${cat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: cat.name })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -351,56 +343,32 @@ export default function NewTransactionPage() {
                   {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
                 </div>
 
-                <div className="space-y-4">
-                    <div className="flex items-center space-x-2 pt-2">
-                       <Controller
-                        name="isRecurring"
+                <div className="space-y-2">
+                    <Label htmlFor="frequencyId">{t('frequency')}</Label>
+                    <Controller
+                        name="frequencyId"
                         control={control}
                         render={({ field }) => (
-                           <Checkbox
-                            id="isRecurring"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            className="h-5 w-5"
-                          />
+                        <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            disabled={isLoadingFrequencies || frequencies.length === 0}
+                        >
+                            <SelectTrigger id="frequencyId" className={errors.frequencyId ? 'border-destructive' : ''}>
+                            <Repeat className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder={isLoadingFrequencies ? t('loading') : t('selectFrequencyPlaceholder')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                            {frequencies.map(freq => (
+                                <SelectItem key={freq.id} value={freq.id}>
+                                 {t(`frequencyName_${freq.name.toLowerCase().replace(/\s+/g, '_')}` as keyof ReturnType<typeof useTranslation>['translations'], {defaultValue: freq.name})}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
                         )}
-                      />
-                      <Label htmlFor="isRecurring" className="cursor-pointer font-medium text-sm">
-                        {t('recurringTransaction')}
-                      </Label>
-                    </div>
-                    {errors.isRecurring && <p className="text-sm text-destructive">{errors.isRecurring.message}</p>}
-
-                    {isRecurringWatched && (
-                        <div className="space-y-2 pl-2">
-                            <Label htmlFor="frequencyId">{t('frequency')}</Label>
-                            <Controller
-                                name="frequencyId"
-                                control={control}
-                                rules={{ required: isRecurringWatched ? t('frequencyRequiredError') : false }}
-                                render={({ field }) => (
-                                <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    disabled={isLoadingFrequencies || frequencies.length === 0}
-                                >
-                                    <SelectTrigger id="frequencyId" className={errors.frequencyId ? 'border-destructive' : ''}>
-                                    <Repeat className="mr-2 h-4 w-4 text-muted-foreground" />
-                                    <SelectValue placeholder={isLoadingFrequencies ? t('loading') : t('selectFrequencyPlaceholder')} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                    {frequencies.map(freq => (
-                                        <SelectItem key={freq.id} value={freq.id}>
-                                        {freq.name} 
-                                        </SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                                )}
-                            />
-                            {errors.frequencyId && <p className="text-sm text-destructive">{errors.frequencyId.message}</p>}
-                        </div>
-                    )}
+                    />
+                    {errors.frequencyId && <p className="text-sm text-destructive">{errors.frequencyId.message}</p>}
                 </div>
               </div>
               
