@@ -21,7 +21,7 @@ export const URLS = {
   transactionById: (id: string | number) => `${API_BASE_URL}/transactions/${id}`,
   transactionTypes: `${API_BASE_URL}/transactions/types`,
   transactionFrequencies: `${API_BASE_URL}/transactions/frequency`,
-  transactionCategories: `${API_BASE_URL}/transactions/categories`, // For form dropdowns
+  transactionCategoriesFlat: `${API_BASE_URL}/transactions/categories`, // For form dropdowns if different from main/sub
 
 
   // User Profile
@@ -31,6 +31,8 @@ export const URLS = {
   wallets: `${API_BASE_URL}/wallets`,
   walletTypes: `${API_BASE_URL}/wallets/types`,
 
-  // Categories Page
-  mainCategories: `${API_BASE_URL}/main/categories`, // For hierarchical display
+  // Categories Page & Management
+  mainCategories: `${API_BASE_URL}/main/categories`, // GET main categories (hierarchical)
+  createMainCategory: `${API_BASE_URL}/main/categories`, // POST new main category
+  createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`, // POST new subcategory
 };

@@ -17,11 +17,11 @@ export interface Transaction {
       code: string;
     };
   };
-  currency: { // This seems redundant if amount.currency exists, but API provides it
+  currency: {
     code: string;
   };
   exchangeRate: number;
-  type: number; // Numeric type from API (e.g., 1 for INCOME, 2 for EXPENSE)
+  type: number; 
   description: string | null;
   wallet: {
     id: string | number;
@@ -34,23 +34,21 @@ export interface Transaction {
   user: {
     id: string | number;
   };
-  source: string | null; // Can be used as fallback for details or category-like info
-  date: string; // ISO 8601 date string
+  source: string | null;
+  date: string; 
   isRecurring?: boolean;
 
-  // Fields added client-side for display
-  typeName?: string; // e.g., "INCOME", "EXPENSE"
-  categoryName?: string | null; // Derived name of the category
+  typeName?: string; 
+  categoryName?: string | null; 
 
-  // Fields for form binding, might not be directly on API GET response
   walletId?: string;
   categoryId?: string;
   frequencyId?: string;
 }
 
 export interface TransactionType {
-  id: string; // "1", "2"
-  name: string; // "INCOME", "EXPENSE"
+  id: string; 
+  name: string; 
 }
 
 export interface ApiError {
@@ -64,10 +62,10 @@ export interface Frequency {
   name: string;
 }
 
-export interface Wallet {
+export interface Wallet { // Used in New Transaction form state
   id: string | number;
   name: string;
-  amount: {
+  amount: { // Added for displaying balance in select
     amount: number;
     currency: {
       code: string;
@@ -75,7 +73,7 @@ export interface Wallet {
   };
 }
 
-export interface WalletDetails { // For /wallets page list
+export interface WalletDetails { 
   id: number;
   name: string;
   amount: {
@@ -92,33 +90,46 @@ export interface WalletDetails { // For /wallets page list
   user: {
     id: number;
   };
-  typeName?: string; // Client-side processed type name
+  typeName?: string; 
 }
 
-// This represents the structure of categories used in the form dropdown
-export interface FormCategory {
+export interface FormCategory { // Used for general category structure in forms/lists if needed
   id: string;
   name: string;
+  icon?: string | null;
+  color?: string | null;
 }
 
-export type WalletTypeApiResponse = Record<string, string>; // e.g. { "main": "MAIN", "deposit": "DEPOSIT" }
+export type WalletTypeApiResponse = Record<string, string>; 
 
 export type WalletTypeMap = Record<string, string>;
 
-
-// For the new Categories page
 export interface SubCategory {
   id: string | number;
   name: string;
-  icon: string | null; // Icon name or identifier
-  color: string | null; // Hex color string or Tailwind class
-  mainCategoryId?: string | number; // Optional, if needed for context
+  icon: string | null; 
+  color: string | null; 
+  mainCategoryId?: string | number; 
 }
 
 export interface MainCategory {
   id: string | number;
   name: string;
-  icon: string | null; // Icon name or identifier
-  color: string | null; // Hex color string or Tailwind class
+  icon: string | null; 
+  color: string | null; 
   subCategories: SubCategory[];
+}
+
+// For category creation forms
+export interface CreateMainCategoryPayload {
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+}
+
+export interface CreateSubCategoryPayload {
+  name: string;
+  icon?: string | null;
+  color?: string | null;
+  mainCategoryId: string; // For API, ensure this is sent
 }

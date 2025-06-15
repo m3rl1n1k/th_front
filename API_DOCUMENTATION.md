@@ -63,7 +63,6 @@ Logs in a user. The backend should associate the provided email with a username 
            "code": "USD"
         },
         "memberSince": "2023-01-15T10:00:00Z"
-        // roles are internal and not sent to client
       },
       "token": "your_jwt_token_here"
     }
@@ -88,11 +87,10 @@ Retrieves the profile information for the currently authenticated user.
       "id": 1,
       "login": "user_login_name",
       "email": "user@example.com",
-      "memberSince": "2023-01-15T10:00:00Z", // ISO 8601 date string
+      "memberSince": "2023-01-15T10:00:00Z",
       "userCurrency": {
-        "code": "USD" // User's preferred currency code
+        "code": "USD" 
       }
-      // roles are internal and not sent to client
     }
     ```
 *   **Failure Response (401 Unauthorized)**
@@ -105,8 +103,7 @@ Updates the profile information for the currently authenticated user.
     {
       "login": "new_user_login_name",
       "email": "new_email@example.com",
-      "userCurrencyCode": "EUR" // Send only the currency code string
-      // ... other updatable fields
+      "userCurrencyCode": "EUR" 
     }
     ```
 *   **Success Response (200 OK)**: Returns the updated user profile (same format as `GET /users/me`).
@@ -115,23 +112,33 @@ Updates the profile information for the currently authenticated user.
 ### 3. Dashboard
 
 #### `GET /dashboard/summary`
-Retrieves summary financial data for the dashboard.
+Retrieves summary financial data for the dashboard. *(Deprecated in favor of individual calls)*
 
 *   **Request Body**: None (token in header)
 *   **Success Response (200 OK)**:
     ```json
     {
-      "total_balance": 64234,   // Integer, in cents (e.g., $642.34)
-      "month_income": 457357,  // Integer, in cents (e.g., $4573.57 for the current month)
-      "month_expense": 363637  // Integer, in cents (e.g., $3636.37 for the current month)
+      "total_balance": 64234,
+      "month_income": 457357,
+      "month_expense": 363637
     }
     ```
 *   **Failure Response (401 Unauthorized)**
 
+#### `GET /dashboard/total-balance`
+*   **Success Response (200 OK)**: `{"total_balance": 64234}`
+
+#### `GET /dashboard/monthly-income`
+*   **Success Response (200 OK)**: `{"month_income": 457357}`
+
+#### `GET /dashboard/average-expenses` (Backend might send month_expense)
+*   **Success Response (200 OK)**: `{"month_expense": 363637}`
+
+
 ### 4. Transactions
 
 #### `GET /transactions/types`
-Retrieves available transaction types.
+Retrieves available transaction types for forms (e.g., Income, Expense).
 
 *   **Request Body**: None (token in header)
 *   **Success Response (200 OK)**:
@@ -139,12 +146,45 @@ Retrieves available transaction types.
     {
       "types": {
         "1": "INCOME",
-        "2": "EXPENSE",
-        "3": "TRANSFER"
+        "2": "EXPENSE"
       }
     }
     ```
-    *Note: The frontend will filter this to show only INCOME and EXPENSE for the creation form.*
+    *Note: Frontend might filter this further if more types are added backend-side for internal use.*
+*   **Failure Response (401 Unauthorized)**
+
+#### `GET /transactions/frequency`
+Retrieves available transaction recurrence frequencies for forms.
+*   **Request Body**: None (token in header)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "periods": {
+        "1": "ONE_TIME",
+        "2": "DAILY",
+        "3": "WEEKLY",
+        "4": "EVERY_TWO_WEEKS",
+        "5": "MONTHLY",
+        "6": "EVERY_6_MONTHS",
+        "7": "YEARLY"
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+#### `GET /transactions/categories`
+Retrieves a flat list of available transaction categories (subcategories) for form dropdowns.
+*   **Request Body**: None (token in header)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "categories": {
+        "101": "Groceries",
+        "102": "Salary",
+        "205": "Dining Out"
+      }
+    }
+    ```
 *   **Failure Response (401 Unauthorized)**
 
 #### `POST /transactions`
@@ -153,28 +193,29 @@ Creates a new transaction.
 *   **Request Body**:
     ```json
     {
-      "amount": 5000,          // Integer, in cents (e.g., $50.00)
+      "amount": 5000,
       "description": "Groceries for the week",
-      "typeId": "2",           // ID of the transaction type (e.g., "2" for EXPENSE)
-      "date": "2024-07-28",    // Date in YYYY-MM-DD format
-      "isRecurring": false     // Boolean
-      // ... any other relevant fields like wallet_id, category_id, currency_code for the transaction if different from user's default
+      "typeId": "2", 
+      "date": "2024-07-28",
+      "isRecurring": false,
+      "wallet_id": 1, // Integer ID
+      "category_id": 101 // Integer ID (refers to a subCategory ID)
     }
     ```
 *   **Success Response (201 Created)**: Returns the created transaction object.
     ```json
     {
       "id": 123,
-      "amount": { "amount": 5000, "currency": { "code": "USD" } }, // Updated structure
+      "amount": { "amount": 5000, "currency": { "code": "USD" } },
       "currency": { "code": "USD" },
       "exchangeRate": 1,
-      "type": 2, // Numeric type
+      "type": 2, 
       "description": "Groceries for the week",
       "wallet": { "id": 1, "name": "Main" },
-      "subCategory": null,
+      "subCategory": { "id": 101, "name": "Groceries"}, // subCategory object
       "user": { "id": 1 },
-      "source": "manual",
-      "date": "2024-07-28T14:30:00Z", // ISO 8601
+      "source": "manual", // or other source if applicable
+      "date": "2024-07-28T14:30:00Z",
       "isRecurring": false
     }
     ```
@@ -189,28 +230,26 @@ Retrieves a list of transactions for the authenticated user. The response should
     *   `typeId=1` (numeric)
     *   `startDate=2024-01-01`
     *   `endDate=2024-01-31`
+    *   `categoryId=101` (numeric, subCategory ID)
 *   **Success Response (200 OK)**:
     ```json
     {
-      "transactions": [ // Key is "transactions"
+      "transactions": [
         {
           "id": 123,
           "amount": { "amount": 5000, "currency": { "code": "USD" } },
           "currency": { "code": "USD" },
           "exchangeRate": 1,
-          "type": 2, // Numeric type
+          "type": 2, 
           "description": "Groceries",
           "wallet": { "id": 1, "name": "Main" },
-          "subCategory": null,
+          "subCategory": { "id": 101, "name": "Groceries"},
           "user": { "id": 1 },
           "source": "store_x",
           "date": "2024-07-28T14:30:00Z",
           "isRecurring": false
         }
-        // ... more transactions
       ]
-      // Meta/pagination info can be added here if needed, e.g., outside the "transactions" array
-      // "meta": { "currentPage": 1, "totalPages": 5, ... }
     }
     ```
 *   **Failure Response (401 Unauthorized)**
@@ -218,7 +257,7 @@ Retrieves a list of transactions for the authenticated user. The response should
 #### `GET /transactions/{id}`
 Retrieves a specific transaction by its ID.
 
-*   **Success Response (200 OK)**: Single transaction object (same format as in the list).
+*   **Success Response (200 OK)**: Single transaction object.
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `PUT /transactions/{id}`
@@ -234,6 +273,123 @@ Deletes a specific transaction.
 *   **Success Response (204 No Content)**
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
+
+### 5. Wallets
+
+#### `GET /wallets`
+Retrieves a list of wallets for the authenticated user.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "wallets": [
+        {
+          "id": 1,
+          "name": "Main Wallet",
+          "amount": { "amount": 150050, "currency": { "code": "USD" } },
+          "number": "ACCT123456",
+          "currency": { "code": "USD" },
+          "type": "main", // key for wallet type, e.g. "main", "deposit"
+          "user": { "id": 1 }
+        }
+      ]
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+#### `GET /wallets/types`
+Retrieves available wallet types mapping.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "types": {
+        "main": "MAIN",
+        "deposit": "DEPOSIT",
+        "archive": "ARCHIVE",
+        "block": "BLOCK",
+        "cash": "CASH",
+        "credit": "CREDIT"
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+### 6. Categories (Hierarchical)
+
+#### `GET /main/categories`
+Retrieves main categories along with their subcategories.
+*   **Success Response (200 OK)**:
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "Food & Dining",
+        "icon": "Utensils",
+        "color": "#FFD700",
+        "subCategories": [
+          { "id": 101, "name": "Groceries", "icon": "ShoppingCart", "color": "#FFA500" },
+          { "id": 102, "name": "Restaurants", "icon": "Plate", "color": "#FF8C00" }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Income",
+        "icon": "CircleDollarSign",
+        "color": "#32CD32",
+        "subCategories": [
+          { "id": 201, "name": "Salary", "icon": "Briefcase", "color": "#2E8B57" },
+          { "id": 202, "name": "Freelance", "icon": "Laptop", "color": "#90EE90" }
+        ]
+      }
+    ]
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+#### `POST /main/categories`
+Creates a new main category.
+*   **Request Body**:
+    ```json
+    {
+      "name": "New Main Category Name",
+      "icon": "LucideIconName", // Optional
+      "color": "#RRGGBB" // Optional, hex color code
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created `MainCategory` object (without subCategories initially).
+    ```json
+    {
+      "id": 3,
+      "name": "New Main Category Name",
+      "icon": "LucideIconName",
+      "color": "#RRGGBB",
+      "subCategories": []
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `POST /main/categories/{mainCategoryId}/subcategories`
+Creates a new subcategory under a specified main category.
+*   **Path Parameter**: `mainCategoryId` (integer)
+*   **Request Body**:
+    ```json
+    {
+      "name": "New Subcategory Name",
+      "icon": "LucideIconName", // Optional
+      "color": "#RRGGBB" // Optional, hex color code
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created `SubCategory` object.
+    ```json
+    {
+      "id": 301,
+      "name": "New Subcategory Name",
+      "icon": "LucideIconName",
+      "color": "#RRGGBB",
+      "mainCategoryId": 3
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for mainCategoryId)**
+
+
 ## Data Models (PHP Representations - Examples)
 
 Consider these when designing your database and PHP classes/objects.
@@ -246,7 +402,6 @@ Consider these when designing your database and PHP classes/objects.
 *   `user_currency_code` (string, e.g., "USD", "EUR")
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
-*   `roles` (array/json, e.g., `["ROLE_USER"]`, for internal use)
 
 ### Transaction
 *   `id` (int, primary key)
@@ -255,7 +410,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `currency_code` (string, e.g., "USD", related to this specific transaction)
 *   `exchange_rate` (decimal/float, if supporting multi-currency conversions)
 *   `description` (string, nullable)
-*   `type` (int, e.g., 1 for INCOME, 2 for EXPENSE)
+*   `type` (int, e.g., 1 for INCOME, 2 for EXPENSE - refers to TransactionType.id)
 *   `wallet_id` (int, foreign key to Wallet)
 *   `subcategory_id` (int, nullable, foreign key to SubCategory)
 *   `source` (string, nullable)
@@ -272,6 +427,28 @@ Consider these when designing your database and PHP classes/objects.
 *   `id` (int, primary key)
 *   `user_id` (int, foreign key to User)
 *   `name` (string)
+*   `current_balance_cents` (int)
+*   `currency_code` (string)
+*   `account_number` (string, nullable)
+*   `type_key` (string, e.g., "main", "deposit" - links to a wallet_types table/enum)
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+
+### MainCategory
+*   `id` (int, primary key)
+*   `user_id` (int, foreign key to User, or null if global)
+*   `name` (string)
+*   `icon` (string, nullable)
+*   `color` (string, nullable, e.g. hex code)
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+
+### SubCategory
+*   `id` (int, primary key)
+*   `main_category_id` (int, foreign key to MainCategory)
+*   `name` (string)
+*   `icon` (string, nullable)
+*   `color` (string, nullable, e.g. hex code)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 

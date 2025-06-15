@@ -1,6 +1,6 @@
 
 import { URLS } from '@/config/urls';
-import type { ApiError, Transaction, User, WalletDetails, Frequency, FormCategory, WalletTypeApiResponse, MainCategory } from '@/types';
+import type { ApiError, Transaction, User, WalletDetails, MainCategory, WalletTypeApiResponse, CreateMainCategoryPayload, CreateSubCategoryPayload, SubCategory } from '@/types';
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -56,16 +56,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   headers.set('Accept', 'application/json');
 
   console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url}`);
-  // console.log('Headers:', Object.fromEntries(headers.entries())); // Can be verbose
-  if (fetchOptions.body && typeof fetchOptions.body === 'string' && headers.get('Content-Type')?.includes('application/json')) {
-    try {
-      // console.log('Body:', JSON.parse(fetchOptions.body)); // Can be verbose
-    } catch (e) {
-      // console.log('Body (raw):', fetchOptions.body); // Can be verbose
-    }
-  } else if (fetchOptions.body) {
-    // console.log('Body (FormData or other):', fetchOptions.body); // Can be verbose
-  }
 
   const response = await fetch(url, {
     ...fetchOptions,
@@ -121,9 +111,10 @@ export const getTransactionsList = (
 export const getTransactionFrequencies = (token: string): Promise<{ periods: Record<string, string> }> =>
   request(URLS.transactionFrequencies, { method: 'GET', token });
 
-// For form dropdowns - expecting a flat list of categories
-export const getTransactionCategories = (token: string): Promise<{ categories: Record<string, string> }> =>
-  request(URLS.transactionCategories, { method: 'GET', token });
+// For form dropdowns, if backend provides a flat list from a different endpoint.
+// Currently, transactions page filter uses getMainCategories.
+export const getTransactionCategoriesFlat = (token: string): Promise<{ categories: Record<string, string> }> =>
+  request(URLS.transactionCategoriesFlat, { method: 'GET', token });
 
 
 // Wallets
@@ -133,9 +124,15 @@ export const getWalletsList = (token: string): Promise<{ wallets: WalletDetails[
 export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiResponse }> =>
   request(URLS.walletTypes, { method: 'GET', token });
 
-// Categories Page (Hierarchical)
+// Categories Page & Management
 export const getMainCategories = (token: string): Promise<MainCategory[]> =>
   request<MainCategory[]>(URLS.mainCategories, { method: 'GET', token });
+
+export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
+  request<MainCategory>(URLS.createMainCategory, { method: 'POST', body: data, token });
+
+export const createSubCategory = (mainCategoryId: string | number, data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
+  request<SubCategory>(URLS.createSubCategory(mainCategoryId), { method: 'POST', body: data, token });
 
 
 export { request };

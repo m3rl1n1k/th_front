@@ -2,16 +2,18 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link'; // Import Link
+import { Button } from '@/components/ui/button'; // Import Button
 import { MainLayout } from '@/components/layout/main-layout';
 import { useAuth } from '@/context/auth-context';
 import { getMainCategories } from '@/lib/api';
-import type { MainCategory, SubCategory } from '@/types';
+import type { MainCategory } from '@/types';
 import { useTranslation } from '@/context/i18n-context';
 import { useGlobalLoader } from '@/context/global-loader-context';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Shapes } from 'lucide-react'; // Using Shapes as a default icon
+import { AlertTriangle, Shapes, PlusCircle } from 'lucide-react';
 import { IconRenderer } from '@/components/common/icon-renderer';
 
 export default function CategoriesPage() {
@@ -34,7 +36,7 @@ export default function CategoriesPage() {
         })
         .catch(error => {
           console.error("Failed to fetch main categories", error);
-          setMainCategories([]); // Set to empty array on error to avoid null checks
+          setMainCategories([]); 
           // Toast for error can be added here
         })
         .finally(() => setIsLoading(false));
@@ -48,7 +50,13 @@ export default function CategoriesPage() {
     return (
       <MainLayout>
         <div className="space-y-6">
-          <h1 className="font-headline text-3xl font-bold text-foreground">{t('categoriesTitle')}</h1>
+           <div className="flex justify-between items-center">
+            <h1 className="font-headline text-3xl font-bold text-foreground">{t('categoriesTitle')}</h1>
+            <Button asChild variant="outline" disabled>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t('addNewCategoryButton')}
+            </Button>
+          </div>
           <Card>
             <CardHeader>
               <Skeleton className="h-8 w-3/4" />
@@ -74,7 +82,15 @@ export default function CategoriesPage() {
     return (
       <MainLayout>
         <div className="space-y-6">
-          <h1 className="font-headline text-3xl font-bold text-foreground">{t('categoriesTitle')}</h1>
+           <div className="flex justify-between items-center">
+            <h1 className="font-headline text-3xl font-bold text-foreground">{t('categoriesTitle')}</h1>
+            <Button asChild variant="default">
+              <Link href="/categories/new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t('addNewCategoryButton')}
+              </Link>
+            </Button>
+          </div>
           <Card className="text-center py-10">
             <CardHeader>
               <Shapes className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -94,7 +110,12 @@ export default function CategoriesPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="font-headline text-3xl font-bold text-foreground">{t('categoriesTitle')}</h1>
-          {/* Placeholder for potential "Add Category" button */}
+           <Button asChild variant="default">
+              <Link href="/categories/new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t('addNewCategoryButton')}
+              </Link>
+            </Button>
         </div>
 
         <Card className="shadow-lg">
@@ -110,21 +131,21 @@ export default function CategoriesPage() {
                     <div className="flex items-center space-x-3">
                       <IconRenderer iconName={mainCat.icon} className="text-primary" />
                       <span 
-                        className="h-4 w-4 rounded-full" 
+                        className="h-4 w-4 rounded-full border" 
                         style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
                         title={mainCat.color || undefined}
                       ></span>
                       <span className="font-medium text-foreground">{mainCat.name}</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-2 pb-3 pl-4 pr-2">
+                  <AccordionContent className="pt-2 pb-3 pl-8 pr-2"> {/* Increased pl for sub-items */}
                     {mainCat.subCategories && mainCat.subCategories.length > 0 ? (
                       <ul className="space-y-2 mt-1">
                         {mainCat.subCategories.map((subCat) => (
                           <li key={subCat.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
-                            <IconRenderer iconName={subCat.icon} className="text-secondary-foreground" />
+                            <IconRenderer iconName={subCat.icon} className="text-secondary-foreground h-4 w-4" /> {/* Smaller icon */}
                             <span 
-                              className="h-3 w-3 rounded-full" 
+                              className="h-3 w-3 rounded-full border" 
                               style={{ backgroundColor: subCat.color || 'hsl(var(--muted))' }}
                               title={subCat.color || undefined}
                             ></span>

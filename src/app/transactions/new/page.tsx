@@ -23,14 +23,20 @@ import {
   createTransaction,
   getTransactionFrequencies,
   getWalletsList,
-  getTransactionCategories
+  getTransactionCategoriesFlat // Corrected import
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransactionType as AppTransactionType, Frequency, WalletDetails, Category } from '@/types';
+import type { TransactionType as AppTransactionType, Frequency, WalletDetails } from '@/types'; // Removed Category from here as it will be {id: string, name: string}
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
 import { useGlobalLoader } from '@/context/global-loader-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
+
+// Define a simple category type for the form's dropdown
+interface FormCategory {
+  id: string;
+  name: string;
+}
 
 export default function NewTransactionPage() {
   const { token, isAuthenticated, user } = useAuth();
@@ -40,8 +46,8 @@ export default function NewTransactionPage() {
   
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [frequencies, setFrequencies] = useState<Frequency[]>([]);
-  const [wallets, setWallets] = useState<WalletDetails[]>([]); // Use WalletDetails for richer info
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [wallets, setWallets] = useState<WalletDetails[]>([]);
+  const [categories, setCategories] = useState<FormCategory[]>([]); // Use FormCategory
 
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
@@ -71,7 +77,7 @@ export default function NewTransactionPage() {
       date: new Date(),
       walletId: '',
       categoryId: '',
-      frequencyId: '', // Default to empty, user must select
+      frequencyId: '', 
     },
   });
 
@@ -87,7 +93,7 @@ export default function NewTransactionPage() {
         .then(data => {
           const formattedTypes = Object.entries(data.types)
             .map(([id, name]) => ({ id, name: name as string }))
-            .filter(type => type.name.toUpperCase() !== 'TRANSFER'); // Filter out TRANSFER type
+            .filter(type => type.name.toUpperCase() !== 'TRANSFER'); 
           setTransactionTypes(formattedTypes);
         })
         .catch(error => {
@@ -97,9 +103,9 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingTypes(false));
 
       setIsLoadingWallets(true);
-      getWalletsList(token) // This should return WalletDetails[]
+      getWalletsList(token)
         .then(data => {
-           setWallets(data.wallets || []); // Assuming API returns {wallets: WalletDetails[]}
+           setWallets(data.wallets || []); 
         })
         .catch(error => {
           console.error("Failed to fetch wallets", error);
@@ -108,7 +114,7 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingWallets(false));
       
       setIsLoadingCategories(true);
-      getTransactionCategories(token) 
+      getTransactionCategoriesFlat(token) // Use corrected function
         .then(data => {
           const formattedCategories = Object.entries(data.categories)
             .map(([id, name]) => ({ id, name: name as string }));
@@ -145,9 +151,6 @@ export default function NewTransactionPage() {
     setGlobalLoading(true);
 
     const selectedFrequency = frequencies.find(f => f.id === data.frequencyId);
-    // Assuming "ONE_TIME" or similar is the name for non-recurring. Adjust if API name is different.
-    // The API_DOCUMENTATION.md for /transactions/frequency is { periods: { "1": "ONE_TIME", ...} }
-    // So we might need to check against the "name" field of the frequency object.
     const isRecurring = selectedFrequency ? selectedFrequency.name.toUpperCase() !== 'ONE_TIME' : false;
 
 
@@ -389,4 +392,3 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
-
