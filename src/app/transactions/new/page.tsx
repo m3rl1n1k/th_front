@@ -55,7 +55,7 @@ export default function NewTransactionPage() {
 
   type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, register, watch } = useForm<NewTransactionFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting }, register } = useForm<NewTransactionFormData>({
     resolver: zodResolver(NewTransactionSchema),
     defaultValues: {
       amount: undefined,
@@ -67,17 +67,24 @@ export default function NewTransactionPage() {
   });
 
   useEffect(() => {
-    let typesLoadedFromQuery = false;
-    const typesFromQuery = searchParams.get('types');
+    // If types are already in state, don't do anything.
+    if (transactionTypes.length > 0) {
+      setIsLoadingTypes(false);
+      // Intentionally not setting global loading false here, 
+      // as other operations might still be pending for the page.
+      // Global loader should be managed by the overall page loading lifecycle.
+      return;
+    }
 
+    const typesFromQuery = searchParams.get('types');
     if (typesFromQuery) {
       try {
         const parsedTypes = JSON.parse(typesFromQuery) as TransactionType[];
-        // Basic validation of parsed types structure
         if (Array.isArray(parsedTypes) && parsedTypes.every(type => typeof type.id === 'string' && typeof type.name === 'string')) {
           setTransactionTypes(parsedTypes);
           setIsLoadingTypes(false);
-          typesLoadedFromQuery = true;
+          // setGlobalLoading(false); // Avoid premature global loader stop
+          return; // Types loaded from query, exit
         } else {
           console.warn("Parsed types from query params have invalid structure:", parsedTypes);
         }
@@ -86,8 +93,10 @@ export default function NewTransactionPage() {
       }
     }
 
-    if (!typesLoadedFromQuery && isAuthenticated && token) {
-      setGlobalLoading(true); // Set global loading only if fetching
+    // If not returned by now, types were not in state and not in query params (or invalid)
+    // So, fetch them.
+    if (isAuthenticated && token) {
+      setGlobalLoading(true); // Set global loading only if we are about to fetch
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
@@ -102,17 +111,18 @@ export default function NewTransactionPage() {
         })
         .finally(() => {
           setIsLoadingTypes(false);
-          setGlobalLoading(false);
+          setGlobalLoading(false); // Stop global loading after fetch attempt
         });
-    } else if (!isAuthenticated || !token) {
-      setIsLoadingTypes(false); // Stop loading if not authenticated or no token
+    } else {
+      // Not authenticated or no token, and types not available from query or state
+      setIsLoadingTypes(false);
+      setGlobalLoading(false); // Ensure loader is off if no fetch is attempted
     }
-    // If typesLoadedFromQuery is true, global loader might not have been set, ensure it's false if no fetch occurs.
-    if (typesLoadedFromQuery) {
-        setGlobalLoading(false);
-    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, isAuthenticated, searchParams, transactionTypes.length]);
+  // Removed t, toast, setGlobalLoading from dependencies as they are stable or their change doesn't necessitate re-fetching types.
+  // transactionTypes.length ensures effect re-evaluates if types are set (e.g. from query), then bails out early.
 
-  }, [token, isAuthenticated, t, toast, setGlobalLoading, searchParams]);
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
     if (!token) {
@@ -122,11 +132,11 @@ export default function NewTransactionPage() {
     setGlobalLoading(true);
     try {
       const payload = {
-        amount: Math.round(data.amount * 100),
+        amount: Math.round(data.amount * 100), // Convert to cents
         description: data.description,
         typeId: data.typeId,
         date: format(data.date, 'yyyy-MM-dd'),
-        isRecurring: parseInt(data.recurrenceInterval, 10) > 0,
+        isRecurring: parseInt(data.recurrenceInterval, 10) > 0, 
       };
       await createTransaction(payload, token);
       toast({
@@ -187,10 +197,10 @@ export default function NewTransactionPage() {
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
-                        disabled={isLoadingTypes}
+                        disabled={isLoadingTypes || transactionTypes.length === 0}
                       >
                         <SelectTrigger id="typeId" className={errors.typeId ? 'border-destructive' : ''}>
-                          <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
+                          <SelectValue placeholder={isLoadingTypes ? t('loading') : (transactionTypes.length === 0 ? t('noTypesAvailable') : t('selectTypePlaceholder'))} />
                         </SelectTrigger>
                         <SelectContent>
                           {transactionTypes.map(type => (
@@ -290,5 +300,3 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
-
-    
