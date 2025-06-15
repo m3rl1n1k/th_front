@@ -6,9 +6,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 
 export const URLS = {
   // Auth
-  login: `${API_BASE_URL}/auth/login`, // POST { email: string } -> { user: { login: string }, token: string }
+  login: `${API_BASE_URL}/login_check`, // POST { email: string } -> { user: { login: string }, token: string }
   logout: `${API_BASE_URL}/auth/logout`, // POST
-  me: `${API_BASE_URL}/users/me`, // GET -> User profile data
+  me: `${API_BASE_URL}/user`, // GET -> User profile data
 
   // Dashboard
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`, // GET -> { total_balance: number }
