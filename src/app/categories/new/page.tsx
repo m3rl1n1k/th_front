@@ -19,7 +19,7 @@ import { createMainCategory, createSubCategory, getMainCategories } from '@/lib/
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, PlusCircle, Palette, Tag, Icon } from 'lucide-react';
+import { Save, ArrowLeft, PlusCircle, Tag } from 'lucide-react'; // Removed Palette, Icon as they might conflict
 import { useGlobalLoader } from '@/context/global-loader-context';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 
@@ -55,12 +55,12 @@ export default function CreateCategoryPage() {
 
   const mainCategoryForm = useForm<MainCategoryFormData>({
     resolver: zodResolver(MainCategorySchema),
-    defaultValues: { name: '', icon: null, color: '#FFFFFF' }, // Default color to white
+    defaultValues: { name: '', icon: null, color: '#FFFFFF' },
   });
 
   const subCategoryForm = useForm<SubCategoryFormData>({
     resolver: zodResolver(SubCategorySchema),
-    defaultValues: { mainCategoryId: '', name: '', icon: null, color: '#FFFFFF' }, // Default color to white
+    defaultValues: { mainCategoryId: '', name: '', icon: null, color: '#FFFFFF' },
   });
   
   useEffect(() => {
