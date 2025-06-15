@@ -11,7 +11,7 @@ import { useTranslation } from './i18n-context';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  isLoading: boolean; 
+  isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string) => Promise<void>;
   logout: () => void;
@@ -33,7 +33,7 @@ const DUMMY_TOKEN = 'dev-mode-active-dummy-token';
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -45,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
       return;
     }
+    // setIsLoading(true); // Set loading true before async operation - this is handled by callers or initial effect.
     try {
       const userData = await fetchUserProfile(currentTokenValue);
       setUser(userData);
@@ -57,15 +58,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: t('profileFetchErrorTitle'),
         description: `${t('profileFetchErrorDesc')} ${(error as ApiError).message || ''}`
       });
-      setUser(null); 
-      setToken(currentTokenValue); 
+      setUser(null);
+      setToken(currentTokenValue); // Keep token so user can see it in set-token page if redirect happens
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, t]); 
+  }, [t, toast]);
 
   useEffect(() => {
+    setIsLoading(true); // Ensure loading is true at the start of this effect
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
     if (storedToken) {
       fetchUserCallback(storedToken);
@@ -73,29 +74,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/set-token') {
         setUser(DUMMY_USER);
         setToken(DUMMY_TOKEN);
-        localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
+        if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
       }
-      setIsLoading(false);
+      setIsLoading(false); // Set loading false if no token and not fetching
     }
-  }, [fetchUserCallback]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array: runs only once on mount.
 
   const login = useCallback(async (email: string) => {
+    setIsLoading(true);
+    // Simulate API call for login for dev mode
+    await new Promise(resolve => setTimeout(resolve, 500));
     setUser(DUMMY_USER);
     setToken(DUMMY_TOKEN);
     if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
     toast({ title: "Dev Mode Active", description: "Login is bypassed. Welcome!" });
+    setIsLoading(false);
     router.push('/dashboard');
   }, [router, toast]);
 
   const logout = useCallback(() => {
-    setUser(DUMMY_USER); 
-    setToken(DUMMY_TOKEN); 
+    setIsLoading(true);
+    setUser(null); // More realistic logout
+    setToken(null);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN); 
+      localStorage.removeItem(TOKEN_STORAGE_KEY); // Clear the token
     }
-    toast({ title: "Dev Mode Logout", description: "Simulated logout. Redirecting..." });
+    // Re-enable dummy token for next page load if not login/set-token for dev convenience
+    // This part is tricky; for now, let's just clear and redirect.
+    // The useEffect on mount will handle setting dummy token if appropriate.
+    toast({ title: t('logoutSuccessTitle'), description: "You have been logged out." });
+    setIsLoading(false);
     router.push('/login');
-  }, [router, toast]);
+  }, [router, toast, t]);
 
   const setTokenManually = useCallback(async (newToken: string) => {
     setIsLoading(true);
@@ -103,13 +114,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(TOKEN_STORAGE_KEY, trimmedNewToken);
     }
-    if (!trimmedNewToken) { 
+    if (!trimmedNewToken) {
       setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
       toast({ title: t('tokenClearedTitle'), description: t('revertedToDevModeDesc') });
       setIsLoading(false);
     } else {
-      await fetchUserCallback(trimmedNewToken); 
+      await fetchUserCallback(trimmedNewToken);
+      // fetchUserCallback handles setIsLoading(false)
     }
   }, [fetchUserCallback, toast, t]);
 
@@ -118,14 +130,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentTokenValue = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
     if (currentTokenValue) {
       await fetchUserCallback(currentTokenValue);
+      // fetchUserCallback handles setIsLoading(false)
     } else {
-      setUser(DUMMY_USER);
-      setToken(DUMMY_TOKEN);
+      // If no token, potentially set to dummy state or just ensure loading is false
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/set-token') {
+          setUser(DUMMY_USER);
+          setToken(DUMMY_TOKEN);
+      } else {
+        setUser(null);
+        setToken(null);
+      }
       setIsLoading(false);
     }
   }, [fetchUserCallback]);
 
-  const isAuthenticated = !!user && !!token && token !== DUMMY_TOKEN ? true : (token === DUMMY_TOKEN);
+  const isAuthenticated = !!user && !!token; // Simpler check: if user and token exist
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, setTokenManually, fetchUser }}>
@@ -141,3 +160,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

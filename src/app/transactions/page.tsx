@@ -53,6 +53,7 @@ export default function TransactionsPage() {
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
 
+  // Effect for global loader based on local loading states
   useEffect(() => {
     setGlobalLoading(isLoadingTypes || isLoadingTransactions);
   }, [isLoadingTypes, isLoadingTransactions, setGlobalLoading]);
@@ -61,6 +62,7 @@ export default function TransactionsPage() {
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTypes(true);
+      // setGlobalLoading(true); // Handled by the dedicated effect
       getTransactionTypes(token)
         .then(data => {
           const filteredTypes = Object.entries(data.types)
@@ -72,10 +74,15 @@ export default function TransactionsPage() {
           console.error("Failed to fetch transaction types", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
-        .finally(() => setIsLoadingTypes(false));
+        .finally(() => {
+          setIsLoadingTypes(false);
+          // setGlobalLoading(false); // Handled by the dedicated effect
+        });
     } else {
       setIsLoadingTypes(false);
+      // setGlobalLoading(false); // Handled by the dedicated effect
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, t, toast]);
 
 
@@ -83,6 +90,7 @@ export default function TransactionsPage() {
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTransactions(true);
+      // setGlobalLoading(true); // Handled by the dedicated effect
       const params: Record<string, string> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
@@ -92,7 +100,9 @@ export default function TransactionsPage() {
 
       getTransactionsList(token, params)
         .then(result => {
-          const processed = (result.data || []).map(tx => ({
+          // Ensure result and result.data are not null/undefined before mapping
+          const transactionsFromResult = result?.data || [];
+          const processed = transactionsFromResult.map(tx => ({
             ...tx,
             typeName: transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || t('transactionType_UNKNOWN')
           }));
@@ -105,11 +115,14 @@ export default function TransactionsPage() {
         })
         .finally(() => {
           setIsLoadingTransactions(false);
+          // setGlobalLoading(false); // Handled by the dedicated effect
         });
     } else if (!isAuthenticated || !token) {
       setDisplayedTransactions([]);
       setIsLoadingTransactions(false);
+      // setGlobalLoading(false); // Handled by the dedicated effect
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token, filters, activeTab, transactionTypes, t, toast]);
 
   const handleFilterChange = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
@@ -117,7 +130,7 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    // Re-fetch is triggered by `filters` changing in the useEffect dependency array
+    // Re-fetch is triggered by `filters` changing in the useEffect dependency array for fetching transactions
   };
 
   const handleClearFilters = () => {
@@ -125,9 +138,9 @@ export default function TransactionsPage() {
   };
 
   const handleAddNewTransaction = () => {
-    router.push('/transactions/new'); 
+    router.push('/transactions/new');
   };
-  
+
   const renderTransactionTableContent = () => {
     if (isLoadingTransactions) {
       return (
@@ -153,10 +166,10 @@ export default function TransactionsPage() {
     return displayedTransactions.map(tx => (
       <TableRow key={tx.id}>
          <TableCell className="hidden md:table-cell w-32">
-           {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+           {tx.date ? format(parseISO(tx.date), "PP") : 'N/A'} {/* Changed to PP for date only as per original state */}
          </TableCell>
         <TableCell>
-          <div className="font-medium">{tx.description}</div>
+          <div className="font-medium">{tx.description || t('noDescription', {defaultValue: 'No description'})}</div> {/* Added fallback for description */}
             <div className="text-xs text-muted-foreground md:hidden">
                 {tx.date ? format(parseISO(tx.date), "PP p") : 'N/A'}
             </div>
@@ -170,7 +183,7 @@ export default function TransactionsPage() {
       </TableRow>
     ));
   };
-  
+
 
   return (
     <MainLayout>
@@ -182,7 +195,7 @@ export default function TransactionsPage() {
             {t('addNewTransaction')}
           </Button>
         </div>
-        
+
         <Accordion type="single" collapsible className="w-full" defaultValue="">
           <AccordionItem value="filters" className="border-b-0">
             <Card className="shadow-lg">
@@ -232,7 +245,7 @@ export default function TransactionsPage() {
                         <SelectContent>
                           <SelectItem value="all">{t('allCategories')}</SelectItem>
                           {mockCategories.map(cat => (
-                            <SelectItem key={cat.id} value={cat.id}>{t(cat.nameKey as keyof ReturnType<typeof useTranslation>['translations'])}</SelectItem> 
+                            <SelectItem key={cat.id} value={cat.id}>{t(cat.nameKey as keyof ReturnType<typeof useTranslation>['translations'])}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -288,7 +301,7 @@ export default function TransactionsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="hidden md:table-cell w-32">{t('time')}</TableHead>
+                        <TableHead className="hidden md:table-cell w-32">{t('date')}</TableHead>
                         <TableHead>{t('description')}</TableHead>
                         <TableHead>{t('transactionType')}</TableHead>
                         <TableHead className="text-right">{t('amount')}</TableHead>
@@ -312,7 +325,7 @@ export default function TransactionsPage() {
                    <Table>
                      <TableHeader>
                       <TableRow>
-                        <TableHead className="hidden md:table-cell w-32">{t('time')}</TableHead>
+                        <TableHead className="hidden md:table-cell w-32">{t('date')}</TableHead>
                         <TableHead>{t('description')}</TableHead>
                         <TableHead>{t('transactionType')}</TableHead>
                         <TableHead className="text-right">{t('amount')}</TableHead>
