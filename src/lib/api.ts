@@ -10,7 +10,16 @@ interface RequestOptions extends RequestInit {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
-    console.error('API Error:', errorData); // Re-added console.error
+    
+    console.error('API Error:', errorData);
+
+    if (response.status === 401) {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/set-token') {
+        // Ensure toast is displayed for token issues before redirect
+        // This might require a small delay or ensuring toast is shown by AuthContext on token failure
+        window.location.href = '/set-token';
+      }
+    }
     throw errorData;
   }
   if (response.status === 204) { // No content
@@ -37,6 +46,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
       fetchOptions.body = JSON.stringify(fetchOptions.body);
     }
   } else {
+    // Remove Content-Type for GET requests if it was accidentally set to application/json
     if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
         if (headers.get('Content-Type')?.includes('application/json')) {
             headers.delete('Content-Type');
@@ -46,7 +56,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   
   headers.set('Accept', 'application/json');
 
-  // Log request details - Re-added
+  // Log request details
   console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url}`);
   console.log('Headers:', Object.fromEntries(headers.entries()));
   if (fetchOptions.body && typeof fetchOptions.body === 'string' && headers.get('Content-Type')?.includes('application/json')) {
@@ -109,3 +119,4 @@ export const getTransactionsList = (
 };
 
 export { request };
+
