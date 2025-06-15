@@ -255,7 +255,7 @@ export default function TransactionsPage() {
         </div>
 
         <Card className="shadow-xl border-border/60">
-          <Accordion type="single" collapsible className="w-full" defaultValue="filters">
+          <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="filters" className="border-b-0">
                 <AccordionTrigger className="w-full px-6 py-4 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/10 transition-colors rounded-t-lg">
                   <div className="flex items-center text-xl font-semibold text-foreground">
@@ -407,4 +407,5 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
 
