@@ -1,5 +1,6 @@
+
 import { URLS } from '@/config/urls';
-import type { ApiError } from '@/types';
+import type { ApiError, Transaction } from '@/types'; // Added Transaction type
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -64,5 +65,20 @@ export const getTransactionTypes = (token: string): Promise<{ types: Record<stri
 
 export const createTransaction = (data: any, token: string): Promise<any> =>
   request(URLS.transactions, { method: 'POST', body: data, token });
+
+export const getTransactionsList = (
+  token: string,
+  params: Record<string, string | undefined> = {} // Allow undefined for easier param construction
+): Promise<{ data: Transaction[], meta: any }> => {
+  const definedParams: Record<string, string> = {};
+  for (const key in params) {
+    if (params[key] !== undefined) {
+      definedParams[key] = params[key] as string;
+    }
+  }
+  const queryString = new URLSearchParams(definedParams).toString();
+  const url = queryString ? `${URLS.transactions}?${queryString}` : URLS.transactions;
+  return request(url, { method: 'GET', token });
+};
 
 export { request }; // Export generic request if needed elsewhere

@@ -1,3 +1,4 @@
+
 export interface User {
   id: string | number;
   login: string; // This is the username derived from email
@@ -9,16 +10,17 @@ export interface Transaction {
   id: string | number;
   amount: number; // in cents
   description: string;
-  type: string; // e.g., "INCOME", "EXPENSE", "TRANSFER" or their IDs like "1", "2"
-  typeId?: string; // "1", "2"
-  date: string; // ISO date string
+  typeId: string; // e.g., "1", "2" (from API)
+  typeName?: string; // e.g., "INCOME", "EXPENSE" (from API)
+  date: string; // ISO date string, e.g., "2024-07-28"
   isRecurring: boolean;
+  createdAt?: string; // ISO 8601 date string from API
   // Add other transaction properties
 }
 
 export interface TransactionType {
   id: string;
-  name: string;
+  name: string; // e.g. "INCOME", "EXPENSE"
 }
 
 export interface ApiError {
