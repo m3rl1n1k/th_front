@@ -89,7 +89,18 @@
   "allTransactionsTab": "All Transactions",
   "recurringTransactionsTab": "Recurring",
   "recurringTransactionsListTitle": "Recurring Transactions List",
-  "noRecurringTransactionsFound": "No recurring transactions found."
+  "noRecurringTransactionsFound": "No recurring transactions found.",
+  "newTransactionTitle": "New Transaction",
+  "enterTransactionDetails": "Enter Transaction Details",
+  "fillFormBelow": "Fill out the form below to add a new transaction.",
+  "amountPlaceholder": "Enter amount e.g., 25.50",
+  "amountPositiveError": "Amount must be a positive number.",
+  "descriptionTooLongError": "Description must be 100 characters or less.",
+  "recurrenceRequiredError": "Recurrence interval is required.",
+  "tokenMissingError": "Authentication token is missing. Please log in.",
+  "error": "Error",
+  "saving": "Saving...",
+  "backButton": "Back"
 }
 
     

@@ -89,7 +89,18 @@
   "allTransactionsTab": "Todas las Transacciones",
   "recurringTransactionsTab": "Recurrentes",
   "recurringTransactionsListTitle": "Lista de Transacciones Recurrentes",
-  "noRecurringTransactionsFound": "No se encontraron transacciones recurrentes."
+  "noRecurringTransactionsFound": "No se encontraron transacciones recurrentes.",
+  "newTransactionTitle": "Nueva Transacción",
+  "enterTransactionDetails": "Ingresar Detalles de la Transacción",
+  "fillFormBelow": "Completa el siguiente formulario para agregar una nueva transacción.",
+  "amountPlaceholder": "Ingresar monto ej: 25.50",
+  "amountPositiveError": "El monto debe ser un número positivo.",
+  "descriptionTooLongError": "La descripción debe tener 100 caracteres o menos.",
+  "recurrenceRequiredError": "El intervalo de recurrencia es obligatorio.",
+  "tokenMissingError": "Falta el token de autenticación. Por favor, inicia sesión.",
+  "error": "Error",
+  "saving": "Guardando...",
+  "backButton": "Volver"
 }
 
     
