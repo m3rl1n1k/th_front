@@ -70,10 +70,13 @@ export default function TransactionsPage() {
         })
         .finally(() => {
           setIsLoadingTypes(false);
-          setGlobalLoading(false); 
+          // Global loading will be set to false after transactions are fetched or if type fetch was the only loading task
+          if(!isLoadingTransactions) setGlobalLoading(false);
         });
+    } else {
+      setIsLoadingTypes(false); // If not authenticated, stop loading types
     }
-  }, [token, isAuthenticated, t, toast, setGlobalLoading]);
+  }, [token, isAuthenticated, t, toast, setGlobalLoading, isLoadingTransactions]);
 
   const fetchFilteredTransactions = useCallback(async (currentFilters: typeof filters, tab: "all" | "recurring") => {
     if (!token || !isAuthenticated) return;
@@ -102,10 +105,10 @@ export default function TransactionsPage() {
   }, [token, isAuthenticated, t, toast, setGlobalLoading]);
 
   useEffect(() => {
-    if (isAuthenticated && token) {
+    if (isAuthenticated && token && !isLoadingTypes) { // Fetch transactions only if types are loaded or failed to load
       fetchFilteredTransactions(filters, activeTab);
     }
-  }, [isAuthenticated, token, activeTab, fetchFilteredTransactions, filters]);
+  }, [isAuthenticated, token, activeTab, fetchFilteredTransactions, filters, isLoadingTypes]);
 
 
   const handleFilterChange = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
@@ -122,6 +125,22 @@ export default function TransactionsPage() {
     fetchFilteredTransactions(clearedFilters, activeTab);
   };
 
+  const handleAddNewTransaction = () => {
+    const queryParams: Record<string, string> = {};
+    if (transactionTypes.length > 0) {
+      try {
+        queryParams.types = JSON.stringify(transactionTypes);
+      } catch (error) {
+        console.error("Error stringifying transaction types for query params:", error);
+        // Proceed without types in query if stringification fails
+      }
+    }
+    router.push({
+      pathname: '/transactions/new',
+      query: queryParams,
+    });
+  };
+
   const filteredTransactionList = useMemo(() => {
     if (activeTab === 'recurring') {
       return displayedTransactions.filter(tx => tx.isRecurring);
@@ -131,7 +150,6 @@ export default function TransactionsPage() {
 
   const groupedTransactions = useMemo(() => {
     return filteredTransactionList.reduce((acc, tx) => {
-      // Use tx.date directly as it's already YYYY-MM-DD
       const dateKey = tx.date; 
       if (!acc[dateKey]) {
         acc[dateKey] = [];
@@ -142,7 +160,6 @@ export default function TransactionsPage() {
   }, [filteredTransactionList]);
 
   const sortedDateKeys = useMemo(() => {
-    // Sort by date, most recent first
     return Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
   }, [groupedTransactions]);
 
@@ -172,7 +189,7 @@ export default function TransactionsPage() {
       <React.Fragment key={dateKey}>
         <TableRow className="sticky top-0 z-10 bg-muted/70 hover:bg-muted/70 backdrop-blur-sm">
           <TableCell colSpan={4} className="py-2.5 font-semibold text-foreground">
-            {format(new Date(dateKey + 'T00:00:00'), "PPP")} {/* Add T00:00:00 to ensure local date parsing */}
+            {format(new Date(dateKey + 'T00:00:00'), "PPP")}
           </TableCell>
         </TableRow>
         {groupedTransactions[dateKey].map(tx => (
@@ -199,7 +216,7 @@ export default function TransactionsPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="font-headline text-3xl font-bold text-foreground">{t('transactions')}</h1>
-          <Button onClick={() => router.push('/transactions/new')} className="w-full sm:w-auto">
+          <Button onClick={handleAddNewTransaction} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-5 w-5" />
             {t('addNewTransaction')}
           </Button>
@@ -278,8 +295,8 @@ export default function TransactionsPage() {
                   </div>
                   <div className="flex justify-end space-x-2 pt-4">
                     <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions}>{t('clearFiltersButton')}</Button>
-                    <Button onClick={handleApplyFilters} disabled={isLoadingTransactions}>
-                      {isLoadingTransactions && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes}>
+                      {(isLoadingTransactions || isLoadingTypes) && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
                       {t('applyFiltersButton')}
                     </Button>
                   </div>
@@ -353,4 +370,6 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+    
+
     

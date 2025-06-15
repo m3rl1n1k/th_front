@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Textarea } from '@/components/ui/textarea'; // Assuming you have this component
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { getTransactionTypes, createTransaction } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
@@ -32,7 +32,7 @@ const recurrenceOptions = [
   { value: "14", labelKey: "recurrence_two_weeks" },
   { value: "30", labelKey: "recurrence_monthly" },
   { value: "180", labelKey: "recurrence_six_months" },
-  { value: "365", labelKey: "recurrence_yearly" }, // Changed 364 to 365 for clarity, API expects number
+  { value: "365", labelKey: "recurrence_yearly" },
 ];
 
 export default function NewTransactionPage() {
@@ -40,6 +40,7 @@ export default function NewTransactionPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
@@ -61,13 +62,32 @@ export default function NewTransactionPage() {
       description: '',
       typeId: '',
       date: new Date(),
-      recurrenceInterval: "0", // Default to one-time
+      recurrenceInterval: "0", 
     },
   });
 
   useEffect(() => {
-    if (isAuthenticated && token) {
-      setGlobalLoading(true);
+    let typesLoadedFromQuery = false;
+    const typesFromQuery = searchParams.get('types');
+
+    if (typesFromQuery) {
+      try {
+        const parsedTypes = JSON.parse(typesFromQuery) as TransactionType[];
+        // Basic validation of parsed types structure
+        if (Array.isArray(parsedTypes) && parsedTypes.every(type => typeof type.id === 'string' && typeof type.name === 'string')) {
+          setTransactionTypes(parsedTypes);
+          setIsLoadingTypes(false);
+          typesLoadedFromQuery = true;
+        } else {
+          console.warn("Parsed types from query params have invalid structure:", parsedTypes);
+        }
+      } catch (e) {
+        console.error("Failed to parse transaction types from query params:", e);
+      }
+    }
+
+    if (!typesLoadedFromQuery && isAuthenticated && token) {
+      setGlobalLoading(true); // Set global loading only if fetching
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
@@ -84,8 +104,15 @@ export default function NewTransactionPage() {
           setIsLoadingTypes(false);
           setGlobalLoading(false);
         });
+    } else if (!isAuthenticated || !token) {
+      setIsLoadingTypes(false); // Stop loading if not authenticated or no token
     }
-  }, [token, isAuthenticated, t, toast, setGlobalLoading]);
+    // If typesLoadedFromQuery is true, global loader might not have been set, ensure it's false if no fetch occurs.
+    if (typesLoadedFromQuery) {
+        setGlobalLoading(false);
+    }
+
+  }, [token, isAuthenticated, t, toast, setGlobalLoading, searchParams]);
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
     if (!token) {
@@ -95,13 +122,11 @@ export default function NewTransactionPage() {
     setGlobalLoading(true);
     try {
       const payload = {
-        amount: Math.round(data.amount * 100), // Convert to cents
+        amount: Math.round(data.amount * 100),
         description: data.description,
         typeId: data.typeId,
         date: format(data.date, 'yyyy-MM-dd'),
         isRecurring: parseInt(data.recurrenceInterval, 10) > 0,
-        // If your API expects recurrence_interval or similar, add it here
-        // recurrence_interval_value: parseInt(data.recurrenceInterval, 10) 
       };
       await createTransaction(payload, token);
       toast({
@@ -140,7 +165,6 @@ export default function NewTransactionPage() {
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Amount */}
                 <div className="space-y-2">
                   <Label htmlFor="amount">{t('amount')}</Label>
                   <Input
@@ -154,7 +178,6 @@ export default function NewTransactionPage() {
                   {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
                 </div>
 
-                {/* Transaction Type */}
                 <div className="space-y-2">
                   <Label htmlFor="typeId">{t('transactionType')}</Label>
                   <Controller
@@ -183,7 +206,6 @@ export default function NewTransactionPage() {
                 </div>
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">{t('description')}</Label>
                 <Textarea
@@ -196,7 +218,6 @@ export default function NewTransactionPage() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Date */}
                 <div className="space-y-2">
                   <Label htmlFor="date">{t('date')}</Label>
                   <Controller
@@ -229,7 +250,6 @@ export default function NewTransactionPage() {
                   {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
                 </div>
 
-                {/* Recurrence Interval */}
                 <div className="space-y-2">
                   <Label htmlFor="recurrenceInterval">{t('recurrenceIntervalLabel')}</Label>
                   <Controller
@@ -270,6 +290,5 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
-
 
     
