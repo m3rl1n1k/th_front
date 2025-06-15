@@ -144,9 +144,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem onClick={() => handleLanguageChange('en')} disabled={language === 'en'}>
                   English
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLanguageChange('es')} disabled={language === 'es'}>
-                  Español
-                </DropdownMenuItem>
+                {/* Spanish option removed */}
               </DropdownMenuContent>
             </DropdownMenu>
 
