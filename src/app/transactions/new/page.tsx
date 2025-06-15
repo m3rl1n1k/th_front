@@ -173,7 +173,7 @@ export default function NewTransactionPage() {
         date: format(data.date, 'yyyy-MM-dd'),
         wallet_id: parseInt(data.walletId), 
         category_id: data.categoryId ? parseInt(data.categoryId) : null,
-        frequencyId: data.frequencyId, // Send frequencyId instead of isRecurring
+        frequencyId: data.frequencyId, 
       };
       await createTransaction(payload, token);
       toast({
