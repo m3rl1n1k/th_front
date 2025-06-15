@@ -27,17 +27,25 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  if (!isFormData && fetchOptions.body && typeof fetchOptions.body === 'object') {
-    headers.set('Content-Type', 'application/json');
-    fetchOptions.body = JSON.stringify(fetchOptions.body);
-  } else if (isFormData) {
-    // Content-Type for FormData is set automatically by the browser
-  } else {
-     headers.set('Content-Type', 'application/json');
+  // Handle body and Content-Type
+  if (fetchOptions.body) {
+    if (isFormData) {
+      // For FormData, Content-Type is set by the browser.
+      // The body is already FormData, do not stringify.
+    } else if (typeof fetchOptions.body === 'object') {
+      // If body is an object and not FormData, stringify it.
+      // Set Content-Type to application/json if not already set.
+      if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
+      fetchOptions.body = JSON.stringify(fetchOptions.body);
+    }
+    // If body is a string or other type, assume it's pre-formatted and Content-Type (if needed)
+    // is set in options.headers by the caller.
   }
   
+  // Always expect JSON response
   headers.set('Accept', 'application/json');
-
 
   const response = await fetch(url, {
     ...fetchOptions,
@@ -89,4 +97,3 @@ export const getTransactionsList = (
 };
 
 export { request }; // Export generic request if needed elsewhere
-
