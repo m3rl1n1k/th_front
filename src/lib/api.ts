@@ -123,13 +123,14 @@ export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiRes
   request(URLS.walletTypes, { method: 'GET', token });
 
 // Categories Page & Management
-export const getMainCategories = (token: string): Promise<MainCategory[]> =>
-  request<MainCategory[]>(URLS.mainCategories, { method: 'GET', token });
+export const getMainCategories = async (token: string): Promise<MainCategory[]> => {
+  const response = await request<{ categories: MainCategory[] }>(URLS.mainCategories, { method: 'GET', token });
+  return response.categories || []; // Ensure it returns an array
+}
 
 export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
   request<MainCategory>(URLS.createMainCategory, { method: 'POST', body: data, token });
 
-// Updated createSubCategory to use the correct endpoint and accept mainCategoryId in the data payload
 export const createSubCategory = (mainCategoryId: string | number, data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
   request<SubCategory>(URLS.createSubCategory(mainCategoryId), { method: 'POST', body: data, token });
 
