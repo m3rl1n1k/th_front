@@ -1,10 +1,11 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
-import { getDashboardSummary } from '@/lib/api';
+import { getDashboardTotalBalance, getDashboardMonthlyIncome, getDashboardMonthExpenses } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Wallet } from 'lucide-react';
@@ -30,10 +31,20 @@ export default function DashboardPage() {
     if (isAuthenticated && token) {
       setGlobalLoading(true);
       setIsLoading(true);
-      getDashboardSummary(token)
-        .then(setData)
+      Promise.all([
+        getDashboardTotalBalance(token),
+        getDashboardMonthlyIncome(token),
+        getDashboardMonthExpenses(token),
+      ])
+        .then(([balanceData, incomeData, expenseData]) => {
+          setData({
+            total_balance: balanceData.total_balance,
+            month_income: incomeData.month_income,
+            month_expense: expenseData.month_expense,
+          });
+        })
         .catch(error => {
-          console.error("Failed to fetch dashboard summary", error);
+          console.error("Failed to fetch dashboard summary data", error);
           toast({
             variant: "destructive",
             title: t('errorFetchingData'),
@@ -46,8 +57,6 @@ export default function DashboardPage() {
           setGlobalLoading(false)
         });
     } else if (!isAuthenticated) {
-      // This will be handled by MainLayout's redirection logic or auth context
-      // but good to ensure loading state is consistent
       setIsLoading(false);
       setGlobalLoading(false);
     }
@@ -158,3 +167,4 @@ export default function DashboardPage() {
     </MainLayout>
   );
 }
+

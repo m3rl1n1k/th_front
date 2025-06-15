@@ -1,3 +1,4 @@
+
 // All API endpoints used in the application
 
 // Replace with your actual backend base URL
@@ -10,7 +11,10 @@ export const URLS = {
   me: `${API_BASE_URL}/users/me`, // GET -> User profile data
 
   // Dashboard
-  dashboardSummary: `${API_BASE_URL}/dashboard/summary`, // GET -> { total_balance: number, month_income: number, month_expense: number }
+  dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`, // GET -> { total_balance: number }
+  dashboardMonthlyIncome: `${API_BASE_URL}/dashboard/monthly-income`, // GET -> { month_income: number }
+  dashboardMonthExpenses: `${API_BASE_URL}/dashboard/average-expenses`, // GET -> { month_expense: number } (assuming this provides total month_expense)
+
 
   // Transactions
   transactions: `${API_BASE_URL}/transactions`, // GET (list), POST (create)
@@ -20,3 +24,4 @@ export const URLS = {
   // User Profile
   userProfile: `${API_BASE_URL}/profile`, // GET, PUT
 };
+

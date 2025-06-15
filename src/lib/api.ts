@@ -1,6 +1,6 @@
 
 import { URLS } from '@/config/urls';
-import type { ApiError, Transaction } from '@/types'; // Added Transaction type
+import type { ApiError, Transaction, User } from '@/types'; // Added User type
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -51,13 +51,20 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 export const loginUser = (email: string): Promise<{ user: { login: string }; token: string }> =>
   request(URLS.login, { method: 'POST', body: { email } });
 
-export const fetchUserProfile = (token: string): Promise<any> =>
+export const fetchUserProfile = (token: string): Promise<User> => // Updated to use User type
   request(URLS.me, { method: 'GET', token });
 
 
 // Dashboard
-export const getDashboardSummary = (token: string): Promise<{ total_balance: number; month_income: number; month_expense: number }> =>
-  request(URLS.dashboardSummary, { method: 'GET', token });
+export const getDashboardTotalBalance = (token: string): Promise<{ total_balance: number }> =>
+  request(URLS.dashboardTotalBalance, { method: 'GET', token });
+
+export const getDashboardMonthlyIncome = (token: string): Promise<{ month_income: number }> =>
+  request(URLS.dashboardMonthlyIncome, { method: 'GET', token });
+
+export const getDashboardMonthExpenses = (token: string): Promise<{ month_expense: number }> =>
+  request(URLS.dashboardMonthExpenses, { method: 'GET', token });
+
 
 // Transactions
 export const getTransactionTypes = (token: string): Promise<{ types: Record<string, string> }> =>
@@ -82,3 +89,4 @@ export const getTransactionsList = (
 };
 
 export { request }; // Export generic request if needed elsewhere
+
