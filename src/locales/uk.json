@@ -183,5 +183,11 @@
   "errorCreatingMainCategory": "Помилка створення основної категорії",
   "subCategoryCreatedTitle": "Підкатегорію створено",
   "subCategoryCreatedDesc": "Нову підкатегорію успішно додано.",
-  "errorCreatingSubCategory": "Помилка створення підкатегорії"
+  "errorCreatingSubCategory": "Помилка створення підкатегорії",
+  "viewAsCards": "Переглянути як картки",
+  "viewAsTable": "Переглянути як таблицю",
+  "walletsListTableTitle": "Список гаманців",
+  "walletsListTableDescription": "Детальний перегляд ваших гаманців у форматі таблиці.",
+  "balanceLabel": "Баланс"
 }
+

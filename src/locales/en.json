@@ -183,5 +183,11 @@
   "errorCreatingMainCategory": "Error Creating Main Category",
   "subCategoryCreatedTitle": "Subcategory Created",
   "subCategoryCreatedDesc": "The new subcategory has been successfully added.",
-  "errorCreatingSubCategory": "Error Creating Subcategory"
+  "errorCreatingSubCategory": "Error Creating Subcategory",
+  "viewAsCards": "View as cards",
+  "viewAsTable": "View as table",
+  "walletsListTableTitle": "Wallets List",
+  "walletsListTableDescription": "Detailed view of your wallets in a table format.",
+  "balanceLabel": "Balance"
 }
+
