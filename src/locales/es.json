@@ -29,6 +29,7 @@
   "weekly": "Semanal",
   "monthly": "Mensual",
   "newTransaction": "Nueva Transacción",
+  "addNewTransaction": "Agregar Nueva Transacción",
   "transactionType": "Tipo de Transacción",
   "amount": "Monto",
   "description": "Descripción",
@@ -84,5 +85,11 @@
   "allTypes": "Todos los Tipos",
   "applyFiltersButton": "Aplicar Filtros",
   "clearFiltersButton": "Limpiar Filtros",
-  "noTransactionsFound": "No se encontraron transacciones que coincidan con tus criterios."
+  "noTransactionsFound": "No se encontraron transacciones que coincidan con tus criterios.",
+  "allTransactionsTab": "Todas las Transacciones",
+  "recurringTransactionsTab": "Recurrentes",
+  "recurringTransactionsListTitle": "Lista de Transacciones Recurrentes",
+  "noRecurringTransactionsFound": "No se encontraron transacciones recurrentes."
 }
+
+    
