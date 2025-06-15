@@ -70,6 +70,7 @@
   "endDate": "End Date",
   "filterByCategory": "Category",
   "selectCategoryPlaceholder": "Select category",
+  "selectCategoryOptionalPlaceholder": "Select category (optional)",
   "allCategories": "All Categories",
   "categoryName_food_&_dining": "Food & Dining",
   "categoryName_transportation": "Transportation",
@@ -156,6 +157,7 @@
   "noDetailsPlaceholder": "No Details",
   "notApplicable": "N/A",
   "noCategory": "No Category",
+  "noCategoryOption": "No Category (Optional)",
   "categoriesTitle": "Categories",
   "noCategoriesFoundTitle": "No Categories Found",
   "noCategoriesFoundDescription": "It seems there are no categories set up yet.",
@@ -197,3 +199,4 @@
   "switchToDarkMode": "Switch to Dark Mode",
   "switchToLightMode": "Switch to Light Mode"
 }
+

@@ -193,13 +193,13 @@ Creates a new transaction.
 *   **Request Body**:
     ```json
     {
-      "amount": 5000,
-      "description": "Groceries for the week",
-      "typeId": "2", 
-      "date": "2024-07-28",
-      "isRecurring": false,
-      "wallet_id": 1, // Integer ID
-      "category_id": 101 // Integer ID (refers to a subCategory ID)
+      "amount": 5000, // integer, in cents
+      "description": "Groceries for the week", // string, optional
+      "typeId": "2", // string, required (ID from GET /transactions/types)
+      "date": "2024-07-28", // string, YYYY-MM-DD, required
+      "isRecurring": false, // boolean, required
+      "wallet_id": 1, // integer ID, required
+      "category_id": 101 // integer ID (refers to a subCategory ID), optional (null if not provided)
     }
     ```
 *   **Success Response (201 Created)**: Returns the created transaction object.
@@ -212,7 +212,7 @@ Creates a new transaction.
       "type": 2, 
       "description": "Groceries for the week",
       "wallet": { "id": 1, "name": "Main" },
-      "subCategory": { "id": 101, "name": "Groceries"}, // subCategory object
+      "subCategory": { "id": 101, "name": "Groceries"}, // subCategory object, null if not provided
       "user": { "id": 1 },
       "source": "manual", // or other source if applicable
       "date": "2024-07-28T14:30:00Z",
@@ -243,7 +243,7 @@ Retrieves a list of transactions for the authenticated user. The response should
           "type": 2, 
           "description": "Groceries",
           "wallet": { "id": 1, "name": "Main" },
-          "subCategory": { "id": 101, "name": "Groceries"},
+          "subCategory": { "id": 101, "name": "Groceries"}, // null if not set
           "user": { "id": 1 },
           "source": "store_x",
           "date": "2024-07-28T14:30:00Z",
@@ -263,7 +263,7 @@ Retrieves a specific transaction by its ID.
 #### `PUT /transactions/{id}`
 Updates a specific transaction.
 
-*   **Request Body**: Similar to `POST /transactions`, containing fields to update.
+*   **Request Body**: Similar to `POST /transactions`, containing fields to update. `category_id` can be `null`.
 *   **Success Response (200 OK)**: Updated transaction object.
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
 
@@ -319,28 +319,30 @@ Retrieves available wallet types mapping.
 Retrieves main categories along with their subcategories.
 *   **Success Response (200 OK)**:
     ```json
-    [
-      {
-        "id": 1,
-        "name": "Food & Dining",
-        "icon": "Utensils",
-        "color": "#FFD700",
-        "subCategories": [
-          { "id": 101, "name": "Groceries", "icon": "ShoppingCart", "color": "#FFA500" },
-          { "id": 102, "name": "Restaurants", "icon": "Plate", "color": "#FF8C00" }
-        ]
-      },
-      {
-        "id": 2,
-        "name": "Income",
-        "icon": "CircleDollarSign",
-        "color": "#32CD32",
-        "subCategories": [
-          { "id": 201, "name": "Salary", "icon": "Briefcase", "color": "#2E8B57" },
-          { "id": 202, "name": "Freelance", "icon": "Laptop", "color": "#90EE90" }
-        ]
-      }
-    ]
+    { 
+      "categories": [
+        {
+          "id": 1,
+          "name": "Food & Dining",
+          "icon": "Utensils",
+          "color": "#FFD700",
+          "subCategories": [
+            { "id": 101, "name": "Groceries", "icon": "ShoppingCart", "color": "#FFA500" },
+            { "id": 102, "name": "Restaurants", "icon": "Plate", "color": "#FF8C00" }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Income",
+          "icon": "CircleDollarSign",
+          "color": "#32CD32",
+          "subCategories": [
+            { "id": 201, "name": "Salary", "icon": "Briefcase", "color": "#2E8B57" },
+            { "id": 202, "name": "Freelance", "icon": "Laptop", "color": "#90EE90" }
+          ]
+        }
+      ]
+    }
     ```
 *   **Failure Response (401 Unauthorized)**
 
@@ -476,3 +478,4 @@ Consider these when designing your database and PHP classes/objects.
     ```
 
 This documentation provides a starting point. Adapt and expand it based on the full feature set of FinanceFlow.
+

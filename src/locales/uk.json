@@ -70,6 +70,7 @@
   "endDate": "Дата закінчення",
   "filterByCategory": "Категорія",
   "selectCategoryPlaceholder": "Виберіть категорію",
+  "selectCategoryOptionalPlaceholder": "Виберіть категорію (необов'язково)",
   "allCategories": "Всі категорії",
   "categoryName_food_&_dining": "Їжа та ресторани",
   "categoryName_transportation": "Транспорт",
@@ -156,6 +157,7 @@
   "noDetailsPlaceholder": "Без деталей",
   "notApplicable": "Н/Д",
   "noCategory": "Без категорії",
+  "noCategoryOption": "Без категорії (необов'язково)",
   "categoriesTitle": "Категорії",
   "noCategoriesFoundTitle": "Категорій не знайдено",
   "noCategoriesFoundDescription": "Схоже, категорії ще не налаштовані.",
@@ -197,3 +199,4 @@
   "switchToDarkMode": "Перемкнути на темну тему",
   "switchToLightMode": "Перемкнути на світлу тему"
 }
+

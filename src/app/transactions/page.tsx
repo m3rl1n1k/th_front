@@ -237,7 +237,9 @@ export default function TransactionsPage() {
           }
 
           const detailsText = tx.description || t('noDetailsPlaceholder');
-          const categoryText = tx.categoryName ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) : "-";
+          const categoryText = tx.categoryName 
+            ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) 
+            : t('noCategory'); // Display "No Category" if not present
 
           return (
             <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
@@ -435,3 +437,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+

@@ -23,7 +23,7 @@ import {
   createTransaction,
   getTransactionFrequencies,
   getWalletsList,
-  getMainCategories
+  getMainCategories // Changed from getTransactionCategoriesFlat
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -58,7 +58,7 @@ export default function NewTransactionPage() {
     typeId: z.string().min(1, { message: t('typeRequired') }),
     date: z.date({ required_error: t('dateRequired') }),
     walletId: z.string().min(1, { message: t('walletRequiredError') }),
-    categoryId: z.string().min(1, { message: t('categoryRequiredError') }),
+    categoryId: z.string().optional().nullable(), // Made categoryId optional
     frequencyId: z.string().min(1, { message: t('frequencyRequiredError')}),
   });
 
@@ -72,7 +72,7 @@ export default function NewTransactionPage() {
       typeId: '', 
       date: new Date(),
       walletId: '',
-      categoryId: '',
+      categoryId: null, // Default to null for optional category
       frequencyId: '', 
     },
   });
@@ -105,7 +105,7 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingWallets(false));
       
       setIsLoadingCategories(true);
-      getMainCategories(token)
+      getMainCategories(token) // Using getMainCategories
         .then(mainCategoriesResponse => {
            const allSubCategories: ApiSubCategory[] = Array.isArray(mainCategoriesResponse) 
             ? mainCategoriesResponse.flatMap(mainCat => mainCat.subCategories || []) 
@@ -160,6 +160,7 @@ export default function NewTransactionPage() {
       if (!currentFormValues.frequencyId && defaultOneTimeFrequency) {
         newDefaults.frequencyId = defaultOneTimeFrequency.id;
       }
+      // categoryId remains null by default from form init
 
       if (Object.keys(newDefaults).length > 0) {
         reset({
@@ -189,7 +190,7 @@ export default function NewTransactionPage() {
         date: format(data.date, 'yyyy-MM-dd'),
         isRecurring: isRecurring, 
         wallet_id: parseInt(data.walletId), 
-        category_id: parseInt(data.categoryId),
+        category_id: data.categoryId ? parseInt(data.categoryId) : null, // Handle optional categoryId
       };
       await createTransaction(payload, token);
       toast({
@@ -304,15 +305,16 @@ export default function NewTransactionPage() {
                     control={control}
                     render={({ field }) => (
                       <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
+                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                        value={field.value || "none"} // Handle null value for "No Category"
                         disabled={isLoadingCategories || categories.length === 0}
                       >
                         <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
                           <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
+                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryOptionalPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">{t('noCategoryOption')}</SelectItem>
                           {categories.map(cat => (
                             <SelectItem key={cat.id} value={cat.id}>
                                {t(`categoryName_${cat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: cat.name })}
@@ -417,3 +419,4 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
+
