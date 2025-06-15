@@ -172,9 +172,10 @@
   "createSubCategoryDesc": "Add a new subcategory under an existing main category.",
   "categoryNameLabel": "Category Name",
   "categoryNamePlaceholder": "e.g., Groceries, Salary, Rent",
-  "iconNameLabel": "Icon Name (Lucide)",
-  "iconNamePlaceholder": "e.g., Home, ShoppingCart, Pill",
-  "colorHexLabel": "Color (Hex Code)",
+  "iconLabel": "Icon",
+  "selectIconPlaceholder": "Select an icon",
+  "noIconOption": "No Icon",
+  "colorLabel": "Color",
   "createButton": "Create",
   "parentCategoryLabel": "Parent Main Category",
   "selectParentCategoryPlaceholder": "Select parent category",
@@ -190,4 +191,3 @@
   "walletsListTableDescription": "Detailed view of your wallets in a table format.",
   "balanceLabel": "Balance"
 }
-

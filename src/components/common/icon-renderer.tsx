@@ -99,6 +99,8 @@ const iconMap: Record<string, LucideIcon> = {
   Award,
 };
 
+export const iconMapKeys = Object.keys(iconMap).sort();
+
 const DefaultIcon = Shapes; // Default icon if no match is found
 
 export const IconRenderer: React.FC<IconRendererProps> = ({ iconName, className, color }) => {
@@ -140,4 +142,3 @@ const cn = (...inputs: Array<string | undefined | null | false | Record<string, 
     .filter(Boolean)
     .join(' ');
 };
-

@@ -172,9 +172,10 @@
   "createSubCategoryDesc": "Додайте нову підкатегорію до існуючої основної категорії.",
   "categoryNameLabel": "Назва категорії",
   "categoryNamePlaceholder": "напр., Продукти, Зарплата, Оренда",
-  "iconNameLabel": "Назва іконки (Lucide)",
-  "iconNamePlaceholder": "напр., Home, ShoppingCart, Pill",
-  "colorHexLabel": "Колір (Hex-код)",
+  "iconLabel": "Іконка",
+  "selectIconPlaceholder": "Виберіть іконку",
+  "noIconOption": "Без іконки",
+  "colorLabel": "Колір",
   "createButton": "Створити",
   "parentCategoryLabel": "Батьківська основна категорія",
   "selectParentCategoryPlaceholder": "Виберіть батьківську категорію",
@@ -190,4 +191,3 @@
   "walletsListTableDescription": "Детальний перегляд ваших гаманців у форматі таблиці.",
   "balanceLabel": "Баланс"
 }
-

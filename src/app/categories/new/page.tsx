@@ -19,16 +19,17 @@ import { createMainCategory, createSubCategory, getMainCategories } from '@/lib/
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, PlusCircle, Palette, Tag } from 'lucide-react';
+import { Save, ArrowLeft, PlusCircle, Palette, Tag, Icon } from 'lucide-react';
 import { useGlobalLoader } from '@/context/global-loader-context';
+import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 
 // Schemas
-const hexColorRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/i;
+const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i; // Updated to require 6 hex characters
 
 const MainCategorySchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB or #RGB)." }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
 });
 type MainCategoryFormData = z.infer<typeof MainCategorySchema>;
 
@@ -36,7 +37,7 @@ const SubCategorySchema = z.object({
   mainCategoryId: z.string().min(1, { message: "Parent category is required." }),
   name: z.string().min(1, { message: "Name is required." }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB or #RGB)." }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
 });
 type SubCategoryFormData = z.infer<typeof SubCategorySchema>;
 
@@ -46,7 +47,7 @@ export default function CreateCategoryPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  const { setIsLoading: setGlobalLoading, isLoading: isGlobalLoadingOuter } = useGlobalLoader();
+  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [existingMainCategories, setExistingMainCategories] = useState<MainCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -54,23 +55,20 @@ export default function CreateCategoryPage() {
 
   const mainCategoryForm = useForm<MainCategoryFormData>({
     resolver: zodResolver(MainCategorySchema),
-    defaultValues: { name: '', icon: null, color: null },
+    defaultValues: { name: '', icon: null, color: '#FFFFFF' }, // Default color to white
   });
 
   const subCategoryForm = useForm<SubCategoryFormData>({
     resolver: zodResolver(SubCategorySchema),
-    defaultValues: { mainCategoryId: '', name: '', icon: null, color: null },
+    defaultValues: { mainCategoryId: '', name: '', icon: null, color: '#FFFFFF' }, // Default color to white
   });
   
-  const watchedMainColor = mainCategoryForm.watch('color');
-  const watchedSubColor = subCategoryForm.watch('color');
-
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingCategories(true);
       getMainCategories(token)
         .then(data => {
-          setExistingMainCategories(Array.isArray(data) ? data : []); // Explicitly ensure it's an array
+          setExistingMainCategories(Array.isArray(data) ? data : []); 
         })
         .catch(error => {
           console.error("Failed to fetch main categories for dropdown", error);
@@ -108,7 +106,7 @@ export default function CreateCategoryPage() {
       name: data.name,
       icon: data.icon || null,
       color: data.color || null,
-      mainCategoryId: data.mainCategoryId,
+      mainCategoryId: data.mainCategoryId, 
     };
     try {
       await createSubCategory(data.mainCategoryId, payloadForBody, token);
@@ -152,18 +150,49 @@ export default function CreateCategoryPage() {
                     {mainCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.name.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="main-icon">{t('iconNameLabel')}</Label>
-                    <Input id="main-icon" {...mainCategoryForm.register('icon')} placeholder={t('iconNamePlaceholder')} />
+                    <Label htmlFor="main-icon-select">{t('iconLabel')}</Label>
+                    <Controller
+                      name="icon"
+                      control={mainCategoryForm.control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+                          value={field.value || 'none'}
+                        >
+                          <SelectTrigger id="main-icon-select">
+                            <SelectValue placeholder={t('selectIconPlaceholder')} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60 overflow-y-auto">
+                            <SelectItem value="none">{t('noIconOption')}</SelectItem>
+                            {iconMapKeys.map(iconKey => (
+                              <SelectItem key={iconKey} value={iconKey}>
+                                <div className="flex items-center gap-2">
+                                  <IconRenderer iconName={iconKey} className="h-4 w-4" />
+                                  {iconKey}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     {mainCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.icon.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="main-color">{t('colorHexLabel')}</Label>
-                    <div className="flex items-center gap-2">
-                        <Input id="main-color" {...mainCategoryForm.register('color')} placeholder="#RRGGBB" className="flex-grow"/>
-                        {watchedMainColor && hexColorRegex.test(watchedMainColor) && (
-                            <div style={{ backgroundColor: watchedMainColor }} className="w-8 h-8 rounded-md border flex-shrink-0" />
+                    <Label htmlFor="main-color-picker">{t('colorLabel')}</Label>
+                    <Controller
+                        name="color"
+                        control={mainCategoryForm.control}
+                        render={({ field }) => (
+                            <Input
+                                type="color"
+                                id="main-color-picker"
+                                value={field.value || '#FFFFFF'}
+                                onChange={field.onChange}
+                                className="h-10 w-full rounded-md border p-1"
+                            />
                         )}
-                    </div>
+                    />
                     {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.color.message}</p>}
                   </div>
                   <Button type="submit" disabled={isSubmitting} className="w-full">
@@ -190,7 +219,7 @@ export default function CreateCategoryPage() {
                       render={({ field }) => (
                         <Select 
                             onValueChange={field.onChange} 
-                            defaultValue={field.value} 
+                            value={field.value}
                             disabled={isLoadingCategories || !existingMainCategories || existingMainCategories.length === 0}
                         >
                           <SelectTrigger id="sub-mainCategoryId">
@@ -218,18 +247,49 @@ export default function CreateCategoryPage() {
                     {subCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.name.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sub-icon">{t('iconNameLabel')}</Label>
-                    <Input id="sub-icon" {...subCategoryForm.register('icon')} placeholder={t('iconNamePlaceholder')} />
+                    <Label htmlFor="sub-icon-select">{t('iconLabel')}</Label>
+                     <Controller
+                      name="icon"
+                      control={subCategoryForm.control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
+                          value={field.value || 'none'}
+                        >
+                          <SelectTrigger id="sub-icon-select">
+                            <SelectValue placeholder={t('selectIconPlaceholder')} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60 overflow-y-auto">
+                             <SelectItem value="none">{t('noIconOption')}</SelectItem>
+                            {iconMapKeys.map(iconKey => (
+                              <SelectItem key={iconKey} value={iconKey}>
+                                <div className="flex items-center gap-2">
+                                  <IconRenderer iconName={iconKey} className="h-4 w-4" />
+                                  {iconKey}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                     {subCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.icon.message}</p>}
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="sub-color">{t('colorHexLabel')}</Label>
-                     <div className="flex items-center gap-2">
-                        <Input id="sub-color" {...subCategoryForm.register('color')} placeholder="#RRGGBB" className="flex-grow"/>
-                        {watchedSubColor && hexColorRegex.test(watchedSubColor) && (
-                            <div style={{ backgroundColor: watchedSubColor }} className="w-8 h-8 rounded-md border flex-shrink-0" />
+                    <Label htmlFor="sub-color-picker">{t('colorLabel')}</Label>
+                    <Controller
+                        name="color"
+                        control={subCategoryForm.control}
+                        render={({ field }) => (
+                            <Input
+                                type="color"
+                                id="sub-color-picker"
+                                value={field.value || '#FFFFFF'}
+                                onChange={field.onChange}
+                                className="h-10 w-full rounded-md border p-1"
+                            />
                         )}
-                    </div>
+                    />
                     {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.color.message}</p>}
                   </div>
                   <Button type="submit" disabled={isSubmitting || isLoadingCategories} className="w-full">
@@ -244,4 +304,3 @@ export default function CreateCategoryPage() {
     </MainLayout>
   );
 }
-
