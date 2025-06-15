@@ -18,12 +18,13 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useGlobalLoader } from '@/context/global-loader-context';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards } from 'lucide-react'; 
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
   { href: '/transactions', labelKey: 'transactions', icon: ListChecks },
-  { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards }, // Added Wallets
+  { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards },
+  { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes },
   { href: '/profile', labelKey: 'profile', icon: UserCircle },
   { href: '/set-token', labelKey: 'setToken', icon: Settings },
 ];
@@ -45,19 +46,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router, pathname]);
-  
+
   const handleNavLinkClick = (href: string) => {
     if (pathname === href && !isGlobalLoading) return; // Avoid reload if already on page and not loading
     setGlobalLoading(true);
     router.push(href);
-    setIsSheetOpen(false); 
+    setIsSheetOpen(false);
   };
 
   const handleLanguageChange = async (lang: string) => {
     if (language === lang) return;
     setGlobalLoading(true);
     try {
-      await setLanguage(lang); 
+      await setLanguage(lang);
     } catch (error) {
       console.error("Error changing language:", error);
       // Toast can be added here if needed
@@ -65,7 +66,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       // setGlobalLoading(false); // Let navigation events handle this
     }
   };
-  
+
   if (authLoading && !user) {
      return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -83,10 +84,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   if (pathname === '/login' || pathname === '/set-token') {
     return <>{children}</>;
   }
-  
+
   if (!authLoading && !isAuthenticated) {
     // Could return null or a redirecting state, but effect above handles push to /login
-    return null; 
+    return null;
   }
 
 

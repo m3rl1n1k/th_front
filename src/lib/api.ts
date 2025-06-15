@@ -1,6 +1,6 @@
 
 import { URLS } from '@/config/urls';
-import type { ApiError, Transaction, User, Wallet, WalletDetails, Frequency, Category, WalletTypeApiResponse } from '@/types';
+import type { ApiError, Transaction, User, WalletDetails, Frequency, FormCategory, WalletTypeApiResponse, MainCategory } from '@/types';
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -10,7 +10,7 @@ interface RequestOptions extends RequestInit {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
-    
+
     console.error('API Error Status:', response.status, 'Error Data:', errorData);
 
     if (response.status === 401) {
@@ -22,7 +22,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
     throw errorData;
   }
-  if (response.status === 204) { 
+  if (response.status === 204) {
     return undefined as T;
   }
   return response.json();
@@ -52,19 +52,19 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
         }
     }
   }
-  
+
   headers.set('Accept', 'application/json');
 
   console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url}`);
-  console.log('Headers:', Object.fromEntries(headers.entries()));
+  // console.log('Headers:', Object.fromEntries(headers.entries())); // Can be verbose
   if (fetchOptions.body && typeof fetchOptions.body === 'string' && headers.get('Content-Type')?.includes('application/json')) {
     try {
-      console.log('Body:', JSON.parse(fetchOptions.body));
+      // console.log('Body:', JSON.parse(fetchOptions.body)); // Can be verbose
     } catch (e) {
-      console.log('Body (raw):', fetchOptions.body);
+      // console.log('Body (raw):', fetchOptions.body); // Can be verbose
     }
   } else if (fetchOptions.body) {
-    console.log('Body (FormData or other):', fetchOptions.body);
+    // console.log('Body (FormData or other):', fetchOptions.body); // Can be verbose
   }
 
   const response = await fetch(url, {
@@ -76,7 +76,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 }
 
 // Auth
-export const loginUser = (email: string): Promise<{ user: User; token: string }> => 
+export const loginUser = (email: string): Promise<{ user: User; token: string }> =>
   request(URLS.login, { method: 'POST', body: { email } });
 
 export const fetchUserProfile = (token: string): Promise<User> =>
@@ -121,6 +121,7 @@ export const getTransactionsList = (
 export const getTransactionFrequencies = (token: string): Promise<{ periods: Record<string, string> }> =>
   request(URLS.transactionFrequencies, { method: 'GET', token });
 
+// For form dropdowns - expecting a flat list of categories
 export const getTransactionCategories = (token: string): Promise<{ categories: Record<string, string> }> =>
   request(URLS.transactionCategories, { method: 'GET', token });
 
@@ -132,6 +133,9 @@ export const getWalletsList = (token: string): Promise<{ wallets: WalletDetails[
 export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiResponse }> =>
   request(URLS.walletTypes, { method: 'GET', token });
 
+// Categories Page (Hierarchical)
+export const getMainCategories = (token: string): Promise<MainCategory[]> =>
+  request<MainCategory[]>(URLS.mainCategories, { method: 'GET', token });
+
 
 export { request };
-

@@ -33,7 +33,7 @@
   "monthly": "Щомісяця",
   "newTransaction": "Нова транзакція",
   "addNewTransaction": "Додати нову транзакцію",
-  "transactionType": "Тип транзакції",
+  "transactionType": "Тип",
   "amount": "Сума",
   "description": "Опис",
   "date": "Дата",
@@ -155,5 +155,11 @@
   "detailsLabel": "Деталі",
   "noDetailsPlaceholder": "Без деталей",
   "notApplicable": "Н/Д",
-  "noCategory": "Без категорії"
+  "noCategory": "Без категорії",
+  "categoriesTitle": "Категорії",
+  "noCategoriesFoundTitle": "Категорій не знайдено",
+  "noCategoriesFoundDescription": "Схоже, категорії ще не налаштовані.",
+  "mainCategoriesListTitle": "Основні категорії",
+  "mainCategoriesListDescription": "Переглядайте ваші основні категорії та їх підкатегорії.",
+  "noSubcategories": "Підкатегорії відсутні."
 }

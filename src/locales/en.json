@@ -33,7 +33,7 @@
   "monthly": "Monthly",
   "newTransaction": "New Transaction",
   "addNewTransaction": "Add New Transaction",
-  "transactionType": "Transaction Type",
+  "transactionType": "Type",
   "amount": "Amount",
   "description": "Description",
   "date": "Date",
@@ -155,5 +155,11 @@
   "detailsLabel": "Details",
   "noDetailsPlaceholder": "No Details",
   "notApplicable": "N/A",
-  "noCategory": "No Category"
+  "noCategory": "No Category",
+  "categoriesTitle": "Categories",
+  "noCategoriesFoundTitle": "No Categories Found",
+  "noCategoriesFoundDescription": "It seems there are no categories set up yet.",
+  "mainCategoriesListTitle": "Main Categories",
+  "mainCategoriesListDescription": "Browse your main categories and their subcategories.",
+  "noSubcategories": "No subcategories available."
 }
