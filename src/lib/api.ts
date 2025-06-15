@@ -1,6 +1,6 @@
 
 import { URLS } from '@/config/urls';
-import type { ApiError, Transaction, User } from '@/types'; // Added User type
+import type { ApiError, Transaction, User } from '@/types';
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -23,28 +23,30 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   const { token, isFormData, ...fetchOptions } = options;
   const headers = new Headers(fetchOptions.headers || {});
 
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+  if (token && token.trim() !== "") {
+    headers.set('Authorization', `Bearer ${token.trim()}`); // Added .trim()
   }
 
   // Handle body and Content-Type
   if (fetchOptions.body) {
     if (isFormData) {
       // For FormData, Content-Type is set by the browser.
-      // The body is already FormData, do not stringify.
     } else if (typeof fetchOptions.body === 'object') {
-      // If body is an object and not FormData, stringify it.
-      // Set Content-Type to application/json if not already set.
       if (!headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
       }
       fetchOptions.body = JSON.stringify(fetchOptions.body);
     }
-    // If body is a string or other type, assume it's pre-formatted and Content-Type (if needed)
-    // is set in options.headers by the caller.
+  } else {
+    // For GET or other requests without a body, ensure Content-Type is not unnecessarily set.
+    if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
+        // Only remove if it's a common JSON type, to avoid removing user-set specific types for GET if any.
+        if (headers.get('Content-Type')?.includes('application/json')) {
+            headers.delete('Content-Type');
+        }
+    }
   }
   
-  // Always expect JSON response
   headers.set('Accept', 'application/json');
 
   const response = await fetch(url, {
@@ -59,7 +61,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 export const loginUser = (email: string): Promise<{ user: { login: string }; token: string }> =>
   request(URLS.login, { method: 'POST', body: { email } });
 
-export const fetchUserProfile = (token: string): Promise<User> => // Updated to use User type
+export const fetchUserProfile = (token: string): Promise<User> =>
   request(URLS.me, { method: 'GET', token });
 
 
@@ -83,7 +85,7 @@ export const createTransaction = (data: any, token: string): Promise<any> =>
 
 export const getTransactionsList = (
   token: string,
-  params: Record<string, string | undefined> = {} // Allow undefined for easier param construction
+  params: Record<string, string | undefined> = {}
 ): Promise<{ data: Transaction[], meta: any }> => {
   const definedParams: Record<string, string> = {};
   for (const key in params) {
@@ -96,4 +98,4 @@ export const getTransactionsList = (
   return request(url, { method: 'GET', token });
 };
 
-export { request }; // Export generic request if needed elsewhere
+export { request };
