@@ -16,7 +16,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
     if (response.status === 401) {
       if (typeof window !== 'undefined' && window.location.pathname !== '/set-token' && window.location.pathname !== '/login') {
         console.log('Redirecting to /set-token due to 401');
-        // Before redirecting, clear potentially bad token
         localStorage.removeItem('financeflow_jwt_token');
         window.location.href = '/set-token';
       }
@@ -77,7 +76,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 }
 
 // Auth
-export const loginUser = (email: string): Promise<{ user: User; token: string }> => // Assuming API returns full User object
+export const loginUser = (email: string): Promise<{ user: User; token: string }> => 
   request(URLS.login, { method: 'POST', body: { email } });
 
 export const fetchUserProfile = (token: string): Promise<User> =>
@@ -122,22 +121,8 @@ export const getTransactionsList = (
 export const getTransactionFrequencies = (token: string): Promise<{ periods: Record<string, string> }> =>
   request(URLS.transactionFrequencies, { method: 'GET', token });
 
-// Mocked for now as API endpoint is {categories: {}} in user prompt
-export const getTransactionCategories = (token: string): Promise<{ categories: Record<string, string> }> => {
-  console.warn("Using mock data for getTransactionCategories");
-  return Promise.resolve({
-    categories: {
-      "1": "Food & Dining",
-      "2": "Transportation",
-      "3": "Shopping",
-      "4": "Utilities",
-      "5": "Entertainment",
-      "6": "Healthcare",
-      "7": "Salary",
-      "8": "Freelance",
-    }
-  });
-};
+export const getTransactionCategories = (token: string): Promise<{ categories: Record<string, string> }> =>
+  request(URLS.transactionCategories, { method: 'GET', token });
 
 
 // Wallets
@@ -149,3 +134,4 @@ export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiRes
 
 
 export { request };
+

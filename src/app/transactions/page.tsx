@@ -17,21 +17,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
-import { getTransactionTypes, getTransactionsList } from '@/lib/api';
+import { getTransactionTypes, getTransactionsList, getTransactionCategories } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, Category } from '@/types';
 import { useGlobalLoader } from '@/context/global-loader-context';
-
-const mockCategories = [
-  { id: '1', nameKey: 'category_food' },
-  { id: '2', nameKey: 'category_transport' },
-  { id: '3', nameKey: 'category_shopping' },
-  { id: '4', nameKey: 'category_utilities' },
-  { id: '5', nameKey: 'category_entertainment' },
-];
 
 interface GroupedTransactions {
   [date: string]: Transaction[];
@@ -45,8 +37,11 @@ export default function TransactionsPage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [rawTransactions, setRawTransactions] = useState<Transaction[] | null>(null);
+  
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
   const [filters, setFilters] = useState<{
@@ -58,8 +53,8 @@ export default function TransactionsPage() {
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
 
   useEffect(() => {
-    setGlobalLoading(isLoadingTypes || isLoadingTransactions);
-  }, [isLoadingTypes, isLoadingTransactions, setGlobalLoading]);
+    setGlobalLoading(isLoadingTypes || isLoadingCategories || isLoadingTransactions);
+  }, [isLoadingTypes, isLoadingCategories, isLoadingTransactions, setGlobalLoading]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -77,8 +72,24 @@ export default function TransactionsPage() {
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingTypes(false));
+
+      setIsLoadingCategories(true);
+      getTransactionCategories(token)
+        .then(data => {
+           const formattedCategories = Object.entries(data.categories).map(([id, name]) => ({
+            id: id,
+            name: name as string
+          }));
+          setCategories(formattedCategories);
+        })
+        .catch(error => {
+          console.error("Failed to fetch categories", error);
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+        })
+        .finally(() => setIsLoadingCategories(false));
     } else {
       setIsLoadingTypes(false);
+      setIsLoadingCategories(false);
     }
   }, [token, isAuthenticated, t, toast]);
 
@@ -90,12 +101,7 @@ export default function TransactionsPage() {
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
-      // Backend handles recurring filtering based on API docs if `isRecurring` param is sent
-      // For now, client-side filtering for 'recurring' tab is also in place if needed.
-      // If API supports isRecurring=true, that's preferred.
-      // if (activeTab === "recurring") params.isRecurring = "true"; 
-
-
+      
       getTransactionsList(token, params)
         .then(result => {
           setRawTransactions(result.transactions || []);
@@ -114,7 +120,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions]); // fetchTransactions is now memoized and includes filters in its deps
+  }, [fetchTransactions]);
 
   const processedTransactions = useMemo(() => {
     if (!rawTransactions || transactionTypes.length === 0) {
@@ -156,34 +162,28 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    fetchTransactions(); // Manually trigger fetch on apply
+    fetchTransactions(); 
   };
 
   const handleClearFilters = () => {
     setFilters({});
-    // fetchTransactions will be called by the useEffect watching 'filters' if filters object reference changes.
-    // To ensure it runs, we can also call it directly:
-    // fetchTransactions(); // Or rely on the useEffect dependency on filters.
-    // If filters is reset to empty object, the effect watching `filters` might not re-run if the object reference doesn't change.
-    // It's safer to have fetchTransactions directly called if state is cleared to {} or to manage filters state to ensure a new object reference on clear.
-    // Forcing a re-fetch after clearing:
-    setRawTransactions(null); // This will trigger loading state and re-fetch in the main useEffect
-    setIsLoadingTransactions(true); // Manually set loading
+    setRawTransactions(null); 
+    setIsLoadingTransactions(true); 
   };
   
   useEffect(() => {
-    if (Object.keys(filters).length === 0 && rawTransactions === null) { // re-fetch if filters cleared and no data
+    if (Object.keys(filters).length === 0 && rawTransactions === null) {
         fetchTransactions();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, rawTransactions]); // re-fetch if filters are cleared.
+  }, [filters, rawTransactions]); 
 
   const handleAddNewTransaction = () => {
     router.push('/transactions/new');
   };
 
   const renderTransactionTableContent = () => {
-    if (isLoadingTransactions || isLoadingTypes) {
+    if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
           <TableCell colSpan={4} className="h-60 text-center">
@@ -210,41 +210,36 @@ export default function TransactionsPage() {
       );
     }
 
-    return sortedDateKeys.map(dateKey => {
-      const transactionsForDate = groups[dateKey];
-      const formattedDate = format(parseISO(dateKey), "PPP"); // e.g., July 28th, 2024
-
-      return (
-        <React.Fragment key={dateKey + '-group'}>
-          <TableRow key={dateKey} className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-            <TableCell colSpan={4} className="py-3 px-4 font-semibold text-foreground text-md">
-              {formattedDate}
+    return sortedDateKeys.map(dateKey => (
+      <React.Fragment key={dateKey + '-group'}>
+        <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
+          <TableCell colSpan={4} className="py-3 px-4 font-semibold text-foreground text-md">
+            {format(parseISO(dateKey), "PPP")}
+          </TableCell>
+        </TableRow>
+        {groups[dateKey].map(tx => (
+          <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
+            <TableCell className="hidden md:table-cell w-24 py-3 px-4 align-top">
+               <span className="text-sm text-muted-foreground">{tx.date ? format(parseISO(tx.date), "p") : 'N/A'}</span>
+            </TableCell>
+            <TableCell className="py-3 px-4 align-top">
+              <div className="font-medium text-foreground">{tx.description || <span className="italic text-muted-foreground">{t('noDescription')}</span>}</div>
+              <div className="text-xs text-muted-foreground md:hidden mt-1">
+                  {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+              </div>
+            </TableCell>
+            <TableCell className="py-3 px-4 align-top">
+              <span className={`text-sm ${tx.typeName === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
+              </span>
+            </TableCell>
+            <TableCell className="text-right py-3 px-4 align-top">
+              <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
             </TableCell>
           </TableRow>
-          {transactionsForDate.map(tx => (
-            <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
-              <TableCell className="hidden md:table-cell w-24 py-3 px-4 align-top">
-                 <span className="text-sm text-muted-foreground">{tx.date ? format(parseISO(tx.date), "p") : 'N/A'}</span>
-              </TableCell>
-              <TableCell className="py-3 px-4 align-top">
-                <div className="font-medium text-foreground">{tx.description || <span className="italic text-muted-foreground">{t('noDescription')}</span>}</div>
-                <div className="text-xs text-muted-foreground md:hidden mt-1">
-                    {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
-                </div>
-              </TableCell>
-              <TableCell className="py-3 px-4 align-top">
-                <span className={`text-sm ${tx.typeName === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
-                </span>
-              </TableCell>
-              <TableCell className="text-right py-3 px-4 align-top">
-                <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </React.Fragment>
-      );
-    });
+        ))}
+      </React.Fragment>
+    ));
   };
 
 
@@ -301,14 +296,16 @@ export default function TransactionsPage() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
-                        <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)}>
+                        <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)} disabled={isLoadingCategories}>
                           <SelectTrigger id="filterCategory" className="hover:border-primary transition-colors">
-                            <SelectValue placeholder={t('selectCategoryPlaceholder')} />
+                            <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">{t('allCategories')}</SelectItem>
-                            {mockCategories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.id}>{t(cat.nameKey as keyof ReturnType<typeof useTranslation>['translations'])}</SelectItem>
+                            {categories.map(cat => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                 {t(`categoryName_${cat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: cat.name })}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -331,9 +328,9 @@ export default function TransactionsPage() {
                       </div>
                     </div>
                     <div className="flex justify-end space-x-3 pt-4">
-                      <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes} className="shadow-sm hover:shadow-md transition-shadow">{t('clearFiltersButton')}</Button>
-                      <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes} className="shadow-sm hover:shadow-md transition-shadow">
-                        {(isLoadingTransactions || isLoadingTypes) && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
+                      <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="shadow-sm hover:shadow-md transition-shadow">{t('clearFiltersButton')}</Button>
+                      <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="shadow-sm hover:shadow-md transition-shadow">
+                        {(isLoadingTransactions || isLoadingTypes || isLoadingCategories) && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
                         {t('applyFiltersButton')}
                       </Button>
                     </div>
@@ -410,3 +407,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
