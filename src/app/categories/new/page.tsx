@@ -33,7 +33,7 @@ const MainCategorySchema = z.object({
 type MainCategoryFormData = z.infer<typeof MainCategorySchema>;
 
 const SubCategorySchema = z.object({
-  mainCategoryId: z.string().min(1, { message: "Parent category is required." }), // This is the ID of the main category
+  mainCategoryId: z.string().min(1, { message: "Parent category is required." }),
   name: z.string().min(1, { message: "Name is required." }),
   icon: z.string().nullable().optional(),
   color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB or #RGB)." }).nullable().optional(),
@@ -69,11 +69,13 @@ export default function CreateCategoryPage() {
     if (isAuthenticated && token) {
       setIsLoadingCategories(true);
       getMainCategories(token)
-        .then(data => setExistingMainCategories(data || [])) // Ensure data is an array
+        .then(data => {
+          setExistingMainCategories(Array.isArray(data) ? data : []); // Explicitly ensure it's an array
+        })
         .catch(error => {
           console.error("Failed to fetch main categories for dropdown", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-          setExistingMainCategories([]); // Set to empty array on error
+          setExistingMainCategories([]); 
         })
         .finally(() => setIsLoadingCategories(false));
     }
@@ -102,18 +104,13 @@ export default function CreateCategoryPage() {
 
   const onSubCategorySubmit: SubmitHandler<SubCategoryFormData> = async (data) => {
     if (!token) return;
-    // The mainCategoryId from the form is the actual ID of the main category.
-    // The API expects this ID in the URL, and the rest of the data in the body.
-    // The CreateSubCategoryPayload should align with what the backend expects in the body.
     const payloadForBody: CreateSubCategoryPayload = {
       name: data.name,
       icon: data.icon || null,
       color: data.color || null,
-      mainCategoryId: data.mainCategoryId, // Ensure this key matches what your backend expects in the body if needed
+      mainCategoryId: data.mainCategoryId,
     };
     try {
-      // Pass mainCategoryId to the API function which uses it in the URL
-      // and payloadForBody for the request body
       await createSubCategory(data.mainCategoryId, payloadForBody, token);
       toast({ title: t('subCategoryCreatedTitle'), description: t('subCategoryCreatedDesc') });
       router.push('/categories');
@@ -191,12 +188,22 @@ export default function CreateCategoryPage() {
                       name="mainCategoryId"
                       control={subCategoryForm.control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingCategories || existingMainCategories.length === 0}>
+                        <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value} 
+                            disabled={isLoadingCategories || !existingMainCategories || existingMainCategories.length === 0}
+                        >
                           <SelectTrigger id="sub-mainCategoryId">
-                            <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectParentCategoryPlaceholder')} />
+                            <SelectValue placeholder={
+                                isLoadingCategories 
+                                ? t('loading') 
+                                : (!existingMainCategories || existingMainCategories.length === 0 
+                                    ? t('noCategoriesFoundTitle') 
+                                    : t('selectParentCategoryPlaceholder'))
+                            } />
                           </SelectTrigger>
                           <SelectContent>
-                            {existingMainCategories.map(cat => (
+                            {Array.isArray(existingMainCategories) && existingMainCategories.map(cat => (
                               <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
                             ))}
                           </SelectContent>
