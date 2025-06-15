@@ -4,26 +4,24 @@ export interface User {
   login: string;
   email: string;
   memberSince?: string;
-  userCurrency?: { // Added user's preferred currency
+  userCurrency?: {
     code: string;
   };
-  // Roles removed as per requirement not to show them
 }
 
-// Updated Transaction interface to match the new API response
 export interface Transaction {
   id: string | number;
   amount: {
-    amount: number; // Assuming this is in cents as per original API doc intent
+    amount: number; 
     currency: {
       code: string;
     };
   };
-  currency: { // Top-level currency information, might be redundant if amount.currency is always present
+  currency: { 
     code: string;
   };
   exchangeRate: number;
-  type: number; // Numeric type (e.g., 1 for INCOME, 2 for EXPENSE)
+  type: number; 
   description: string | null;
   wallet: {
     id: string | number;
@@ -37,14 +35,17 @@ export interface Transaction {
     id: string | number;
   };
   source: string;
-  date: string; // ISO 8601 date string
+  date: string; 
   isRecurring?: boolean;
-  typeName?: string; // To be populated client-side (e.g., "INCOME", "EXPENSE")
+  typeName?: string; 
+  walletId?: string; // For form
+  categoryId?: string; // For form
+  frequencyId?: string; // For form, if recurring
 }
 
 export interface TransactionType {
-  id: string; // e.g., "1", "2"
-  name: string; // e.g., "INCOME", "EXPENSE"
+  id: string; 
+  name: string; 
 }
 
 export interface ApiError {
@@ -52,3 +53,51 @@ export interface ApiError {
   code?: number;
   errors?: Record<string, string[]>;
 }
+
+export interface Frequency {
+  id: string;
+  name: string;
+}
+
+export interface Wallet {
+  id: string | number;
+  name: string;
+  // For form selection primarily
+}
+
+export interface WalletDetails {
+  id: number;
+  name: string;
+  amount: {
+    amount: number;
+    currency: {
+      code: string;
+    };
+  };
+  number: string;
+  currency: { // Top-level currency for the wallet itself
+    code: string;
+  };
+  type: string; // e.g., "main", "deposit" - key for walletTypes
+  user: {
+    id: number;
+  };
+  typeName?: string; // To be populated client-side using WalletTypeMap
+}
+
+export interface Category {
+  id: string;
+  name: string;
+}
+
+// Raw structure from API: { "main": "MAIN", ... }
+export type WalletTypeApiResponse = Record<string, string>;
+
+// Processed structure for easier use: { id: "main", name: "MAIN" }
+export interface WalletType {
+  id: string;
+  name: string;
+}
+
+// Map for quick lookup: { "main": "MAIN_translated_or_raw", ... }
+export type WalletTypeMap = Record<string, string>;

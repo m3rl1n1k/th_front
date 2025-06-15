@@ -16,79 +16,138 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
-import { getTransactionTypes, createTransaction } from '@/lib/api';
+import { 
+  getTransactionTypes, 
+  createTransaction,
+  getTransactionFrequencies,
+  getWalletsList,
+  getTransactionCategories
+} from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransactionType as AppTransactionType } from '@/types'; // Renamed to avoid conflict
-import { CalendarIcon, Save, ArrowLeft } from 'lucide-react';
+import type { TransactionType as AppTransactionType, Frequency, Wallet, Category } from '@/types';
+import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
 import { useGlobalLoader } from '@/context/global-loader-context';
-
-const recurrenceOptions = [
-  { value: "0", labelKey: "recurrence_one_time" },
-  // Add other recurrence options if the API supports them or if client-side logic handles them.
-  // For now, the API payload only has `isRecurring: boolean`.
-  // If more complex recurrence is needed, the API and this form need to be extended.
-];
 
 export default function NewTransactionPage() {
   const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
+  
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
+  const [frequencies, setFrequencies] = useState<Frequency[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(false); // Only load if recurring
+  const [isLoadingWallets, setIsLoadingWallets] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const NewTransactionSchema = z.object({
     amount: z.coerce.number().positive({ message: t('amountPositiveError') }),
-    description: z.string().max(255, { message: t('descriptionTooLongError')}).optional().nullable(), // Optional description
-    typeId: z.string().min(1, { message: t('typeRequired') }), // This will be string ID from AppTransactionType ("1", "2")
+    description: z.string().max(255, { message: t('descriptionTooLongError')}).optional().nullable(),
+    typeId: z.string().min(1, { message: t('typeRequired') }),
     date: z.date({ required_error: t('dateRequired') }),
-    isRecurring: z.boolean(), // Simplified to boolean based on API documentation
-    // currencyCode: z.string().min(3, "Currency code is required").default("USD"), // Add if currency can be selected
+    isRecurring: z.boolean(),
+    walletId: z.string().min(1, { message: t('walletRequiredError') }),
+    categoryId: z.string().min(1, { message: t('categoryRequiredError') }),
+    frequencyId: z.string().optional(), // Optional, only relevant if isRecurring
   });
 
   type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, register } = useForm<NewTransactionFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting }, register, watch } = useForm<NewTransactionFormData>({
     resolver: zodResolver(NewTransactionSchema),
     defaultValues: {
       amount: undefined,
       description: '',
-      typeId: '', // Default to empty, user must select
+      typeId: '', 
       date: new Date(),
       isRecurring: false,
+      walletId: '',
+      categoryId: '',
+      frequencyId: '',
     },
   });
 
+  const isRecurringWatched = watch('isRecurring');
+
+  useEffect(() => {
+    const overallLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || isLoadingFrequencies;
+    setGlobalLoading(overallLoading);
+  }, [isLoadingTypes, isLoadingWallets, isLoadingCategories, isLoadingFrequencies, setGlobalLoading]);
+
   useEffect(() => {
     if (isAuthenticated && token) {
-      setGlobalLoading(true);
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
           const formattedTypes = Object.entries(data.types)
             .map(([id, name]) => ({ id, name: name as string }));
           setTransactionTypes(formattedTypes);
-          // Set default typeId if applicable, e.g., to EXPENSE ("2")
-          // For now, let user select.
         })
         .catch(error => {
           console.error("Failed to fetch transaction types", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
-        .finally(() => {
-          setIsLoadingTypes(false);
-          setGlobalLoading(false);
-        });
-    } else {
-      setIsLoadingTypes(false);
-      setGlobalLoading(false);
+        .finally(() => setIsLoadingTypes(false));
+
+      setIsLoadingWallets(true);
+      getWalletsList(token)
+        .then(data => {
+           const formattedWallets = data.wallets.map(w => ({ id: String(w.id), name: w.name}));
+           setWallets(formattedWallets);
+        })
+        .catch(error => {
+          console.error("Failed to fetch wallets", error);
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+        })
+        .finally(() => setIsLoadingWallets(false));
+      
+      setIsLoadingCategories(true);
+      getTransactionCategories(token) // This uses mock data for now
+        .then(data => {
+          const formattedCategories = Object.entries(data.categories)
+            .map(([id, name]) => ({ id, name: name as string }));
+          setCategories(formattedCategories);
+        })
+        .catch(error => {
+          console.error("Failed to fetch categories", error);
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+        })
+        .finally(() => setIsLoadingCategories(false));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated]);
+  }, [token, isAuthenticated, t, toast]);
+
+  useEffect(() => {
+    if (isRecurringWatched && isAuthenticated && token) {
+      setIsLoadingFrequencies(true);
+      getTransactionFrequencies(token)
+        .then(data => {
+          const formattedFrequencies = Object.entries(data.periods)
+            .map(([id, name]) => ({ id, name: name as string }));
+          setFrequencies(formattedFrequencies);
+        })
+        .catch(error => {
+          console.error("Failed to fetch frequencies", error);
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+        })
+        .finally(() => setIsLoadingFrequencies(false));
+    } else {
+      setFrequencies([]); // Clear frequencies if not recurring
+      setIsLoadingFrequencies(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecurringWatched, token, isAuthenticated, t, toast]);
+
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
     if (!token) {
@@ -97,19 +156,15 @@ export default function NewTransactionPage() {
     }
     setGlobalLoading(true);
     try {
-      // API expects amount in cents. New API structure amount is { amount: number, currency: { code: string } }
-      // The form collects `amount` as a float.
-      // The createTransaction API endpoint in API_DOCUMENTATION.md expects:
-      // { "amount": 5000, "description": "...", "typeId": "2", "date": "YYYY-MM-DD", "isRecurring": false }
-      // So, we need to ensure `typeId` is the string ID ("1", "2") that matches the fetched types.
-      // And amount is in cents.
       const payload = {
         amount: Math.round(data.amount * 100), 
-        description: data.description || null, // Send null if empty
-        typeId: data.typeId, // This is already "1" or "2" from the select
+        description: data.description || null,
+        typeId: data.typeId, 
         date: format(data.date, 'yyyy-MM-dd'),
-        isRecurring: data.isRecurring, 
-        // currency: data.currencyCode, // Add if currency selection is implemented
+        isRecurring: data.isRecurring,
+        wallet_id: data.walletId, // API_DOCUMENTATION suggests wallet_id
+        category_id: data.categoryId, // API_DOCUMENTATION suggests category_id
+        // frequencyId is not sent as per API spec, only isRecurring
       };
       await createTransaction(payload, token);
       toast({
@@ -125,9 +180,11 @@ export default function NewTransactionPage() {
         description: error.message || t('unexpectedError'),
       });
     } finally {
-      setGlobalLoading(false);
+      // Global loader is turned off by navigation events or the effect watching local loaders
     }
   };
+  
+  const anyDataLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || (isRecurringWatched && isLoadingFrequencies);
 
   return (
     <MainLayout>
@@ -155,7 +212,7 @@ export default function NewTransactionPage() {
                     type="number"
                     step="0.01"
                     {...register('amount')}
-                    placeholder={t('amountPlaceholder', { currency: '$' })} 
+                    placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })} 
                     className={errors.amount ? 'border-destructive' : ''}
                   />
                   {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
@@ -173,13 +230,12 @@ export default function NewTransactionPage() {
                         disabled={isLoadingTypes || transactionTypes.length === 0}
                       >
                         <SelectTrigger id="typeId" className={errors.typeId ? 'border-destructive' : ''}>
-                          <SelectValue placeholder={isLoadingTypes ? t('loading') : (transactionTypes.length === 0 ? t('selectTypePlaceholder') : t('selectTypePlaceholder'))} />
+                          <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
                           {transactionTypes.map(type => (
-                            // type.id is string "1", "2"; type.name is "INCOME", "EXPENSE"
                             <SelectItem key={type.id} value={type.id}>
-                              {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'])}
+                              {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'], {defaultValue: type.name})}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -189,6 +245,64 @@ export default function NewTransactionPage() {
                   {errors.typeId && <p className="text-sm text-destructive">{errors.typeId.message}</p>}
                 </div>
               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="walletId">{t('wallet')}</Label>
+                  <Controller
+                    name="walletId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isLoadingWallets || wallets.length === 0}
+                      >
+                        <SelectTrigger id="walletId" className={errors.walletId ? 'border-destructive' : ''}>
+                           <Landmark className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder={isLoadingWallets ? t('loading') : t('selectWalletPlaceholder')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {wallets.map(wallet => (
+                            <SelectItem key={wallet.id} value={String(wallet.id)}>
+                              {wallet.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.walletId && <p className="text-sm text-destructive">{errors.walletId.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="categoryId">{t('category')}</Label>
+                  <Controller
+                    name="categoryId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isLoadingCategories || categories.length === 0}
+                      >
+                        <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
+                          <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
+                </div>
+              </div>
+
 
               <div className="space-y-2">
                 <Label htmlFor="description">{t('description')}</Label>
@@ -201,7 +315,7 @@ export default function NewTransactionPage() {
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <div className="space-y-2">
                   <Label htmlFor="date">{t('date')}</Label>
                   <Controller
@@ -234,29 +348,67 @@ export default function NewTransactionPage() {
                   {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
                 </div>
 
-                <div className="space-y-2 flex items-center gap-x-2 pt-6">
-                   <Controller
-                    name="isRecurring"
-                    control={control}
-                    render={({ field }) => (
-                       <Input
-                        id="isRecurring"
-                        type="checkbox"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        className="h-4 w-4"
+                <div className="space-y-4">
+                    <div className="flex items-center space-x-2 pt-2">
+                       <Controller
+                        name="isRecurring"
+                        control={control}
+                        render={({ field }) => (
+                           <Checkbox
+                            id="isRecurring"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="h-5 w-5"
+                          />
+                        )}
                       />
+                      <Label htmlFor="isRecurring" className="cursor-pointer font-medium text-sm">
+                        {t('recurringTransaction')}
+                      </Label>
+                    </div>
+                    {errors.isRecurring && <p className="text-sm text-destructive">{errors.isRecurring.message}</p>}
+
+                    {isRecurringWatched && (
+                        <div className="space-y-2 pl-2">
+                            <Label htmlFor="frequencyId">{t('frequency')}</Label>
+                            <Controller
+                                name="frequencyId"
+                                control={control}
+                                rules={{ required: isRecurringWatched ? t('frequencyRequiredError') : false }}
+                                render={({ field }) => (
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    disabled={isLoadingFrequencies || frequencies.length === 0}
+                                >
+                                    <SelectTrigger id="frequencyId" className={errors.frequencyId ? 'border-destructive' : ''}>
+                                    <Repeat className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    <SelectValue placeholder={isLoadingFrequencies ? t('loading') : t('selectFrequencyPlaceholder')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                    {frequencies.map(freq => (
+                                        <SelectItem key={freq.id} value={freq.id}>
+                                        {freq.name} 
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                )}
+                            />
+                            {errors.frequencyId && <p className="text-sm text-destructive">{errors.frequencyId.message}</p>}
+                        </div>
                     )}
-                  />
-                  <Label htmlFor="isRecurring" className="cursor-pointer">{t('recurringTransaction')}</Label>
-                  {errors.isRecurring && <p className="text-sm text-destructive">{errors.isRecurring.message}</p>}
                 </div>
               </div>
               
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting || isLoadingTypes}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSubmitting ? t('saving') : t('saveTransaction')}
+                <Button type="submit" disabled={isSubmitting || anyDataLoading}>
+                  {isSubmitting || anyDataLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {isSubmitting || anyDataLoading ? t('saving') : t('saveTransaction')}
                 </Button>
               </div>
             </form>

@@ -1,6 +1,6 @@
 
 import { URLS } from '@/config/urls';
-import type { ApiError, Transaction, User } from '@/types';
+import type { ApiError, Transaction, User, Wallet, WalletDetails, Frequency, Category, WalletTypeApiResponse } from '@/types';
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -14,15 +14,16 @@ async function handleResponse<T>(response: Response): Promise<T> {
     console.error('API Error Status:', response.status, 'Error Data:', errorData);
 
     if (response.status === 401) {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/set-token') {
-        // Prevent redirect loop if already on set-token or login page
+      if (typeof window !== 'undefined' && window.location.pathname !== '/set-token' && window.location.pathname !== '/login') {
         console.log('Redirecting to /set-token due to 401');
+        // Before redirecting, clear potentially bad token
+        localStorage.removeItem('financeflow_jwt_token');
         window.location.href = '/set-token';
       }
     }
     throw errorData;
   }
-  if (response.status === 204) { // No content
+  if (response.status === 204) { 
     return undefined as T;
   }
   return response.json();
@@ -67,7 +68,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     console.log('Body (FormData or other):', fetchOptions.body);
   }
 
-
   const response = await fetch(url, {
     ...fetchOptions,
     headers,
@@ -77,12 +77,14 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 }
 
 // Auth
-export const loginUser = (email: string): Promise<{ user: { login: string }; token: string }> =>
+export const loginUser = (email: string): Promise<{ user: User; token: string }> => // Assuming API returns full User object
   request(URLS.login, { method: 'POST', body: { email } });
 
 export const fetchUserProfile = (token: string): Promise<User> =>
   request(URLS.me, { method: 'GET', token });
 
+export const updateUserProfile = (data: Partial<User & { userCurrencyCode?: string }>, token: string): Promise<User> =>
+  request(URLS.userProfile, { method: 'PUT', body: data, token });
 
 // Dashboard
 export const getDashboardTotalBalance = (token: string): Promise<{ total_balance: number }> =>
@@ -99,13 +101,13 @@ export const getDashboardMonthExpenses = (token: string): Promise<{ month_expens
 export const getTransactionTypes = (token: string): Promise<{ types: Record<string, string> }> =>
   request(URLS.transactionTypes, { method: 'GET', token });
 
-export const createTransaction = (data: any, token: string): Promise<any> =>
+export const createTransaction = (data: any, token: string): Promise<Transaction> =>
   request(URLS.transactions, { method: 'POST', body: data, token });
 
 export const getTransactionsList = (
   token: string,
   params: Record<string, string | undefined> = {}
-): Promise<{ transactions: Transaction[] }> => { // Expecting new structure { transactions: [] }
+): Promise<{ transactions: Transaction[] }> => {
   const definedParams: Record<string, string> = {};
   for (const key in params) {
     if (params[key] !== undefined) {
@@ -114,11 +116,36 @@ export const getTransactionsList = (
   }
   const queryString = new URLSearchParams(definedParams).toString();
   const url = queryString ? `${URLS.transactions}?${queryString}` : URLS.transactions;
-  // The API documentation mentioned `{ data: Transaction[]; meta: any }`
-  // but user sample provides `{ transactions: Transaction[] }`.
-  // Adjusting to user sample. If 'data' is the key, this needs to change.
   return request<{ transactions: Transaction[] }>(url, { method: 'GET', token });
 };
+
+export const getTransactionFrequencies = (token: string): Promise<{ periods: Record<string, string> }> =>
+  request(URLS.transactionFrequencies, { method: 'GET', token });
+
+// Mocked for now as API endpoint is {categories: {}} in user prompt
+export const getTransactionCategories = (token: string): Promise<{ categories: Record<string, string> }> => {
+  console.warn("Using mock data for getTransactionCategories");
+  return Promise.resolve({
+    categories: {
+      "1": "Food & Dining",
+      "2": "Transportation",
+      "3": "Shopping",
+      "4": "Utilities",
+      "5": "Entertainment",
+      "6": "Healthcare",
+      "7": "Salary",
+      "8": "Freelance",
+    }
+  });
+};
+
+
+// Wallets
+export const getWalletsList = (token: string): Promise<{ wallets: WalletDetails[] }> =>
+  request(URLS.wallets, { method: 'GET', token });
+
+export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiResponse }> =>
+  request(URLS.walletTypes, { method: 'GET', token });
 
 
 export { request };

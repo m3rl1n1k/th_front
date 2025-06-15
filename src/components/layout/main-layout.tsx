@@ -18,11 +18,12 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useGlobalLoader } from '@/context/global-loader-context';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, Sun, Moon } from 'lucide-react'; 
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards } from 'lucide-react'; 
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
   { href: '/transactions', labelKey: 'transactions', icon: ListChecks },
+  { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards }, // Added Wallets
   { href: '/profile', labelKey: 'profile', icon: UserCircle },
   { href: '/set-token', labelKey: 'setToken', icon: Settings },
 ];
@@ -30,7 +31,7 @@ const navItems = [
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const { t, language, setLanguage } = useTranslation();
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
+  const { setIsLoading: setGlobalLoading, isLoading: isGlobalLoading } = useGlobalLoader();
   const router = useRouter();
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -46,19 +47,22 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }, [authLoading, isAuthenticated, router, pathname]);
   
   const handleNavLinkClick = (href: string) => {
+    if (pathname === href && !isGlobalLoading) return; // Avoid reload if already on page and not loading
     setGlobalLoading(true);
     router.push(href);
     setIsSheetOpen(false); 
   };
 
   const handleLanguageChange = async (lang: string) => {
+    if (language === lang) return;
     setGlobalLoading(true);
     try {
       await setLanguage(lang); 
     } catch (error) {
       console.error("Error changing language:", error);
+      // Toast can be added here if needed
     } finally {
-      setGlobalLoading(false);
+      // setGlobalLoading(false); // Let navigation events handle this
     }
   };
   
@@ -81,6 +85,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
   
   if (!authLoading && !isAuthenticated) {
+    // Could return null or a redirecting state, but effect above handles push to /login
     return null; 
   }
 
@@ -120,11 +125,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </nav>
               </SheetContent>
             </Sheet>
-            <Link href="/" onClick={() => handleNavLinkClick('/')}>
-              <div className="hidden md:flex items-center space-x-2">
-                <DollarSign className="h-8 w-8 text-primary" />
-                <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
-              </div>
+            <Link href="/" onClick={() => handleNavLinkClick('/')} className="hidden md:flex items-center space-x-2">
+              <DollarSign className="h-8 w-8 text-primary" />
+              <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
             </Link>
           </div>
 
@@ -133,6 +136,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Languages className="h-5 w-5" />
+                  <span className="sr-only">{t('changeLanguage')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -141,8 +145,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem onClick={() => handleLanguageChange('en')} disabled={language === 'en'}>
                   English
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLanguageChange('es')} disabled={language === 'es'}>
-                  Español
+                <DropdownMenuItem onClick={() => handleLanguageChange('uk')} disabled={language === 'uk'}>
+                  Українська
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -152,7 +156,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={`https://placehold.co/100x100.png?text=${user.login.charAt(0).toUpperCase()}`} alt={user.login} data-ai-hint="avatar user" />
+                      <AvatarImage src={`https://placehold.co/100x100.png?text=${user.login.charAt(0).toUpperCase()}`} alt={user.login} data-ai-hint="avatar user"/>
                       <AvatarFallback>{user.login.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
@@ -171,7 +175,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>{t('profile')}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={logout}>
+                  <DropdownMenuItem onClick={() => {
+                      setGlobalLoading(true);
+                      logout(); // logout itself will redirect to /login, NavigationEvents should handle loader
+                  }}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>{t('logout')}</span>
                   </DropdownMenuItem>
