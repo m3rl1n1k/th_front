@@ -24,8 +24,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory, MainCategory } from '@/types';
-import { useGlobalLoader } from '@/context/global-loader-context';
+import type { Transaction, TransactionType as AppTransactionType, SubCategory } from '@/types';
 
 interface GroupedTransactions {
   [date: string]: Transaction[];
@@ -36,7 +35,6 @@ export default function TransactionsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
@@ -55,9 +53,6 @@ export default function TransactionsPage() {
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
 
-  useEffect(() => {
-    setGlobalLoading(isLoadingTypes || isLoadingCategories || isLoadingTransactions);
-  }, [isLoadingTypes, isLoadingCategories, isLoadingTransactions, setGlobalLoading]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -110,7 +105,6 @@ export default function TransactionsPage() {
         })
         .catch((error: any) => {
           console.error("Failed to fetch transactions", error);
-          // toast is handled by api.ts for 401, other errors can be handled here
            if (error.code !== 401) {
             toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
           }
@@ -127,7 +121,7 @@ export default function TransactionsPage() {
   useEffect(() => {
     fetchTransactions();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token]); // Only fetch on auth change initially
 
   const processedTransactions = useMemo(() => {
     if (!rawTransactions || transactionTypes.length === 0) {
@@ -176,17 +170,15 @@ export default function TransactionsPage() {
 
   const handleClearFilters = () => {
     setFilters({});
-    // Refetch with empty filters
-    // This relies on fetchTransactions being re-called due to filter state change
-    // To be more explicit on button click and ensure it fires after state update:
-    if (isAuthenticated && token) {
+    // Refetch with empty filters explicitly
+     if (isAuthenticated && token) {
       setIsLoadingTransactions(true);
-      getTransactionsList(token, {})
+      getTransactionsList(token, {}) // Pass empty object for params
         .then(result => {
           setRawTransactions(result.transactions || []);
         })
         .catch((error: any) => {
-          console.error("Failed to fetch transactions", error);
+          console.error("Failed to fetch transactions after clearing filters", error);
            if (error.code !== 401) {
              toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
            }
@@ -443,4 +435,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-

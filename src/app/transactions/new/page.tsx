@@ -29,7 +29,6 @@ import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, SubCategory as ApiSubCategory } from '@/types';
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
-import { useGlobalLoader } from '@/context/global-loader-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
 interface FormCategory {
@@ -53,8 +52,6 @@ export default function NewTransactionPage() {
   const [isLoadingWallets, setIsLoadingWallets] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
-
   const NewTransactionSchema = z.object({
     amount: z.coerce.number().positive({ message: t('amountPositiveError') }),
     description: z.string().max(255, { message: t('descriptionTooLongError')}).optional().nullable(),
@@ -79,11 +76,6 @@ export default function NewTransactionPage() {
       frequencyId: '', 
     },
   });
-
-  useEffect(() => {
-    const overallLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || isLoadingFrequencies;
-    setGlobalLoading(overallLoading);
-  }, [isLoadingTypes, isLoadingWallets, isLoadingCategories, isLoadingFrequencies, setGlobalLoading]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -115,7 +107,9 @@ export default function NewTransactionPage() {
       setIsLoadingCategories(true);
       getMainCategories(token)
         .then(mainCategoriesResponse => {
-          const allSubCategories: ApiSubCategory[] = mainCategoriesResponse.flatMap(mainCat => mainCat.subCategories || []);
+           const allSubCategories: ApiSubCategory[] = Array.isArray(mainCategoriesResponse) 
+            ? mainCategoriesResponse.flatMap(mainCat => mainCat.subCategories || []) 
+            : [];
           const formattedCategories: FormCategory[] = allSubCategories.map(subCat => ({
             id: String(subCat.id),
             name: subCat.name
@@ -183,11 +177,9 @@ export default function NewTransactionPage() {
       toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
       return;
     }
-    setGlobalLoading(true);
 
     const selectedFrequency = frequencies.find(f => f.id === data.frequencyId);
     const isRecurring = selectedFrequency ? selectedFrequency.name.toUpperCase() !== 'ONE_TIME' : false;
-
 
     try {
       const payload = {
@@ -212,8 +204,6 @@ export default function NewTransactionPage() {
         title: t('transactionFailedTitle'),
         description: error.message || t('unexpectedError'),
       });
-    } finally {
-      // Global loader is turned off by navigation events
     }
   };
   
@@ -427,4 +417,3 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
-

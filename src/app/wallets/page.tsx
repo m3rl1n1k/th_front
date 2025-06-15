@@ -11,7 +11,6 @@ import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { WalletCards, Landmark, AlertTriangle, PlusCircle, PiggyBank, CreditCard, RefreshCwIcon, LayoutGrid, List } from 'lucide-react';
 import type { WalletDetails, WalletTypeMap, WalletTypeApiResponse } from '@/types';
-import { useGlobalLoader } from '@/context/global-loader-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,12 +23,7 @@ export default function WalletsPage() {
   const [walletTypeMap, setWalletTypeMap] = useState<WalletTypeMap>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-
-  useEffect(() => {
-    setGlobalLoading(isLoading || isLoadingTypes);
-  }, [isLoading, isLoadingTypes, setGlobalLoading]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -68,10 +62,10 @@ export default function WalletsPage() {
   }, [token, isAuthenticated, t, toast]);
 
   const processedWallets = useMemo(() => {
-    if (!wallets || Object.keys(walletTypeMap).length === 0 && wallets.length > 0) { // Condition adjusted to ensure walletTypeMap is ready only if wallets exist
+    if (!wallets || Object.keys(walletTypeMap).length === 0 && wallets.length > 0) {
       return null; 
     }
-    if (!wallets) return null; // Handle case where wallets is null
+    if (!wallets) return null;
 
     return wallets.map(wallet => {
       const typeKey = wallet.type; 
@@ -122,7 +116,7 @@ export default function WalletsPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 className="font-headline text-3xl font-bold text-foreground">{t('walletsTitle')}</h1>
             <div className="flex items-center space-x-4">
-                <Skeleton className="h-10 w-20 rounded-md" /> {/* Placeholder for view toggle */}
+                <Skeleton className="h-10 w-20 rounded-md" />
                 <Button disabled className="w-full sm:w-auto">
                   <PlusCircle className="mr-2 h-5 w-5" />
                   {t('addNewWalletButton')}
@@ -297,4 +291,3 @@ export default function WalletsPage() {
     </MainLayout>
   );
 }
-

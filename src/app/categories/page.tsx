@@ -9,25 +9,19 @@ import { useAuth } from '@/context/auth-context';
 import { getMainCategories } from '@/lib/api';
 import type { MainCategory } from '@/types';
 import { useTranslation } from '@/context/i18n-context';
-import { useGlobalLoader } from '@/context/global-loader-context';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, Shapes, PlusCircle, Folder } from 'lucide-react'; // Added Folder
+import { AlertTriangle, Shapes, PlusCircle, Folder } from 'lucide-react';
 import { IconRenderer } from '@/components/common/icon-renderer';
 
 export default function CategoriesPage() {
   const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
   const [mainCategories, setMainCategories] = useState<MainCategory[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("all");
-
-  useEffect(() => {
-    setGlobalLoading(isLoading);
-  }, [isLoading, setGlobalLoading]);
 
   useEffect(() => {
     if (isAuthenticated && token) {

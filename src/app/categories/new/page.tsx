@@ -19,12 +19,11 @@ import { createMainCategory, createSubCategory, getMainCategories } from '@/lib/
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, PlusCircle, Tag } from 'lucide-react'; // Removed Palette, Icon as they might conflict
-import { useGlobalLoader } from '@/context/global-loader-context';
+import { Save, ArrowLeft, PlusCircle, Tag } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 
 // Schemas
-const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i; // Updated to require 6 hex characters
+const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
 const MainCategorySchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
@@ -47,7 +46,6 @@ export default function CreateCategoryPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [existingMainCategories, setExistingMainCategories] = useState<MainCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -79,10 +77,6 @@ export default function CreateCategoryPage() {
     }
   }, [token, isAuthenticated, toast, t]);
   
-  useEffect(() => {
-    setGlobalLoading(mainCategoryForm.formState.isSubmitting || subCategoryForm.formState.isSubmitting || isLoadingCategories);
-  }, [mainCategoryForm.formState.isSubmitting, subCategoryForm.formState.isSubmitting, isLoadingCategories, setGlobalLoading]);
-
 
   const onMainCategorySubmit: SubmitHandler<MainCategoryFormData> = async (data) => {
     if (!token) return;
@@ -118,6 +112,7 @@ export default function CreateCategoryPage() {
   };
   
   const isSubmitting = mainCategoryForm.formState.isSubmitting || subCategoryForm.formState.isSubmitting;
+  const isFormsLoading = isSubmitting || isLoadingCategories;
 
   return (
     <MainLayout>
@@ -195,8 +190,8 @@ export default function CreateCategoryPage() {
                     />
                     {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.color.message}</p>}
                   </div>
-                  <Button type="submit" disabled={isSubmitting} className="w-full">
-                    {isSubmitting ? t('saving') : ( <> <PlusCircle className="mr-2 h-4 w-4" /> {t('createButton')} </> )}
+                  <Button type="submit" disabled={isFormsLoading} className="w-full">
+                    {isFormsLoading ? t('saving') : ( <> <PlusCircle className="mr-2 h-4 w-4" /> {t('createButton')} </> )}
                   </Button>
                 </form>
               </CardContent>
@@ -292,8 +287,8 @@ export default function CreateCategoryPage() {
                     />
                     {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.color.message}</p>}
                   </div>
-                  <Button type="submit" disabled={isSubmitting || isLoadingCategories} className="w-full">
-                     {isSubmitting ? t('saving') : ( <> <Tag className="mr-2 h-4 w-4" /> {t('createButton')} </>)}
+                  <Button type="submit" disabled={isFormsLoading} className="w-full">
+                     {isFormsLoading ? t('saving') : ( <> <Tag className="mr-2 h-4 w-4" /> {t('createButton')} </>)}
                   </Button>
                 </form>
               </CardContent>

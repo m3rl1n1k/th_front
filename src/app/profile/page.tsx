@@ -8,9 +8,8 @@ import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase } from 'lucide-react'; // Added Briefcase for currency
+import { UserCircle, Mail, Edit3, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useGlobalLoader } from '@/context/global-loader-context';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,11 +17,11 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserProfileData {
-  login: string; // Renamed from name to login to match User type
+  login: string; 
   email: string;
   memberSince: string;
   profilePictureUrl?: string;
-  userCurrencyCode?: string; // Added for user's preferred currency
+  userCurrencyCode?: string; 
 }
 
 export default function ProfilePage() {
@@ -30,10 +29,8 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
   const { toast } = useToast();
 
-  // Form state for dialog
   const [editLogin, setEditLogin] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editCurrencyCode, setEditCurrencyCode] = useState('');
@@ -41,7 +38,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setGlobalLoading(true);
       setIsLoading(true);
 
       const newProfileData = {
@@ -56,22 +52,17 @@ export default function ProfilePage() {
       setEditEmail(newProfileData.email);
       setEditCurrencyCode(newProfileData.userCurrencyCode || '');
 
-
       setIsLoading(false);
-      setGlobalLoading(false);
     } else if (isAuthenticated && !user && token) {
-        setGlobalLoading(true);
         setIsLoading(true);
         fetchUser().finally(() => {
             setIsLoading(false);
-            setGlobalLoading(false);
         });
     } else if (!isAuthenticated) {
       setIsLoading(false);
-      setGlobalLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, token, fetchUser, setGlobalLoading, t]);
+  }, [isAuthenticated, user, token, fetchUser, t]);
 
 
   if (isLoading || (!isAuthenticated && !token)) {
@@ -141,15 +132,12 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Here you would typically make an API call to update the user's profile
-    // For now, we'll just log it and show a toast
     const updatedData = {
       login: editLogin,
       email: editEmail,
       userCurrencyCode: editCurrencyCode,
     };
     console.log("Profile update submitted:", updatedData);
-    // Update profileData state locally for immediate reflection (optimistic update)
     setProfileData(prev => prev ? ({
         ...prev,
         login: updatedData.login,
@@ -158,7 +146,6 @@ export default function ProfilePage() {
     }) : null);
     
     toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDesc') });
-    // Close dialog - DialogClose is used below
   };
 
   let formattedMemberSince = "N/A";
@@ -250,8 +237,6 @@ export default function ProfilePage() {
                     <DialogClose asChild>
                        <Button type="button" variant="outline">{t('cancelButton')}</Button>
                     </DialogClose>
-                    {/* This button's type="submit" will trigger the form's onSubmit */}
-                    {/* Wrap with DialogClose to close dialog on successful submission from handleProfileUpdate */}
                     <DialogClose asChild>
                         <Button type="submit">{t('saveChangesButton')}</Button>
                     </DialogClose>

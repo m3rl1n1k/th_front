@@ -11,7 +11,6 @@ import { CurrencyDisplay } from '@/components/common/currency-display';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Wallet } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useGlobalLoader } from '@/context/global-loader-context';
 
 interface DashboardData {
   total_balance: number;
@@ -25,11 +24,9 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   useEffect(() => {
     if (isAuthenticated && token) {
-      setGlobalLoading(true);
       setIsLoading(true);
       Promise.all([
         getDashboardTotalBalance(token),
@@ -53,14 +50,12 @@ export default function DashboardPage() {
           setData(null); // Clear data on error
         })
         .finally(() => {
-          setIsLoading(false)
-          setGlobalLoading(false)
+          setIsLoading(false);
         });
     } else if (!isAuthenticated) {
       setIsLoading(false);
-      setGlobalLoading(false);
     }
-  }, [token, isAuthenticated, t, toast, setGlobalLoading]);
+  }, [token, isAuthenticated, t, toast]);
 
   const calculateAverageExpense = (monthlyExpense: number, period: 'daily' | 'weekly' | 'monthly') => {
     if (period === 'monthly') return monthlyExpense;

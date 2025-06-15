@@ -12,13 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
-import { useGlobalLoader } from '@/context/global-loader-context';
 import { useTranslation } from '@/context/i18n-context';
 import { KeyRound, LogIn } from 'lucide-react';
 import Link from 'next/link';
 
 const SetTokenSchema = z.object({
-  token: z.string().min(1, { message: "Token cannot be empty." }), // Basic validation
+  token: z.string().min(1, { message: "Token cannot be empty." }),
 });
 
 type SetTokenFormData = z.infer<typeof SetTokenSchema>;
@@ -27,27 +26,21 @@ export default function SetTokenPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { setTokenManually, token: currentToken, isLoading: authLoading } = useAuth();
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SetTokenFormData>({
     resolver: zodResolver(SetTokenSchema),
     defaultValues: {
-      token: currentToken || '', // Pre-fill with current token if available
+      token: currentToken || '', 
     },
   });
 
   const onSubmit: SubmitHandler<SetTokenFormData> = async (data) => {
-    setGlobalLoading(true);
     try {
-      await setTokenManually(data.token); // Auth context handles toast for success/revert
-      // No need for an additional toast here as auth-context handles it.
+      await setTokenManually(data.token);
       router.push('/dashboard');
     } catch (error: any) {
-      // This catch is unlikely to be hit if setTokenManually itself doesn't throw
-      // and handles its errors with toasts.
       console.error("Error setting token:", error);
-    } finally {
-      // setGlobalLoading(false) // Global loader is turned off by navigation events
+      // Auth context handles toasts for success/revert
     }
   };
 
@@ -81,7 +74,6 @@ export default function SetTokenPage() {
         </CardContent>
         <CardFooter className="mt-4 flex-col items-center justify-center text-sm">
           <p className="text-muted-foreground">
-            {/* Link to dashboard or login if applicable */}
             Go back to{' '}
             <Link href="/dashboard" className="font-medium text-primary hover:underline">
               {t('dashboard')}

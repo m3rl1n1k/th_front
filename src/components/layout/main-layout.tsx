@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
-import { useGlobalLoader } from '@/context/global-loader-context';
 import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes } from 'lucide-react';
 
 const navItems = [
@@ -32,11 +31,11 @@ const navItems = [
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const { t, language, setLanguage } = useTranslation();
-  const { setIsLoading: setGlobalLoading, isLoading: isGlobalLoading } = useGlobalLoader();
   const router = useRouter();
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false); // Local navigation loader
 
   useEffect(() => setMounted(true), []);
 
@@ -48,24 +47,33 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }, [authLoading, isAuthenticated, router, pathname]);
 
   const handleNavLinkClick = (href: string) => {
-    if (pathname === href && !isGlobalLoading) return; // Avoid reload if already on page and not loading
-    setGlobalLoading(true);
+    if (pathname === href) {
+      setIsSheetOpen(false);
+      return;
+    }
+    setIsNavigating(true); // Start local loader
     router.push(href);
     setIsSheetOpen(false);
+    // setIsNavigating(false) should be handled by the target page or a general navigation end event
   };
 
   const handleLanguageChange = async (lang: string) => {
     if (language === lang) return;
-    setGlobalLoading(true);
+    setIsNavigating(true); // Start local loader for language change
     try {
       await setLanguage(lang);
+      // Potentially refresh or let components re-render
     } catch (error) {
       console.error("Error changing language:", error);
-      // Toast can be added here if needed
     } finally {
-      // setGlobalLoading(false); // Let navigation events handle this
+      setIsNavigating(false); // Stop local loader
     }
   };
+
+  useEffect(() => {
+    setIsNavigating(false); // Reset navigation loader when pathname changes (navigation ends)
+  }, [pathname]);
+
 
   if (authLoading && !user) {
      return (
@@ -86,13 +94,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!authLoading && !isAuthenticated) {
-    // Could return null or a redirecting state, but effect above handles push to /login
     return null;
   }
 
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {isNavigating && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/50 backdrop-blur-sm">
+            <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+      )}
       <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center">
@@ -118,6 +132,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                       className="justify-start text-left"
                       onClick={() => handleNavLinkClick(item.href)}
                       aria-current={pathname === item.href ? 'page' : undefined}
+                      disabled={isNavigating}
                     >
                       <item.icon className="mr-2 h-5 w-5" />
                       {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
@@ -135,7 +150,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center space-x-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" disabled={isNavigating}>
                   <Languages className="h-5 w-5" />
                   <span className="sr-only">{t('changeLanguage')}</span>
                 </Button>
@@ -143,10 +158,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{t('changeLanguage')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleLanguageChange('en')} disabled={language === 'en'}>
+                <DropdownMenuItem onClick={() => handleLanguageChange('en')} disabled={language === 'en' || isNavigating}>
                   English
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLanguageChange('uk')} disabled={language === 'uk'}>
+                <DropdownMenuItem onClick={() => handleLanguageChange('uk')} disabled={language === 'uk' || isNavigating}>
                   Українська
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -155,7 +170,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             {mounted && user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled={isNavigating}>
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={`https://placehold.co/100x100.png?text=${user.login.charAt(0).toUpperCase()}`} alt={user.login} data-ai-hint="avatar user"/>
                       <AvatarFallback>{user.login.charAt(0).toUpperCase()}</AvatarFallback>
@@ -172,14 +187,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleNavLinkClick('/profile')}>
+                  <DropdownMenuItem onClick={() => handleNavLinkClick('/profile')} disabled={isNavigating}>
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>{t('profile')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
-                      setGlobalLoading(true);
-                      logout(); // logout itself will redirect to /login, NavigationEvents should handle loader
-                  }}>
+                      setIsNavigating(true);
+                      logout(); 
+                  }} disabled={isNavigating}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>{t('logout')}</span>
                   </DropdownMenuItem>
@@ -200,6 +215,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 className="w-full justify-start"
                 onClick={() => handleNavLinkClick(item.href)}
                 aria-current={pathname === item.href ? 'page' : undefined}
+                disabled={isNavigating}
               >
                 <item.icon className="mr-2 h-5 w-5" />
                 {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}

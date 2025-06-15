@@ -1,22 +1,20 @@
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGlobalLoader } from '@/context/global-loader-context';
 import { useTranslation } from '@/context/i18n-context';
-// Removed unused imports: useState, useForm, SubmitHandler, zodResolver, z, Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, useAuth, DollarSign, Mail, Link
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { setIsLoading: setGlobalLoading } = useGlobalLoader();
+  const [isLoading, setIsLoading] = useState(true); // Local loader
 
   useEffect(() => {
-    setGlobalLoading(true);
+    setIsLoading(true);
     router.replace('/dashboard');
-    // Global loader will be turned off by NavigationEvents on the dashboard page
-  }, [router, setGlobalLoading]);
+    // setIsLoading(false) would ideally be set by the target page's loading logic
+  }, [router]);
 
   // Display a loading/redirecting message
   return (
