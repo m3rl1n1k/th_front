@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useGlobalLoader } from '@/context/global-loader-context';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, Sun, Moon } from 'lucide-react'; // Added Sun/Moon for potential theme toggle
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, Sun, Moon } from 'lucide-react'; 
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
@@ -48,16 +48,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const handleNavLinkClick = (href: string) => {
     setGlobalLoading(true);
     router.push(href);
-    setIsSheetOpen(false); // Close sheet on navigation
+    setIsSheetOpen(false); 
   };
 
   const handleLanguageChange = async (lang: string) => {
     setGlobalLoading(true);
     try {
-      await setLanguage(lang); // setLanguage now returns a Promise
+      await setLanguage(lang); 
     } catch (error) {
       console.error("Error changing language:", error);
-      // Handle error appropriately, e.g., show a toast
     } finally {
       setGlobalLoading(false);
     }
@@ -77,14 +76,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  // For login and set-token pages, don't render the main layout
   if (pathname === '/login' || pathname === '/set-token') {
     return <>{children}</>;
   }
   
-  // If not authenticated and not loading, and not on allowed public pages, potentially show a redirecting message or null
   if (!authLoading && !isAuthenticated) {
-    return null; // Or a loading spinner while redirecting
+    return null; 
   }
 
 
@@ -144,7 +141,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem onClick={() => handleLanguageChange('en')} disabled={language === 'en'}>
                   English
                 </DropdownMenuItem>
-                {/* Spanish option removed */}
+                <DropdownMenuItem onClick={() => handleLanguageChange('uk')} disabled={language === 'uk'}>
+                  Українська
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 

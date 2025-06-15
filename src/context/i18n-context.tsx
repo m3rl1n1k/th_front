@@ -2,11 +2,11 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { useRouter } from 'next/navigation'; // For potential language query param updates
+import { useRouter } from 'next/navigation'; 
 import en from '@/locales/en.json';
-// REMOVED: import es from '@/locales/es.json'; 
+import uk from '@/locales/uk.json'; 
 
-type Translations = typeof en; // Assuming 'en' is the base structure
+type Translations = typeof en; 
 
 interface I18nContextType {
   language: string;
@@ -17,7 +17,7 @@ interface I18nContextType {
 
 const translationsMap: Record<string, Translations> = {
   en,
-  // es removed
+  uk, 
 };
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -31,7 +31,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const storedLang = typeof window !== 'undefined' ? localStorage.getItem(LANGUAGE_STORAGE_KEY) : 'en';
-    const initialLang = translationsMap[storedLang] ? storedLang : 'en'; // Default to 'en' if stored lang not supported
+    const initialLang = translationsMap[storedLang] ? storedLang : 'en'; 
     setLanguageState(initialLang);
     setCurrentTranslations(translationsMap[initialLang]);
   }, []);
@@ -46,7 +46,6 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
       }
     } else {
       console.warn(`Language "${lang}" not supported. Defaulting to 'en'.`);
-      // Default to 'en' if trying to set an unsupported language
       if (lang !== 'en') {
         await new Promise(resolve => setTimeout(resolve, 300));
         setLanguageState('en');
