@@ -19,10 +19,10 @@ import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
 import { getTransactionTypes, getTransactionsList } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
-import { CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, Clock } from 'lucide-react';
+import { CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType } from '@/types'; // Renamed to avoid conflict
+import type { Transaction, TransactionType as AppTransactionType } from '@/types';
 import { useGlobalLoader } from '@/context/global-loader-context';
 
 const mockCategories = [
@@ -53,26 +53,22 @@ export default function TransactionsPage() {
     startDate?: Date;
     endDate?: Date;
     categoryId?: string;
-    typeId?: string; // This refers to the numeric type from API (e.g. 1 for INCOME)
+    typeId?: string;
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
 
-  // Effect for global loader
   useEffect(() => {
     setGlobalLoading(isLoadingTypes || isLoadingTransactions);
   }, [isLoadingTypes, isLoadingTransactions, setGlobalLoading]);
 
-  // Fetch transaction types
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
-          // API returns types like { "1": "INCOME", "2": "EXPENSE" }
-          // We need to transform it to AppTransactionType[]: [{ id: "1", name: "INCOME" }, ...]
           const formattedTypes = Object.entries(data.types).map(([id, name]) => ({
-            id: id, // Keep original ID (string "1", "2")
-            name: name as string // "INCOME", "EXPENSE"
+            id: id,
+            name: name as string
           }));
           setTransactionTypes(formattedTypes);
         })
@@ -86,7 +82,6 @@ export default function TransactionsPage() {
     }
   }, [token, isAuthenticated, t, toast]);
 
-  // Fetch transactions
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTransactions(true);
@@ -94,7 +89,7 @@ export default function TransactionsPage() {
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
-      if (filters.typeId) params.typeId = filters.typeId; // This is the numeric type for API
+      if (filters.typeId) params.typeId = filters.typeId;
       if (activeTab === "recurring") params.isRecurring = "true";
 
       getTransactionsList(token, params)
@@ -113,32 +108,28 @@ export default function TransactionsPage() {
     }
   }, [isAuthenticated, token, filters, activeTab, t, toast]);
 
-  const processedAndGroupedTransactions = useMemo(() => {
+  const processedTransactions = useMemo(() => {
     if (!rawTransactions || transactionTypes.length === 0) {
-      return { groups: {}, sortedDateKeys: [] };
+      return [];
     }
-
-    const processed = rawTransactions.map(tx => {
-      // tx.type is number (1, 2), transactionTypes[].id is string ("1", "2")
+    return rawTransactions.map(tx => {
       const typeDetails = transactionTypes.find(tt => tt.id === String(tx.type));
       return {
         ...tx,
         typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN')
       };
     });
-    
-    // Further filter by activeTab if needed (e.g., if API doesn't fully filter recurring)
-    // For now, assume API handles recurring filter with params.isRecurring
-    // If client-side recurring filtering for 'all' tab vs 'recurring' tab is needed based on tx.isRecurring:
-    // let currentTabTransactions = processed;
-    // if (activeTab === "recurring") {
-    //   currentTabTransactions = processed.filter(tx => tx.isRecurring);
-    // } else if (activeTab === "all") {
-    //   // currentTabTransactions = processed; // Or specific logic if 'all' means non-recurring for this view
-    // }
+  }, [rawTransactions, transactionTypes, t]);
+  
+  const currentTabTransactions = useMemo(() => {
+    if (activeTab === "recurring") {
+      return processedTransactions.filter(tx => tx.isRecurring);
+    }
+    return processedTransactions;
+  }, [processedTransactions, activeTab]);
 
-
-    const groups: GroupedTransactions = processed.reduce((acc, tx) => {
+  const { groups, sortedDateKeys } = useMemo(() => {
+    const newGroups: GroupedTransactions = currentTabTransactions.reduce((acc, tx) => {
       const dateKey = format(parseISO(tx.date), 'yyyy-MM-dd');
       if (!acc[dateKey]) {
         acc[dateKey] = [];
@@ -147,10 +138,9 @@ export default function TransactionsPage() {
       return acc;
     }, {} as GroupedTransactions);
 
-    const sortedDateKeys = Object.keys(groups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-
-    return { groups, sortedDateKeys };
-  }, [rawTransactions, transactionTypes, t]);
+    const newSortedDateKeys = Object.keys(newGroups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    return { groups: newGroups, sortedDateKeys: newSortedDateKeys };
+  }, [currentTabTransactions]);
 
 
   const handleFilterChange = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
@@ -158,7 +148,7 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    // Re-fetch is triggered by `filters` changing in the useEffect dependency array for fetching transactions
+    // Re-fetch is triggered by `filters` changing in the useEffect dependency array
   };
 
   const handleClearFilters = () => {
@@ -170,10 +160,10 @@ export default function TransactionsPage() {
   };
 
   const renderTransactionTableContent = () => {
-    if (isLoadingTransactions || isLoadingTypes) { // Check both as processing depends on types
+    if (isLoadingTransactions || isLoadingTypes) {
       return (
         <TableRow>
-          <TableCell colSpan={4} className="h-40 text-center"> {/* Adjusted colSpan */}
+          <TableCell colSpan={4} className="h-40 text-center">
             <RefreshCwIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
             <p className="mt-2 text-muted-foreground">{t('loading')}</p>
           </TableCell>
@@ -181,49 +171,48 @@ export default function TransactionsPage() {
       );
     }
 
-    const { groups, sortedDateKeys } = processedAndGroupedTransactions;
-
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={4} className="py-10 text-center text-muted-foreground"> {/* Adjusted colSpan */}
+          <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
             {t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}
           </TableCell>
         </TableRow>
       );
     }
 
-    return sortedDateKeys.flatMap(dateKey => {
+    return sortedDateKeys.map(dateKey => {
       const transactionsForDate = groups[dateKey];
-      const formattedDate = format(parseISO(dateKey), "PPP"); // e.g., July 28, 2024
+      const formattedDate = format(parseISO(dateKey), "PPP");
 
-      return [
-        <TableRow key={dateKey} className="bg-muted/30 hover:bg-muted/40 sticky top-0 z-10">
-          <TableCell colSpan={4} className="py-2 px-4 font-semibold text-foreground">
-            {formattedDate}
-          </TableCell>
-        </TableRow>,
-        ...transactionsForDate.map(tx => (
-          <TableRow key={tx.id}>
-            <TableCell className="hidden md:table-cell w-24"> {/* Time column */}
-               {tx.date ? format(parseISO(tx.date), "p") : 'N/A'} {/* e.g., 2:30 PM */}
-            </TableCell>
-            <TableCell>
-              <div className="font-medium">{tx.description || t('noDescription')}</div>
-              <div className="text-xs text-muted-foreground md:hidden">
-                  {tx.date ? format(parseISO(tx.date), "p") : 'N/A'} {/* Time for mobile */}
-              </div>
-            </TableCell>
-            <TableCell>
-              {/* tx.typeName should be populated: "INCOME" or "EXPENSE" */}
-              {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
-            </TableCell>
-            <TableCell className="text-right">
-              <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
+      return (
+        <React.Fragment key={dateKey + '-group'}>
+          <TableRow key={dateKey} className="bg-muted/30 hover:bg-muted/40 sticky top-0 z-10">
+            <TableCell colSpan={4} className="py-2 px-4 font-semibold text-foreground">
+              {formattedDate}
             </TableCell>
           </TableRow>
-        ))
-      ];
+          {transactionsForDate.map(tx => (
+            <TableRow key={tx.id}>
+              <TableCell className="hidden md:table-cell w-24">
+                 {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+              </TableCell>
+              <TableCell>
+                <div className="font-medium">{tx.description || t('noDescription')}</div>
+                <div className="text-xs text-muted-foreground md:hidden">
+                    {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+                </div>
+              </TableCell>
+              <TableCell>
+                {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
+              </TableCell>
+              <TableCell className="text-right">
+                <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
+              </TableCell>
+            </TableRow>
+          ))}
+        </React.Fragment>
+      );
     });
   };
 
@@ -295,7 +284,6 @@ export default function TransactionsPage() {
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="filterType">{t('filterByType')}</Label>
-                      {/* Filter by AppTransactionType.id which is string "1", "2" */}
                       <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
                         <SelectTrigger id="filterType">
                           <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
@@ -303,7 +291,6 @@ export default function TransactionsPage() {
                         <SelectContent>
                           <SelectItem value="all">{t('allTypes')}</SelectItem>
                           {transactionTypes.map(type => (
-                            // type.id is "1", type.name is "INCOME"
                             <SelectItem key={type.id} value={type.id}>
                               {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'])}
                             </SelectItem>
@@ -346,7 +333,7 @@ export default function TransactionsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="hidden md:table-cell w-24">{t('time')}</TableHead> {/* Changed from Date to Time */}
+                        <TableHead className="hidden md:table-cell w-24">{t('time')}</TableHead>
                         <TableHead>{t('description')}</TableHead>
                         <TableHead>{t('transactionType')}</TableHead>
                         <TableHead className="text-right">{t('amount')}</TableHead>
@@ -377,7 +364,7 @@ export default function TransactionsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {renderTransactionTableContent()} {/* Reuses the same rendering logic */}
+                      {renderTransactionTableContent()}
                     </TableBody>
                   </Table>
                 </div>
@@ -389,3 +376,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
