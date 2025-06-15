@@ -193,5 +193,7 @@
   "allCategoriesTab": "All Categories",
   "mainCategoriesOnlyTab": "Main Categories Only",
   "mainCategoriesOnlyListTitle": "Main Categories",
-  "mainCategoriesOnlyListDescription": "A list of your top-level main categories."
+  "mainCategoriesOnlyListDescription": "A list of your top-level main categories.",
+  "switchToDarkMode": "Switch to Dark Mode",
+  "switchToLightMode": "Switch to Light Mode"
 }

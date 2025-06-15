@@ -193,5 +193,7 @@
   "allCategoriesTab": "Всі категорії",
   "mainCategoriesOnlyTab": "Лише основні",
   "mainCategoriesOnlyListTitle": "Основні категорії",
-  "mainCategoriesOnlyListDescription": "Список ваших основних категорій верхнього рівня."
+  "mainCategoriesOnlyListDescription": "Список ваших основних категорій верхнього рівня.",
+  "switchToDarkMode": "Перемкнути на темну тему",
+  "switchToLightMode": "Перемкнути на світлу тему"
 }

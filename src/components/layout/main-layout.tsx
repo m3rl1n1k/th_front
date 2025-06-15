@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
@@ -31,11 +32,12 @@ const navItems = [
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const { t, language, setLanguage } = useTranslation();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false); // Local navigation loader
+  const [isNavigating, setIsNavigating] = useState(false); 
 
   useEffect(() => setMounted(true), []);
 
@@ -51,27 +53,25 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       setIsSheetOpen(false);
       return;
     }
-    setIsNavigating(true); // Start local loader
+    setIsNavigating(true); 
     router.push(href);
     setIsSheetOpen(false);
-    // setIsNavigating(false) should be handled by the target page or a general navigation end event
   };
 
   const handleLanguageChange = async (lang: string) => {
     if (language === lang) return;
-    setIsNavigating(true); // Start local loader for language change
+    setIsNavigating(true); 
     try {
       await setLanguage(lang);
-      // Potentially refresh or let components re-render
     } catch (error) {
       console.error("Error changing language:", error);
     } finally {
-      setIsNavigating(false); // Stop local loader
+      setIsNavigating(false); 
     }
   };
 
   useEffect(() => {
-    setIsNavigating(false); // Reset navigation loader when pathname changes (navigation ends)
+    setIsNavigating(false); 
   }, [pathname]);
 
 
@@ -147,7 +147,18 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                aria-label={t(resolvedTheme === 'dark' ? 'switchToLightMode' : 'switchToDarkMode')}
+                disabled={isNavigating}
+              >
+                {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" disabled={isNavigating}>
