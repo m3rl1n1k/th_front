@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
-import { getTransactionTypes, getTransactionsList } from '@/lib/api';
+import { getTransactionTypes, getTransactionsList, request } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CalendarIcon, PlusCircle, FilterIcon, ListFilter, RefreshCwIcon, History } from 'lucide-react';
 import { format } from 'date-fns';
@@ -38,9 +38,10 @@ export default function TransactionsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
-  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
+
+  const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true); // Start as true
 
   const [filters, setFilters] = useState<{
     startDate?: Date;
@@ -50,64 +51,81 @@ export default function TransactionsPage() {
   }>({});
   
   const [displayedTransactions, setDisplayedTransactions] = useState<Transaction[]>([]);
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true); // Start as true
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
 
+  // Effect to manage global loading state based on local loading states
+  useEffect(() => {
+    if (isLoadingTypes || isLoadingTransactions) {
+      setGlobalLoading(true);
+    } else {
+      setGlobalLoading(false);
+    }
+  }, [isLoadingTypes, isLoadingTransactions, setGlobalLoading]);
+
+  // Fetch Transaction Types
   useEffect(() => {
     if (isAuthenticated && token) {
-      setGlobalLoading(true);
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
           const filteredTypes = Object.entries(data.types)
-            .filter(([key, value]) => value === "INCOME" || value === "EXPENSE")
+            .filter(([, value]) => value === "INCOME" || value === "EXPENSE")
             .map(([key, value]) => ({ id: key, name: value }));
           setTransactionTypes(filteredTypes);
         })
         .catch(error => {
           console.error("Failed to fetch transaction types", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          setTransactionTypes([]);
         })
         .finally(() => {
           setIsLoadingTypes(false);
-          if(!isLoadingTransactions) setGlobalLoading(false);
         });
     } else {
-      setIsLoadingTypes(false); 
+      setIsLoadingTypes(false);
+      setTransactionTypes([]);
     }
-  }, [token, isAuthenticated, t, toast, setGlobalLoading, isLoadingTransactions]);
+  }, [token, isAuthenticated, t, toast]);
 
-  const fetchFilteredTransactions = useCallback(async (currentFilters: typeof filters, tab: "all" | "recurring") => {
-    if (!token || !isAuthenticated) return;
-    setIsLoadingTransactions(true);
-    setGlobalLoading(true);
-    try {
+  // Fetch Transactions List
+  useEffect(() => {
+    if (isAuthenticated && token && !isLoadingTypes) { // Only fetch if types are processed
+      setIsLoadingTransactions(true);
       const params: Record<string, string> = {};
-      if (currentFilters.startDate) params.startDate = format(currentFilters.startDate, 'yyyy-MM-dd');
-      if (currentFilters.endDate) params.endDate = format(currentFilters.endDate, 'yyyy-MM-dd');
-      if (currentFilters.categoryId) params.categoryId = currentFilters.categoryId;
-      if (currentFilters.typeId) params.typeId = currentFilters.typeId;
-      if (tab === "recurring") {
+      if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
+      if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
+      if (filters.categoryId) params.categoryId = filters.categoryId;
+      if (filters.typeId) params.typeId = filters.typeId;
+      if (activeTab === "recurring") {
         params.isRecurring = "true";
       }
 
-      const result = await getTransactionsList(token, params);
-      setDisplayedTransactions(result.data || []);
-    } catch (error: any) {
-      console.error("Failed to fetch transactions", error);
-      toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-      setDisplayedTransactions([]);
-    } finally {
-      setIsLoadingTransactions(false);
-      setGlobalLoading(false);
+      getTransactionsList(token, params)
+        .then(result => {
+          setDisplayedTransactions(result.data || []);
+        })
+        .catch((error: any) => {
+          console.error("Failed to fetch transactions", error);
+          // Log the request details for debugging 401s or other errors
+          console.log(`Failed request: GET ${URLS.transactions} with params:`, params, "Token:", token ? "Present" : "Absent");
+          if (error.code === 401) {
+             toast({ variant: "destructive", title: t('error'), description: `${t('tokenMissingError')} (Details: ${error.message || 'Unauthorized'})` });
+          } else {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+          }
+          setDisplayedTransactions([]);
+        })
+        .finally(() => {
+          setIsLoadingTransactions(false);
+        });
+    } else if (!isAuthenticated || !token) {
+        setDisplayedTransactions([]);
+        setIsLoadingTransactions(false); // Ensure loading stops if not authenticated
     }
-  }, [token, isAuthenticated, t, toast, setGlobalLoading]);
-
-  useEffect(() => {
-    if (isAuthenticated && token && !isLoadingTypes) { 
-      fetchFilteredTransactions(filters, activeTab);
-    }
-  }, [isAuthenticated, token, activeTab, fetchFilteredTransactions, filters, isLoadingTypes]);
+    // This effect depends on isLoadingTypes. When types are loaded (isLoadingTypes becomes false),
+    // it will trigger fetching transactions.
+  }, [isAuthenticated, token, filters, activeTab, isLoadingTypes, t, toast]);
 
 
   const handleFilterChange = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
@@ -115,17 +133,20 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    fetchFilteredTransactions(filters, activeTab);
+    // This will trigger the useEffect for fetching transactions because `filters` state changes.
+    // No direct fetch call needed here if filters are part of the dependency array.
+    // If an explicit re-fetch is needed without filter change, a different mechanism would be required.
+    // For now, this function primarily ensures filter state is updated.
+    // The actual API call is handled by the useEffect watching `filters`.
   };
 
   const handleClearFilters = () => {
     const clearedFilters = {};
-    setFilters(clearedFilters);
-    fetchFilteredTransactions(clearedFilters, activeTab);
+    setFilters(clearedFilters); // This will trigger the transaction fetching useEffect
   };
 
   const handleAddNewTransaction = () => {
-    router.push('/transactions/new'); // Reverted: No longer passing types
+    router.push('/transactions/new'); 
   };
 
   const filteredTransactionList = useMemo(() => {
@@ -135,20 +156,20 @@ export default function TransactionsPage() {
     return displayedTransactions;
   }, [displayedTransactions, activeTab]);
 
-  // Reverted: Removed groupedTransactions and sortedDateKeys useMemo
 
   const renderTransactionTableContent = () => {
-    if (isLoadingTransactions) {
+    if (isLoadingTransactions && displayedTransactions.length === 0) { // Show spinner only if still loading and no data yet
       return (
         <TableRow>
           <TableCell colSpan={4} className="h-40 text-center">
             <RefreshCwIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
+            <p className="mt-2 text-muted-foreground">{t('loading')}</p>
           </TableCell>
         </TableRow>
       );
     }
-
-    if (filteredTransactionList.length === 0) { // Reverted: Use filteredTransactionList directly
+    
+    if (filteredTransactionList.length === 0) { 
       return (
         <TableRow>
           <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
@@ -158,7 +179,6 @@ export default function TransactionsPage() {
       );
     }
 
-    // Reverted: Render flat list
     return filteredTransactionList.map(tx => (
       <TableRow key={tx.id}>
         <TableCell className="hidden md:table-cell">{format(new Date(tx.date + 'T00:00:00'), "PPP")}</TableCell>
@@ -175,6 +195,9 @@ export default function TransactionsPage() {
       </TableRow>
     ));
   };
+  
+  // For logging URLs, you might need to import URLS from '@/config/urls' if not already
+  const { URLS } = require('@/config/urls'); // Temporary for logging in catch
 
   return (
     <MainLayout>
@@ -259,7 +282,7 @@ export default function TransactionsPage() {
                     </div>
                   </div>
                   <div className="flex justify-end space-x-2 pt-4">
-                    <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions}>{t('clearFiltersButton')}</Button>
+                    <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes}>{t('clearFiltersButton')}</Button>
                     <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes}>
                       {(isLoadingTransactions || isLoadingTypes) && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
                       {t('applyFiltersButton')}
@@ -335,3 +358,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
