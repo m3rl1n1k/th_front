@@ -189,5 +189,9 @@
   "viewAsTable": "View as table",
   "walletsListTableTitle": "Wallets List",
   "walletsListTableDescription": "Detailed view of your wallets in a table format.",
-  "balanceLabel": "Balance"
+  "balanceLabel": "Balance",
+  "allCategoriesTab": "All Categories",
+  "mainCategoriesOnlyTab": "Main Categories Only",
+  "mainCategoriesOnlyListTitle": "Main Categories",
+  "mainCategoriesOnlyListDescription": "A list of your top-level main categories."
 }

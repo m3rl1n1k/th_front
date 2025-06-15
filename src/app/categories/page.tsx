@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link'; // Import Link
-import { Button } from '@/components/ui/button'; // Import Button
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { MainLayout } from '@/components/layout/main-layout';
 import { useAuth } from '@/context/auth-context';
 import { getMainCategories } from '@/lib/api';
@@ -13,7 +13,8 @@ import { useGlobalLoader } from '@/context/global-loader-context';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Shapes, PlusCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle, Shapes, PlusCircle, Folder } from 'lucide-react'; // Added Folder
 import { IconRenderer } from '@/components/common/icon-renderer';
 
 export default function CategoriesPage() {
@@ -22,6 +23,7 @@ export default function CategoriesPage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
   const [mainCategories, setMainCategories] = useState<MainCategory[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   useEffect(() => {
     setGlobalLoading(isLoading);
@@ -32,13 +34,11 @@ export default function CategoriesPage() {
       setIsLoading(true);
       getMainCategories(token)
         .then(data => {
-          // Ensure data is an array before setting state
           setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch(error => {
           console.error("Failed to fetch main categories", error);
           setMainCategories([]); 
-          // Toast for error can be added here if needed
         })
         .finally(() => setIsLoading(false));
     } else if (!isAuthenticated) {
@@ -121,52 +121,88 @@ export default function CategoriesPage() {
             </Button>
         </div>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>{t('mainCategoriesListTitle')}</CardTitle>
-            <CardDescription>{t('mainCategoriesListDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="multiple" className="w-full">
-              {mainCategories.map((mainCat) => (
-                <AccordionItem value={`main-${mainCat.id}`} key={mainCat.id}>
-                  <AccordionTrigger className="hover:bg-muted/50 px-4 py-3 rounded-md transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <IconRenderer iconName={mainCat.icon} className="text-primary" />
-                      <span 
-                        className="h-4 w-4 rounded-full border" 
-                        style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
-                        title={mainCat.color || undefined}
-                      ></span>
-                      <span className="font-medium text-foreground">{mainCat.name}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-2 pb-3 pl-8 pr-2"> {/* Increased pl for sub-items */}
-                    {mainCat.subCategories && mainCat.subCategories.length > 0 ? (
-                      <ul className="space-y-2 mt-1">
-                        {mainCat.subCategories.map((subCat) => (
-                          <li key={subCat.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
-                            <IconRenderer iconName={subCat.icon} className="text-secondary-foreground h-4 w-4" /> {/* Smaller icon */}
-                            <span 
-                              className="h-3 w-3 rounded-full border" 
-                              style={{ backgroundColor: subCat.color || 'hsl(var(--muted))' }}
-                              title={subCat.color || undefined}
-                            ></span>
-                            <span className="text-sm text-muted-foreground">{subCat.name}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-muted-foreground px-2 py-1">{t('noSubcategories')}</p>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
+            <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
+              <Shapes className="h-5 w-5" />
+              {t('allCategoriesTab')}
+            </TabsTrigger>
+            <TabsTrigger value="main_only" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
+              <Folder className="h-5 w-5" />
+              {t('mainCategoriesOnlyTab')}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="mt-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>{t('mainCategoriesListTitle')}</CardTitle>
+                <CardDescription>{t('mainCategoriesListDescription')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Accordion type="multiple" className="w-full">
+                  {mainCategories.map((mainCat) => (
+                    <AccordionItem value={`main-${mainCat.id}`} key={`all-${mainCat.id}`}>
+                      <AccordionTrigger className="hover:bg-muted/50 px-4 py-3 rounded-md transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <IconRenderer iconName={mainCat.icon} className="text-primary" />
+                          <span 
+                            className="h-4 w-4 rounded-full border" 
+                            style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
+                            title={mainCat.color || undefined}
+                          ></span>
+                          <span className="font-medium text-foreground">{mainCat.name}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-2 pb-3 pl-8 pr-2">
+                        {mainCat.subCategories && mainCat.subCategories.length > 0 ? (
+                          <ul className="space-y-2 mt-1">
+                            {mainCat.subCategories.map((subCat) => (
+                              <li key={subCat.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
+                                <IconRenderer iconName={subCat.icon} className="text-secondary-foreground h-4 w-4" />
+                                <span 
+                                  className="h-3 w-3 rounded-full border" 
+                                  style={{ backgroundColor: subCat.color || 'hsl(var(--muted))' }}
+                                  title={subCat.color || undefined}
+                                ></span>
+                                <span className="text-sm text-muted-foreground">{subCat.name}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground px-2 py-1">{t('noSubcategories')}</p>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="main_only" className="mt-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>{t('mainCategoriesOnlyListTitle')}</CardTitle>
+                <CardDescription>{t('mainCategoriesOnlyListDescription')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {mainCategories.map(mainCat => (
+                  <div key={`main-only-${mainCat.id}`} className="flex items-center space-x-3 p-3 border-b last:border-b-0 hover:bg-muted/50 rounded-md transition-colors">
+                    <IconRenderer iconName={mainCat.icon} className="text-primary" />
+                    <span 
+                      className="h-4 w-4 rounded-full border" 
+                      style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
+                      title={mainCat.color || undefined}
+                    ></span>
+                    <span className="font-medium text-foreground">{mainCat.name}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );
 }
-

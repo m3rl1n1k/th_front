@@ -189,5 +189,9 @@
   "viewAsTable": "Переглянути як таблицю",
   "walletsListTableTitle": "Список гаманців",
   "walletsListTableDescription": "Детальний перегляд ваших гаманців у форматі таблиці.",
-  "balanceLabel": "Баланс"
+  "balanceLabel": "Баланс",
+  "allCategoriesTab": "Всі категорії",
+  "mainCategoriesOnlyTab": "Лише основні",
+  "mainCategoriesOnlyListTitle": "Основні категорії",
+  "mainCategoriesOnlyListDescription": "Список ваших основних категорій верхнього рівня."
 }
