@@ -151,6 +151,9 @@
   "frequencyName_every_two_weeks": "Кожні два тижні",
   "frequencyName_monthly": "Щомісяця",
   "frequencyName_every_6_months": "Кожні 6 місяців",
-  "frequencyName_yearly": "Щорічно"
+  "frequencyName_yearly": "Щорічно",
+  "detailsLabel": "Деталі",
+  "noDetailsPlaceholder": "Без деталей",
+  "notApplicable": "Н/Д",
+  "noCategory": "Без категорії"
 }
-

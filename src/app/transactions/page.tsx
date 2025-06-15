@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,7 +18,10 @@ import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
 import { getTransactionTypes, getTransactionsList, getTransactionCategories } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
-import { CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History } from 'lucide-react';
+import { 
+  CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
+  ArrowUpCircle, ArrowDownCircle, HelpCircle 
+} from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType as AppTransactionType, Category } from '@/types';
@@ -91,7 +93,8 @@ export default function TransactionsPage() {
       setIsLoadingTypes(false);
       setIsLoadingCategories(false);
     }
-  }, [token, isAuthenticated, t, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, isAuthenticated, toast]); // Removed t from here
 
   const fetchTransactions = useCallback(() => {
     if (isAuthenticated && token) {
@@ -99,7 +102,7 @@ export default function TransactionsPage() {
       const params: Record<string, string> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
-      if (filters.categoryId) params.categoryId = filters.categoryId;
+      if (filters.categoryId) params.categoryId = filters.categoryId; // This should use subCategory.id if API expects that
       if (filters.typeId) params.typeId = filters.typeId;
       
       getTransactionsList(token, params)
@@ -116,24 +119,28 @@ export default function TransactionsPage() {
       setRawTransactions([]);
       setIsLoadingTransactions(false);
     }
-  }, [isAuthenticated, token, filters, t, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, token, filters, toast]); // Removed t from here
 
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
 
   const processedTransactions = useMemo(() => {
-    if (!rawTransactions || transactionTypes.length === 0) {
+    if (!rawTransactions || transactionTypes.length === 0 || categories.length === 0) {
       return [];
     }
     return rawTransactions.map(tx => {
       const typeDetails = transactionTypes.find(tt => tt.id === String(tx.type));
+      const categoryDetails = tx.subCategory?.id ? categories.find(cat => cat.id === String(tx.subCategory!.id)) : null;
+      
       return {
         ...tx,
-        typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN')
+        typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'),
+        categoryName: categoryDetails ? categoryDetails.name : (tx.subCategory?.name || null)
       };
     });
-  }, [rawTransactions, transactionTypes, t]);
+  }, [rawTransactions, transactionTypes, categories, t]);
   
   const currentTabTransactions = useMemo(() => {
     if (activeTab === "recurring") {
@@ -167,16 +174,14 @@ export default function TransactionsPage() {
 
   const handleClearFilters = () => {
     setFilters({});
-    setRawTransactions(null); 
-    setIsLoadingTransactions(true); 
+    // No need to set rawTransactions to null, fetchTransactions will be called by the effect below
   };
   
   useEffect(() => {
-    if (Object.keys(filters).length === 0 && rawTransactions === null) {
-        fetchTransactions();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, rawTransactions]); 
+    // This effect will re-fetch transactions if filters are cleared (become empty object)
+    // or if any filter value changes.
+    fetchTransactions();
+  }, [filters, fetchTransactions]); 
 
   const handleAddNewTransaction = () => {
     router.push('/transactions/new');
@@ -186,7 +191,7 @@ export default function TransactionsPage() {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={4} className="h-60 text-center">
+          <TableCell colSpan={5} className="h-60 text-center"> {/* Adjusted colSpan */}
             <div className="flex flex-col items-center justify-center">
               <RefreshCwIcon className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -199,7 +204,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={4} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground"> {/* Adjusted colSpan */}
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}</p>
@@ -213,31 +218,47 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={4} className="py-3 px-4 font-semibold text-foreground text-md">
+          <TableCell colSpan={5} className="py-3 px-4 font-semibold text-foreground text-md"> {/* Adjusted colSpan */}
             {format(parseISO(dateKey), "PPP")}
           </TableCell>
         </TableRow>
-        {groups[dateKey].map(tx => (
-          <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
-            <TableCell className="hidden md:table-cell w-24 py-3 px-4 align-top">
-               <span className="text-sm text-muted-foreground">{tx.date ? format(parseISO(tx.date), "p") : 'N/A'}</span>
-            </TableCell>
-            <TableCell className="py-3 px-4 align-top">
-              <div className="font-medium text-foreground">{tx.description || <span className="italic text-muted-foreground">{t('noDescription')}</span>}</div>
-              <div className="text-xs text-muted-foreground md:hidden mt-1">
-                  {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
-              </div>
-            </TableCell>
-            <TableCell className="py-3 px-4 align-top">
-              <span className={`text-sm ${tx.typeName === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
-              </span>
-            </TableCell>
-            <TableCell className="text-right py-3 px-4 align-top">
-              <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
-            </TableCell>
-          </TableRow>
-        ))}
+        {groups[dateKey].map(tx => {
+          const typeDetail = transactionTypes.find(tt => tt.id === String(tx.type));
+          let typeIcon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
+          if (typeDetail) {
+              if (typeDetail.name.toUpperCase() === 'INCOME') {
+                  typeIcon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
+              } else if (typeDetail.name.toUpperCase() === 'EXPENSE') {
+                  typeIcon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
+              }
+          }
+
+          const detailsText = tx.description || tx.source || t('noDetailsPlaceholder');
+          const categoryText = tx.categoryName ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) : t('notApplicable');
+
+          return (
+            <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
+              <TableCell className="py-3 px-4 align-top text-sm">
+                {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+              </TableCell>
+              <TableCell className="py-3 px-4 align-top text-center">
+                {typeIcon}
+              </TableCell>
+              <TableCell className="py-3 px-4 align-top text-sm">
+                {detailsText}
+              </TableCell>
+              <TableCell className="py-3 px-4 align-top text-sm">
+                {tx.wallet.name}
+              </TableCell>
+              <TableCell className="py-3 px-4 align-top text-sm">
+                {categoryText}
+              </TableCell>
+              <TableCell className="text-right py-3 px-4 align-top text-sm">
+                <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </React.Fragment>
     ));
   };
@@ -320,7 +341,7 @@ export default function TransactionsPage() {
                             <SelectItem value="all">{t('allTypes')}</SelectItem>
                             {transactionTypes.map(type => (
                               <SelectItem key={type.id} value={type.id}>
-                                {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'])}
+                                {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'], {defaultValue: type.name})}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -363,9 +384,11 @@ export default function TransactionsPage() {
                   <Table>
                     <TableHeader className="bg-muted/30 dark:bg-muted/10">
                       <TableRow>
-                        <TableHead className="hidden md:table-cell w-28 px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('description')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('transactionType')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -388,9 +411,11 @@ export default function TransactionsPage() {
                    <Table>
                      <TableHeader className="bg-muted/30 dark:bg-muted/10">
                       <TableRow>
-                        <TableHead className="hidden md:table-cell w-28 px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('description')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('transactionType')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -407,5 +432,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-
-

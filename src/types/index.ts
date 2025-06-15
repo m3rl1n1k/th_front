@@ -17,35 +17,41 @@ export interface Transaction {
       code: string;
     };
   };
-  currency: { 
+  currency: { // This seems redundant if amount.currency exists, but API provides it
     code: string;
   };
   exchangeRate: number;
-  type: number; 
+  type: number; // Numeric type from API (e.g., 1 for INCOME, 2 for EXPENSE)
   description: string | null;
   wallet: {
     id: string | number;
     name: string;
+    // number?: string; // Not currently in API response for transactions' wallet object
   };
-  subCategory: {
+  subCategory: { // From API documentation: "subCategory": null
     id?: string | number;
     name?: string;
   } | null;
   user: {
     id: string | number;
   };
-  source: string;
-  date: string; 
+  source: string; // Can be used as fallback for details or category-like info
+  date: string; // ISO 8601 date string
   isRecurring?: boolean;
-  typeName?: string; 
+  
+  // Fields added client-side for display
+  typeName?: string; // e.g., "INCOME", "EXPENSE"
+  categoryName?: string | null; // Derived name of the category
+  
+  // Fields for form binding, might not be directly on API GET response
   walletId?: string; 
   categoryId?: string; 
   frequencyId?: string; 
 }
 
 export interface TransactionType {
-  id: string; 
-  name: string; 
+  id: string; // "1", "2"
+  name: string; // "INCOME", "EXPENSE"
 }
 
 export interface ApiError {
@@ -59,11 +65,10 @@ export interface Frequency {
   name: string;
 }
 
-// This type is for the form select, getWalletsList API returns WalletDetails
-export interface Wallet {
-  id: string | number; // Make id string to match form value type
+export interface Wallet { // Used for form selects; WalletDetails is for the /wallets page
+  id: string | number; 
   name: string;
-  amount: { // Add amount and currency for display in select
+  amount: { 
     amount: number;
     currency: {
       code: string;
@@ -71,7 +76,7 @@ export interface Wallet {
   };
 }
 
-export interface WalletDetails {
+export interface WalletDetails { // For /wallets page list
   id: number;
   name: string;
   amount: {
@@ -88,7 +93,7 @@ export interface WalletDetails {
   user: {
     id: number;
   };
-  typeName?: string; 
+  typeName?: string; // Client-side processed type name
 }
 
 export interface Category {
@@ -96,12 +101,12 @@ export interface Category {
   name: string;
 }
 
-export type WalletTypeApiResponse = Record<string, string>;
+export type WalletTypeApiResponse = Record<string, string>; // e.g. { "main": "MAIN", "deposit": "DEPOSIT" }
 
-export interface WalletType {
-  id: string;
-  name: string;
+// Not strictly needed if WalletTypeApiResponse is used directly for map
+export interface WalletType { 
+  id: string; // The key from API, e.g., "main"
+  name: string; // The value from API, e.g., "MAIN"
 }
 
 export type WalletTypeMap = Record<string, string>;
-

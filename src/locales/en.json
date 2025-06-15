@@ -151,6 +151,9 @@
   "frequencyName_every_two_weeks": "Every two weeks",
   "frequencyName_monthly": "Monthly",
   "frequencyName_every_6_months": "Every 6 months",
-  "frequencyName_yearly": "Yearly"
+  "frequencyName_yearly": "Yearly",
+  "detailsLabel": "Details",
+  "noDetailsPlaceholder": "No Details",
+  "notApplicable": "N/A",
+  "noCategory": "No Category"
 }
-
