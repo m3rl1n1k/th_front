@@ -23,16 +23,15 @@ import {
   createTransaction,
   getTransactionFrequencies,
   getWalletsList,
-  getTransactionCategoriesFlat // Corrected import
+  getMainCategories // Changed from getTransactionCategoriesFlat
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransactionType as AppTransactionType, Frequency, WalletDetails } from '@/types'; // Removed Category from here as it will be {id: string, name: string}
+import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, SubCategory as ApiSubCategory } from '@/types';
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
 import { useGlobalLoader } from '@/context/global-loader-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
-// Define a simple category type for the form's dropdown
 interface FormCategory {
   id: string;
   name: string;
@@ -47,7 +46,7 @@ export default function NewTransactionPage() {
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [frequencies, setFrequencies] = useState<Frequency[]>([]);
   const [wallets, setWallets] = useState<WalletDetails[]>([]);
-  const [categories, setCategories] = useState<FormCategory[]>([]); // Use FormCategory
+  const [categories, setCategories] = useState<FormCategory[]>([]);
 
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
@@ -114,15 +113,19 @@ export default function NewTransactionPage() {
         .finally(() => setIsLoadingWallets(false));
       
       setIsLoadingCategories(true);
-      getTransactionCategoriesFlat(token) // Use corrected function
-        .then(data => {
-          const formattedCategories = Object.entries(data.categories)
-            .map(([id, name]) => ({ id, name: name as string }));
+      getMainCategories(token) // Changed from getTransactionCategoriesFlat
+        .then(mainCategoriesResponse => { // mainCategoriesResponse is { categories: ApiMainCategory[] }
+          const allSubCategories: ApiSubCategory[] = mainCategoriesResponse.flatMap(mainCat => mainCat.subCategories || []);
+          const formattedCategories: FormCategory[] = allSubCategories.map(subCat => ({
+            id: String(subCat.id),
+            name: subCat.name
+          }));
           setCategories(formattedCategories);
         })
         .catch(error => {
-          console.error("Failed to fetch categories", error);
+          console.error("Failed to fetch categories from /main/categories", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          setCategories([]);
         })
         .finally(() => setIsLoadingCategories(false));
       
@@ -392,3 +395,4 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
+
