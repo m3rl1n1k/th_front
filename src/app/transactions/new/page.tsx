@@ -33,7 +33,7 @@ import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from
 import { useGlobalLoader } from '@/context/global-loader-context';
 
 export default function NewTransactionPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user } = useAuth(); // Added user here
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -80,9 +80,9 @@ export default function NewTransactionPage() {
   const isRecurringWatched = watch('isRecurring');
 
   useEffect(() => {
-    const overallLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || isLoadingFrequencies;
+    const overallLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || (isRecurringWatched && isLoadingFrequencies);
     setGlobalLoading(overallLoading);
-  }, [isLoadingTypes, isLoadingWallets, isLoadingCategories, isLoadingFrequencies, setGlobalLoading]);
+  }, [isLoadingTypes, isLoadingWallets, isLoadingCategories, isLoadingFrequencies, isRecurringWatched, setGlobalLoading]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -156,15 +156,17 @@ export default function NewTransactionPage() {
     }
     setGlobalLoading(true);
     try {
+      // API expects amount in cents
+      // API expects typeId as a string e.g. "2" for EXPENSE
       const payload = {
         amount: Math.round(data.amount * 100), 
         description: data.description || null,
         typeId: data.typeId, 
         date: format(data.date, 'yyyy-MM-dd'),
         isRecurring: data.isRecurring,
-        wallet_id: data.walletId, // API_DOCUMENTATION suggests wallet_id
-        category_id: data.categoryId, // API_DOCUMENTATION suggests category_id
-        // frequencyId is not sent as per API spec, only isRecurring
+        wallet_id: parseInt(data.walletId), // API_DOCUMENTATION expects wallet_id, potentially numeric
+        category_id: parseInt(data.categoryId), // API_DOCUMENTATION expects category_id, potentially numeric
+        // frequencyId is not sent as per API spec, only isRecurring affects backend logic
       };
       await createTransaction(payload, token);
       toast({
@@ -181,6 +183,7 @@ export default function NewTransactionPage() {
       });
     } finally {
       // Global loader is turned off by navigation events or the effect watching local loaders
+      // setGlobalLoading(false); // This line might be redundant if navigation events handle it
     }
   };
   
@@ -418,3 +421,4 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
+
