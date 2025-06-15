@@ -37,6 +37,7 @@
   "amount": "Monto",
   "description": "Descripción",
   "date": "Fecha",
+  "time": "Hora",
   "recurringTransaction": "Transacción Recurrente",
   "saveTransaction": "Guardar Transacción",
   "transactionType_INCOME": "Ingreso",
@@ -115,5 +116,6 @@
   "profileFetchErrorDesc": "No se pudo validar el token proporcionado.",
   "tokenValidationFailedPersisted": "Falló la validación del token. El token problemático sigue activo para las llamadas API.",
   "tokenValidationSuccess": "Token validado exitosamente. Perfil de usuario actualizado.",
-  "tokenSetButValidationFailed": "Token establecido. Falló la validación, revisa los errores si los hay. El token problemático sigue activo."
+  "tokenSetButValidationFailed": "Token establecido. Falló la validación, revisa los errores si los hay. El token problemático sigue activo.",
+  "noDescription": "Sin descripción"
 }

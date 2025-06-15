@@ -15,8 +15,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     if (response.status === 401) {
       if (typeof window !== 'undefined' && window.location.pathname !== '/set-token') {
-        // Ensure toast is displayed for token issues before redirect
-        // This might require a small delay or ensuring toast is shown by AuthContext on token failure
         window.location.href = '/set-token';
       }
     }
@@ -46,7 +44,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
       fetchOptions.body = JSON.stringify(fetchOptions.body);
     }
   } else {
-    // Remove Content-Type for GET requests if it was accidentally set to application/json
     if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
         if (headers.get('Content-Type')?.includes('application/json')) {
             headers.delete('Content-Type');
@@ -56,7 +53,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   
   headers.set('Accept', 'application/json');
 
-  // Log request details
   console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url}`);
   console.log('Headers:', Object.fromEntries(headers.entries()));
   if (fetchOptions.body && typeof fetchOptions.body === 'string' && headers.get('Content-Type')?.includes('application/json')) {
@@ -68,6 +64,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   } else if (fetchOptions.body) {
     console.log('Body (FormData or other):', fetchOptions.body);
   }
+
 
   const response = await fetch(url, {
     ...fetchOptions,
@@ -106,7 +103,7 @@ export const createTransaction = (data: any, token: string): Promise<any> =>
 export const getTransactionsList = (
   token: string,
   params: Record<string, string | undefined> = {}
-): Promise<{ data: Transaction[], meta: any }> => {
+): Promise<{ transactions: Transaction[] }> => { // Updated return type to match new API
   const definedParams: Record<string, string> = {};
   for (const key in params) {
     if (params[key] !== undefined) {
@@ -119,4 +116,3 @@ export const getTransactionsList = (
 };
 
 export { request };
-

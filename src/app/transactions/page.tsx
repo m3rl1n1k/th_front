@@ -17,10 +17,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
-import { getTransactionTypes, getTransactionsList, request } from '@/lib/api';
+import { getTransactionTypes, getTransactionsList } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
-import { CalendarIcon, PlusCircle, FilterIcon, ListFilter, RefreshCwIcon, History } from 'lucide-react';
-import { format } from 'date-fns';
+import { CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType } from '@/types';
 import { useGlobalLoader } from '@/context/global-loader-context';
@@ -41,7 +41,7 @@ export default function TransactionsPage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
-  const [isLoadingTypes, setIsLoadingTypes] = useState(true); // Start as true
+  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
 
   const [filters, setFilters] = useState<{
     startDate?: Date;
@@ -51,10 +51,9 @@ export default function TransactionsPage() {
   }>({});
   
   const [displayedTransactions, setDisplayedTransactions] = useState<Transaction[]>([]);
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true); // Start as true
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
 
-  // Effect to manage global loading state based on local loading states
   useEffect(() => {
     if (isLoadingTypes || isLoadingTransactions) {
       setGlobalLoading(true);
@@ -63,7 +62,6 @@ export default function TransactionsPage() {
     }
   }, [isLoadingTypes, isLoadingTransactions, setGlobalLoading]);
 
-  // Fetch Transaction Types
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTypes(true);
@@ -71,7 +69,7 @@ export default function TransactionsPage() {
         .then(data => {
           const filteredTypes = Object.entries(data.types)
             .filter(([, value]) => value === "INCOME" || value === "EXPENSE")
-            .map(([key, value]) => ({ id: key, name: value }));
+            .map(([key, value]) => ({ id: key, name: value as string }));
           setTransactionTypes(filteredTypes);
         })
         .catch(error => {
@@ -88,27 +86,30 @@ export default function TransactionsPage() {
     }
   }, [token, isAuthenticated, t, toast]);
 
-  // Fetch Transactions List
   useEffect(() => {
-    if (isAuthenticated && token && !isLoadingTypes) { // Only fetch if types are processed
+    if (isAuthenticated && token && !isLoadingTypes) { 
       setIsLoadingTransactions(true);
       const params: Record<string, string> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
+      // The API response sample does not include `isRecurring`.
+      // If `isRecurring` is not sent by the backend, this filter will not work as expected.
       if (activeTab === "recurring") {
-        params.isRecurring = "true";
+        params.isRecurring = "true"; 
       }
 
       getTransactionsList(token, params)
         .then(result => {
-          setDisplayedTransactions(result.data || []);
+          const processedTransactions = (result.transactions || []).map(tx => ({
+            ...tx,
+            typeName: transactionTypes.find(tt => tt.id === String(tx.type))?.name
+          }));
+          setDisplayedTransactions(processedTransactions);
         })
         .catch((error: any) => {
           console.error("Failed to fetch transactions", error);
-          // Log the request details for debugging 401s or other errors
-          console.log(`Failed request: GET ${URLS.transactions} with params:`, params, "Token:", token ? "Present" : "Absent");
           if (error.code === 401) {
              toast({ variant: "destructive", title: t('error'), description: `${t('tokenMissingError')} (Details: ${error.message || 'Unauthorized'})` });
           } else {
@@ -121,11 +122,9 @@ export default function TransactionsPage() {
         });
     } else if (!isAuthenticated || !token) {
         setDisplayedTransactions([]);
-        setIsLoadingTransactions(false); // Ensure loading stops if not authenticated
+        setIsLoadingTransactions(false);
     }
-    // This effect depends on isLoadingTypes. When types are loaded (isLoadingTypes becomes false),
-    // it will trigger fetching transactions.
-  }, [isAuthenticated, token, filters, activeTab, isLoadingTypes, t, toast]);
+  }, [isAuthenticated, token, filters, activeTab, isLoadingTypes, t, toast, transactionTypes]);
 
 
   const handleFilterChange = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
@@ -133,16 +132,11 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    // This will trigger the useEffect for fetching transactions because `filters` state changes.
-    // No direct fetch call needed here if filters are part of the dependency array.
-    // If an explicit re-fetch is needed without filter change, a different mechanism would be required.
-    // For now, this function primarily ensures filter state is updated.
-    // The actual API call is handled by the useEffect watching `filters`.
+    // Triggering useEffect by changing `filters` state
   };
 
   const handleClearFilters = () => {
-    const clearedFilters = {};
-    setFilters(clearedFilters); // This will trigger the transaction fetching useEffect
+    setFilters({});
   };
 
   const handleAddNewTransaction = () => {
@@ -150,15 +144,33 @@ export default function TransactionsPage() {
   };
 
   const filteredTransactionList = useMemo(() => {
+    // Note: This relies on `isRecurring` being present in the Transaction object.
+    // If the backend doesn't send it, this filter will effectively show no recurring transactions.
     if (activeTab === 'recurring') {
       return displayedTransactions.filter(tx => tx.isRecurring);
     }
     return displayedTransactions;
   }, [displayedTransactions, activeTab]);
 
+  const groupedTransactions = useMemo(() => {
+    if (!filteredTransactionList) return {};
+    return filteredTransactionList.reduce((acc, tx) => {
+        const dateKey = format(parseISO(tx.date), 'yyyy-MM-dd'); // Group by day from ISO string
+        if (!acc[dateKey]) {
+            acc[dateKey] = [];
+        }
+        acc[dateKey].push(tx);
+        return acc;
+    }, {} as Record<string, Transaction[]>);
+  }, [filteredTransactionList]);
+
+  const sortedDateKeys = useMemo(() => 
+    Object.keys(groupedTransactions).sort((a, b) => parseISO(b).getTime() - parseISO(a).getTime()), 
+  [groupedTransactions]);
+
 
   const renderTransactionTableContent = () => {
-    if (isLoadingTransactions && displayedTransactions.length === 0) { // Show spinner only if still loading and no data yet
+    if (isLoadingTransactions && sortedDateKeys.length === 0) {
       return (
         <TableRow>
           <TableCell colSpan={4} className="h-40 text-center">
@@ -169,7 +181,7 @@ export default function TransactionsPage() {
       );
     }
     
-    if (filteredTransactionList.length === 0) { 
+    if (sortedDateKeys.length === 0) { 
       return (
         <TableRow>
           <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
@@ -179,25 +191,37 @@ export default function TransactionsPage() {
       );
     }
 
-    return filteredTransactionList.map(tx => (
-      <TableRow key={tx.id}>
-        <TableCell className="hidden md:table-cell">{format(new Date(tx.date + 'T00:00:00'), "PPP")}</TableCell>
-        <TableCell>
-          <div className="font-medium">{tx.description}</div>
-          <div className="text-xs text-muted-foreground md:hidden">{format(new Date(tx.date + 'T00:00:00'), "PP")}</div>
-        </TableCell>
-        <TableCell>
-          {tx.typeName || t(`transactionType_${transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || 'UNKNOWN'}` as any, {defaultValue: String(tx.typeId)})}
-        </TableCell>
-        <TableCell className="text-right">
-          <CurrencyDisplay amountInCents={tx.amount} />
-        </TableCell>
-      </TableRow>
-    ));
+    return sortedDateKeys.flatMap(dateKey => {
+      const transactionsForDate = groupedTransactions[dateKey];
+      return [
+        <TableRow key={`header-${dateKey}`} className="bg-muted/50 sticky top-0 z-10 shadow-sm">
+          <TableCell colSpan={4} className="py-3 px-4 font-semibold text-foreground text-lg">
+            {format(parseISO(dateKey), "PPP")}
+          </TableCell>
+        </TableRow>,
+        ...transactionsForDate.map(tx => (
+          <TableRow key={tx.id}>
+            <TableCell className="hidden md:table-cell w-32">
+              {format(parseISO(tx.date), "p")} {/* Display time for individual transaction */}
+            </TableCell>
+            <TableCell>
+              <div className="font-medium">{tx.description || t('noDescription')}</div>
+              <div className="text-xs text-muted-foreground md:hidden">
+                {format(parseISO(tx.date), "PP p")} {/* Date and time for mobile */}
+              </div>
+            </TableCell>
+            <TableCell>
+              {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
+            </TableCell>
+            <TableCell className="text-right">
+              <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
+            </TableCell>
+          </TableRow>
+        ))
+      ];
+    });
   };
   
-  // For logging URLs, you might need to import URLS from '@/config/urls' if not already
-  const { URLS } = require('@/config/urls'); // Temporary for logging in catch
 
   return (
     <MainLayout>
@@ -310,12 +334,12 @@ export default function TransactionsPage() {
               <CardHeader>
                 <CardTitle>{t('recentTransactionsTitle')}</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0"> {/* Remove padding for full-width table */}
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="hidden md:table-cell">{t('date')}</TableHead>
+                        <TableHead className="hidden md:table-cell w-32">{t('time')}</TableHead>
                         <TableHead>{t('description')}</TableHead>
                         <TableHead>{t('transactionType')}</TableHead>
                         <TableHead className="text-right">{t('amount')}</TableHead>
@@ -334,12 +358,12 @@ export default function TransactionsPage() {
               <CardHeader>
                 <CardTitle>{t('recurringTransactionsListTitle')}</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <div className="overflow-x-auto">
                    <Table>
                      <TableHeader>
                       <TableRow>
-                        <TableHead className="hidden md:table-cell">{t('date')}</TableHead>
+                        <TableHead className="hidden md:table-cell w-32">{t('time')}</TableHead>
                         <TableHead>{t('description')}</TableHead>
                         <TableHead>{t('transactionType')}</TableHead>
                         <TableHead className="text-right">{t('amount')}</TableHead>
@@ -358,4 +382,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-
