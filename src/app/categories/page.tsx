@@ -32,12 +32,13 @@ export default function CategoriesPage() {
       setIsLoading(true);
       getMainCategories(token)
         .then(data => {
-          setMainCategories(data || []);
+          // Ensure data is an array before setting state
+          setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch(error => {
           console.error("Failed to fetch main categories", error);
           setMainCategories([]); 
-          // Toast for error can be added here
+          // Toast for error can be added here if needed
         })
         .finally(() => setIsLoading(false));
     } else if (!isAuthenticated) {
@@ -53,8 +54,10 @@ export default function CategoriesPage() {
            <div className="flex justify-between items-center">
             <h1 className="font-headline text-3xl font-bold text-foreground">{t('categoriesTitle')}</h1>
             <Button asChild variant="outline" disabled>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                {t('addNewCategoryButton')}
+                <Link href="/categories/new">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    {t('addNewCategoryButton')}
+                </Link>
             </Button>
           </div>
           <Card>
@@ -166,3 +169,4 @@ export default function CategoriesPage() {
     </MainLayout>
   );
 }
+

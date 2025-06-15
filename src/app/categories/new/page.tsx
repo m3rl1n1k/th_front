@@ -33,7 +33,7 @@ const MainCategorySchema = z.object({
 type MainCategoryFormData = z.infer<typeof MainCategorySchema>;
 
 const SubCategorySchema = z.object({
-  mainCategoryId: z.string().min(1, { message: "Parent category is required." }),
+  mainCategoryId: z.string().min(1, { message: "Parent category is required." }), // This is the ID of the main category
   name: z.string().min(1, { message: "Name is required." }),
   icon: z.string().nullable().optional(),
   color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB or #RGB)." }).nullable().optional(),
@@ -69,10 +69,11 @@ export default function CreateCategoryPage() {
     if (isAuthenticated && token) {
       setIsLoadingCategories(true);
       getMainCategories(token)
-        .then(data => setExistingMainCategories(data || []))
+        .then(data => setExistingMainCategories(data || [])) // Ensure data is an array
         .catch(error => {
           console.error("Failed to fetch main categories for dropdown", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          setExistingMainCategories([]); // Set to empty array on error
         })
         .finally(() => setIsLoadingCategories(false));
     }
@@ -101,14 +102,19 @@ export default function CreateCategoryPage() {
 
   const onSubCategorySubmit: SubmitHandler<SubCategoryFormData> = async (data) => {
     if (!token) return;
-    const payload: CreateSubCategoryPayload = {
+    // The mainCategoryId from the form is the actual ID of the main category.
+    // The API expects this ID in the URL, and the rest of the data in the body.
+    // The CreateSubCategoryPayload should align with what the backend expects in the body.
+    const payloadForBody: CreateSubCategoryPayload = {
       name: data.name,
       icon: data.icon || null,
       color: data.color || null,
-      mainCategoryId: data.mainCategoryId,
+      mainCategoryId: data.mainCategoryId, // Ensure this key matches what your backend expects in the body if needed
     };
     try {
-      await createSubCategory(data.mainCategoryId, payload, token);
+      // Pass mainCategoryId to the API function which uses it in the URL
+      // and payloadForBody for the request body
+      await createSubCategory(data.mainCategoryId, payloadForBody, token);
       toast({ title: t('subCategoryCreatedTitle'), description: t('subCategoryCreatedDesc') });
       router.push('/categories');
     } catch (error: any) {
@@ -231,3 +237,4 @@ export default function CreateCategoryPage() {
     </MainLayout>
   );
 }
+

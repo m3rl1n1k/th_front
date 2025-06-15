@@ -62,10 +62,10 @@ export interface Frequency {
   name: string;
 }
 
-export interface Wallet { // Used in New Transaction form state
+export interface Wallet {
   id: string | number;
   name: string;
-  amount: { // Added for displaying balance in select
+  amount: { 
     amount: number;
     currency: {
       code: string;
@@ -93,7 +93,7 @@ export interface WalletDetails {
   typeName?: string; 
 }
 
-export interface FormCategory { // Used for general category structure in forms/lists if needed
+export interface FormCategory { 
   id: string;
   name: string;
   icon?: string | null;
@@ -109,7 +109,7 @@ export interface SubCategory {
   name: string;
   icon: string | null; 
   color: string | null; 
-  mainCategoryId?: string | number; 
+  mainCategoryId?: string | number; // This field is expected from the API in GET /main/categories
 }
 
 export interface MainCategory {
@@ -131,5 +131,6 @@ export interface CreateSubCategoryPayload {
   name: string;
   icon?: string | null;
   color?: string | null;
-  mainCategoryId: string; // For API, ensure this is sent
+  mainCategoryId: string; // This will be used in the URL for the API, and potentially in the body if backend expects it
 }
+

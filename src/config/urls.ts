@@ -21,7 +21,7 @@ export const URLS = {
   transactionById: (id: string | number) => `${API_BASE_URL}/transactions/${id}`,
   transactionTypes: `${API_BASE_URL}/transactions/types`,
   transactionFrequencies: `${API_BASE_URL}/transactions/frequency`,
-  transactionCategoriesFlat: `${API_BASE_URL}/transactions/categories`, // For form dropdowns if different from main/sub
+  transactionCategoriesFlat: `${API_BASE_URL}/transactions/categories`, 
 
 
   // User Profile
@@ -34,5 +34,7 @@ export const URLS = {
   // Categories Page & Management
   mainCategories: `${API_BASE_URL}/main/categories`, // GET main categories (hierarchical)
   createMainCategory: `${API_BASE_URL}/main/categories`, // POST new main category
-  createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`, // POST new subcategory
+  // Corrected subcategory creation URL to match API documentation
+  createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`, 
 };
+

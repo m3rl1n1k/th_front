@@ -111,8 +111,6 @@ export const getTransactionsList = (
 export const getTransactionFrequencies = (token: string): Promise<{ periods: Record<string, string> }> =>
   request(URLS.transactionFrequencies, { method: 'GET', token });
 
-// For form dropdowns, if backend provides a flat list from a different endpoint.
-// Currently, transactions page filter uses getMainCategories.
 export const getTransactionCategoriesFlat = (token: string): Promise<{ categories: Record<string, string> }> =>
   request(URLS.transactionCategoriesFlat, { method: 'GET', token });
 
@@ -131,8 +129,10 @@ export const getMainCategories = (token: string): Promise<MainCategory[]> =>
 export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
   request<MainCategory>(URLS.createMainCategory, { method: 'POST', body: data, token });
 
+// Updated createSubCategory to use the correct endpoint and accept mainCategoryId in the data payload
 export const createSubCategory = (mainCategoryId: string | number, data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
   request<SubCategory>(URLS.createSubCategory(mainCategoryId), { method: 'POST', body: data, token });
 
 
 export { request };
+
