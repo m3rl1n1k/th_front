@@ -34,8 +34,6 @@ export default function WalletsPage() {
       setIsLoadingTypes(true);
       getWalletTypes(token)
         .then((data: { types: WalletTypeApiResponse }) => {
-          // data.types is { "main": "MAIN", "deposit": "DEPOSIT", ... }
-          // We want to store this mapping for translating type keys later.
           setWalletTypeMap(data.types || {});
         })
         .catch(error => {
@@ -58,7 +56,7 @@ export default function WalletsPage() {
         .catch(error => {
           console.error("Failed to fetch wallets", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-          setWallets([]); // Set to empty array on error to stop loading state
+          setWallets([]); 
         })
         .finally(() => setIsLoading(false));
     } else if (!isAuthenticated) {
@@ -68,17 +66,39 @@ export default function WalletsPage() {
   }, [token, isAuthenticated, t, toast]);
 
   const processedWallets = useMemo(() => {
-    if (!wallets) return null;
-    return wallets.map(wallet => ({
-      ...wallet,
-      // Use the fetched walletTypeMap to get the display name, then translate it
-      typeName: t(`walletType_${walletTypeMap[wallet.type] || wallet.type.toUpperCase()}` as any, { defaultValue: walletTypeMap[wallet.type] || wallet.type })
-    }));
+    if (!wallets || Object.keys(walletTypeMap).length === 0) {
+      return null; 
+    }
+    return wallets.map(wallet => {
+      const typeKey = wallet.type; 
+      const mappedDisplayValue = typeof typeKey === 'string' ? walletTypeMap[typeKey] : undefined; 
+
+      const typeIdentifierForTranslation = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey.toUpperCase() : 'UNKNOWN');
+      
+      const userFriendlyDefault = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey : 'Unknown');
+
+      return {
+        ...wallet,
+        typeName: t(`walletType_${typeIdentifierForTranslation}` as any, { defaultValue: userFriendlyDefault })
+      };
+    });
   }, [wallets, walletTypeMap, t]);
 
-  const getWalletIcon = (typeKey: string) => {
-    const typeUpperCase = (walletTypeMap[typeKey] || typeKey).toUpperCase();
-    switch (typeUpperCase) {
+  const getWalletIcon = (typeFromWallet: string | null | undefined) => {
+    const typeKey = typeof typeFromWallet === 'string' ? typeFromWallet : null;
+
+    const mappedTypeEnum = typeKey ? walletTypeMap[typeKey] : undefined;
+
+    let typeForSwitch: string;
+    if (mappedTypeEnum) {
+      typeForSwitch = mappedTypeEnum; 
+    } else if (typeKey) {
+      typeForSwitch = typeKey.toUpperCase(); 
+    } else {
+      typeForSwitch = 'UNKNOWN'; 
+    }
+    
+    switch (typeForSwitch) {
       case 'MAIN':
         return <Landmark className="h-6 w-6 text-primary" />;
       case 'DEPOSIT':
@@ -86,7 +106,9 @@ export default function WalletsPage() {
       case 'CREDIT':
         return <CreditCard className="h-6 w-6 text-blue-500" />;
       case 'CASH':
-         return <WalletCards className="h-6 w-6 text-yellow-500" />; // Re-using WalletCards for cash
+         return <WalletCards className="h-6 w-6 text-yellow-500" />;
+      case 'BLOCK': // Assuming 'BLOCK' is a valid type from walletTypeMap
+         return <AlertTriangle className="h-6 w-6 text-red-500" />
       default:
         return <WalletCards className="h-6 w-6 text-muted-foreground" />;
     }
@@ -194,3 +216,4 @@ export default function WalletsPage() {
     </MainLayout>
   );
 }
+
