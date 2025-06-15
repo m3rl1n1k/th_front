@@ -24,7 +24,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   const headers = new Headers(fetchOptions.headers || {});
 
   if (token && token.trim() !== "") {
-    headers.set('Authorization', `Bearer ${token.trim()}`); // Added .trim()
+    headers.set('Authorization', `Bearer ${token.trim()}`);
   }
 
   // Handle body and Content-Type
