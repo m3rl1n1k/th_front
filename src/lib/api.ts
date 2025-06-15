@@ -49,6 +49,14 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   
   headers.set('Accept', 'application/json');
 
+  console.log(`Requesting URL: ${url}`);
+  console.log(`Method: ${fetchOptions.method || 'GET'}`);
+  console.log('Headers:', Object.fromEntries(headers.entries()));
+  if (fetchOptions.body && !isFormData) {
+    console.log('Body:', fetchOptions.body);
+  }
+
+
   const response = await fetch(url, {
     ...fetchOptions,
     headers,
