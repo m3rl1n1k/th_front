@@ -5,7 +5,14 @@ import React from 'react';
 import {
   Shapes, Utensils, ShoppingCart, Car, Drama, Shirt, Home, Fuel, Pill, Gift,
   GraduationCap, Plane, Dumbbell, Film, Music, CircleDollarSign, BarChart2,
-  MoreHorizontal, AlertCircle, type LucideIcon, Euro, PoundSterling, Landmark
+  MoreHorizontal, AlertCircle, Euro, PoundSterling, Landmark,
+  Save, ArrowLeft, PlusCircle, Palette, Tag, LayoutGrid, List, RefreshCw,
+  ArrowUpCircle, ArrowDownCircle, HelpCircle, LayoutDashboard, ListChecks,
+  UserCircle, Settings, Languages, Edit3, KeyRound, WalletCards,
+  Search, X, Check, Trash2, Copy, ExternalLink, Upload, Download, Briefcase,
+  CreditCard, PiggyBank, TrendingUp, TrendingDown, Building, Calendar, Clock,
+  Mail, Phone, MapPin, FileText, Folder, Image, Star, Heart, Bell, Sun, Moon, Award,
+  type LucideIcon
 } from 'lucide-react';
 
 interface IconRendererProps {
@@ -15,6 +22,7 @@ interface IconRendererProps {
 }
 
 const iconMap: Record<string, LucideIcon> = {
+  // Existing Icons
   Shapes,
   Utensils,
   ShoppingCart,
@@ -31,20 +39,84 @@ const iconMap: Record<string, LucideIcon> = {
   Film,
   Music,
   CircleDollarSign,
-  DollarSign: CircleDollarSign, // Alias
+  DollarSign: CircleDollarSign, // Alias for convenience
   Euro,
   PoundSterling,
   Landmark,
   BarChart2,
   MoreHorizontal,
   AlertCircle,
-  // Add more icons as needed from lucide-react
+
+  // Icons from project usage
+  Save,
+  ArrowLeft,
+  PlusCircle,
+  Palette,
+  Tag,
+  LayoutGrid,
+  List,
+  RefreshCw,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  HelpCircle,
+  LayoutDashboard,
+  ListChecks,
+  UserCircle,
+  Settings,
+  Languages,
+  Edit3,
+  KeyRound,
+  WalletCards,
+
+  // Additional common icons
+  Search,
+  X, // Close
+  Check,
+  Trash2,
+  Copy,
+  ExternalLink,
+  Upload,
+  Download,
+  Briefcase,
+  CreditCard,
+  PiggyBank,
+  TrendingUp,
+  TrendingDown,
+  Building,
+  Calendar,
+  Clock,
+  Mail,
+  Phone,
+  MapPin,
+  FileText, // Document
+  Folder,
+  Image,
+  Star,
+  Heart,
+  Bell,
+  Sun,
+  Moon,
+  Award,
 };
 
-const DefaultIcon = Shapes;
+const DefaultIcon = Shapes; // Default icon if no match is found
 
 export const IconRenderer: React.FC<IconRendererProps> = ({ iconName, className, color }) => {
-  const IconComponent = iconName ? (iconMap[iconName] || iconMap[iconName.charAt(0).toUpperCase() + iconName.slice(1)] || DefaultIcon) : DefaultIcon;
+  let IconComponent: LucideIcon = DefaultIcon;
+
+  if (iconName) {
+    // Attempt direct match
+    if (iconMap[iconName]) {
+      IconComponent = iconMap[iconName];
+    } else {
+      // Attempt match with first letter capitalized (common for API values like "home" vs. Lucide "Home")
+      const capitalizedIconName = iconName.charAt(0).toUpperCase() + iconName.slice(1);
+      if (iconMap[capitalizedIconName]) {
+        IconComponent = iconMap[capitalizedIconName];
+      }
+      // Could add more sophisticated matching (e.g. kebab-case to PascalCase) if needed
+    }
+  }
   
   return <IconComponent className={cn("h-5 w-5", className)} style={color ? { color } : {}} />;
 };
@@ -68,3 +140,4 @@ const cn = (...inputs: Array<string | undefined | null | false | Record<string, 
     .filter(Boolean)
     .join(' ');
 };
+
