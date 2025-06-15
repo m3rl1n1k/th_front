@@ -70,11 +70,10 @@ export default function TransactionsPage() {
         })
         .finally(() => {
           setIsLoadingTypes(false);
-          // Global loading will be set to false after transactions are fetched or if type fetch was the only loading task
           if(!isLoadingTransactions) setGlobalLoading(false);
         });
     } else {
-      setIsLoadingTypes(false); // If not authenticated, stop loading types
+      setIsLoadingTypes(false); 
     }
   }, [token, isAuthenticated, t, toast, setGlobalLoading, isLoadingTransactions]);
 
@@ -105,7 +104,7 @@ export default function TransactionsPage() {
   }, [token, isAuthenticated, t, toast, setGlobalLoading]);
 
   useEffect(() => {
-    if (isAuthenticated && token && !isLoadingTypes) { // Fetch transactions only if types are loaded or failed to load
+    if (isAuthenticated && token && !isLoadingTypes) { 
       fetchFilteredTransactions(filters, activeTab);
     }
   }, [isAuthenticated, token, activeTab, fetchFilteredTransactions, filters, isLoadingTypes]);
@@ -126,19 +125,7 @@ export default function TransactionsPage() {
   };
 
   const handleAddNewTransaction = () => {
-    const queryParams: Record<string, string> = {};
-    if (transactionTypes.length > 0) {
-      try {
-        queryParams.types = JSON.stringify(transactionTypes);
-      } catch (error) {
-        console.error("Error stringifying transaction types for query params:", error);
-        // Proceed without types in query if stringification fails
-      }
-    }
-    router.push({
-      pathname: '/transactions/new',
-      query: queryParams,
-    });
+    router.push('/transactions/new'); // Reverted: No longer passing types
   };
 
   const filteredTransactionList = useMemo(() => {
@@ -148,21 +135,7 @@ export default function TransactionsPage() {
     return displayedTransactions;
   }, [displayedTransactions, activeTab]);
 
-  const groupedTransactions = useMemo(() => {
-    return filteredTransactionList.reduce((acc, tx) => {
-      const dateKey = tx.date; 
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(tx);
-      return acc;
-    }, {} as Record<string, Transaction[]>);
-  }, [filteredTransactionList]);
-
-  const sortedDateKeys = useMemo(() => {
-    return Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-  }, [groupedTransactions]);
-
+  // Reverted: Removed groupedTransactions and sortedDateKeys useMemo
 
   const renderTransactionTableContent = () => {
     if (isLoadingTransactions) {
@@ -175,7 +148,7 @@ export default function TransactionsPage() {
       );
     }
 
-    if (sortedDateKeys.length === 0) {
+    if (filteredTransactionList.length === 0) { // Reverted: Use filteredTransactionList directly
       return (
         <TableRow>
           <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
@@ -185,29 +158,21 @@ export default function TransactionsPage() {
       );
     }
 
-    return sortedDateKeys.map(dateKey => (
-      <React.Fragment key={dateKey}>
-        <TableRow className="sticky top-0 z-10 bg-muted/70 hover:bg-muted/70 backdrop-blur-sm">
-          <TableCell colSpan={4} className="py-2.5 font-semibold text-foreground">
-            {format(new Date(dateKey + 'T00:00:00'), "PPP")}
-          </TableCell>
-        </TableRow>
-        {groupedTransactions[dateKey].map(tx => (
-          <TableRow key={tx.id}>
-            <TableCell className="hidden md:table-cell">{format(new Date(tx.date + 'T00:00:00'), "PPP")}</TableCell>
-            <TableCell>
-              <div className="font-medium">{tx.description}</div>
-              <div className="text-xs text-muted-foreground md:hidden">{format(new Date(tx.date + 'T00:00:00'), "PP")}</div>
-            </TableCell>
-            <TableCell>
-              {tx.typeName || t(`transactionType_${transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || 'UNKNOWN'}` as any, {defaultValue: String(tx.typeId)})}
-            </TableCell>
-            <TableCell className="text-right">
-              <CurrencyDisplay amountInCents={tx.amount} />
-            </TableCell>
-          </TableRow>
-        ))}
-      </React.Fragment>
+    // Reverted: Render flat list
+    return filteredTransactionList.map(tx => (
+      <TableRow key={tx.id}>
+        <TableCell className="hidden md:table-cell">{format(new Date(tx.date + 'T00:00:00'), "PPP")}</TableCell>
+        <TableCell>
+          <div className="font-medium">{tx.description}</div>
+          <div className="text-xs text-muted-foreground md:hidden">{format(new Date(tx.date + 'T00:00:00'), "PP")}</div>
+        </TableCell>
+        <TableCell>
+          {tx.typeName || t(`transactionType_${transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || 'UNKNOWN'}` as any, {defaultValue: String(tx.typeId)})}
+        </TableCell>
+        <TableCell className="text-right">
+          <CurrencyDisplay amountInCents={tx.amount} />
+        </TableCell>
+      </TableRow>
     ));
   };
 
@@ -370,6 +335,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-    
-
-    

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // Removed useSearchParams
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -40,7 +40,7 @@ export default function NewTransactionPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  // const searchParams = useSearchParams(); // Reverted: Removed searchParams
   const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
@@ -66,37 +66,15 @@ export default function NewTransactionPage() {
     },
   });
 
+  // Reverted: Simplified useEffect for fetching transaction types
   useEffect(() => {
-    // If types are already in state, don't do anything.
     if (transactionTypes.length > 0) {
       setIsLoadingTypes(false);
-      // Intentionally not setting global loading false here, 
-      // as other operations might still be pending for the page.
-      // Global loader should be managed by the overall page loading lifecycle.
       return;
     }
 
-    const typesFromQuery = searchParams.get('types');
-    if (typesFromQuery) {
-      try {
-        const parsedTypes = JSON.parse(typesFromQuery) as TransactionType[];
-        if (Array.isArray(parsedTypes) && parsedTypes.every(type => typeof type.id === 'string' && typeof type.name === 'string')) {
-          setTransactionTypes(parsedTypes);
-          setIsLoadingTypes(false);
-          // setGlobalLoading(false); // Avoid premature global loader stop
-          return; // Types loaded from query, exit
-        } else {
-          console.warn("Parsed types from query params have invalid structure:", parsedTypes);
-        }
-      } catch (e) {
-        console.error("Failed to parse transaction types from query params:", e);
-      }
-    }
-
-    // If not returned by now, types were not in state and not in query params (or invalid)
-    // So, fetch them.
     if (isAuthenticated && token) {
-      setGlobalLoading(true); // Set global loading only if we are about to fetch
+      setGlobalLoading(true);
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
@@ -111,17 +89,14 @@ export default function NewTransactionPage() {
         })
         .finally(() => {
           setIsLoadingTypes(false);
-          setGlobalLoading(false); // Stop global loading after fetch attempt
+          setGlobalLoading(false);
         });
     } else {
-      // Not authenticated or no token, and types not available from query or state
       setIsLoadingTypes(false);
-      setGlobalLoading(false); // Ensure loader is off if no fetch is attempted
+      setGlobalLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, searchParams, transactionTypes.length]);
-  // Removed t, toast, setGlobalLoading from dependencies as they are stable or their change doesn't necessitate re-fetching types.
-  // transactionTypes.length ensures effect re-evaluates if types are set (e.g. from query), then bails out early.
+  }, [token, isAuthenticated, transactionTypes.length]); // Simplified dependencies
 
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
@@ -200,7 +175,7 @@ export default function NewTransactionPage() {
                         disabled={isLoadingTypes || transactionTypes.length === 0}
                       >
                         <SelectTrigger id="typeId" className={errors.typeId ? 'border-destructive' : ''}>
-                          <SelectValue placeholder={isLoadingTypes ? t('loading') : (transactionTypes.length === 0 ? t('noTypesAvailable') : t('selectTypePlaceholder'))} />
+                          <SelectValue placeholder={isLoadingTypes ? t('loading') : (transactionTypes.length === 0 ? t('selectTypePlaceholder') : t('selectTypePlaceholder'))} />
                         </SelectTrigger>
                         <SelectContent>
                           {transactionTypes.map(type => (

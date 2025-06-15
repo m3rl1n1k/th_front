@@ -10,7 +10,7 @@ interface RequestOptions extends RequestInit {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
-    console.error('API Error:', errorData);
+    console.error('API Error:', errorData); // Re-added console.error
     throw errorData;
   }
   if (response.status === 204) { // No content
@@ -45,6 +45,19 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   }
   
   headers.set('Accept', 'application/json');
+
+  // Log request details - Re-added
+  console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url}`);
+  console.log('Headers:', Object.fromEntries(headers.entries()));
+  if (fetchOptions.body && typeof fetchOptions.body === 'string' && headers.get('Content-Type')?.includes('application/json')) {
+    try {
+      console.log('Body:', JSON.parse(fetchOptions.body));
+    } catch (e) {
+      console.log('Body (raw):', fetchOptions.body);
+    }
+  } else if (fetchOptions.body) {
+    console.log('Body (FormData or other):', fetchOptions.body);
+  }
 
   const response = await fetch(url, {
     ...fetchOptions,
@@ -96,4 +109,3 @@ export const getTransactionsList = (
 };
 
 export { request };
-

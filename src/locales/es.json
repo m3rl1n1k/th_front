@@ -57,7 +57,6 @@
   "noDataAvailable": "Aún no hay datos disponibles.",
   "errorFetchingData": "Error al cargar los datos. Por favor, inténtalo de nuevo.",
   "selectTypePlaceholder": "Seleccionar tipo",
-  "noTypesAvailable": "No hay tipos disponibles",
   "descriptionPlaceholder": "Ej: Comestibles, Salario",
   "transactionSavedTitle": "Transacción Guardada",
   "transactionSavedDesc": "Tu transacción ha sido registrada exitosamente.",
@@ -118,4 +117,3 @@
   "tokenValidationSuccess": "Token validado exitosamente. Perfil de usuario actualizado.",
   "tokenSetButValidationFailed": "Token establecido. Falló la validación, revisa los errores si los hay. El token problemático sigue activo."
 }
-

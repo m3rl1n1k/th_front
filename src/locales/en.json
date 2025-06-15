@@ -57,7 +57,6 @@
   "noDataAvailable": "No data available yet.",
   "errorFetchingData": "Error fetching data. Please try again.",
   "selectTypePlaceholder": "Select type",
-  "noTypesAvailable": "No types available",
   "descriptionPlaceholder": "e.g., Groceries, Salary",
   "transactionSavedTitle": "Transaction Saved",
   "transactionSavedDesc": "Your transaction has been successfully recorded.",
@@ -118,4 +117,3 @@
   "tokenValidationSuccess": "Token validated successfully. User profile updated.",
   "tokenSetButValidationFailed": "Token set. Validation failed, review errors if any. Problematic token remains active."
 }
-    
