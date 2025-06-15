@@ -129,6 +129,71 @@ export default function TransactionsPage() {
     return displayedTransactions;
   }, [displayedTransactions, activeTab]);
 
+  const groupedTransactions = useMemo(() => {
+    return filteredTransactionList.reduce((acc, tx) => {
+      // Use tx.date directly as it's already YYYY-MM-DD
+      const dateKey = tx.date; 
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(tx);
+      return acc;
+    }, {} as Record<string, Transaction[]>);
+  }, [filteredTransactionList]);
+
+  const sortedDateKeys = useMemo(() => {
+    // Sort by date, most recent first
+    return Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  }, [groupedTransactions]);
+
+
+  const renderTransactionTableContent = () => {
+    if (isLoadingTransactions) {
+      return (
+        <TableRow>
+          <TableCell colSpan={4} className="h-40 text-center">
+            <RefreshCwIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (sortedDateKeys.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+            {t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return sortedDateKeys.map(dateKey => (
+      <React.Fragment key={dateKey}>
+        <TableRow className="sticky top-0 z-10 bg-muted/70 hover:bg-muted/70 backdrop-blur-sm">
+          <TableCell colSpan={4} className="py-2.5 font-semibold text-foreground">
+            {format(new Date(dateKey + 'T00:00:00'), "PPP")} {/* Add T00:00:00 to ensure local date parsing */}
+          </TableCell>
+        </TableRow>
+        {groupedTransactions[dateKey].map(tx => (
+          <TableRow key={tx.id}>
+            <TableCell className="hidden md:table-cell">{format(new Date(tx.date + 'T00:00:00'), "PPP")}</TableCell>
+            <TableCell>
+              <div className="font-medium">{tx.description}</div>
+              <div className="text-xs text-muted-foreground md:hidden">{format(new Date(tx.date + 'T00:00:00'), "PP")}</div>
+            </TableCell>
+            <TableCell>
+              {tx.typeName || t(`transactionType_${transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || 'UNKNOWN'}` as any, {defaultValue: String(tx.typeId)})}
+            </TableCell>
+            <TableCell className="text-right">
+              <CurrencyDisplay amountInCents={tx.amount} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </React.Fragment>
+    ));
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -241,83 +306,45 @@ export default function TransactionsPage() {
                 <CardTitle>{t('recentTransactionsTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoadingTransactions ? (
-                  <div className="flex justify-center items-center h-40">
-                    <RefreshCwIcon className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : filteredTransactionList.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('date')}</TableHead>
-                          <TableHead>{t('description')}</TableHead>
-                          <TableHead>{t('transactionType')}</TableHead>
-                          <TableHead className="text-right">{t('amount')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredTransactionList.map(tx => (
-                          <TableRow key={tx.id}>
-                            <TableCell>{format(new Date(tx.date), "PPP")}</TableCell>
-                            <TableCell>{tx.description}</TableCell>
-                            <TableCell>
-                              {tx.typeName || t(`transactionType_${transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || 'UNKNOWN'}` as any, {defaultValue: String(tx.typeId)})}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <CurrencyDisplay amountInCents={tx.amount} />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-10">{t('noTransactionsFound')}</p>
-                )}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="hidden md:table-cell">{t('date')}</TableHead>
+                        <TableHead>{t('description')}</TableHead>
+                        <TableHead>{t('transactionType')}</TableHead>
+                        <TableHead className="text-right">{t('amount')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {renderTransactionTableContent()}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
           <TabsContent value="recurring">
-            <Card className="shadow-lg">
+             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>{t('recurringTransactionsListTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoadingTransactions ? (
-                  <div className="flex justify-center items-center h-40">
-                    <RefreshCwIcon className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : filteredTransactionList.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <Table>
-                       <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('date')}</TableHead>
-                          <TableHead>{t('description')}</TableHead>
-                          <TableHead>{t('transactionType')}</TableHead>
-                          <TableHead className="text-right">{t('amount')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredTransactionList.map(tx => (
-                          <TableRow key={tx.id}>
-                            <TableCell>{format(new Date(tx.date), "PPP")}</TableCell>
-                            <TableCell>{tx.description}</TableCell>
-                            <TableCell>
-                              {tx.typeName || t(`transactionType_${transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || 'UNKNOWN'}` as any, {defaultValue: String(tx.typeId)})}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <CurrencyDisplay amountInCents={tx.amount} />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-10">{t('noRecurringTransactionsFound')}</p>
-                )}
+                <div className="overflow-x-auto">
+                   <Table>
+                     <TableHeader>
+                      <TableRow>
+                        <TableHead className="hidden md:table-cell">{t('date')}</TableHead>
+                        <TableHead>{t('description')}</TableHead>
+                        <TableHead>{t('transactionType')}</TableHead>
+                        <TableHead className="text-right">{t('amount')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {renderTransactionTableContent()}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -326,5 +353,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-
     

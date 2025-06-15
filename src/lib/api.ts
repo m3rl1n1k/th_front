@@ -9,7 +9,7 @@ interface RequestOptions extends RequestInit {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+    const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
     console.error('API Error:', errorData);
     throw errorData;
   }
@@ -27,7 +27,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     headers.set('Authorization', `Bearer ${token.trim()}`);
   }
 
-  // Handle body and Content-Type
   if (fetchOptions.body) {
     if (isFormData) {
       // For FormData, Content-Type is set by the browser.
@@ -38,9 +37,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
       fetchOptions.body = JSON.stringify(fetchOptions.body);
     }
   } else {
-    // For GET or other requests without a body, ensure Content-Type is not unnecessarily set.
     if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
-        // Only remove if it's a common JSON type, to avoid removing user-set specific types for GET if any.
         if (headers.get('Content-Type')?.includes('application/json')) {
             headers.delete('Content-Type');
         }
@@ -49,11 +46,21 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   
   headers.set('Accept', 'application/json');
 
-  console.log(`Requesting URL: ${url}`);
-  console.log(`Method: ${fetchOptions.method || 'GET'}`);
-  console.log('Headers:', Object.fromEntries(headers.entries()));
+  // Logging request details
+  console.log(`[API Request] URL: ${url}`);
+  console.log(`[API Request] Method: ${fetchOptions.method || 'GET'}`);
+  const headersObject: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    headersObject[key] = value;
+  });
+  console.log('[API Request] Headers:', headersObject);
   if (fetchOptions.body && !isFormData) {
-    console.log('Body:', fetchOptions.body);
+    try {
+      const bodyPreview = JSON.parse(fetchOptions.body as string);
+      console.log('[API Request] Body:', bodyPreview);
+    } catch (e) {
+      console.log('[API Request] Body (raw):', fetchOptions.body);
+    }
   }
 
 
