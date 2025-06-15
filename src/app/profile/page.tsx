@@ -46,17 +46,22 @@ export default function ProfilePage() {
       });
       setIsLoading(false);
       setGlobalLoading(false);
-    } else if (isAuthenticated && !user) {
+    } else if (isAuthenticated && !user && token) { // Ensure token exists before fetching
         setGlobalLoading(true);
         setIsLoading(true);
         fetchUser().finally(() => {
             setIsLoading(false);
             setGlobalLoading(false);
         });
+    } else if (!isAuthenticated) {
+      setIsLoading(false); // Not authenticated, not loading profile
+      setGlobalLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, token, fetchUser, setGlobalLoading]);
 
-  if (isLoading || !profileData) {
+
+  if (isLoading || (!isAuthenticated && !token)) { // Show skeleton if loading or if not authenticated and no token (initial state)
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -82,6 +87,43 @@ export default function ProfilePage() {
       </MainLayout>
     );
   }
+  
+  if (!profileData && isAuthenticated) { // If authenticated but profileData is still null (e.g. fetch error)
+     return (
+      <MainLayout>
+        <div className="space-y-6">
+          <h1 className="font-headline text-3xl font-bold text-foreground">{t('userProfileTitle')}</h1>
+          <Card>
+            <CardHeader><CardTitle>{t('errorFetchingData')}</CardTitle></CardHeader>
+            <CardContent><p>{t('noDataAvailable')}</p></CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+  
+  // This case handles when user is null but token might be DUMMY_TOKEN (dev mode initial state)
+  // or if profileData is truly null after attempts to load.
+  if (!profileData) {
+    return (
+       <MainLayout>
+        <div className="space-y-6">
+          <h1 className="font-headline text-3xl font-bold text-foreground">{t('userProfileTitle')}</h1>
+          <Card className="shadow-lg">
+            <CardHeader className="items-center text-center">
+              <Skeleton className="h-24 w-24 rounded-full mb-4" />
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-5 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <p className="text-center text-muted-foreground">{t('loading')}...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    )
+  }
+
 
   const handleProfileUpdate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -108,7 +150,7 @@ export default function ProfilePage() {
           <div className="bg-gradient-to-br from-primary via-primary/80 to-accent h-32" />
           <CardHeader className="items-center text-center -mt-16">
             <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profileData.profilePictureUrl} alt={profileData.name} data-ai-hint="person portrait" />
+              <AvatarImage src={profileData.profilePictureUrl} alt={profileData.name} data-ai-hint="person portrait"/>
               <AvatarFallback className="text-4xl">
                 {profileData.name.charAt(0).toUpperCase()}
               </AvatarFallback>
@@ -178,3 +220,4 @@ export default function ProfilePage() {
     </MainLayout>
   );
 }
+
