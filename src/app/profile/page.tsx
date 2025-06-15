@@ -14,14 +14,15 @@ import { useGlobalLoader } from '@/context/global-loader-context';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns'; // Added for date formatting if not already present
+import { format } from 'date-fns'; 
+import { useToast } from '@/hooks/use-toast';
 
-// Mock User Profile Data structure - replace with actual API call and type
+
 interface UserProfileData {
   name: string;
   email: string;
-  memberSince: string; // ISO Date string
-  profilePictureUrl?: string; // Optional
+  memberSince: string; 
+  profilePictureUrl?: string; 
 }
 
 export default function ProfilePage() {
@@ -30,6 +31,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isAuthenticated && user) { 
@@ -39,7 +41,7 @@ export default function ProfilePage() {
       setProfileData({
         name: user.login, 
         email: user.email,
-        memberSince: user.memberSince || new Date().toISOString(), // Use actual if available, else placeholder
+        memberSince: user.memberSince || new Date().toISOString(), 
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`
       });
       setIsLoading(false);
@@ -83,15 +85,10 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Add profile update logic here
-    // For now, just log and close dialog
     console.log("Profile update submitted");
-    // Consider closing the dialog programmatically if needed after submission
-    // For this example, DialogClose button will handle it.
     toast({ title: "Profile Update", description: "Update functionality is not yet implemented." });
   };
   
-  // Fallback for memberSince if it's missing or invalid
   let formattedMemberSince = "N/A";
   try {
     if (profileData.memberSince) {
@@ -181,4 +178,3 @@ export default function ProfilePage() {
     </MainLayout>
   );
 }
-

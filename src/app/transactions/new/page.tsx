@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; // Removed useSearchParams
+import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -40,7 +40,6 @@ export default function NewTransactionPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  // const searchParams = useSearchParams(); // Reverted: Removed searchParams
   const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
@@ -66,13 +65,7 @@ export default function NewTransactionPage() {
     },
   });
 
-  // Reverted: Simplified useEffect for fetching transaction types
   useEffect(() => {
-    if (transactionTypes.length > 0) {
-      setIsLoadingTypes(false);
-      return;
-    }
-
     if (isAuthenticated && token) {
       setGlobalLoading(true);
       setIsLoadingTypes(true);
@@ -96,8 +89,7 @@ export default function NewTransactionPage() {
       setGlobalLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, transactionTypes.length]); // Simplified dependencies
-
+  }, [token, isAuthenticated]);
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
     if (!token) {
@@ -107,7 +99,7 @@ export default function NewTransactionPage() {
     setGlobalLoading(true);
     try {
       const payload = {
-        amount: Math.round(data.amount * 100), // Convert to cents
+        amount: Math.round(data.amount * 100), 
         description: data.description,
         typeId: data.typeId,
         date: format(data.date, 'yyyy-MM-dd'),

@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation'; 
 import en from '@/locales/en.json';
-import uk from '@/locales/uk.json'; 
+import es from '@/locales/es.json'; 
 
 type Translations = typeof en; 
 
@@ -17,7 +17,7 @@ interface I18nContextType {
 
 const translationsMap: Record<string, Translations> = {
   en,
-  uk, 
+  es, 
 };
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);

@@ -103,7 +103,7 @@ export const createTransaction = (data: any, token: string): Promise<any> =>
 export const getTransactionsList = (
   token: string,
   params: Record<string, string | undefined> = {}
-): Promise<{ transactions: Transaction[] }> => { // Updated return type to match new API
+): Promise<{ data: Transaction[]; meta: any }> => { // Expecting old structure
   const definedParams: Record<string, string> = {};
   for (const key in params) {
     if (params[key] !== undefined) {

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
@@ -41,9 +41,8 @@ export default function TransactionsPage() {
   const { setIsLoading: setGlobalLoading } = useGlobalLoader();
 
   const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
+  const [displayedTransactions, setDisplayedTransactions] = useState<Transaction[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-  
-  const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
 
   const [filters, setFilters] = useState<{
@@ -54,16 +53,11 @@ export default function TransactionsPage() {
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
 
-  // Effect to control global loader based on local loading states
   useEffect(() => {
-    if (isLoadingTypes || isLoadingTransactions) {
-      setGlobalLoading(true);
-    } else {
-      setGlobalLoading(false);
-    }
+    setGlobalLoading(isLoadingTypes || isLoadingTransactions);
   }, [isLoadingTypes, isLoadingTransactions, setGlobalLoading]);
 
-  // Effect to fetch transaction types
+  // Fetch transaction types
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTypes(true);
@@ -77,18 +71,15 @@ export default function TransactionsPage() {
         .catch(error => {
           console.error("Failed to fetch transaction types", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-          setTransactionTypes([]);
         })
-        .finally(() => {
-          setIsLoadingTypes(false);
-        });
+        .finally(() => setIsLoadingTypes(false));
     } else {
       setIsLoadingTypes(false);
-      setTransactionTypes([]);
     }
   }, [token, isAuthenticated, t, toast]);
 
-  // Effect to fetch raw transactions
+
+  // Fetch transactions (and process them)
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTransactions(true);
@@ -97,36 +88,29 @@ export default function TransactionsPage() {
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
-      
-      // The API response sample does not include `isRecurring`.
-      // If `isRecurring` is not sent by the backend, this filter will not work as expected.
-      // This logic assumes the API *can* filter by isRecurring if the param is sent.
-      if (activeTab === "recurring") {
-        params.isRecurring = "true"; 
-      }
+      if (activeTab === "recurring") params.isRecurring = "true";
 
       getTransactionsList(token, params)
         .then(result => {
-          setRawTransactions(result.transactions || []);
+          const processed = (result.data || []).map(tx => ({
+            ...tx,
+            typeName: transactionTypes.find(tt => tt.id === String(tx.typeId))?.name || t('transactionType_UNKNOWN')
+          }));
+          setDisplayedTransactions(processed);
         })
         .catch((error: any) => {
           console.error("Failed to fetch transactions", error);
-           if (error.code === 401) {
-             toast({ variant: "destructive", title: t('error'), description: `${t('tokenMissingError')} (Details: ${error.message || 'Unauthorized'})` });
-          } else {
-            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-          }
-          setRawTransactions([]);
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+          setDisplayedTransactions([]);
         })
         .finally(() => {
           setIsLoadingTransactions(false);
         });
     } else if (!isAuthenticated || !token) {
-      setRawTransactions([]);
+      setDisplayedTransactions([]);
       setIsLoadingTransactions(false);
     }
-  }, [isAuthenticated, token, filters, activeTab, t, toast]);
-
+  }, [isAuthenticated, token, filters, activeTab, transactionTypes, t, toast]);
 
   const handleFilterChange = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -143,52 +127,9 @@ export default function TransactionsPage() {
   const handleAddNewTransaction = () => {
     router.push('/transactions/new'); 
   };
-
-  // Memoized processed and filtered transactions
-  const processedTransactions = useMemo(() => {
-    if (transactionTypes.length === 0 && rawTransactions.length > 0) {
-      // If types aren't loaded yet but raw transactions are, return rawTransactions to avoid flashing empty list
-      // or show a temporary state. For now, just map with UNKNOWN type.
-       return rawTransactions.map(tx => ({
-        ...tx,
-        typeName: t('transactionType_UNKNOWN')
-      }));
-    }
-
-    const transactionsWithTypeName = rawTransactions.map(tx => ({
-      ...tx,
-      typeName: transactionTypes.find(tt => tt.id === String(tx.type))?.name || t('transactionType_UNKNOWN')
-    }));
-    
-    // If activeTab === "recurring" and the API did not filter, we might need client-side filtering here
-    // For now, we assume the API handles the isRecurring filter if params.isRecurring was sent.
-    // If tx.isRecurring is available on the transaction object, client-side filtering would look like:
-    // if (activeTab === 'recurring') {
-    //   return transactionsWithTypeName.filter(tx => tx.isRecurring);
-    // }
-    return transactionsWithTypeName;
-  }, [rawTransactions, transactionTypes, t]);
-
-  // Memoized grouped transactions
-  const { groupedTransactions, sortedDateKeys } = useMemo(() => {
-    const grouped = processedTransactions.reduce((acc, tx) => {
-        const dateKey = format(parseISO(tx.date), 'yyyy-MM-dd');
-        if (!acc[dateKey]) {
-            acc[dateKey] = [];
-        }
-        acc[dateKey].push(tx);
-        return acc;
-    }, {} as Record<string, Transaction[]>);
-
-    const sortedKeys = Object.keys(grouped).sort((a, b) => parseISO(b).getTime() - parseISO(a).getTime());
-    return { groupedTransactions: grouped, sortedDateKeys: sortedKeys };
-  }, [processedTransactions]);
-
-
+  
   const renderTransactionTableContent = () => {
-    // Show loading indicator if either types or transactions are actively loading
-    // and we don't have any dates to display yet (initial load)
-    if ((isLoadingTypes || isLoadingTransactions) && sortedDateKeys.length === 0) {
+    if (isLoadingTransactions) {
       return (
         <TableRow>
           <TableCell colSpan={4} className="h-40 text-center">
@@ -198,8 +139,8 @@ export default function TransactionsPage() {
         </TableRow>
       );
     }
-    
-    if (sortedDateKeys.length === 0) { 
+
+    if (displayedTransactions.length === 0) {
       return (
         <TableRow>
           <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
@@ -209,37 +150,25 @@ export default function TransactionsPage() {
       );
     }
 
-    return sortedDateKeys.flatMap(dateKey => {
-      const transactionsForDate = groupedTransactions[dateKey];
-      if (!transactionsForDate || transactionsForDate.length === 0) return []; // Should not happen if keys are from groupedTransactions
-
-      return [
-        <TableRow key={`header-${dateKey}`} className="bg-muted/50 sticky top-0 z-10 shadow-sm">
-          <TableCell colSpan={4} className="py-3 px-4 font-semibold text-foreground text-lg">
-            {format(parseISO(dateKey), "PPP")}
-          </TableCell>
-        </TableRow>,
-        ...transactionsForDate.map(tx => (
-          <TableRow key={tx.id}>
-            <TableCell className="hidden md:table-cell w-32">
-              {format(parseISO(tx.date), "p")}
-            </TableCell>
-            <TableCell>
-              <div className="font-medium">{tx.description || t('noDescription')}</div>
-              <div className="text-xs text-muted-foreground md:hidden">
-                {format(parseISO(tx.date), "PP p")}
-              </div>
-            </TableCell>
-            <TableCell>
-              {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
-            </TableCell>
-            <TableCell className="text-right">
-              <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
-            </TableCell>
-          </TableRow>
-        ))
-      ];
-    });
+    return displayedTransactions.map(tx => (
+      <TableRow key={tx.id}>
+         <TableCell className="hidden md:table-cell w-32">
+           {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+         </TableCell>
+        <TableCell>
+          <div className="font-medium">{tx.description}</div>
+            <div className="text-xs text-muted-foreground md:hidden">
+                {tx.date ? format(parseISO(tx.date), "PP p") : 'N/A'}
+            </div>
+        </TableCell>
+        <TableCell>
+          {tx.typeName ? t(`transactionType_${tx.typeName}` as any, {defaultValue: tx.typeName}) : t('transactionType_UNKNOWN')}
+        </TableCell>
+        <TableCell className="text-right">
+          <CurrencyDisplay amountInCents={tx.amount} />
+        </TableCell>
+      </TableRow>
+    ));
   };
   
 
@@ -402,4 +331,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-

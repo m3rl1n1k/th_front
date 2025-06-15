@@ -11,7 +11,7 @@ import { useTranslation } from './i18n-context';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  isLoading: boolean; // AuthContext's internal loading state for initial validation
+  isLoading: boolean; 
   isAuthenticated: boolean;
   login: (email: string) => Promise<void>;
   logout: () => void;
@@ -33,74 +33,51 @@ const DUMMY_TOKEN = 'dev-mode-active-dummy-token';
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // True until initial token check is done
+  const [isLoading, setIsLoading] = useState(true); 
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Effect for initial token loading and validation. Runs once on mount.
-  useEffect(() => {
-    const storedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
-    
-    setIsLoading(true); // Start auth loading
-    if (!storedToken || storedToken === DUMMY_TOKEN) {
+  const fetchUserCallback = useCallback(async (currentTokenValue: string) => {
+    if (currentTokenValue === DUMMY_TOKEN) {
       setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
-      if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
-      setIsLoading(false); // End auth loading
-    } else {
-      fetchUserProfile(storedToken)
-        .then(userData => {
-          setUser(userData);
-          setToken(storedToken);
-          // toast({ title: t('tokenValidationSuccess') }); // Optional: toast for success
-        })
-        .catch(error => {
-          console.error("Initial token validation failed:", error);
-          toast({
-            variant: "destructive",
-            title: t('profileFetchErrorTitle'),
-            description: `${t('profileFetchErrorDesc')} ${(error as ApiError).message || ''}`
-          });
-          setUser(null); // Correctly set user to null
-          setToken(storedToken); // Keep the problematic token for clarity
-          // localStorage is already set with storedToken. API layer handles 401 redirect.
-        })
-        .finally(() => {
-          setIsLoading(false); // End auth loading
-        });
+      setIsLoading(false);
+      return;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  // Memoized callback for fetching user profile with the current token.
-  // This is used internally by setTokenManually and the exported fetchUser.
-  const fetchUserWithCurrentToken = useCallback(async (currentTokenValue: string | null) => {
-    if (!currentTokenValue || currentTokenValue === DUMMY_TOKEN) {
-      setUser(DUMMY_USER);
-      setToken(DUMMY_TOKEN);
-      if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
-      return; // No actual fetching needed for dummy token
-    }
-
-    // For real tokens, attempt to fetch user profile
     try {
       const userData = await fetchUserProfile(currentTokenValue);
       setUser(userData);
       setToken(currentTokenValue);
       toast({ title: t('tokenValidationSuccess') });
     } catch (error) {
-      console.error("Failed to fetch user profile with token:", currentTokenValue, error);
+      console.error("Failed to fetch user profile:", error);
       toast({
         variant: "destructive",
         title: t('profileFetchErrorTitle'),
         description: `${t('profileFetchErrorDesc')} ${(error as ApiError).message || ''}`
       });
-      setUser(null);
-      setToken(currentTokenValue); // Keep problematic token
+      setUser(null); 
+      setToken(currentTokenValue); 
+    } finally {
+      setIsLoading(false);
     }
-  }, [toast, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast, t]); 
 
+  useEffect(() => {
+    const storedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+    if (storedToken) {
+      fetchUserCallback(storedToken);
+    } else {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/set-token') {
+        setUser(DUMMY_USER);
+        setToken(DUMMY_TOKEN);
+        localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
+      }
+      setIsLoading(false);
+    }
+  }, [fetchUserCallback]);
 
   const login = useCallback(async (email: string) => {
     setUser(DUMMY_USER);
@@ -111,10 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [router, toast]);
 
   const logout = useCallback(() => {
-    setUser(DUMMY_USER);
-    setToken(DUMMY_TOKEN);
+    setUser(DUMMY_USER); 
+    setToken(DUMMY_TOKEN); 
     if (typeof window !== 'undefined') {
-      localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
+      localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN); 
     }
     toast({ title: "Dev Mode Logout", description: "Simulated logout. Redirecting..." });
     router.push('/login');
@@ -123,29 +100,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const setTokenManually = useCallback(async (newToken: string) => {
     setIsLoading(true);
     const trimmedNewToken = newToken.trim();
-
     if (typeof window !== 'undefined') {
       localStorage.setItem(TOKEN_STORAGE_KEY, trimmedNewToken);
     }
-    
-    await fetchUserWithCurrentToken(trimmedNewToken); // Validate and set user/token state
-    
-    // If fetchUserWithCurrentToken resulted in DUMMY_TOKEN (e.g. empty input)
-    if (!trimmedNewToken || trimmedNewToken === DUMMY_TOKEN) {
-        toast({ title: t('tokenClearedTitle'), description: t('revertedToDevModeDesc') });
+    if (!trimmedNewToken) { 
+      setUser(DUMMY_USER);
+      setToken(DUMMY_TOKEN);
+      toast({ title: t('tokenClearedTitle'), description: t('revertedToDevModeDesc') });
+      setIsLoading(false);
+    } else {
+      await fetchUserCallback(trimmedNewToken); 
     }
-    // Success/error toasts for real tokens are handled within fetchUserWithCurrentToken
-
-    setIsLoading(false);
-  }, [fetchUserWithCurrentToken, toast, t]);
+  }, [fetchUserCallback, toast, t]);
 
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
-    await fetchUserWithCurrentToken(token); // Use the current token from state
-    setIsLoading(false);
-  }, [token, fetchUserWithCurrentToken]);
+    const currentTokenValue = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+    if (currentTokenValue) {
+      await fetchUserCallback(currentTokenValue);
+    } else {
+      setUser(DUMMY_USER);
+      setToken(DUMMY_TOKEN);
+      setIsLoading(false);
+    }
+  }, [fetchUserCallback]);
 
-  const isAuthenticated = true; // Dev mode always "authenticated" for UI purposes
+  const isAuthenticated = !!user && !!token && token !== DUMMY_TOKEN ? true : (token === DUMMY_TOKEN);
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, setTokenManually, fetchUser }}>

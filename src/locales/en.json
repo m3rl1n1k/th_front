@@ -37,7 +37,6 @@
   "amount": "Amount",
   "description": "Description",
   "date": "Date",
-  "time": "Time",
   "recurringTransaction": "Recurring Transaction",
   "saveTransaction": "Save Transaction",
   "transactionType_INCOME": "Income",
@@ -116,6 +115,5 @@
   "profileFetchErrorDesc": "Could not validate the provided token.",
   "tokenValidationFailedPersisted": "Token validation failed. The problematic token is still active for API calls.",
   "tokenValidationSuccess": "Token validated successfully. User profile updated.",
-  "tokenSetButValidationFailed": "Token set. Validation failed, review errors if any. Problematic token remains active.",
-  "noDescription": "No description"
+  "tokenSetButValidationFailed": "Token set. Validation failed, review errors if any. Problematic token remains active."
 }
