@@ -26,7 +26,7 @@ interface UserProfileData {
 
 export default function ProfilePage() {
   const { user, token, isAuthenticated, fetchUser } = useAuth();
-  const { t } = useTranslation();
+  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -151,7 +151,7 @@ export default function ProfilePage() {
   let formattedMemberSince = "N/A";
   try {
     if (profileData.memberSince) {
-      formattedMemberSince = format(new Date(profileData.memberSince), "MMMM d, yyyy");
+      formattedMemberSince = format(new Date(profileData.memberSince), "MMMM d, yyyy", { locale: dateFnsLocale });
     }
   } catch (error) {
     console.warn("Invalid date for memberSince:", profileData.memberSince);

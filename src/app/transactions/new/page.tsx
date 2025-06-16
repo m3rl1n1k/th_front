@@ -38,7 +38,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 
 export default function NewTransactionPage() {
   const { token, isAuthenticated, user } = useAuth();
-  const { t } = useTranslation();
+  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
   const { toast } = useToast();
   const router = useRouter();
   
@@ -348,7 +348,7 @@ export default function NewTransactionPage() {
                             className={`w-full justify-start text-left font-normal ${errors.date ? 'border-destructive' : ''}`}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>{t('selectDate')}</span>}
+                            {field.value ? format(field.value, "PPP", { locale: dateFnsLocale }) : <span>{t('selectDate')}</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -358,6 +358,7 @@ export default function NewTransactionPage() {
                             onSelect={field.onChange}
                             disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                             initialFocus
+                            locale={dateFnsLocale} // Pass locale to Calendar
                           />
                         </PopoverContent>
                       </Popover>

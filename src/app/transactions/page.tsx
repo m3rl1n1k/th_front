@@ -63,7 +63,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 
 export default function TransactionsPage() {
   const { token, isAuthenticated } = useAuth();
-  const { t } = useTranslation();
+  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -202,7 +202,7 @@ export default function TransactionsPage() {
     setInitiatingActionForTxId(null);
   }, [pathname]);
 
- const processedTransactions = useMemo(() => {
+  const processedTransactions = useMemo(() => {
     if (!rawTransactions) return [];
     return rawTransactions.map(tx => ({
       ...tx,
@@ -355,7 +355,7 @@ export default function TransactionsPage() {
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
           <TableCell colSpan={5} className="py-3 px-4 font-semibold text-foreground text-md">
-            {format(parseISO(dateKey), "PPP")}
+            {format(parseISO(dateKey), "PPP", { locale: dateFnsLocale })}
           </TableCell>
         </TableRow>
         {groups[dateKey].map(tx => {
@@ -377,7 +377,7 @@ export default function TransactionsPage() {
           return (
             <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
               <TableCell className="py-3 px-4 align-top text-sm">
-                {tx.date ? format(parseISO(tx.date), "p") : 'N/A'}
+                {tx.date ? format(parseISO(tx.date), "p", { locale: dateFnsLocale }) : 'N/A'}
               </TableCell>
               <TableCell className="py-3 px-4 align-top text-center">
                 {typeIcon}
@@ -485,8 +485,8 @@ export default function TransactionsPage() {
         </TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">{getStatusName(def.status)}</TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">{getFrequencyNameById(def.frequency)}</TableCell>
-        <TableCell className="py-3 px-4 align-top text-sm">{format(parseISO(def.createdAt), "PP")}</TableCell>
-        <TableCell className="py-3 px-4 align-top text-sm">{format(parseISO(def.nextExecution), "PPp")}</TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm">{format(parseISO(def.createdAt), "PP", { locale: dateFnsLocale })}</TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm">{format(parseISO(def.nextExecution), "PPp", { locale: dateFnsLocale })}</TableCell>
         <TableCell className="py-3 px-4 align-top text-sm text-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -549,11 +549,11 @@ export default function TransactionsPage() {
                             <PopoverTrigger asChild>
                               <Button id="startDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
                                 <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                                {filters.startDate ? format(filters.startDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
+                                {filters.startDate ? format(filters.startDate, "PPP", { locale: dateFnsLocale }) : <span className="text-muted-foreground">{t('selectDate')}</span>}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} />
+                              <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} locale={dateFnsLocale} />
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -563,11 +563,11 @@ export default function TransactionsPage() {
                             <PopoverTrigger asChild>
                               <Button id="endDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
                                 <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                                {filters.endDate ? format(filters.endDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
+                                {filters.endDate ? format(filters.endDate, "PPP", { locale: dateFnsLocale }) : <span className="text-muted-foreground">{t('selectDate')}</span>}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} disabled={(date) => filters.startDate ? date < filters.startDate : false}/>
+                              <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} disabled={(date) => filters.startDate ? date < filters.startDate : false} locale={dateFnsLocale}/>
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -727,4 +727,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-

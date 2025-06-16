@@ -34,7 +34,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 
 export default function ViewTransactionPage() {
   const { token, isAuthenticated } = useAuth();
-  const { t } = useTranslation();
+  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
@@ -107,7 +107,7 @@ export default function ViewTransactionPage() {
       const items = [
         { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: <DollarSign className="text-primary" /> },
         { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
-        { labelKey: 'date', value: format(parseISO(transaction.date), "PPPp"), icon: <CalendarDays className="text-primary" /> },
+        { labelKey: 'date', value: format(parseISO(transaction.date), "PPPp", { locale: dateFnsLocale }), icon: <CalendarDays className="text-primary" /> },
         { labelKey: 'wallet', value: transaction.wallet.name, icon: <WalletIcon className="text-primary" /> },
         { labelKey: 'category', value: categoryName, icon: <Info className="text-primary" /> },
         { labelKey: 'frequency', value: frequencyName, icon: <Repeat className="text-primary" /> },
@@ -123,7 +123,7 @@ export default function ViewTransactionPage() {
       items.push({ labelKey: 'description', value: transaction.description || t('noDescription'), icon: <Info className="text-primary" />, fullWidth: true });
       setDetailItems(items);
     }
-  }, [transaction, typeName, frequencyName, categoryName, t]);
+  }, [transaction, typeName, frequencyName, categoryName, t, dateFnsLocale]);
 
 
   if (isLoading) {

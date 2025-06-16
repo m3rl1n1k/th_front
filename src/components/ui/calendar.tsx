@@ -1,24 +1,30 @@
+
 "use client"
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, type DayPickerProps } from "react-day-picker"
+import type { Locale } from 'date-fns'; // Import Locale type
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+export type CalendarProps = DayPickerProps & { // DayPickerProps already includes locale
+  locale?: Locale; // Explicitly define locale prop, though DayPickerProps has it
+}
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  locale, // Receive locale prop
   ...props
 }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      locale={locale} // Pass locale to DayPicker
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
