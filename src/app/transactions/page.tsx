@@ -84,7 +84,7 @@ export default function TransactionsPage() {
         .then(data => {
           const formattedTypes = Object.entries(data.types).map(([id, name]) => ({
             id: id,
-            name: name as string
+            name: name as string // e.g., "INCOME", "EXPENSE"
           }));
           setTransactionTypes(formattedTypes);
         })
@@ -154,7 +154,7 @@ export default function TransactionsPage() {
   }, [pathname]);
 
   const processedTransactions = useMemo(() => {
-    if (!rawTransactions || transactionTypes.length === 0) {
+    if (!rawTransactions) { // Process if rawTransactions are available, even if types are not yet.
       return [];
     }
     return rawTransactions.map(tx => {
@@ -162,7 +162,7 @@ export default function TransactionsPage() {
       
       return {
         ...tx,
-        typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'),
+        typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'), // Will be 'Unknown Type' if types not loaded
         categoryName: tx.subCategory?.name || null 
       };
     });

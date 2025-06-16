@@ -16,6 +16,12 @@ export interface TransactionAmount {
   };
 }
 
+export interface TransactionSubCategory {
+  id: string | number;
+  name: string;
+  icon?: string | null;
+}
+
 export interface Transaction {
   id: string | number;
   amount: TransactionAmount; // Updated to use TransactionAmount
@@ -29,10 +35,7 @@ export interface Transaction {
     id: string | number;
     name: string;
   };
-  subCategory: {
-    id?: string | number;
-    name?: string;
-  } | null;
+  subCategory: TransactionSubCategory | null; // Updated to use TransactionSubCategory
   user: {
     id: string | number;
   };
@@ -42,7 +45,7 @@ export interface Transaction {
   frequencyId?: string; // From GET /transactions/frequency
 
   // Frontend derived/display properties
-  typeName?: string;
+  typeName?: string; // Raw type name like 'INCOME', 'EXPENSE'
   categoryName?: string | null;
 
   // Potential form fields (ensure consistency with payloads)
@@ -74,7 +77,7 @@ export interface UpdateTransactionPayload {
 
 export interface TransactionType {
   id: string;
-  name: string;
+  name: string; // e.g., "INCOME", "EXPENSE"
 }
 
 export interface ApiError {
