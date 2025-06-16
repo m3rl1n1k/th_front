@@ -16,6 +16,7 @@
   "loginFailedTitle": "Помилка входу",
   "loginFailedDesc": "Будь ласка, перевірте ваші дані або спробуйте пізніше.",
   "logoutSuccessTitle": "Ви вийшли з системи",
+  "logoutSuccessDesc": "Ви успішно вийшли з системи.",
   "tokenSetTitle": "Токен встановлено",
   "tokenSetDesc": "JWT Токен надіслано на перевірку.",
   "tokenUpdatedDesc": "Спроба обробки токена. Перевірте наявність помилок профілю.",
@@ -107,7 +108,7 @@
   "saveChangesButton": "Зберегти зміни",
   "cancelButton": "Скасувати",
   "profileFetchErrorTitle": "Помилка завантаження профілю",
-  "profileFetchErrorDesc": "Не вдалося перевірити наданий токен.",
+  "profileFetchErrorDesc": "Не вдалося перевірити вашу сесію.",
   "tokenValidationFailedPersisted": "Перевірка токена не вдалася. Проблемний токен все ще активний для API-запитів.",
   "tokenValidationSuccess": "Токен успішно перевірено. Профіль користувача оновлено.",
   "tokenSetButValidationFailed": "Токен встановлено. Перевірка не вдалася, перегляньте помилки, якщо є. Проблемний токен залишається активним.",
@@ -208,5 +209,6 @@
   "deleting": "Видалення...",
   "transactionDeletedTitle": "Транзакцію видалено",
   "transactionDeletedDesc": "Транзакцію було успішно видалено.",
-  "errorDeletingTransaction": "Помилка видалення транзакції"
+  "errorDeletingTransaction": "Помилка видалення транзакції",
+  "pleaseLoginAgain": "Будь ласка, спробуйте увійти знову або встановіть новий токен, якщо проблема не зникне."
 }

@@ -10,8 +10,8 @@ import type {
   CreateMainCategoryPayload, 
   CreateSubCategoryPayload, 
   SubCategory,
-  CreateTransactionPayload, // Added
-  UpdateTransactionPayload  // Added
+  CreateTransactionPayload,
+  UpdateTransactionPayload
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -25,13 +25,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     console.error('API Error Status:', response.status, 'Error Data:', errorData);
 
-    if (response.status === 401) {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/set-token' && window.location.pathname !== '/login') {
-        console.log('Redirecting to /set-token due to 401');
-        localStorage.removeItem('financeflow_jwt_token');
-        window.location.href = '/set-token';
-      }
-    }
+    // Removed automatic redirection on 401. AuthContext will handle this.
+    // if (response.status === 401) {
+    //   if (typeof window !== 'undefined' && window.location.pathname !== '/set-token' && window.location.pathname !== '/login') {
+    //     console.log('Redirecting to /set-token due to 401');
+    //     localStorage.removeItem('financeflow_jwt_token');
+    //     window.location.href = '/set-token';
+    //   }
+    // }
     throw errorData;
   }
   if (response.status === 204) { // Handle No Content for DELETE
@@ -154,3 +155,4 @@ export const createSubCategory = (mainCategoryId: string | number, data: CreateS
 
 
 export { request };
+

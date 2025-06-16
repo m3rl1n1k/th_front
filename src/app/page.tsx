@@ -1,23 +1,34 @@
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/context/i18n-context';
+import { useAuth } from '@/context/auth-context'; // Import useAuth
 
 export default function HomePage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [isLoading, setIsLoading] = React.useState(true); // Local loader
+  const auth = useAuth(); // Use the auth context
+  const [isPageLoading, setIsPageLoading] = useState(true); // Local loader for this page
 
   useEffect(() => {
-    setIsLoading(true); 
-    router.replace('/dashboard');
-    // setIsLoading(false) will effectively be handled by the browser once redirection completes
-    // or the target page can manage its own loading state.
-  }, [router]);
+    // Wait for auth context to finish its initial loading
+    if (!auth.isLoading) {
+      setIsPageLoading(true); // Show loader while deciding/redirecting
+      if (auth.isAuthenticated) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/login'); // If not authenticated after auth check, go to login
+      }
+      // No need to setIsPageLoading(false) here as the component will unmount upon redirection
+    } else {
+      // Auth is still loading its state, keep page loader active
+      setIsPageLoading(true);
+    }
+  }, [auth.isLoading, auth.isAuthenticated, router]);
 
-  if (isLoading) {
+  if (isPageLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center">
@@ -33,4 +44,3 @@ export default function HomePage() {
 
   return null; // Or some minimal UI if needed before redirect fully occurs
 }
-

@@ -27,20 +27,20 @@ const DUMMY_USER: User = {
   login: 'Dev User',
   email: 'dev@example.com',
   memberSince: new Date().toISOString(),
-  userCurrency: { code: 'USD' } // Added default currency for dummy user
+  userCurrency: { code: 'USD' }
 };
 const DUMMY_TOKEN = 'dev-mode-active-dummy-token';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useTranslation();
 
   const fetchUserCallback = useCallback(async (currentTokenValue: string) => {
-    setIsLoading(true); // Set loading true before this async operation
+    setIsLoading(true);
     if (currentTokenValue === DUMMY_TOKEN) {
       setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
@@ -49,42 +49,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     try {
       const userData = await fetchUserProfile(currentTokenValue);
-      setUser(userData); // userData should include userCurrency
+      setUser(userData);
       setToken(currentTokenValue);
-      toast({ title: t('tokenValidationSuccess') });
+      // toast({ title: t('tokenValidationSuccess') }); // Optional: can be noisy
     } catch (error) {
-      console.error("Failed to fetch user profile:", error);
+      console.error("Failed to fetch user profile with token:", error);
+      setUser(null);
+      setToken(null); // Clear token state
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(TOKEN_STORAGE_KEY); // Remove invalid token from storage
+      }
       toast({
         variant: "destructive",
         title: t('profileFetchErrorTitle'),
-        description: `${t('profileFetchErrorDesc')} ${(error as ApiError).message || ''}`
+        description: `${t('profileFetchErrorDesc')} ${(error as ApiError).message || t('pleaseLoginAgain')}`
       });
-      setUser(null); // Clear user on error
-      setToken(currentTokenValue); 
     } finally {
       setIsLoading(false);
     }
   }, [t, toast]);
 
   useEffect(() => {
-    setIsLoading(true); 
+    let isActive = true;
+    setIsLoading(true);
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+
     if (storedToken) {
-      fetchUserCallback(storedToken);
+      fetchUserCallback(storedToken); // This sets isLoading internally and then false in finally
     } else {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/set-token') {
+      // No stored token logic (Dev mode fallback)
+      if (process.env.NODE_ENV === 'development' || true) { 
         setUser(DUMMY_USER);
         setToken(DUMMY_TOKEN);
         if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
+      } else {
+        setUser(null);
+        setToken(null);
       }
-      setIsLoading(false); 
+      if (isActive) setIsLoading(false);
     }
+    return () => { isActive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array to run once on mount
+  }, [fetchUserCallback]); // fetchUserCallback is memoized
 
   const login = useCallback(async (email: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
     setUser(DUMMY_USER);
     setToken(DUMMY_TOKEN);
     if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
@@ -100,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
     }
-    toast({ title: t('logoutSuccessTitle'), description: "You have been logged out." });
+    toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
     setIsLoading(false);
     router.push('/login');
   }, [router, toast, t]);
@@ -108,33 +118,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const setTokenManually = useCallback(async (newToken: string) => {
     setIsLoading(true);
     const trimmedNewToken = newToken.trim();
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(TOKEN_STORAGE_KEY, trimmedNewToken);
-    }
-    if (!trimmedNewToken) {
-      setUser(DUMMY_USER);
+    
+    if (!trimmedNewToken) { // User cleared the token input
+      setUser(DUMMY_USER); // Revert to dummy user for dev
       setToken(DUMMY_TOKEN);
+      if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
       toast({ title: t('tokenClearedTitle'), description: t('revertedToDevModeDesc') });
       setIsLoading(false);
     } else {
-      await fetchUserCallback(trimmedNewToken);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(TOKEN_STORAGE_KEY, trimmedNewToken);
+      }
+      await fetchUserCallback(trimmedNewToken); // This will set isLoading to false in its finally
     }
   }, [fetchUserCallback, toast, t]);
 
   const fetchUser = useCallback(async () => {
-    // setIsLoading(true); // This might be redundant if fetchUserCallback handles it
+    setIsLoading(true);
     const currentTokenValue = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
     if (currentTokenValue) {
-      await fetchUserCallback(currentTokenValue);
+      await fetchUserCallback(currentTokenValue); // Manages its own isLoading
     } else {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/set-token') {
+      if (process.env.NODE_ENV === 'development' || true) {
           setUser(DUMMY_USER);
           setToken(DUMMY_TOKEN);
       } else {
         setUser(null);
         setToken(null);
       }
-      setIsLoading(false); // Ensure loading is false if no token to fetch with
+      setIsLoading(false);
     }
   }, [fetchUserCallback]);
 
