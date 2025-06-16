@@ -65,17 +65,17 @@ export default function ViewTransactionPage() {
 
       // Map Type ID to Name
       const typeDetail = Object.entries(typesData.types).find(([typeId]) => typeId === String(txData.type));
-      setTypeName(typeDetail ? t(\`transactionType_\${typeDetail[1]}\` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
+      setTypeName(typeDetail ? t(`transactionType_${typeDetail[1]}` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
 
       // Map Frequency ID to Name
       const freqDetail = Object.entries(frequenciesData.periods).find(([freqId]) => freqId === String(txData.frequencyId));
-      setFrequencyName(freqDetail ? t(\`frequencyName_\${freqDetail[1].toLowerCase().replace(/\\s+/g, '_')}\` as any, {defaultValue: freqDetail[1]}) : t('notApplicable'));
+      setFrequencyName(freqDetail ? t(`frequencyName_${freqDetail[1].toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freqDetail[1]}) : t('notApplicable'));
       
       // Map Category ID to Name
       if (txData.subCategory?.id) {
         const allSubCategories = mainCategoriesData.flatMap(mc => mc.subCategories);
         const catDetail = allSubCategories.find(sc => String(sc.id) === String(txData.subCategory!.id));
-        setCategoryName(catDetail ? t(\`categoryName_\${catDetail.name.replace(/\\s+/g, '_').toLowerCase()}\` as any, { defaultValue: catDetail.name }) : t('noCategory'));
+        setCategoryName(catDetail ? t(`categoryName_${catDetail.name.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: catDetail.name }) : t('noCategory'));
       } else {
         setCategoryName(t('noCategory'));
       }
@@ -152,6 +152,7 @@ export default function ViewTransactionPage() {
     );
   }
   
+  // Define detailItems here, after transaction is confirmed to be non-null
   const detailItems = [
     { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: <DollarSign className="text-primary" /> },
     { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
@@ -179,7 +180,7 @@ export default function ViewTransactionPage() {
             </CardHeader>
             <CardContent className="p-6 space-y-6">
                 {detailItems.map(item => (
-                    <div key={item.labelKey} className={\`flex items-start space-x-4 \${item.fullWidth ? 'col-span-1 md:col-span-2' : ''}\`}>
+                    <div key={item.labelKey} className={`flex items-start space-x-4 ${item.fullWidth ? 'col-span-1 md:col-span-2' : ''}`}>
                         <div className="flex-shrink-0 mt-1 text-primary">
                             {React.cloneElement(item.icon, { className: "h-5 w-5" })}
                         </div>
@@ -199,7 +200,7 @@ export default function ViewTransactionPage() {
                 {t('backToListButton')}
             </Button>
             <Button asChild variant="default">
-                <Link href={\`/transactions/\${transaction.id}/edit\`}>
+                <Link href={`/transactions/${transaction.id}/edit`}>
                     <Edit3 className="mr-2 h-4 w-4" />
                     {t('editTransactionButton')}
                 </Link>
