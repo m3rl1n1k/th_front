@@ -15,7 +15,7 @@ export const URLS = {
   dashboardMonthlyIncome: `${API_BASE_URL}/dashboard/monthly-income`,
   dashboardMonthExpenses: `${API_BASE_URL}/dashboard/average-expenses`,
   dashboardChartTotalExpense: `${API_BASE_URL}/dashboard/chart/total-expense`,
-  dashboardLastTransactions: `${API_BASE_URL}/dashboard/last-transactions`,
+  dashboardLastTransactions: (limit: number) => `${API_BASE_URL}/dashboard/last-transactions/${limit}`,
 
 
   // Transactions
@@ -28,8 +28,8 @@ export const URLS = {
 
   // Repeated Transactions
   repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`,
-  toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`, // Updated URL
-  deleteRepeatedTransaction: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`, // Updated URL
+  toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`,
+  deleteRepeatedTransaction: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`,
 
 
   // User Profile
@@ -44,3 +44,4 @@ export const URLS = {
   createMainCategory: `${API_BASE_URL}/main/categories`, // POST new main category
   createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
 };
+

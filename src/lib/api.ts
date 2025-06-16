@@ -92,8 +92,8 @@ export const getDashboardMonthExpenses = (token: string): Promise<{ month_expens
 export const getDashboardChartTotalExpense = (token: string): Promise<MonthlyExpensesByCategoryResponse> =>
   request(URLS.dashboardChartTotalExpense, { method: 'GET', token });
 
-export const getDashboardLastTransactions = (token: string): Promise<DashboardLastTransactionsResponse> =>
-  request(URLS.dashboardLastTransactions, { method: 'GET', token });
+export const getDashboardLastTransactions = (token: string, limit: number): Promise<DashboardLastTransactionsResponse> =>
+  request(URLS.dashboardLastTransactions(limit), { method: 'GET', token });
 
 
 // Transactions
@@ -159,10 +159,10 @@ export const getRepeatedTransactionsList = (token: string): Promise<RepeatedTran
   request(URLS.repeatedTransactionsList, { method: 'GET', token });
 
 export const toggleRepeatedTransactionStatus = (id: string | number, token: string): Promise<RepeatedTransactionEntry> =>
-  request(URLS.toggleRepeatedTransactionStatus(id), { method: 'GET', token }); // Changed to GET and no body
+  request(URLS.toggleRepeatedTransactionStatus(id), { method: 'GET', token });
 
 export const deleteRepeatedTransactionDefinition = (id: string | number, token: string): Promise<void> =>
-  request<void>(URLS.deleteRepeatedTransaction(id), { method: 'DELETE', token }); // Changed URL
+  request<void>(URLS.deleteRepeatedTransaction(id), { method: 'DELETE', token });
 
 
 export { request };

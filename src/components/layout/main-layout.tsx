@@ -26,7 +26,8 @@ const navItems = [
   { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards },
   { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes },
   { href: '/profile', labelKey: 'profile', icon: UserCircle },
-  { href: '/set-token', labelKey: 'setToken', icon: Settings },
+  { href: '/settings', labelKey: 'settings', icon: Settings },
+  { href: '/set-token', labelKey: 'setToken', icon: Settings }, // Original settings, possibly for token
 ];
 
 export function MainLayout({ children }: { children: React.ReactNode }) {

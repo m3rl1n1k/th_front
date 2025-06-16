@@ -257,5 +257,13 @@
   "tryAddingExpenses": "Try adding some expenses to see them here.",
   "lastActivityTitle": "Recent Transactions",
   "noRecentTransactions": "No recent transactions found.",
-  "viewAllTransactions": "View All Transactions"
+  "viewAllTransactions": "View All Transactions",
+  "settings": "Settings",
+  "settingsPageTitle": "Application Settings",
+  "dashboardSettingsTitle": "Dashboard Settings",
+  "dashboardSettingsDesc": "Customize your dashboard view.",
+  "lastTransactionsLimitLabel": "Number of recent transactions to display on Dashboard",
+  "saveSettingsButton": "Save Settings",
+  "settingsSavedTitle": "Settings Saved",
+  "settingsSavedDesc": "Your preferences have been updated."
 }

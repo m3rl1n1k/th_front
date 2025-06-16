@@ -10,8 +10,8 @@ import {
   getDashboardTotalBalance,
   getDashboardMonthlyIncome,
   getDashboardMonthExpenses,
-  getDashboardChartTotalExpense, // This is for the doughnut chart
-  getDashboardLastTransactions,  // This is for the list of last transactions
+  getDashboardChartTotalExpense,
+  getDashboardLastTransactions,
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
@@ -99,6 +99,8 @@ interface ProcessedLastTransactionItem {
   date: string; // Formatted date
 }
 
+const LAST_TRANSACTIONS_LIMIT_KEY = 'dashboardLastTransactionsLimit';
+const DEFAULT_LAST_TRANSACTIONS_LIMIT = 10;
 
 export default function DashboardPage() {
   const { user, token, isAuthenticated } = useAuth();
@@ -121,12 +123,23 @@ export default function DashboardPage() {
       setIsLoadingExpensesChart(true);
       setIsLoadingLastActivity(true);
 
+      let limit = DEFAULT_LAST_TRANSACTIONS_LIMIT;
+      if (typeof window !== 'undefined') {
+        const storedLimit = localStorage.getItem(LAST_TRANSACTIONS_LIMIT_KEY);
+        if (storedLimit) {
+          const parsedLimit = parseInt(storedLimit, 10);
+          if (!isNaN(parsedLimit) && parsedLimit > 0) {
+            limit = parsedLimit;
+          }
+        }
+      }
+
       Promise.all([
         getDashboardTotalBalance(token),
         getDashboardMonthlyIncome(token),
         getDashboardMonthExpenses(token),
-        getDashboardChartTotalExpense(token), // For doughnut chart
-        getDashboardLastTransactions(token), // For last transactions list
+        getDashboardChartTotalExpense(token),
+        getDashboardLastTransactions(token, limit),
       ])
         .then(([balanceData, incomeData, expenseData, chartData, lastTransactionsResp]) => {
           setSummaryData({
@@ -163,7 +176,7 @@ export default function DashboardPage() {
   const processedLastActivity = useMemo((): ProcessedLastTransactionItem[] | null => {
     if (!lastTransactions) return null;
     
-    return lastTransactions.slice(0, 10).map(tx => {
+    return lastTransactions.map(tx => {
       let icon;
       // Assuming type 1 is INCOME, type 2 is EXPENSE from API_DOCUMENTATION.md
       if (tx.type === 1) { 

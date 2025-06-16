@@ -257,5 +257,13 @@
   "tryAddingExpenses": "Спробуйте додати витрати, щоб побачити їх тут.",
   "lastActivityTitle": "Останні Транзакції",
   "noRecentTransactions": "Нещодавніх транзакцій не знайдено.",
-  "viewAllTransactions": "Переглянути всі транзакції"
+  "viewAllTransactions": "Переглянути всі транзакції",
+  "settings": "Налаштування",
+  "settingsPageTitle": "Налаштування додатку",
+  "dashboardSettingsTitle": "Налаштування Панелі",
+  "dashboardSettingsDesc": "Налаштуйте вигляд вашої панелі.",
+  "lastTransactionsLimitLabel": "Кількість останніх транзакцій для відображення на Панелі",
+  "saveSettingsButton": "Зберегти налаштування",
+  "settingsSavedTitle": "Налаштування збережено",
+  "settingsSavedDesc": "Ваші налаштування оновлено."
 }
