@@ -20,37 +20,38 @@ export interface TransactionSubCategory {
   id: string | number;
   name: string;
   icon?: string | null;
+  color?: string | null; // Added color as per API_DOCUMENTATION
 }
 
 export interface Transaction {
   id: string | number;
-  amount: TransactionAmount; // Updated to use TransactionAmount
-  currency: { // Often redundant if amount object has it, but API might send it
+  amount: TransactionAmount;
+  currency: {
     code: string;
   };
   exchangeRate: number;
-  type: number; // Numeric ID from API (e.g., 1 for INCOME, 2 for EXPENSE)
+  type: number; // Numeric ID from API
   description: string | null;
   wallet: {
     id: string | number;
     name: string;
   };
-  subCategory: TransactionSubCategory | null; // Updated to use TransactionSubCategory
+  subCategory: TransactionSubCategory | null;
   user: {
     id: string | number;
   };
   source: string | null;
-  date: string; // ISO date string e.g., "2024-07-28T14:30:00Z"
-  isRecurring?: boolean; // This might be derived from frequencyId or sent by backend
+  date: string; // ISO date string
+  isRecurring?: boolean; // Derived or sent by backend
   frequencyId?: string; // From GET /transactions/frequency
 
   // Frontend derived/display properties
-  typeName?: string; // Raw type name like 'INCOME', 'EXPENSE'
+  typeName?: string;
   categoryName?: string | null;
 
-  // Potential form fields (ensure consistency with payloads)
-  walletId?: string; // string for form binding
-  categoryId?: string; // string for form binding
+  // Potential form fields
+  walletId?: string;
+  categoryId?: string;
 }
 
 export interface CreateTransactionPayload {
@@ -71,13 +72,12 @@ export interface UpdateTransactionPayload {
   wallet_id: number;
   category_id?: number | null;
   frequencyId: string;
-  // source?: string | null; // Include if API expects it and form supports it
 }
 
 
 export interface TransactionType {
   id: string;
-  name: string; // e.g., "INCOME", "EXPENSE"
+  name: string;
 }
 
 export interface ApiError {
@@ -94,13 +94,13 @@ export interface Frequency {
 export interface Wallet {
   id: string | number;
   name: string;
-  amount: TransactionAmount; // Re-using TransactionAmount
+  amount: TransactionAmount;
 }
 
 export interface WalletDetails {
   id: number;
   name: string;
-  amount: TransactionAmount; // Re-using TransactionAmount
+  amount: TransactionAmount;
   number: string;
   currency: {
     code: string;
@@ -150,4 +150,27 @@ export interface CreateSubCategoryPayload {
   icon?: string | null;
   color?: string | null;
   mainCategoryId: string;
+}
+
+// For the new repeated transactions feature
+export interface RepeatedTransactionEntry {
+  id: number | string; // ID of the *template* transaction (assumption)
+  status: number; // e.g., 1 for active, 0 for inactive
+  frequency: string; // Frequency ID (e.g., "1", "5")
+  createdAt: string; // ISO date string
+  nextExecution: string; // ISO date string
+  transaction?: Partial<Pick<Transaction, 'description' | 'amount' | 'type' | 'currency'>>; // Optional: API might send some template details
+
+  // Frontend derived
+  frequencyName?: string;
+  statusName?: string;
+  templateTransactionDescription?: string; // For display
+}
+
+export interface RepeatedTransactionsApiResponse {
+  repeated_transactions: RepeatedTransactionEntry[];
+}
+
+export interface ToggleStatusPayload {
+  status: number;
 }

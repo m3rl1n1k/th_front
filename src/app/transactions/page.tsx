@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation'; // Added usePathname
+import { useRouter, usePathname } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -16,15 +16,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
-import { getTransactionTypes, getTransactionsList, getMainCategories, deleteTransaction } from '@/lib/api';
+import { 
+  getTransactionTypes, 
+  getTransactionsList, 
+  getMainCategories, 
+  deleteTransaction,
+  getRepeatedTransactionsList, // New
+  toggleRepeatedTransactionStatus, // New
+  deleteRepeatedTransactionDefinition // New
+} from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { 
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
-  ArrowUpCircle, ArrowDownCircle, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2
+  ArrowUpCircle, ArrowDownCircle, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, ToggleStatusPayload } from '@/types'; // Updated imports
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,16 +65,20 @@ export default function TransactionsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  const pathname = usePathname(); // For resetting action state on navigation
+  const pathname = usePathname();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
+  const [frequencies, setFrequencies] = useState<AppFrequency[]>([]); // State for frequencies
   
   const [rawTransactions, setRawTransactions] = useState<Transaction[] | null>(null);
+  const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null); // New state for repeated definitions
   
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); // Loading state for frequencies
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [isLoadingRepeatedDefinitions, setIsLoadingRepeatedDefinitions] = useState(false); // New loading state
 
   const [filters, setFilters] = useState<{
     startDate?: Date;
@@ -81,6 +93,11 @@ export default function TransactionsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [initiatingActionForTxId, setInitiatingActionForTxId] = useState<string | number | null>(null);
 
+  // New states for repeated definitions actions
+  const [definitionActionStates, setDefinitionActionStates] = useState<Record<string | number, { isLoading: boolean }>>({});
+  const [showDeleteDefinitionDialog, setShowDeleteDefinitionDialog] = useState(false);
+  const [selectedDefinitionForDelete, setSelectedDefinitionForDelete] = useState<RepeatedTransactionEntry | null>(null);
+
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -93,10 +110,7 @@ export default function TransactionsPage() {
           }));
           setTransactionTypes(formattedTypes);
         })
-        .catch(error => {
-          console.error("Failed to fetch transaction types", error);
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-        })
+        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
         .finally(() => setIsLoadingTypes(false));
 
       setIsLoadingCategories(true);
@@ -105,21 +119,31 @@ export default function TransactionsPage() {
           const subCategories = data.flatMap(mainCat => mainCat.subCategories || []);
           setAllSubCategories(subCategories);
         })
-        .catch(error => {
-          console.error("Failed to fetch main categories", error);
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-          setAllSubCategories([]);
-        })
+        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
         .finally(() => setIsLoadingCategories(false));
+      
+      setIsLoadingFrequencies(true);
+      getTransactionFrequencies(token)
+        .then(data => {
+          const formattedFrequencies = Object.entries(data.periods).map(([id, name]) => ({
+            id: id,
+            name: name as string
+          }));
+          setFrequencies(formattedFrequencies);
+        })
+        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
+        .finally(() => setIsLoadingFrequencies(false));
+
     } else {
       setIsLoadingTypes(false);
       setIsLoadingCategories(false);
+      setIsLoadingFrequencies(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, toast]);
+  }, [token, isAuthenticated, toast, t]);
 
   const fetchTransactions = useCallback((showLoadingIndicator = true) => {
-    if (isAuthenticated && token) {
+    if (isAuthenticated && token && activeTab === "all") {
       if(showLoadingIndicator) setIsLoadingTransactions(true);
       const params: Record<string, string> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
@@ -128,14 +152,9 @@ export default function TransactionsPage() {
       if (filters.typeId) params.typeId = filters.typeId;
       
       getTransactionsList(token, params)
-        .then(result => {
-          setRawTransactions(result.transactions || []);
-        })
+        .then(result => setRawTransactions(result.transactions || []))
         .catch((error: any) => {
-          console.error("Failed to fetch transactions", error);
-           if (error.code !== 401) {
-            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-          }
+          if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
           setRawTransactions([]);
         })
         .finally(() => {
@@ -146,85 +165,92 @@ export default function TransactionsPage() {
       if(showLoadingIndicator) setIsLoadingTransactions(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId]); 
+  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab]); 
+
+  const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
+    if (isAuthenticated && token && activeTab === "recurring") {
+        if (showLoading) setIsLoadingRepeatedDefinitions(true);
+        getRepeatedTransactionsList(token)
+            .then(response => setRepeatedDefinitions(response.repeated_transactions || []))
+            .catch(error => {
+                if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+                setRepeatedDefinitions([]);
+            })
+            .finally(() => {
+                if (showLoading) setIsLoadingRepeatedDefinitions(false);
+            });
+    } else if (!isAuthenticated || !token) {
+        setRepeatedDefinitions([]);
+        if (showLoading) setIsLoadingRepeatedDefinitions(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, token, activeTab, t, toast]);
 
   useEffect(() => {
-    fetchTransactions();
+    if (activeTab === "all") {
+      fetchTransactions();
+    } else if (activeTab === "recurring") {
+      fetchRepeatedDefinitions();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token]); 
+  }, [isAuthenticated, token, activeTab]);
 
   useEffect(() => {
     setInitiatingActionForTxId(null);
   }, [pathname]);
 
   const processedTransactions = useMemo(() => {
-    if (!rawTransactions) { 
-      return [];
-    }
-    return rawTransactions.map(tx => {
-      const typeDetails = transactionTypes.find(tt => tt.id === String(tx.type));
-      
-      return {
-        ...tx,
-        typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'), 
-        categoryName: tx.subCategory?.name || null 
-      };
-    });
+    if (!rawTransactions) return [];
+    return rawTransactions.map(tx => ({
+      ...tx,
+      typeName: transactionTypes.find(tt => tt.id === String(tx.type))?.name || t('transactionType_UNKNOWN'),
+      categoryName: tx.subCategory?.name || null 
+    }));
   }, [rawTransactions, transactionTypes, t]);
   
-  const currentTabTransactions = useMemo(() => {
-    if (activeTab === "recurring") {
-      return processedTransactions.filter(tx => tx.isRecurring); 
-    }
-    return processedTransactions;
-  }, [processedTransactions, activeTab]);
-
   const { groups, sortedDateKeys } = useMemo(() => {
-    const newGroups: GroupedTransactions = currentTabTransactions.reduce((acc, tx) => {
+    const newGroups: GroupedTransactions = processedTransactions.reduce((acc, tx) => {
       const dateKey = format(parseISO(tx.date), 'yyyy-MM-dd');
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
+      if (!acc[dateKey]) acc[dateKey] = [];
       acc[dateKey].push(tx);
       return acc;
     }, {} as GroupedTransactions);
-
     const newSortedDateKeys = Object.keys(newGroups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     return { groups: newGroups, sortedDateKeys: newSortedDateKeys };
-  }, [currentTabTransactions]);
+  }, [processedTransactions]);
 
+  const getFrequencyNameById = useCallback((id: string) => {
+    const freq = frequencies.find(f => f.id === id);
+    return freq ? t(freq.name.toLowerCase().replace(/\s+/g, '_') as any, {defaultValue: freq.name}) : t('notApplicable');
+  }, [frequencies, t]);
+
+  const getStatusName = useCallback((status: number) => {
+    return status === 1 ? t('statusActive') : t('statusInactive');
+  }, [t]);
 
   const handleFilterChange = <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const handleApplyFilters = () => {
-    fetchTransactions(); 
+    if (activeTab === 'all') fetchTransactions();
   };
 
   const handleClearFilters = () => {
     setFilters({});
-     if (isAuthenticated && token) {
+    if (activeTab === 'all' && isAuthenticated && token) {
       setIsLoadingTransactions(true);
       getTransactionsList(token, {}) 
-        .then(result => {
-          setRawTransactions(result.transactions || []);
-        })
+        .then(result => setRawTransactions(result.transactions || []))
         .catch((error: any) => {
-          console.error("Failed to fetch transactions after clearing filters", error);
-           if (error.code !== 401) {
-             toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-           }
+          if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
           setRawTransactions([]);
         })
         .finally(() => setIsLoadingTransactions(false));
     }
   };
   
-
-  const handleAddNewTransaction = () => {
-    router.push('/transactions/new');
-  };
+  const handleAddNewTransaction = () => router.push('/transactions/new');
 
   const openDeleteDialog = (transaction: Transaction) => {
     setSelectedTransactionForDelete(transaction);
@@ -257,14 +283,50 @@ export default function TransactionsPage() {
     router.push(`/transactions/${txId}/edit`);
   };
   
+  const handleToggleDefinitionStatus = async (definition: RepeatedTransactionEntry) => {
+    if (!token) return;
+    setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } }));
+    const newStatus = definition.status === 1 ? 0 : 1;
+    const payload: ToggleStatusPayload = { status: newStatus };
+    try {
+      await toggleRepeatedTransactionStatus(definition.id, payload, token);
+      toast({ title: t('statusToggledTitle'), description: t('statusToggledDesc')});
+      fetchRepeatedDefinitions(false); // Refetch to update list
+    } catch (error: any) {
+      toast({ variant: "destructive", title: t('errorTogglingStatus'), description: error.message || t('unexpectedError') });
+    } finally {
+      setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: false } }));
+    }
+  };
+
+  const openDeleteDefinitionDialog = (definition: RepeatedTransactionEntry) => {
+    setSelectedDefinitionForDelete(definition);
+    setShowDeleteDefinitionDialog(true);
+  };
+
+  const handleDeleteDefinitionConfirmed = async () => {
+    if (!selectedDefinitionForDelete || !token) return;
+    setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: true } }));
+    try {
+      await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token);
+      toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
+      fetchRepeatedDefinitions(false); // Refetch to update list
+    } catch (error: any) {
+      toast({ variant: "destructive", title: t('errorRemovingDefinition'), description: error.message || t('unexpectedError') });
+    } finally {
+      setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: false } }));
+      setShowDeleteDefinitionDialog(false);
+      setSelectedDefinitionForDelete(null);
+    }
+  };
 
   const renderTransactionTableContent = () => {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center"> {/* Reduced colSpan */}
+          <TableCell colSpan={6} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
-              <RefreshCwIcon className="h-10 w-10 animate-spin text-primary mb-3" />
+              <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
             </div>
           </TableCell>
@@ -275,10 +337,10 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground"> {/* Reduced colSpan */}
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
-                <p className="text-xl font-medium">{t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}</p>
+                <p className="text-xl font-medium">{t('noTransactionsFound')}</p>
                 <p className="text-sm">{t('tryAdjustingFilters')}</p> 
             </div>
           </TableCell>
@@ -289,7 +351,7 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md"> {/* Reduced colSpan */}
+          <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md">
             {format(parseISO(dateKey), "PPP")}
           </TableCell>
         </TableRow>
@@ -326,7 +388,6 @@ export default function TransactionsPage() {
               <TableCell className="py-3 px-4 align-top text-sm">
                 {categoryText}
               </TableCell>
-              {/* Removed Details Cell */}
               <TableCell className="py-3 px-4 align-top text-sm text-center">
                 <DropdownMenu onOpenChange={(open) => { if (!open) setInitiatingActionForTxId(null); }}>
                   <DropdownMenuTrigger asChild>
@@ -374,6 +435,79 @@ export default function TransactionsPage() {
       </React.Fragment>
     ));
   };
+  
+  const renderRepeatedDefinitionsTableContent = () => {
+    if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
+      return (
+        <TableRow>
+          <TableCell colSpan={6} className="h-60 text-center">
+            <div className="flex flex-col items-center justify-center">
+              <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
+              <p className="text-lg text-muted-foreground">{t('loading')}</p>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+             <div className="flex flex-col items-center justify-center">
+                <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
+                <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
+                <p className="text-sm">{t('addNewTransaction')}</p> 
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+    
+    return repeatedDefinitions.map(def => {
+      const isActionLoading = definitionActionStates[def.id]?.isLoading || false;
+      return (
+      <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
+        <TableCell className="py-3 px-4 align-top text-sm">
+          <Link href={`/transactions/${def.id}`} className="text-primary hover:underline">
+            {t('templateId')} #{def.id}
+          </Link>
+        </TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm">
+            {def.transaction?.description || t('noDescription')}
+        </TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm">{getStatusName(def.status)}</TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm">{getFrequencyNameById(def.frequency)}</TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm">{format(parseISO(def.createdAt), "PP")}</TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm">{format(parseISO(def.nextExecution), "PPp")}</TableCell>
+        <TableCell className="py-3 px-4 align-top text-sm text-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isActionLoading}>
+                {isActionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                <span className="sr-only">{t('actions')}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => router.push(`/transactions/${def.id}/edit`)} className="flex items-center cursor-pointer">
+                <Edit3 className="mr-2 h-4 w-4" />
+                {t('editTemplateButton')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleToggleDefinitionStatus(def)} className="flex items-center cursor-pointer">
+                {def.status === 1 ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" /> }
+                {t('toggleStatusButton')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => openDeleteDefinitionDialog(def)} className="text-destructive focus:text-destructive flex items-center cursor-pointer">
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('removeDefinitionButton')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    )});
+  };
 
 
   return (
@@ -387,91 +521,93 @@ export default function TransactionsPage() {
           </Button>
         </div>
 
-        <Card className="shadow-xl border-border/60">
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="filters" className="border-b-0">
-                <AccordionTrigger className="w-full px-6 py-4 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/10 transition-colors rounded-t-lg">
-                  <div className="flex items-center text-xl font-semibold text-foreground">
-                    <ListFilter className="mr-3 h-6 w-6 text-primary" />
-                    {t('filterTransactionsTitle')}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="border-t border-border/60">
-                  <div className="p-6 space-y-6 bg-background rounded-b-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
-                      <div className="space-y-2">
-                        <Label htmlFor="startDate" className="font-medium">{t('startDate')}</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button id="startDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
-                              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {filters.startDate ? format(filters.startDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} />
-                          </PopoverContent>
-                        </Popover>
+        {activeTab === 'all' && (
+          <Card className="shadow-xl border-border/60">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="filters" className="border-b-0">
+                  <AccordionTrigger className="w-full px-6 py-4 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/10 transition-colors rounded-t-lg">
+                    <div className="flex items-center text-xl font-semibold text-foreground">
+                      <ListFilter className="mr-3 h-6 w-6 text-primary" />
+                      {t('filterTransactionsTitle')}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="border-t border-border/60">
+                    <div className="p-6 space-y-6 bg-background rounded-b-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                        <div className="space-y-2">
+                          <Label htmlFor="startDate" className="font-medium">{t('startDate')}</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button id="startDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
+                                <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                {filters.startDate ? format(filters.startDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="endDate" className="font-medium">{t('endDate')}</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button id="endDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
+                                <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                {filters.endDate ? format(filters.endDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} disabled={(date) => filters.startDate ? date < filters.startDate : false}/>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
+                          <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)} disabled={isLoadingCategories}>
+                            <SelectTrigger id="filterCategory" className="hover:border-primary transition-colors">
+                              <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">{t('allCategories')}</SelectItem>
+                              {allSubCategories.map(subCat => (
+                                <SelectItem key={subCat.id} value={String(subCat.id)}>
+                                   {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="filterType" className="font-medium">{t('filterByType')}</Label>
+                          <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
+                            <SelectTrigger id="filterType" className="hover:border-primary transition-colors">
+                              <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">{t('allTypes')}</SelectItem>
+                              {transactionTypes.map(type => (
+                                <SelectItem key={type.id} value={type.id}>
+                                  {t(`transactionType_${type.name}` as any, {defaultValue: type.name})}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="endDate" className="font-medium">{t('endDate')}</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button id="endDate" variant="outline" className="w-full justify-start text-left font-normal hover:border-primary transition-colors">
-                              <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {filters.endDate ? format(filters.endDate, "PPP") : <span className="text-muted-foreground">{t('selectDate')}</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} disabled={(date) => filters.startDate ? date < filters.startDate : false}/>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
-                        <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)} disabled={isLoadingCategories}>
-                          <SelectTrigger id="filterCategory" className="hover:border-primary transition-colors">
-                            <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">{t('allCategories')}</SelectItem>
-                            {allSubCategories.map(subCat => (
-                              <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                 {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="filterType" className="font-medium">{t('filterByType')}</Label>
-                        <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
-                          <SelectTrigger id="filterType" className="hover:border-primary transition-colors">
-                            <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">{t('allTypes')}</SelectItem>
-                            {transactionTypes.map(type => (
-                              <SelectItem key={type.id} value={type.id}>
-                                {t(`transactionType_${type.name}` as any, {defaultValue: type.name})}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="flex justify-end space-x-3 pt-4">
+                        <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="shadow-sm hover:shadow-md transition-shadow">{t('clearFiltersButton')}</Button>
+                        <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="shadow-sm hover:shadow-md transition-shadow">
+                          {(isLoadingTransactions && activeTab === 'all') && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {t('applyFiltersButton')}
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex justify-end space-x-3 pt-4">
-                      <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="shadow-sm hover:shadow-md transition-shadow">{t('clearFiltersButton')}</Button>
-                      <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="shadow-sm hover:shadow-md transition-shadow">
-                        {(isLoadingTransactions || isLoadingTypes || isLoadingCategories) && <RefreshCwIcon className="mr-2 h-4 w-4 animate-spin" />}
-                        {t('applyFiltersButton')}
-                      </Button>
-                    </div>
-                  </div>
-                </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </Card>
+                  </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </Card>
+        )}
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "all" | "recurring")} className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
@@ -501,7 +637,6 @@ export default function TransactionsPage() {
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
-                        {/* Removed Details Header */}
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -517,24 +652,24 @@ export default function TransactionsPage() {
              <Card className="shadow-xl border-border/60">
               <CardHeader className="border-b border-border/60">
                 <CardTitle className="text-2xl font-semibold text-foreground">{t('recurringTransactionsListTitle')}</CardTitle>
-                <CardDescription>{t('viewYourRecurringTransactions')}</CardDescription>
+                <CardDescription>{t('manageRecurringDefinitions')}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                    <Table>
                      <TableHeader className="bg-muted/30 dark:bg-muted/10">
                       <TableRow>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
-                        <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
-                        {/* Removed Details Header */}
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('templateInfo')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('description')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('status')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('frequency')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('createdAt')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('nextExecution')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {renderTransactionTableContent()}
+                      {renderRepeatedDefinitionsTableContent()}
                     </TableBody>
                   </Table>
                 </div>
@@ -560,7 +695,29 @@ export default function TransactionsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog for deleting repeated transaction definition */}
+      <AlertDialog open={showDeleteDefinitionDialog} onOpenChange={setShowDeleteDefinitionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('confirmRemoveDefinitionTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmRemoveDefinitionMessage')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedDefinitionForDelete(null)}>{t('cancelButton')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteDefinitionConfirmed} 
+              disabled={definitionActionStates[selectedDefinitionForDelete?.id || '']?.isLoading}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {definitionActionStates[selectedDefinitionForDelete?.id || '']?.isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {definitionActionStates[selectedDefinitionForDelete?.id || '']?.isLoading ? t('deleting') : t('deleteButtonConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
-

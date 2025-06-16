@@ -1,17 +1,20 @@
 
 import { URLS } from '@/config/urls';
-import type { 
-  ApiError, 
-  Transaction, 
-  User, 
-  WalletDetails, 
-  MainCategory, 
-  WalletTypeApiResponse, 
-  CreateMainCategoryPayload, 
-  CreateSubCategoryPayload, 
+import type {
+  ApiError,
+  Transaction,
+  User,
+  WalletDetails,
+  MainCategory,
+  WalletTypeApiResponse,
+  CreateMainCategoryPayload,
+  CreateSubCategoryPayload,
   SubCategory,
   CreateTransactionPayload,
-  UpdateTransactionPayload
+  UpdateTransactionPayload,
+  RepeatedTransactionsApiResponse, // New
+  RepeatedTransactionEntry, // New
+  ToggleStatusPayload // New
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -22,12 +25,10 @@ interface RequestOptions extends RequestInit {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
-
     console.error('API Error Status:', response.status, 'Error Data:', errorData);
-
     throw errorData;
   }
-  if (response.status === 204) { // Handle No Content for DELETE
+  if (response.status === 204) {
     return undefined as T;
   }
   return response.json();
@@ -59,8 +60,8 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   }
 
   headers.set('Accept', 'application/json');
+  console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url} with options:`, fetchOptions.body ? { body: fetchOptions.body, headers: Object.fromEntries(headers.entries()) } : { headers: Object.fromEntries(headers.entries())});
 
-  console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url}`);
 
   const response = await fetch(url, {
     ...fetchOptions,
@@ -140,7 +141,7 @@ export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiRes
 // Categories Page & Management
 export const getMainCategories = async (token: string): Promise<MainCategory[]> => {
   const response = await request<{ categories: MainCategory[] }>(URLS.mainCategories, { method: 'GET', token });
-  return response.categories || []; 
+  return response.categories || [];
 }
 
 export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
@@ -149,6 +150,15 @@ export const createMainCategory = (data: CreateMainCategoryPayload, token: strin
 export const createSubCategory = (mainCategoryId: string | number, data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
   request<SubCategory>(URLS.createSubCategory(mainCategoryId), { method: 'POST', body: data, token });
 
+// Repeated Transactions (New)
+export const getRepeatedTransactionsList = (token: string): Promise<RepeatedTransactionsApiResponse> =>
+  request(URLS.repeatedTransactionsList, { method: 'GET', token });
+
+export const toggleRepeatedTransactionStatus = (id: string | number, payload: ToggleStatusPayload, token: string): Promise<RepeatedTransactionEntry> =>
+  request(URLS.toggleRepeatedTransactionStatus(id), { method: 'PATCH', body: payload, token });
+
+export const deleteRepeatedTransactionDefinition = (id: string | number, token: string): Promise<void> =>
+  request<void>(URLS.repeatedTransactionById(id), { method: 'DELETE', token });
+
 
 export { request };
-
