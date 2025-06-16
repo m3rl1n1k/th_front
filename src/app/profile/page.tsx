@@ -25,8 +25,8 @@ interface UserProfileData {
 }
 
 export default function ProfilePage() {
-  const { user, token, isAuthenticated, fetchUser } = useAuth();
-  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
+  const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
+  const { t, dateFnsLocale } = useTranslation(); 
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -65,7 +65,7 @@ export default function ProfilePage() {
   }, [isAuthenticated, user, token, fetchUser, t]);
 
 
-  if (isLoading || (!isAuthenticated && !token)) {
+  if (isLoading || authIsLoading || (!isAuthenticated && !token)) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -165,7 +165,7 @@ export default function ProfilePage() {
           <div className="bg-gradient-to-br from-primary via-primary/80 to-accent h-32" />
           <CardHeader className="items-center text-center -mt-16">
             <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profileData.profilePictureUrl} alt={profileData.login} data-ai-hint="person portrait"/>
+              <AvatarImage src={profileData.profilePictureUrl} alt={profileData.login} data-ai-hint="avatar user"/>
               <AvatarFallback className="text-4xl">
                 {profileData.login.charAt(0).toUpperCase()}
               </AvatarFallback>
