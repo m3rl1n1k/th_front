@@ -93,7 +93,6 @@ export default function ViewTransactionPage() {
       }
 
     } catch (err: any) {
-      console.error("Failed to fetch transaction details:", err);
       setError(err.message || t('errorFetchingData'));
       toast({ variant: "destructive", title: t('errorFetchingData'), description: err.message });
     } finally {

@@ -137,7 +137,6 @@ export default function ProfilePage() {
       email: editEmail,
       userCurrencyCode: editCurrencyCode,
     };
-    console.log("Profile update submitted:", updatedData);
     setProfileData(prev => prev ? ({
         ...prev,
         login: updatedData.login,
@@ -154,7 +153,7 @@ export default function ProfilePage() {
       formattedMemberSince = format(new Date(profileData.memberSince), "MMMM d, yyyy", { locale: dateFnsLocale });
     }
   } catch (error) {
-    console.warn("Invalid date for memberSince:", profileData.memberSince);
+    // Invalid date format, formattedMemberSince remains "N/A"
   }
 
   return (

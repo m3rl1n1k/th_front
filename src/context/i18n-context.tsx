@@ -59,7 +59,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
       }
     } else {
-      console.warn(`Language "${lang}" not supported. Defaulting to 'en'.`);
+      // Language not supported, default to 'en'
       if (lang !== 'en') {
         await new Promise(resolve => setTimeout(resolve, 300));
         setLanguageState('en');

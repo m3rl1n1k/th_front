@@ -41,7 +41,6 @@ export default function DashboardPage() {
           });
         })
         .catch(error => {
-          console.error("Failed to fetch dashboard summary data", error);
           toast({
             variant: "destructive",
             title: t('errorFetchingData'),

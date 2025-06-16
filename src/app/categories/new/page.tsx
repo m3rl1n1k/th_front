@@ -69,7 +69,6 @@ export default function CreateCategoryPage() {
           setExistingMainCategories(Array.isArray(data) ? data : []); 
         })
         .catch(error => {
-          console.error("Failed to fetch main categories for dropdown", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setExistingMainCategories([]); 
         })

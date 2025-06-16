@@ -36,7 +36,6 @@ export default function CategoriesPage() {
           setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch(error => {
-          console.error("Failed to fetch main categories", error);
           setMainCategories([]); 
         })
         .finally(() => setIsLoading(false));

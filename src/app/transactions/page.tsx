@@ -132,7 +132,6 @@ export default function TransactionsPage() {
           setApiFrequencies(formattedFrequencies);
         })
         .catch(error => {
-            console.error("Error fetching frequencies:", error);
             toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingFrequencies(false));

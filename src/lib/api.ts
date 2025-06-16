@@ -25,7 +25,6 @@ interface RequestOptions extends RequestInit {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
-    console.error('API Error Status:', response.status, 'Error Data:', errorData);
     throw errorData;
   }
   if (response.status === 204) {
@@ -60,8 +59,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   }
 
   headers.set('Accept', 'application/json');
-  console.log(`Requesting: ${fetchOptions.method || 'GET'} ${url} with options:`, fetchOptions.body ? { body: fetchOptions.body, headers: Object.fromEntries(headers.entries()) } : { headers: Object.fromEntries(headers.entries())});
-
 
   const response = await fetch(url, {
     ...fetchOptions,
@@ -162,4 +159,3 @@ export const deleteRepeatedTransactionDefinition = (id: string | number, token: 
 
 
 export { request };
-

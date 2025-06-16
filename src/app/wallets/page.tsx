@@ -33,7 +33,6 @@ export default function WalletsPage() {
           setWalletTypeMap(data.types || {});
         })
         .catch(error => {
-          console.error("Failed to fetch wallet types", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingTypes(false));
@@ -50,7 +49,6 @@ export default function WalletsPage() {
           setWallets(data.wallets || []);
         })
         .catch(error => {
-          console.error("Failed to fetch wallets", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setWallets([]); 
         })

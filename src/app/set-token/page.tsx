@@ -39,7 +39,6 @@ export default function SetTokenPage() {
       await setTokenManually(data.token);
       router.push('/dashboard');
     } catch (error: any) {
-      console.error("Error setting token:", error);
       // Auth context handles toasts for success/revert
     }
   };

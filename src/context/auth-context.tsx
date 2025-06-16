@@ -53,7 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(currentTokenValue);
       // toast({ title: t('tokenValidationSuccess') }); // Optional: can be noisy
     } catch (error) {
-      console.error("Failed to fetch user profile with token:", error);
       setUser(null);
       setToken(null); // Clear token state
       if (typeof window !== 'undefined') {

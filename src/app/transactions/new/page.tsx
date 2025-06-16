@@ -88,7 +88,6 @@ export default function NewTransactionPage() {
           setTransactionTypes(formattedTypes);
         })
         .catch(error => {
-          console.error("Failed to fetch transaction types", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingTypes(false));
@@ -99,7 +98,6 @@ export default function NewTransactionPage() {
            setWallets(data.wallets || []); 
         })
         .catch(error => {
-          console.error("Failed to fetch wallets", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingWallets(false));
@@ -110,7 +108,6 @@ export default function NewTransactionPage() {
           setMainCategoriesHierarchical(Array.isArray(mainCategoriesResponse) ? mainCategoriesResponse : []);
         })
         .catch(error => {
-          console.error("Failed to fetch categories from /main/categories", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setMainCategoriesHierarchical([]);
         })
@@ -124,7 +121,6 @@ export default function NewTransactionPage() {
           setFrequencies(formattedFrequencies);
         })
         .catch(error => {
-          console.error("Failed to fetch frequencies", error);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingFrequencies(false));
@@ -138,7 +134,8 @@ export default function NewTransactionPage() {
       
       const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main');
       const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE');
-      const defaultOneTimeFrequency = frequencies.find(f => f.id === '0'); // API ID for "Once" is "0"
+      // For frequencies, API sends "0" as ID for "Once".
+      const defaultOneTimeFrequency = frequencies.find(f => f.id === '0'); 
 
       const currentFormValues = getValues();
       const newDefaults: Partial<NewTransactionFormData> = {};
@@ -187,7 +184,6 @@ export default function NewTransactionPage() {
       });
       router.push('/transactions');
     } catch (error: any) {
-      console.error("Failed to save transaction", error);
       toast({
         variant: "destructive",
         title: t('transactionFailedTitle'),

@@ -39,7 +39,6 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ amountInCents,
       currencyDisplay: 'code', // Explicitly show the ISO currency code
     }).format(amount);
   } catch (error) {
-    console.warn(`Error formatting currency ${displayCurrency} for locale ${locale}:`, error);
     const amount = typeof amountInCents === 'number' ? (amountInCents / 100).toFixed(2) : '0.00';
     // Fallback displays the amount and the ISO code
     formattedAmount = `${amount} ${displayCurrency}`;
@@ -47,4 +46,3 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ amountInCents,
 
   return <span className="font-mono">{formattedAmount}</span>;
 };
-
