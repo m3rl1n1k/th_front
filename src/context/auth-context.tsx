@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const clearAuth artefacts = useCallback(() => {
+  const clearAuthArtefacts = useCallback(() => {
     setUser(null);
     setToken(null);
     removeTokenFromStorages();
@@ -64,10 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return userData;
     } catch (error) {
-      clearAuth artefacts();
+      clearAuthArtefacts();
       throw error; // Re-throw to be caught by calling function
     }
-  }, [clearAuth artefacts]);
+  }, [clearAuthArtefacts]);
 
 
   useEffect(() => {
@@ -113,12 +113,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
       router.push('/dashboard');
     } catch (error) {
-      clearAuth artefacts();
+      clearAuthArtefacts();
       throw error; // Re-throw for the form to handle
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAndSetUser, router, toast, t, clearAuth artefacts]);
+  }, [fetchAndSetUser, router, toast, t, clearAuthArtefacts]);
 
   const register = useCallback(async (payload: RegistrationPayload) => {
     setIsLoading(true);
@@ -136,18 +136,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     setIsLoading(true);
-    clearAuth artefacts();
+    clearAuthArtefacts();
     toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
     setIsLoading(false); // Set loading false before router push
     router.push('/login');
-  }, [router, toast, t, clearAuth artefacts]);
+  }, [router, toast, t, clearAuthArtefacts]);
 
   const setTokenManually = useCallback(async (newTokenValue: string) => {
     setIsLoading(true);
     const trimmedNewToken = newTokenValue.trim();
     
     if (!trimmedNewToken) { 
-      clearAuth artefacts();
+      clearAuthArtefacts();
       toast({ title: t('tokenClearedTitle'), description: t('manualTokenClearedDesc') });
       setIsLoading(false);
       router.push('/login');
@@ -164,7 +164,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     }
-  }, [fetchAndSetUser, toast, t, router, clearAuth artefacts]);
+  }, [fetchAndSetUser, toast, t, router, clearAuthArtefacts]);
 
   const fetchUser = useCallback(async () => {
     // This function might be used if there's a need to manually re-validate the user
@@ -201,3 +201,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
