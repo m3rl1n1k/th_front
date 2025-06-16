@@ -245,12 +245,12 @@
   "errorRemovingDefinition": "Error Removing Definition",
   "noRecurringDefinitionsFound": "No recurring transaction definitions found.",
   "manageRecurringDefinitions": "Manage your scheduled recurring transactions.",
-  "frequency_0": "One-time",
+  "frequency_0": "Once",
   "frequency_1": "Daily",
   "frequency_7": "Weekly",
-  "frequency_14": "Every two weeks",
+  "frequency_14": "Two weeks",
   "frequency_30": "Monthly",
-  "frequency_180": "Every 6 months",
+  "frequency_180": "HalfYearly",
   "frequency_365": "Yearly"
 }
 

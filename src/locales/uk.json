@@ -248,9 +248,9 @@
   "frequency_0": "Одноразово",
   "frequency_1": "Щодня",
   "frequency_7": "Щотижня",
-  "frequency_14": "Кожні два тижні",
+  "frequency_14": "Два тижні",
   "frequency_30": "Щомісяця",
-  "frequency_180": "Кожні 6 місяців",
+  "frequency_180": "Півріччя",
   "frequency_365": "Щорічно"
 }
 
