@@ -25,14 +25,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     console.error('API Error Status:', response.status, 'Error Data:', errorData);
 
-    // Removed automatic redirection on 401. AuthContext will handle this.
-    // if (response.status === 401) {
-    //   if (typeof window !== 'undefined' && window.location.pathname !== '/set-token' && window.location.pathname !== '/login') {
-    //     console.log('Redirecting to /set-token due to 401');
-    //     localStorage.removeItem('financeflow_jwt_token');
-    //     window.location.href = '/set-token';
-    //   }
-    // }
     throw errorData;
   }
   if (response.status === 204) { // Handle No Content for DELETE
@@ -104,7 +96,7 @@ export const getTransactionTypes = (token: string): Promise<{ types: Record<stri
   request(URLS.transactionTypes, { method: 'GET', token });
 
 export const createTransaction = (data: CreateTransactionPayload, token: string): Promise<Transaction> =>
-  request(URLS.transactions, { method: 'POST', body: data, token });
+  request<Transaction>(URLS.transactions, { method: 'POST', body: data, token });
 
 export const getTransactionsList = (
   token: string,
@@ -121,11 +113,15 @@ export const getTransactionsList = (
   return request<{ transactions: Transaction[] }>(url, { method: 'GET', token });
 };
 
-export const getTransactionById = (id: string | number, token: string): Promise<Transaction> =>
-  request<Transaction>(URLS.transactionById(id), { method: 'GET', token });
+export const getTransactionById = async (id: string | number, token: string): Promise<Transaction> => {
+  const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'GET', token });
+  return response.transaction;
+};
 
-export const updateTransaction = (id: string | number, data: UpdateTransactionPayload, token: string): Promise<Transaction> =>
-  request<Transaction>(URLS.transactionById(id), { method: 'PUT', body: data, token });
+export const updateTransaction = async (id: string | number, data: UpdateTransactionPayload, token: string): Promise<Transaction> => {
+  const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'PUT', body: data, token });
+  return response.transaction;
+};
 
 export const deleteTransaction = (id: string | number, token: string): Promise<void> =>
   request<void>(URLS.transactionById(id), { method: 'DELETE', token });
