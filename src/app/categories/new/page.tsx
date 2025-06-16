@@ -19,8 +19,20 @@ import { createMainCategory, createSubCategory, getMainCategories } from '@/lib/
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, PlusCircle, Tag } from 'lucide-react';
+import { Save, ArrowLeft, PlusCircle, Tag, Check } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
+import { cn } from '@/lib/utils';
+
+// Predefined color palette
+const predefinedColors = [
+  '#FFFFFF', '#000000', '#808080', '#D3D3D3', // Basics
+  '#FF0000', '#FA8072', '#FFC0CB', '#DC143C', // Reds/Pinks
+  '#FFA500', '#FFD700', '#FFFF00',             // Oranges/Yellows
+  '#008000', '#90EE90', '#2E8B57', '#32CD32', // Greens
+  '#0000FF', '#ADD8E6', '#4682B4', '#00008B', // Blues
+  '#800080', '#DA70D6', '#9370DB',             // Purples
+  '#A52A2A', '#DEB887', '#F5F5DC'              // Browns/Others
+];
 
 // Schemas
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
@@ -53,12 +65,12 @@ export default function CreateCategoryPage() {
 
   const mainCategoryForm = useForm<MainCategoryFormData>({
     resolver: zodResolver(MainCategorySchema),
-    defaultValues: { name: '', icon: null, color: '#FFFFFF' },
+    defaultValues: { name: '', icon: null, color: predefinedColors[0] },
   });
 
   const subCategoryForm = useForm<SubCategoryFormData>({
     resolver: zodResolver(SubCategorySchema),
-    defaultValues: { mainCategoryId: '', name: '', icon: null, color: '#FFFFFF' },
+    defaultValues: { mainCategoryId: '', name: '', icon: null, color: predefinedColors[0] },
   });
   
   useEffect(() => {
@@ -74,6 +86,7 @@ export default function CreateCategoryPage() {
         })
         .finally(() => setIsLoadingCategories(false));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, toast, t]);
   
 
@@ -112,6 +125,28 @@ export default function CreateCategoryPage() {
   
   const isSubmitting = mainCategoryForm.formState.isSubmitting || subCategoryForm.formState.isSubmitting;
   const isFormsLoading = isSubmitting || isLoadingCategories;
+
+  const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
+    <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-1 border rounded-md bg-muted/20 max-w-sm">
+      {predefinedColors.map((color) => (
+        <button
+          type="button"
+          key={color}
+          onClick={() => onChange(color)}
+          className={cn(
+            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+            value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
+            color === '#FFFFFF' && 'border-input' // Add border for white swatch for visibility
+          )}
+          style={{ backgroundColor: color }}
+          title={color}
+          aria-label={`Color ${color}`}
+        >
+          {value === color && <Check className={cn("h-4 w-4 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' ? 'text-white' : 'text-black')} />}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <MainLayout>
@@ -173,18 +208,12 @@ export default function CreateCategoryPage() {
                     {mainCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.icon.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="main-color-picker">{t('colorLabel')}</Label>
+                    <Label htmlFor="main-color-swatches">{t('colorLabel')}</Label>
                     <Controller
                         name="color"
                         control={mainCategoryForm.control}
                         render={({ field }) => (
-                            <Input
-                                type="color"
-                                id="main-color-picker"
-                                value={field.value || '#FFFFFF'}
-                                onChange={field.onChange}
-                                className="h-10 w-full rounded-md border p-1"
-                            />
+                          <ColorSwatches value={field.value} onChange={field.onChange} />
                         )}
                     />
                     {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.color.message}</p>}
@@ -270,18 +299,12 @@ export default function CreateCategoryPage() {
                     {subCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.icon.message}</p>}
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="sub-color-picker">{t('colorLabel')}</Label>
-                    <Controller
+                    <Label htmlFor="sub-color-swatches">{t('colorLabel')}</Label>
+                     <Controller
                         name="color"
                         control={subCategoryForm.control}
                         render={({ field }) => (
-                            <Input
-                                type="color"
-                                id="sub-color-picker"
-                                value={field.value || '#FFFFFF'}
-                                onChange={field.onChange}
-                                className="h-10 w-full rounded-md border p-1"
-                            />
+                          <ColorSwatches value={field.value} onChange={field.onChange} />
                         )}
                     />
                     {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.color.message}</p>}
@@ -298,3 +321,6 @@ export default function CreateCategoryPage() {
     </MainLayout>
   );
 }
+
+
+    
