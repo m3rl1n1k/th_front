@@ -71,7 +71,7 @@ Logs in a user.
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format.
 
-#### `POST /auth/register`
+#### `POST /register`
 Registers a new user.
 *   **Request Body**:
     ```json
@@ -111,7 +111,7 @@ Invalidates the user's session/token if server-side session management or token 
 
 ### 2. User Profile
 
-#### `GET /users/me` (or `/user`)
+#### `GET /user` (or `/users/me`)
 Retrieves the profile information for the currently authenticated user.
 
 *   **Request Body**: None (token in header)
@@ -129,7 +129,7 @@ Retrieves the profile information for the currently authenticated user.
     ```
 *   **Failure Response (401 Unauthorized)**
 
-#### `PUT /users/me` (Or `/profile`)
+#### `PUT /profile` (Or `/users/me`)
 Updates the profile information for the currently authenticated user.
 
 *   **Request Body**:
@@ -141,7 +141,7 @@ Updates the profile information for the currently authenticated user.
       // Password changes should ideally be a separate endpoint with current password confirmation
     }
     ```
-*   **Success Response (200 OK)**: Returns the updated user profile (same format as `GET /users/me`).
+*   **Success Response (200 OK)**: Returns the updated user profile (same format as `GET /user`).
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 ### 3. Dashboard
@@ -305,7 +305,7 @@ Retrieves a list of transactions for the authenticated user. The response should
           "source": "store_x",
           "date": "2024-07-28T14:30:00Z", // ISO date string
           "isRecurring": false, // This field might change if frequencyId is adopted
-          "frequencyId": "1"
+          "frequencyId": "1" 
         }
       ]
     }
@@ -545,11 +545,10 @@ Consider these when designing your database and PHP classes/objects.
 
 *   **Database**: Choose a suitable database (e.g., MySQL, PostgreSQL).
 *   **PHP Framework**: Using a PHP framework (e.g., Laravel, Symfony) is highly recommended to handle routing, ORM, security, etc.
-*   **PHP Server Binding for Local Network Access**: When running your PHP development server locally (e.g., using `php -S ...` or Symfony's `symfony server:start`), ensure it's bound to `0.0.0.0` or your specific local network IP, not just `127.0.0.1`. For example:
-    `php -S 0.0.0.0:8000`
-    Or for Symfony:
-    `symfony server:start --port=8000 --allow-http` (Symfony often binds to `0.0.0.0` by default if not specified, but verify).
-    This allows other devices on your local network (like your mobile phone) to connect to the backend. If it's bound only to `127.0.0.1`, it will only be accessible from your development PC.
+*   **PHP Server Binding for Local Network Access (CRUCIAL for Mobile Testing)**:
+    *   When running your PHP development server locally (e.g., using `php -S ...` or Symfony's `symfony server:start`), **it MUST be bound to `0.0.0.0` or your specific local network IP, NOT just `127.0.0.1`.** If it's bound to `127.0.0.1`, it will only accept connections from your development PC and will REFUSE connections from other devices on your network like your mobile phone, leading to "Failed to fetch" errors.
+    *   Example for built-in PHP server: `php -S 0.0.0.0:8000` (replace `8000` with your backend port).
+    *   For Symfony: `symfony server:start --port=8000 --allow-http` (Symfony often defaults to `0.0.0.0`, but verify. The `--allow-http` is also important for local network access if not using HTTPS locally).
 *   **Security**:
     *   Sanitize all user inputs.
     *   Protect against SQL injection, XSS, CSRF.
@@ -557,7 +556,7 @@ Consider these when designing your database and PHP classes/objects.
 *   **Validation**: Implement robust server-side validation for all incoming data.
 *   **CORS (Cross-Origin Resource Sharing)**:
     *   Configure Cross-Origin Resource Sharing (CORS) headers appropriately in your PHP backend to allow requests from your Next.js frontend domain.
-    *   **Development with Mobile**: When testing from a mobile device accessing your Next.js app via your computer's local IP (e.g., `http://192.168.1.100:9002`), your PHP backend's `Access-Control-Allow-Origin` header must explicitly include this origin. Your NelmioCorsBundle configuration provided (`allow_origin: [ '^http://localhost(:[0-9]+)?$', '^http://192.168.0.41(:[0-9]+)?' ]`) seems to address this if `192.168.0.41` is your computer's correct current local IP.
+    *   **Development with Mobile**: When testing from a mobile device accessing your Next.js app via your computer's local IP (e.g., `http://192.168.1.100:9002`), your PHP backend's `Access-Control-Allow-Origin` header must explicitly include this origin. Your NelmioCorsBundle configuration (`allow_origin: [ ..., '^http://192.168.0.41(:[0-9]+)?' ]`) seems to address this if `192.168.0.41` is your computer's correct current local IP and your Next.js app is accessed from a URL matching this pattern.
         ```php
         // Example PHP CORS headers (actual implementation depends on framework)
 
@@ -565,7 +564,7 @@ Consider these when designing your database and PHP classes/objects.
         // For production, be very specific.
         $allowed_origins = [
             "http://localhost:9002", // Your Next.js dev server on PC
-            "http://<YOUR_COMPUTER_LOCAL_IP_ADDRESS>:9002" // Replace with your PC's actual local IP and Next.js port
+            "http://<YOUR_COMPUTER_LOCAL_IP_ADDRESS>:<NEXTJS_PORT>" // Replace with your PC's actual local IP and Next.js port
         ];
         // Determine the incoming origin
         $http_origin = $_SERVER['HTTP_ORIGIN'] ?? null;
@@ -591,25 +590,47 @@ Consider these when designing your database and PHP classes/objects.
         ```
     *   **Important for `POST` requests with `Authorization` or `Content-Type: application/json`**: The browser will send an `OPTIONS` preflight request. Your server *must* respond to this `OPTIONS` request with a `200 OK` or `204 No Content` and the correct CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`). If the `OPTIONS` request fails, the browser will block the actual `POST` request.
 
-## Troubleshooting Mobile Connectivity
+## Troubleshooting Mobile Connectivity ("Failed to fetch" or similar errors)
 
-If you experience "fetch failed" errors or similar issues when accessing the application from a mobile device on your local network, even after configuring `NEXT_PUBLIC_API_BASE_URL` with your computer's local IP:
+If you experience "Failed to fetch" errors or similar network issues when accessing the application from a mobile device on your local network, even after configuring `NEXT_PUBLIC_API_BASE_URL` with your computer's local IP, follow these steps methodically:
 
-1.  **Verify IP Address**: Double-check that the IP address used in `NEXT_PUBLIC_API_BASE_URL` is the *current* local IP address of the machine running your PHP backend. IP addresses can change if your network uses DHCP. Ensure this IP matches what's in your backend's CORS `allow_origin` (e.g., `192.168.0.41` in your example).
-2.  **PHP Server Binding**: Re-confirm your PHP server (e.g., Symfony's built-in server, `php -S`) is bound to `0.0.0.0:<port>` or `<YOUR_COMPUTER_IP_ADDRESS>:<port>`, not just `127.0.0.1`. If it's bound to `127.0.0.1`, it won't accept external local network connections.
-3.  **CORS Configuration (Backend)**:
-    *   Ensure your backend's `Access-Control-Allow-Origin` correctly includes the origin from which your mobile device is accessing the Next.js app (e.g., `http://<YOUR_COMPUTER_IP_ADDRESS>:<NEXTJS_PORT>`).
-    *   **Crucially, verify your backend correctly handles preflight `OPTIONS` requests for `POST`, `PUT`, `DELETE` operations, returning a `200 OK` or `204 No Content` with necessary CORS headers (`Access-Control-Allow-Methods` including `POST`, `OPTIONS`; `Access-Control-Allow-Headers` including `Content-Type`, `Authorization`).** Your provided NelmioCorsBundle configuration seems to aim for this, but it's essential to confirm it's active and working as expected for the specific mobile origin.
-4.  **Mobile Browser Developer Tools**: **This is the most important step.**
+1.  **Verify IP Address & `NEXT_PUBLIC_API_BASE_URL`**:
+    *   **Confirm your PC's current local IP address.** (e.g., using `ipconfig` on Windows or `ifconfig`/`ip addr` on macOS/Linux). IP addresses can change if your network uses DHCP.
+    *   Ensure this exact IP address and your PHP backend's port are correctly set in `NEXT_PUBLIC_API_BASE_URL` in your `.env.local` file (e.g., `NEXT_PUBLIC_API_BASE_URL=http://192.168.1.100:8000/api`).
+    *   Restart your Next.js development server after changing `.env.local`.
+
+2.  **PHP Backend Server Binding (CRITICAL for "Failed to fetch")**:
+    *   **Re-confirm your PHP server (e.g., Symfony's built-in server, `php -S`) is bound to `0.0.0.0:<port>` or `<YOUR_COMPUTER_IP_ADDRESS>:<port>`, NOT just `127.0.0.1`.**
+    *   If it's bound only to `127.0.0.1`, it will only accept connections from your development PC itself and will *refuse* connections from your mobile phone, leading to a "Failed to fetch" error. The browser won't even get a chance to make a CORS preflight request.
+    *   For Symfony: `symfony server:start --port=8000 --allow-http` (or your backend port). The `--allow-http` is important.
+    *   For PHP built-in: `php -S 0.0.0.0:8000`
+
+3.  **Firewall on Development PC**:
+    *   Temporarily disable any firewalls on your development PC (Windows Firewall, macOS Firewall, third-party antivirus/firewall) to see if this resolves the issue.
+    *   If it does, re-enable the firewall and add a specific inbound rule to allow connections to your PHP backend's port (e.g., 8000) from your local network.
+
+4.  **CORS Configuration (Backend)**:
+    *   Ensure your backend's `Access-Control-Allow-Origin` in your Nelmio CORS bundle configuration (or equivalent) correctly includes the origin from which your mobile device is accessing the Next.js app (e.g., `^http://<YOUR_COMPUTER_IP_ADDRESS>:<NEXTJS_PORT>`).
+    *   **Verify your backend correctly handles preflight `OPTIONS` requests** for `POST`, `PUT`, `DELETE` operations, returning a `200 OK` or `204 No Content` with necessary CORS headers. Your provided NelmioCorsBundle configuration aims for this, but it's essential to confirm it's active and working as expected for the specific mobile origin using the Mobile Browser Developer Tools.
+
+5.  **Mobile Browser Developer Tools (ESSENTIAL for diagnosis)**:
+    *   This is the most important step to get specific error details.
     *   Connect your mobile device to your computer via USB.
     *   Use your desktop browser's developer tools to inspect the mobile browser's Network tab and Console.
-        *   **Chrome (Android)**: Go to `chrome://inspect` on your desktop Chrome.
-        *   **Safari (iOS)**: Enable Web Inspector in Safari settings on your iPhone/iPad, then find it under the Develop menu in Safari on your Mac.
-    *   Examine the failed network request (both the `OPTIONS` preflight and the actual `POST` request for login). Look for the exact HTTP status code, response headers, and any console errors (especially CORS errors). This will provide specific clues.
-5.  **Firewall**: Check if a firewall on your development machine is blocking incoming connections to your PHP backend's port from other devices on your local network.
+        *   **Chrome (Android)**: Go to `chrome://inspect` on your desktop Chrome. Find your device and the open tab, then click "inspect."
+        *   **Safari (iOS)**: Enable Web Inspector in Safari settings on your iPhone/iPad (Settings > Safari > Advanced > Web Inspector). Then, in Safari on your Mac, go to Develop > [Your iPhone Name] > [Your Tab].
+    *   **Examine the failed network request in the Network Tab**:
+        *   Look for the `login_check` (or other failing) request.
+        *   Is there an `OPTIONS` preflight request immediately before it? What is its status code? (Should be 200 or 204).
+        *   What is the status of the actual `POST` (or other) request? Is it `(failed)` (indicating a network level issue like "connection refused"), or does it show an HTTP error code (e.g., 401, 403, 500)?
+        *   Check the "Headers" tab for both the request and response to see what's being sent and received.
+    *   **Check the Console Tab**: Look for any error messages, especially CORS errors (e.g., "Access to fetch at '...' from origin '...' has been blocked by CORS policy..."). These messages are usually very specific.
+
 6.  **Clear Mobile Browser Cache**: Sometimes, outdated cached responses or service workers can cause issues. Try clearing your mobile browser's cache and data for the site.
+
 7.  **HTTPS vs HTTP Mismatch**: Ensure both frontend and backend are using the same protocol (HTTP for local IP testing is fine, but if one is HTTPS and the other HTTP, it will cause issues).
 
-This documentation provides a starting point. Adapt and expand it based on the full feature set of FinanceFlow.
+By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
+
 
