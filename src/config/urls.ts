@@ -26,7 +26,7 @@ export const URLS = {
 
   // Repeated Transactions (New)
   repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`,
-  repeatedTransactionById: (id: string | number) => `${API_BASE_URL}/repeated-transactions/${id}`, // For delete
+  repeatedTransactionById: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`, // For delete
   toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`,
 
 

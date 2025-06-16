@@ -231,7 +231,7 @@
   "templateId": "ID Шаблону",
   "toggleStatusButton": "Змінити статус",
   "editTemplateButton": "Редагувати шаблон",
-  "removeDefinitionButton": "Видалити визначення",
+  "removeDefinitionButton": "Видалити",
   "confirmToggleStatusTitle": "Підтвердити зміну статусу",
   "confirmToggleStatusMessage": "Ви впевнені, що хочете змінити статус цього визначення повторюваної транзакції?",
   "confirmRemoveDefinitionTitle": "Підтвердити видалення",
