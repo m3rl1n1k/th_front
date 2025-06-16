@@ -16,6 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, Shapes, PlusCircle, Folder } from 'lucide-react';
 import { IconRenderer } from '@/components/common/icon-renderer';
 
+const generateCategoryTranslationKey = (name: string | undefined | null): string => {
+  if (!name) return '';
+  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
 export default function CategoriesPage() {
   const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
@@ -145,7 +150,9 @@ export default function CategoriesPage() {
                             style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
                             title={mainCat.color || undefined}
                           ></span>
-                          <span className="font-medium text-foreground">{mainCat.name}</span>
+                          <span className="font-medium text-foreground">
+                            {t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}
+                          </span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="pt-2 pb-3 pl-8 pr-2">
@@ -159,7 +166,9 @@ export default function CategoriesPage() {
                                   style={{ backgroundColor: subCat.color || 'hsl(var(--muted))' }}
                                   title={subCat.color || undefined}
                                 ></span>
-                                <span className="text-sm text-muted-foreground">{subCat.name}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
+                                </span>
                               </li>
                             ))}
                           </ul>
@@ -189,7 +198,9 @@ export default function CategoriesPage() {
                       style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
                       title={mainCat.color || undefined}
                     ></span>
-                    <span className="font-medium text-foreground">{mainCat.name}</span>
+                    <span className="font-medium text-foreground">
+                       {t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}
+                    </span>
                   </div>
                 ))}
               </CardContent>

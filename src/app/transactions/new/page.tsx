@@ -31,6 +31,11 @@ import type { TransactionType as AppTransactionType, Frequency, WalletDetails, M
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
+const generateCategoryTranslationKey = (name: string | undefined | null): string => {
+  if (!name) return '';
+  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
 export default function NewTransactionPage() {
   const { token, isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
@@ -300,10 +305,10 @@ export default function NewTransactionPage() {
                           <SelectItem value="none">{t('noCategoryOption')}</SelectItem>
                           {mainCategoriesHierarchical.map(mainCat => (
                             <SelectGroup key={mainCat.id}>
-                              <SelectLabel>{t(`categoryName_${mainCat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: mainCat.name })}</SelectLabel>
+                              <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
                               {mainCat.subCategories && mainCat.subCategories.map(subCat => (
                                 <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                  {t(`categoryName_${subCat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: subCat.name })}
+                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
                                 </SelectItem>
                               ))}
                             </SelectGroup>
@@ -407,5 +412,3 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
-
-    

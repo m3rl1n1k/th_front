@@ -47,6 +47,11 @@ interface GroupedTransactions {
   [date: string]: Transaction[];
 }
 
+const generateCategoryTranslationKey = (name: string | undefined | null): string => {
+  if (!name) return '';
+  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
 export default function TransactionsPage() {
   const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
@@ -84,7 +89,7 @@ export default function TransactionsPage() {
         .then(data => {
           const formattedTypes = Object.entries(data.types).map(([id, name]) => ({
             id: id,
-            name: name as string // e.g., "INCOME", "EXPENSE"
+            name: name as string 
           }));
           setTransactionTypes(formattedTypes);
         })
@@ -148,13 +153,12 @@ export default function TransactionsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token]); 
 
-  // Reset initiatingActionForTxId when pathname changes (navigation occurs)
   useEffect(() => {
     setInitiatingActionForTxId(null);
   }, [pathname]);
 
   const processedTransactions = useMemo(() => {
-    if (!rawTransactions) { // Process if rawTransactions are available, even if types are not yet.
+    if (!rawTransactions) { 
       return [];
     }
     return rawTransactions.map(tx => {
@@ -162,7 +166,7 @@ export default function TransactionsPage() {
       
       return {
         ...tx,
-        typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'), // Will be 'Unknown Type' if types not loaded
+        typeName: typeDetails ? typeDetails.name : t('transactionType_UNKNOWN'), 
         categoryName: tx.subCategory?.name || null 
       };
     });
@@ -298,8 +302,9 @@ export default function TransactionsPage() {
           }
 
           const detailsText = tx.description || t('noDetailsPlaceholder');
+          
           const categoryText = tx.categoryName 
-            ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) 
+            ? t(generateCategoryTranslationKey(tx.categoryName), { defaultValue: tx.categoryName }) 
             : t('noCategory');
 
           const showLoaderForThisTx = 
@@ -357,7 +362,7 @@ export default function TransactionsPage() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onSelect={() => openDeleteDialog(tx)} // onSelect is fine here too
+                      onSelect={() => openDeleteDialog(tx)} 
                       className="text-destructive focus:text-destructive flex items-center cursor-pointer"
                       disabled={isDeleting && selectedTransactionForDelete?.id === tx.id}
                     >
@@ -436,7 +441,7 @@ export default function TransactionsPage() {
                             <SelectItem value="all">{t('allCategories')}</SelectItem>
                             {allSubCategories.map(subCat => (
                               <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                 {t(`categoryName_${subCat.name.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: subCat.name })}
+                                 {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
                               </SelectItem>
                             ))}
                           </SelectContent>

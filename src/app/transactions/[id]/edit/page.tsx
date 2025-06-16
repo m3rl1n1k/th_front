@@ -32,8 +32,13 @@ import type { Transaction, TransactionType as AppTransactionType, Frequency, Wal
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, AlertTriangle } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
+const generateCategoryTranslationKey = (name: string | undefined | null): string => {
+  if (!name) return '';
+  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
 const EditTransactionSchema = z.object({
-  amount: z.coerce.number().positive({ message: "Amount must be a positive number." }), // Handled by t() in component
+  amount: z.coerce.number().positive({ message: "Amount must be a positive number." }), 
   description: z.string().max(255).optional().nullable(),
   typeId: z.string().min(1, { message: "Type is required." }),
   date: z.date({ required_error: "Date is required." }),
@@ -79,7 +84,6 @@ export default function EditTransactionPage() {
     },
   });
 
-  // Fetch auxiliary data for dropdowns
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingTypes(true);
@@ -109,7 +113,6 @@ export default function EditTransactionPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, t, toast]);
 
-  // Fetch transaction to edit and populate form
   useEffect(() => {
     if (id && token && !isLoadingTypes && !isLoadingFrequencies && !isLoadingWallets && !isLoadingCategories) {
       setIsLoadingTransaction(true);
@@ -315,10 +318,10 @@ export default function EditTransactionPage() {
                            <SelectItem value="none">{t('noCategoryOption')}</SelectItem>
                           {mainCategoriesHierarchical.map(mainCat => (
                             <SelectGroup key={mainCat.id}>
-                              <SelectLabel>{t(`categoryName_${mainCat.name.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: mainCat.name })}</SelectLabel>
+                              <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
                               {mainCat.subCategories && mainCat.subCategories.map(subCat => (
                                 <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                  {t(`categoryName_${subCat.name.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: subCat.name })}
+                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
                                 </SelectItem>
                               ))}
                             </SelectGroup>
@@ -421,5 +424,3 @@ export default function EditTransactionPage() {
     </MainLayout>
   );
 }
-
-    

@@ -27,6 +27,11 @@ import type {
 } from '@/types';
 import { ArrowLeft, Edit3, Loader2, AlertTriangle, DollarSign, Tag, CalendarDays, Repeat, WalletIcon, Info } from 'lucide-react';
 
+const generateCategoryTranslationKey = (name: string | undefined | null): string => {
+  if (!name) return '';
+  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
 export default function ViewTransactionPage() {
   const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
@@ -55,28 +60,25 @@ export default function ViewTransactionPage() {
 
     try {
       const [txResponse, typesData, frequenciesData, mainCategoriesData] = await Promise.all([
-        getTransactionById(id, token), // This now returns Transaction directly
+        getTransactionById(id, token), 
         getTransactionTypes(token),
         getTransactionFrequencies(token),
         getMainCategories(token)
       ]);
 
-      const txData = txResponse; // No longer nested under .transaction
+      const txData = txResponse; 
       setTransaction(txData);
 
-      // Map Type ID to Name
       const typeDetail = Object.entries(typesData.types).find(([typeId]) => typeId === String(txData.type));
       setTypeName(typeDetail ? t(`transactionType_${typeDetail[1]}` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
 
-      // Map Frequency ID to Name
       const freqDetail = Object.entries(frequenciesData.periods).find(([freqId]) => freqId === String(txData.frequencyId));
       setFrequencyName(freqDetail ? t(`frequencyName_${freqDetail[1].toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freqDetail[1]}) : t('notApplicable'));
       
-      // Map Category ID to Name
       if (txData.subCategory?.id) {
         const allSubCategories = mainCategoriesData.flatMap(mc => mc.subCategories);
         const catDetail = allSubCategories.find(sc => String(sc.id) === String(txData.subCategory!.id));
-        setCategoryName(catDetail ? t(`categoryName_${catDetail.name.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: catDetail.name }) : t('noCategory'));
+        setCategoryName(catDetail ? t(generateCategoryTranslationKey(catDetail.name), { defaultValue: catDetail.name }) : t('noCategory'));
       } else {
         setCategoryName(t('noCategory'));
       }
@@ -97,6 +99,7 @@ export default function ViewTransactionPage() {
         setIsLoading(false);
     }
   }, [isAuthenticated, token, fetchTransactionDetails]);
+
 
   if (isLoading) {
     return (
@@ -219,4 +222,3 @@ export default function ViewTransactionPage() {
     </MainLayout>
   );
 }
-
