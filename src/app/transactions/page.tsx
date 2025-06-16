@@ -262,7 +262,7 @@ export default function TransactionsPage() {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="h-60 text-center">
+          <TableCell colSpan={6} className="h-60 text-center"> {/* Reduced colSpan */}
             <div className="flex flex-col items-center justify-center">
               <RefreshCwIcon className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -275,7 +275,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground"> {/* Reduced colSpan */}
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}</p>
@@ -289,7 +289,7 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={7} className="py-3 px-4 font-semibold text-foreground text-md">
+          <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md"> {/* Reduced colSpan */}
             {format(parseISO(dateKey), "PPP")}
           </TableCell>
         </TableRow>
@@ -300,8 +300,6 @@ export default function TransactionsPage() {
           } else if (tx.typeName?.toUpperCase() === 'EXPENSE') {
               typeIcon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
           }
-
-          const detailsText = tx.description || t('noDetailsPlaceholder');
           
           const categoryText = tx.categoryName 
             ? t(generateCategoryTranslationKey(tx.categoryName), { defaultValue: tx.categoryName }) 
@@ -328,9 +326,7 @@ export default function TransactionsPage() {
               <TableCell className="py-3 px-4 align-top text-sm">
                 {categoryText}
               </TableCell>
-              <TableCell className="py-3 px-4 align-top text-sm">
-                {detailsText}
-              </TableCell>
+              {/* Removed Details Cell */}
               <TableCell className="py-3 px-4 align-top text-sm text-center">
                 <DropdownMenu onOpenChange={(open) => { if (!open) setInitiatingActionForTxId(null); }}>
                   <DropdownMenuTrigger asChild>
@@ -505,7 +501,7 @@ export default function TransactionsPage() {
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        {/* Removed Details Header */}
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -533,7 +529,7 @@ export default function TransactionsPage() {
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        {/* Removed Details Header */}
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -567,3 +563,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
