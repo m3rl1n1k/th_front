@@ -73,7 +73,7 @@ export default function WalletsPage() {
 
       return {
         ...wallet,
-        typeName: t(`walletType_${typeIdentifierForTranslation}` as any, { defaultValue: userFriendlyDefault })
+        typeName: t(\`walletType_\${typeIdentifierForTranslation}\` as any, { defaultValue: userFriendlyDefault })
       };
     });
   }, [wallets, walletTypeMap, t]);
@@ -121,7 +121,7 @@ export default function WalletsPage() {
                 </Button>
             </div>
           </div>
-          <div className={`grid gap-6 ${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+          <div className={\`grid gap-6 \${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}\`}>
             {viewMode === 'card' ? (
               [1, 2, 3, 4].map(i => (
                 <Card key={i} className="shadow-lg">
@@ -260,7 +260,7 @@ export default function WalletsPage() {
                 <Table>
                   <TableHeader className="bg-muted/30 dark:bg-muted/10">
                     <TableRow>
-                      <TableHead className="w-[50px] px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs"></TableHead> {/* Icon */}
+                      <TableHead className="w-[50px] px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{null}</TableHead>
                       <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('nameLabel')}</TableHead>
                       <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('walletTypeLabel')}</TableHead>
                       <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('accountNumberLabel')}</TableHead>
