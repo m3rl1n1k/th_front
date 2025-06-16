@@ -225,7 +225,7 @@ export default function TransactionsPage() {
   const getFrequencyNameById = useCallback((frequencyApiId: string) => {
     const freqObj = frequencies.find(f => f.id === frequencyApiId);
     if (freqObj) {
-      return t(`frequency_${freqObj.id}` as any, {defaultValue: freqObj.name});
+      return t(`frequency_${freqObj.name}` as any, {defaultValue: freqObj.name});
     }
     return t('notApplicable');
   }, [frequencies, t]);
@@ -439,7 +439,7 @@ export default function TransactionsPage() {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="h-60 text-center"> 
+          <TableCell colSpan={6} className="h-60 text-center"> 
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -452,7 +452,7 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground"> 
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground"> 
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
@@ -476,7 +476,7 @@ export default function TransactionsPage() {
               className="p-0 h-auto text-primary hover:underline" 
               onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)}
             >
-               {t('templateId')} #{templateTransactionId} 
+               {t('templateId')} #{templateTransactionId}
             </Button>
           ) : (
             <span>{t('templateId')} N/A</span>

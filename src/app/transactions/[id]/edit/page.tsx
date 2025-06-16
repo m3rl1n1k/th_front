@@ -397,7 +397,7 @@ export default function EditTransactionPage() {
                         <SelectContent>
                           {frequencies.map(freq => (
                               <SelectItem key={freq.id} value={freq.id}>
-                              {t(`frequency_${freq.id}` as any, {defaultValue: freq.name})}
+                              {t(`frequency_${freq.name}` as any, {defaultValue: freq.name})}
                               </SelectItem>
                           ))}
                         </SelectContent>

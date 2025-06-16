@@ -61,7 +61,7 @@ export default function ViewTransactionPage() {
     setError(null);
 
     try {
-      const [txResponse, typesData, frequenciesData, mainCategoriesData] = await Promise.all([
+      const [txResponse, typesData, frequenciesDataResponse, mainCategoriesData] = await Promise.all([
         getTransactionById(id, token), 
         getTransactionTypes(token),
         getTransactionFrequencies(token),
@@ -74,13 +74,12 @@ export default function ViewTransactionPage() {
       const typeDetail = Object.entries(typesData.types).find(([typeId]) => typeId === String(txData.type));
       setTypeName(typeDetail ? t(`transactionType_${typeDetail[1]}` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
       
+      const formattedFrequencies = Object.entries(frequenciesDataResponse.periods).map(([id, name]) => ({ id, name: name as string }));
       const freqIdFromTx = String(txData.frequencyId);
-      const freqObject = Object.entries(frequenciesData.periods)
-                            .map(([id, name]) => ({ id, name: name as string }))
-                            .find(f => f.id === freqIdFromTx);
+      const freqObject = formattedFrequencies.find(f => f.id === freqIdFromTx);
 
       if (freqObject) {
-        setFrequencyName(t(`frequency_${freqObject.id}` as any, {defaultValue: freqObject.name}));
+        setFrequencyName(t(`frequency_${freqObject.name}` as any, {defaultValue: freqObject.name}));
       } else {
         setFrequencyName(t('notApplicable'));
       }

@@ -245,12 +245,12 @@
   "errorRemovingDefinition": "Помилка видалення визначення",
   "noRecurringDefinitionsFound": "Шаблонів повторюваних транзакцій не знайдено.",
   "manageRecurringDefinitions": "Керуйте вашими запланованими повторюваними транзакціями.",
-  "frequency_0": "Одноразово",
-  "frequency_1": "Щодня",
-  "frequency_7": "Щотижня",
-  "frequency_14": "Два тижні",
-  "frequency_30": "Щомісяця",
-  "frequency_180": "Півріччя",
-  "frequency_365": "Щорічно"
+  "frequency_Once": "Одноразово",
+  "frequency_Daily": "Щодня",
+  "frequency_Weekly": "Щотижня",
+  "frequency_Two_weeks": "Два тижні",
+  "frequency_Monthly": "Щомісяця",
+  "frequency_HalfYearly": "Півріччя",
+  "frequency_Yearly": "Щорічно"
 }
     

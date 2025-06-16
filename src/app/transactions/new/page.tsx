@@ -138,7 +138,7 @@ export default function NewTransactionPage() {
       
       const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main');
       const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE');
-      const defaultOneTimeFrequency = frequencies.find(f => f.id === '0'); // Find by ID "0" for "Once"
+      const defaultOneTimeFrequency = frequencies.find(f => f.id === '0'); // API ID for "Once" is "0"
 
       const currentFormValues = getValues();
       const newDefaults: Partial<NewTransactionFormData> = {};
@@ -385,7 +385,7 @@ export default function NewTransactionPage() {
                             <SelectContent>
                             {frequencies.map(freq => (
                                 <SelectItem key={freq.id} value={freq.id}>
-                                {t(`frequency_${freq.id}` as any, {defaultValue: freq.name})}
+                                {t(`frequency_${freq.name}` as any, {defaultValue: freq.name})}
                                 </SelectItem>
                             ))}
                             </SelectContent>
