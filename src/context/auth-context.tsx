@@ -17,7 +17,7 @@ interface AuthContextType {
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
   setTokenManually: (newToken: string) => Promise<void>;
-  fetchUser: () => Promise<void>; // Keep for re-validating token if needed
+  fetchUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Changed to state
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -50,25 +51,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const clearAuthArtefacts = useCallback(() => {
     setUser(null);
     setToken(null);
+    setIsAuthenticated(false); // Update isAuthenticated state
     removeTokenFromStorages();
   }, []);
-
 
   const fetchAndSetUser = useCallback(async (currentTokenValue: string, shouldSaveToken = true) => {
     try {
       const userData = await fetchUserProfile(currentTokenValue);
       setUser(userData);
       setToken(currentTokenValue);
+      setIsAuthenticated(true); // Update isAuthenticated state
       if (shouldSaveToken) {
         saveTokenToStorages(currentTokenValue);
       }
       return userData;
     } catch (error) {
       clearAuthArtefacts();
-      throw error; // Re-throw to be caught by calling function
+      throw error;
     }
   }, [clearAuthArtefacts]);
-
 
   useEffect(() => {
     let isActive = true;
@@ -78,43 +79,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         initialToken = sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY);
         if (initialToken && sessionStorage.getItem(TOKEN_STORAGE_KEY) !== initialToken) {
-          sessionStorage.setItem(TOKEN_STORAGE_KEY, initialToken); // Sync session storage
+          sessionStorage.setItem(TOKEN_STORAGE_KEY, initialToken);
         }
       }
 
       if (initialToken) {
         try {
-          await fetchAndSetUser(initialToken, false); // Don't re-save if just fetching
+          await fetchAndSetUser(initialToken, false);
         } catch (error) {
-          // Token validation failed, already cleared by fetchAndSetUser
           toast({
             variant: "destructive",
             title: t('sessionExpiredTitle'),
             description: (error as ApiError).message || t('sessionExpiredDesc'),
           });
-          if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/terms')) {
+          if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/terms') && pathname !== '/') {
             router.replace('/login');
           }
         }
+      } else {
+        clearAuthArtefacts(); // Ensure state is cleared if no token
       }
       if (isActive) setIsLoading(false);
     };
 
     initializeAuth();
     return () => { isActive = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchAndSetUser]); // `router` and `t` removed as they are stable
+  }, [fetchAndSetUser, t, pathname, router, clearAuthArtefacts]); // Added clearAuthArtefacts
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
       const response: LoginResponse = await apiLoginUser(credentials);
       await fetchAndSetUser(response.token);
+      // setIsAuthenticated(true) is called within fetchAndSetUser
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
       router.push('/dashboard');
     } catch (error) {
       clearAuthArtefacts();
-      throw error; // Re-throw for the form to handle
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -124,21 +126,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       await apiRegisterUser(payload);
-      // No need to set user/token here, registration typically requires login afterwards
-      // Toast and navigation will be handled by the component calling register
     } catch (error) {
-      throw error; // Re-throw for the form to handle
+      throw error;
     } finally {
       setIsLoading(false);
     }
   }, [setIsLoading]);
 
-
   const logout = useCallback(() => {
     setIsLoading(true);
     clearAuthArtefacts();
     toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
-    setIsLoading(false); // Set loading false before router push
+    setIsLoading(false);
     router.push('/login');
   }, [router, toast, t, clearAuthArtefacts]);
 
@@ -154,12 +153,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       try {
         await fetchAndSetUser(trimmedNewToken);
+        // setIsAuthenticated(true) is called within fetchAndSetUser
         toast({ title: t('tokenSetSuccessTitle'), description: t('tokenSetSuccessDesc') });
         router.push('/dashboard');
       } catch (error) {
-        // fetchAndSetUser already clears auth artefacts on failure
         toast({ variant: "destructive", title: t('tokenSetFailedTitle'), description: (error as ApiError).message || t('tokenSetFailedDesc') });
-        // Stay on set-token page or redirect to login? For now, stay.
       } finally {
         setIsLoading(false);
       }
@@ -167,13 +165,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchAndSetUser, toast, t, router, clearAuthArtefacts]);
 
   const fetchUser = useCallback(async () => {
-    // This function might be used if there's a need to manually re-validate the user
-    // For example, after a period of inactivity if we don't rely solely on token expiry
     const currentTokenValue = token || (typeof window !== 'undefined' ? (sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY)) : null);
     if (currentTokenValue) {
       setIsLoading(true);
       try {
         await fetchAndSetUser(currentTokenValue, false);
+         // setIsAuthenticated(true) is called within fetchAndSetUser
       } catch (error) {
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
         router.replace('/login');
@@ -181,11 +178,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     } else {
-      if (!isLoading && !isAuthenticated) router.replace('/login'); // If no token and not already loading/authenticated
+       // If no token, and not currently loading and not already authenticated (which implies state is settled)
+      if (!isLoading && !isAuthenticated) {
+        clearAuthArtefacts(); // Ensure state is fully cleared
+        // router.replace('/login'); // Redirect if on a protected page
+      }
     }
-  }, [token, fetchAndSetUser, toast, t, router, isLoading, isAuthenticated]);
-
-  const isAuthenticated = !!user && !!token;
+  }, [token, fetchAndSetUser, toast, t, router, isLoading, isAuthenticated, clearAuthArtefacts]); // Added clearAuthArtefacts
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, setTokenManually, fetchUser }}>
@@ -201,4 +200,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

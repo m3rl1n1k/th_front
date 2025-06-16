@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, KeyRound } from 'lucide-react';
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, KeyRound, UserPlus } from 'lucide-react'; // Added UserPlus
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
@@ -29,10 +29,8 @@ const navItems = [
   { href: '/settings', labelKey: 'settings', icon: Settings, authRequired: true },
 ];
 
-// Public nav items for when user is not authenticated, shown in header of PublicLayout
-// For MainLayout, if not authenticated, we redirect, so these are mainly for conceptual clarity
 const publicNavItems = [
-  { href: '/login', labelKey: 'loginButtonNav', icon: LogIn },
+  { href: '/login', labelKey: 'loginButtonNav', icon: LogOut }, // Changed icon for login
   { href: '/register', labelKey: 'registerButtonNav', icon: UserPlus },
 ];
 
@@ -50,9 +48,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    // If auth is resolved, not loading, and user is not authenticated,
-    // and current page is not public, redirect to login.
-    const publicPaths = ['/login', '/register', '/set-token', '/terms', '/']; // Home page is public
+    const publicPaths = ['/login', '/register', '/set-token', '/terms', '/'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       router.replace('/login');
     }
@@ -65,7 +61,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
     setIsNavigating(true); 
     router.push(href);
-    // setIsSheetOpen(false); // Closing sheet handled by useEffect on pathname change
   };
 
   const handleLanguageChange = async (lang: string) => {
@@ -75,19 +70,16 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       await setLanguage(lang);
     } catch (error) {
       // Error handled by i18n context
-    } finally {
-       // setIsNavigating(false); // Handled by useEffect on pathname change
     }
   };
   
-  // Reset navigation loader when pathname changes (navigation completes)
   useEffect(() => {
     setIsNavigating(false);
     setIsSheetOpen(false); 
   }, [pathname]);
 
 
-  if (authIsLoading && !isAuthenticated) { // Only show full page loader if truly unauthenticated and loading
+  if (authIsLoading) { 
      return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center">
@@ -101,14 +93,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  // If auth is resolved and user is not authenticated, this layout shouldn't render its content.
-  // The useEffect above should handle redirection.
-  // This check is a safeguard or for brief moments before redirect.
-  if (!authIsLoading && !isAuthenticated) {
-    return null; // Or a minimal loader / message if redirection takes time
+  if (!isAuthenticated) {
+     const publicPaths = ['/login', '/register', '/set-token', '/terms', '/'];
+     if (!publicPaths.includes(pathname)) {
+        return null; // Should be redirected by useEffect
+     }
+     // If it's a public path, allow children (which would be PublicLayout content)
+     // This MainLayout shouldn't be wrapping public pages directly.
+     // This path indicates a potential structural issue if MainLayout is wrapping a PublicLayout page.
+     // For now, if we hit this and it's a public path, we assume PublicLayout is handling it.
+     // If it's NOT a public path, the useEffect should have redirected.
   }
   
-  const currentNavItems = isAuthenticated ? navItems : []; // Only show auth items if authenticated
+  const currentNavItems = isAuthenticated ? navItems : [];
 
 
   return (
@@ -240,12 +237,20 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             )}
              {!isAuthenticated && !authIsLoading && mounted && (
                 <div className="flex items-center space-x-2">
-                    <Button variant="ghost" asChild>
-                        <Link href="/login">{t('loginButtonNav')}</Link>
-                    </Button>
-                    <Button variant="default" asChild>
-                        <Link href="/register">{t('registerButtonNav')}</Link>
-                    </Button>
+                    {publicNavItems.map(item => (
+                       <Button 
+                          key={item.href}
+                          variant={item.href === '/register' ? 'default' : 'ghost'} 
+                          asChild
+                          disabled={isNavigating}
+                        >
+                          <Link href={item.href} onClick={(e) => {if (pathname !== item.href) setIsNavigating(true); else e.preventDefault();}}>
+                             {/* @ts-ignore Icon component */}
+                            {item.icon && <item.icon className="mr-2 h-4 w-4" />} 
+                            {t(item.labelKey as keyof ReturnType<typeof useTranslation>["translations"])}
+                          </Link>
+                       </Button>
+                    ))}
                 </div>
             )}
           </div>
@@ -283,8 +288,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </aside>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          {/* Only render children if authenticated or if it's a public page already handled by PublicLayout */}
-          {(isAuthenticated || ['/login', '/register', '/set-token', '/terms', '/'].includes(pathname)) ? children : null}
+          {isAuthenticated || ['/login', '/register', '/set-token', '/terms', '/'].includes(pathname) ? children : null}
         </main>
       </div>
     </div>
