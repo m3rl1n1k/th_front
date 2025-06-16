@@ -288,11 +288,11 @@ export default function TransactionsPage() {
   
   const handleToggleDefinitionStatus = async (definition: RepeatedTransactionEntry) => {
     if (!token) return;
-    setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } })); // Use definition.id for the rule
+    setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } })); 
     const newStatus = definition.status === 1 ? 0 : 1;
     const payload: ToggleStatusPayload = { status: newStatus };
     try {
-      await toggleRepeatedTransactionStatus(definition.id, payload, token); // API uses definition.id
+      await toggleRepeatedTransactionStatus(definition.id, payload, token); 
       toast({ title: t('statusToggledTitle'), description: t('statusToggledDesc')});
       fetchRepeatedDefinitions(false); 
     } catch (error: any) {
@@ -309,9 +309,9 @@ export default function TransactionsPage() {
 
   const handleDeleteDefinitionConfirmed = async () => {
     if (!selectedDefinitionForDelete || !token) return;
-    setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: true } })); // Use definition.id for the rule
+    setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: true } }));
     try {
-      await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token); // API uses definition.id
+      await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token); 
       toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
       fetchRepeatedDefinitions(false); 
     } catch (error: any) {
@@ -440,7 +440,7 @@ export default function TransactionsPage() {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="h-60 text-center">
+          <TableCell colSpan={6} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -453,7 +453,7 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
@@ -465,8 +465,7 @@ export default function TransactionsPage() {
     }
     
     return repeatedDefinitions.map(def => {
-      const isActionLoading = definitionActionStates[def.id]?.isLoading || false; // definition.id is the rule id
-      const templateDescription = def.transaction?.description || t('noDescription');
+      const isActionLoading = definitionActionStates[def.id]?.isLoading || false;
       const templateTransactionId = def.transaction?.id;
 
       return (
@@ -483,9 +482,6 @@ export default function TransactionsPage() {
           ) : (
             <span>{t('templateId')} N/A</span>
           )}
-        </TableCell>
-        <TableCell className="py-3 px-4 align-top text-sm">
-            {templateDescription}
         </TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">{getStatusName(def.status)}</TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">{getFrequencyNameById(def.frequency)}</TableCell>
@@ -672,7 +668,6 @@ export default function TransactionsPage() {
                      <TableHeader className="bg-muted/30 dark:bg-muted/10">
                       <TableRow>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('templateInfo')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('description')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('status')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('frequency')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('createdAt')}</TableHead>
@@ -732,3 +727,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
