@@ -2,9 +2,10 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { useRouter } from 'next/navigation'; 
+// Removed useRouter as it's not used in setLanguage anymore
 import en from '@/locales/en.json';
 import es from '@/locales/es.json'; 
+import uk from '@/locales/uk.json'; // Import Ukrainian translations
 
 type Translations = typeof en; 
 
@@ -18,6 +19,7 @@ interface I18nContextType {
 const translationsMap: Record<string, Translations> = {
   en,
   es, 
+  uk, // Add Ukrainian translations to the map
 };
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -27,7 +29,7 @@ const LANGUAGE_STORAGE_KEY = 'financeflow_language';
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<string>('en');
   const [currentTranslations, setCurrentTranslations] = useState<Translations>(translationsMap.en);
-  const router = useRouter();
+  // Removed useRouter from here as it's not directly used by the provider for refresh
 
   useEffect(() => {
     const storedLang = typeof window !== 'undefined' ? localStorage.getItem(LANGUAGE_STORAGE_KEY) : 'en';
@@ -55,7 +57,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     }
-  }, [router]);
+  }, []); // Removed router dependency
 
   const t = useCallback((key: keyof Translations, replacements?: Record<string, string | number>): string => {
     let translation = currentTranslations[key] || en[key] || String(key); 
@@ -81,3 +83,4 @@ export const useTranslation = (): I18nContextType => {
   }
   return context;
 };
+
