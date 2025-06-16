@@ -14,8 +14,8 @@ import type {
   UpdateTransactionPayload,
   RepeatedTransactionsApiResponse,
   RepeatedTransactionEntry,
-  Frequency,
-  MonthlyExpensesByCategoryResponse
+  MonthlyExpensesByCategoryResponse,
+  DashboardLastTransactionsResponse
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -89,8 +89,11 @@ export const getDashboardMonthlyIncome = (token: string): Promise<{ month_income
 export const getDashboardMonthExpenses = (token: string): Promise<{ month_expense: number }> =>
   request(URLS.dashboardMonthExpenses, { method: 'GET', token });
 
-export const getDashboardMonthlyExpensesByCategory = (token: string): Promise<MonthlyExpensesByCategoryResponse> =>
-  request(URLS.dashboardMonthlyExpensesByCategory, { method: 'GET', token });
+export const getDashboardChartTotalExpense = (token: string): Promise<MonthlyExpensesByCategoryResponse> => // Renamed
+  request(URLS.dashboardChartTotalExpense, { method: 'GET', token });
+
+export const getDashboardLastTransactions = (token: string): Promise<DashboardLastTransactionsResponse> => // New
+  request(URLS.dashboardLastTransactions, { method: 'GET', token });
 
 
 // Transactions

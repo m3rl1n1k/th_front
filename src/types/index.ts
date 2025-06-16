@@ -87,8 +87,8 @@ export interface ApiError {
 }
 
 export interface Frequency {
-  id: string;
-  name: string;
+  id: string; // Numeric ID from API, like "0", "1", "7"
+  name: string; // String name from API, like "Once", "Daily"
 }
 
 export interface Wallet {
@@ -158,7 +158,6 @@ export interface RepeatedTransactionEntry {
   transaction: {
     id: number | string; // ID of the TEMPLATE TRANSACTION
     description?: string | null;
-    // Other potential fields from the template transaction might be here
   };
   status: number; // e.g., 1 for active, 0 for inactive
   frequency: string; // Frequency ID (e.g., "0", "1")
@@ -184,4 +183,20 @@ export interface MonthlyExpenseByCategoryItem {
 export interface MonthlyExpensesByCategoryResponse {
   totalMonthlyExpense: number; // in cents
   expensesByCategory: MonthlyExpenseByCategoryItem[];
+}
+
+// Dashboard Last Transactions
+export interface DashboardLastTransactionItem {
+  id: string | number;
+  date: string; // ISO date string
+  description: string | null;
+  amount: TransactionAmount; 
+  type: number; // Numeric type ID from API (e.g., 1 for INCOME, 2 for EXPENSE)
+  // Frontend derived optional properties
+  typeName?: string; 
+  icon?: React.ReactElement;
+}
+
+export interface DashboardLastTransactionsResponse {
+  transactions: DashboardLastTransactionItem[];
 }

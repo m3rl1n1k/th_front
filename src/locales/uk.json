@@ -253,5 +253,9 @@
   "frequency_HalfYearly": "Півріччя",
   "frequency_Yearly": "Щорічно",
   "monthlyExpensesByCategoryChartTitle": "Щомісячні витрати за категоріями",
-  "totalExpensesLabel": "Загальні витрати"
+  "totalExpensesLabel": "Загальні витрати",
+  "tryAddingExpenses": "Спробуйте додати витрати, щоб побачити їх тут.",
+  "lastActivityTitle": "Остання активність",
+  "noRecentActivity": "Останньої активності не знайдено.",
+  "viewAllTransactions": "Переглянути всі транзакції"
 }

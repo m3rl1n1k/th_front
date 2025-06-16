@@ -253,5 +253,9 @@
   "frequency_HalfYearly": "HalfYearly",
   "frequency_Yearly": "Yearly",
   "monthlyExpensesByCategoryChartTitle": "Monthly Expenses by Category",
-  "totalExpensesLabel": "Total Expenses"
+  "totalExpensesLabel": "Total Expenses",
+  "tryAddingExpenses": "Try adding some expenses to see them here.",
+  "lastActivityTitle": "Last Activity",
+  "noRecentActivity": "No recent activity found.",
+  "viewAllTransactions": "View All Transactions"
 }
