@@ -171,7 +171,7 @@ export default function NewTransactionPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoadingWallets, isLoadingTypes, isLoadingFrequencies, wallets, transactionTypes, frequencies, reset]);
+  }, [isLoadingWallets, isLoadingTypes, isLoadingFrequencies, wallets, transactionTypes, frequencies, reset, getValues]);
 
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
@@ -427,5 +427,3 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
-
-    
