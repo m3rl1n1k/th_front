@@ -226,5 +226,7 @@
   "transactionUpdatedDesc": "Вашу транзакцію успішно оновлено.",
   "transactionUpdateFailedTitle": "Не вдалося оновити транзакцію",
   "errorFetchingTransactionForEdit": "Помилка завантаження транзакції",
-  "couldNotLoadTransactionEdit": "Не вдалося завантажити транзакцію для редагування. Будь ласка, спробуйте знову."
+  "couldNotLoadTransactionEdit": "Не вдалося завантажити транзакцію для редагування. Будь ласка, спробуйте знову.",
+  "exchangeRateLabel": "Обмінний курс"
 }
+

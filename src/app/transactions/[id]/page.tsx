@@ -54,13 +54,14 @@ export default function ViewTransactionPage() {
     setError(null);
 
     try {
-      const [txData, typesData, frequenciesData, mainCategoriesData] = await Promise.all([
-        getTransactionById(id, token),
+      const [txResponse, typesData, frequenciesData, mainCategoriesData] = await Promise.all([
+        getTransactionById(id, token), // This now returns Transaction directly
         getTransactionTypes(token),
         getTransactionFrequencies(token),
         getMainCategories(token)
       ]);
 
+      const txData = txResponse; // No longer nested under .transaction
       setTransaction(txData);
 
       // Map Type ID to Name
@@ -152,7 +153,6 @@ export default function ViewTransactionPage() {
     );
   }
   
-  // Define detailItems here, after transaction is confirmed to be non-null
   const detailItems = [
     { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: <DollarSign className="text-primary" /> },
     { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
@@ -160,8 +160,17 @@ export default function ViewTransactionPage() {
     { labelKey: 'wallet', value: transaction.wallet.name, icon: <WalletIcon className="text-primary" /> },
     { labelKey: 'category', value: categoryName, icon: <Info className="text-primary" /> },
     { labelKey: 'frequency', value: frequencyName, icon: <Repeat className="text-primary" /> },
-    { labelKey: 'description', value: transaction.description || t('noDescription'), icon: <Info className="text-primary" />, fullWidth: true },
   ];
+
+  if (transaction.exchangeRate && transaction.exchangeRate !== 1) {
+    detailItems.push({
+      labelKey: 'exchangeRateLabel',
+      value: transaction.exchangeRate.toString(),
+      icon: <Repeat className="text-primary" />
+    });
+  }
+
+  detailItems.push({ labelKey: 'description', value: transaction.description || t('noDescription'), icon: <Info className="text-primary" />, fullWidth: true });
 
 
   return (

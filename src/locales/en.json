@@ -226,5 +226,7 @@
   "transactionUpdatedDesc": "Your transaction has been successfully updated.",
   "transactionUpdateFailedTitle": "Failed to Update Transaction",
   "errorFetchingTransactionForEdit": "Error Fetching Transaction",
-  "couldNotLoadTransactionEdit": "Could not load the transaction for editing. Please try again."
+  "couldNotLoadTransactionEdit": "Could not load the transaction for editing. Please try again.",
+  "exchangeRateLabel": "Exchange Rate"
 }
+
