@@ -396,7 +396,7 @@ export default function EditTransactionPage() {
                         <SelectContent>
                           {frequencies.map(freq => (
                             <SelectItem key={freq.id} value={freq.id}>
-                               {t(`frequencyName_${freq.name.toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freq.name})}
+                               {t(`${freq.name.toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freq.name})}
                             </SelectItem>
                           ))}
                         </SelectContent>

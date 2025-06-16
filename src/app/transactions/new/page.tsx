@@ -384,7 +384,7 @@ export default function NewTransactionPage() {
                             <SelectContent>
                             {frequencies.map(freq => (
                                 <SelectItem key={freq.id} value={freq.id}>
-                                 {t(`frequencyName_${freq.name.toLowerCase().replace(/\s+/g, '_')}` as keyof ReturnType<typeof useTranslation>['translations'], {defaultValue: freq.name})}
+                                 {t(`${freq.name.toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freq.name})}
                                 </SelectItem>
                             ))}
                             </SelectContent>

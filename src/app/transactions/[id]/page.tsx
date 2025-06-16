@@ -47,6 +47,8 @@ export default function ViewTransactionPage() {
   const [typeName, setTypeName] = useState<string | null>(null);
   const [frequencyName, setFrequencyName] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState<string | null>(null);
+  const [detailItems, setDetailItems] = useState<Array<{ labelKey: string; value: React.ReactNode; icon: React.ReactElement; fullWidth?: boolean }>>([]);
+
 
   const fetchTransactionDetails = useCallback(async () => {
     if (!id || !token) {
@@ -71,9 +73,9 @@ export default function ViewTransactionPage() {
 
       const typeDetail = Object.entries(typesData.types).find(([typeId]) => typeId === String(txData.type));
       setTypeName(typeDetail ? t(`transactionType_${typeDetail[1]}` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
-
+      
       const freqDetail = Object.entries(frequenciesData.periods).find(([freqId]) => freqId === String(txData.frequencyId));
-      setFrequencyName(freqDetail ? t(`frequencyName_${freqDetail[1].toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freqDetail[1]}) : t('notApplicable'));
+      setFrequencyName(freqDetail ? t(`${freqDetail[1].toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freqDetail[1]}) : t('notApplicable'));
       
       if (txData.subCategory?.id) {
         const allSubCategories = mainCategoriesData.flatMap(mc => mc.subCategories);
@@ -99,6 +101,29 @@ export default function ViewTransactionPage() {
         setIsLoading(false);
     }
   }, [isAuthenticated, token, fetchTransactionDetails]);
+
+  useEffect(() => {
+    if (transaction && typeName && frequencyName && categoryName !== null) { // Ensure categoryName resolved (even to 'No Category')
+      const items = [
+        { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: <DollarSign className="text-primary" /> },
+        { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
+        { labelKey: 'date', value: format(parseISO(transaction.date), "PPPp"), icon: <CalendarDays className="text-primary" /> },
+        { labelKey: 'wallet', value: transaction.wallet.name, icon: <WalletIcon className="text-primary" /> },
+        { labelKey: 'category', value: categoryName, icon: <Info className="text-primary" /> },
+        { labelKey: 'frequency', value: frequencyName, icon: <Repeat className="text-primary" /> },
+      ];
+
+      if (transaction.exchangeRate && transaction.exchangeRate !== 1) {
+        items.push({
+          labelKey: 'exchangeRateLabel',
+          value: transaction.exchangeRate.toString(),
+          icon: <Repeat className="text-primary" />
+        });
+      }
+      items.push({ labelKey: 'description', value: transaction.description || t('noDescription'), icon: <Info className="text-primary" />, fullWidth: true });
+      setDetailItems(items);
+    }
+  }, [transaction, typeName, frequencyName, categoryName, t]);
 
 
   if (isLoading) {
@@ -156,26 +181,6 @@ export default function ViewTransactionPage() {
     );
   }
   
-  const detailItems = [
-    { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: <DollarSign className="text-primary" /> },
-    { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
-    { labelKey: 'date', value: format(parseISO(transaction.date), "PPPp"), icon: <CalendarDays className="text-primary" /> },
-    { labelKey: 'wallet', value: transaction.wallet.name, icon: <WalletIcon className="text-primary" /> },
-    { labelKey: 'category', value: categoryName, icon: <Info className="text-primary" /> },
-    { labelKey: 'frequency', value: frequencyName, icon: <Repeat className="text-primary" /> },
-  ];
-
-  if (transaction.exchangeRate && transaction.exchangeRate !== 1) {
-    detailItems.push({
-      labelKey: 'exchangeRateLabel',
-      value: transaction.exchangeRate.toString(),
-      icon: <Repeat className="text-primary" />
-    });
-  }
-
-  detailItems.push({ labelKey: 'description', value: transaction.description || t('noDescription'), icon: <Info className="text-primary" />, fullWidth: true });
-
-
   return (
     <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
