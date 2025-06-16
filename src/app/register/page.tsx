@@ -35,7 +35,7 @@ type RegistrationFormData = z.infer<ReturnType<typeof createRegistrationSchema>>
 export default function RegisterPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   const captchaRef = useRef<SimpleCaptchaRef>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
@@ -45,6 +45,7 @@ export default function RegisterPage() {
   const { control, handleSubmit, setError, getValues, formState: { errors } } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { email: '', login: '', password: '', confirmPassword: '', captcha: '' },
+    shouldFocusError: false, // Disable auto-focus on error
   });
 
   const onSubmit: SubmitHandler<RegistrationFormData> = async (data) => {
@@ -68,7 +69,11 @@ export default function RegisterPage() {
        if (apiError.errors) {
          Object.entries(apiError.errors).forEach(([field, messages]) => {
            if (field as keyof RegistrationFormData) {
-            setError(field as keyof RegistrationFormData, { type: 'server', message: messages.join(', ') });
+            // Ensure field is a valid key of RegistrationFormData before setting error
+            const validFields: Array<keyof RegistrationFormData> = ["email", "login", "password", "confirmPassword", "captcha"];
+            if (validFields.includes(field as keyof RegistrationFormData)) {
+             setError(field as keyof RegistrationFormData, { type: 'server', message: messages.join(', ') });
+            }
            }
          });
          errorMessage = t('validationFailedCheckFields');
@@ -160,8 +165,8 @@ export default function RegisterPage() {
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isSubmittingForm}>
-              {isSubmittingForm ? t('registeringButton') : t('registerButton')}
+            <Button type="submit" className="w-full" disabled={isSubmittingForm || authIsLoading}>
+              {isSubmittingForm || authIsLoading ? t('registeringButton') : t('registerButton')}
             </Button>
           </form>
         </CardContent>

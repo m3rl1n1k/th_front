@@ -40,6 +40,7 @@ export default function LoginPage() {
   const { control, handleSubmit, setError, getValues, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '', captcha: '' },
+    shouldFocusError: false, // Disable auto-focus on error
   });
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function LoginPage() {
     setIsSubmittingForm(true);
     try {
       await login({ username: data.email, password: data.password });
+      // Successful login navigation is handled by AuthContext effect or login function itself
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -65,12 +67,14 @@ export default function LoginPage() {
         title: t('loginFailedTitle'),
         description: apiError.message || t('loginFailedDesc'),
       });
-      captchaRef.current?.refresh();
+      captchaRef.current?.refresh(); // Refresh captcha on API error
     } finally {
       setIsSubmittingForm(false);
     }
   };
 
+  // If auth is still loading and user is not authenticated, show a loading spinner.
+  // This prevents flashing the login page if already authenticated.
   if (authIsLoading && !isAuthenticated) { 
     return (
       <PublicLayout>
@@ -85,6 +89,7 @@ export default function LoginPage() {
     );
   }
   
+  // If authenticated, don't render the login page (redirect is handled by useEffect)
   if (isAuthenticated) { 
       return null;
   }
