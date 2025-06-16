@@ -9,7 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { getWalletsList, getWalletTypes } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { WalletCards, Landmark, AlertTriangle, PlusCircle, PiggyBank, CreditCard, RefreshCwIcon, LayoutGrid, List } from 'lucide-react';
+import { WalletCards, Landmark, AlertTriangle, PlusCircle, PiggyBank, CreditCard, LayoutGrid, List } from 'lucide-react';
 import type { WalletDetails, WalletTypeMap, WalletTypeApiResponse } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -50,7 +50,7 @@ export default function WalletsPage() {
         })
         .catch(error => {
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-          setWallets([]); 
+          setWallets([]);
         })
         .finally(() => setIsLoading(false));
     } else if (!isAuthenticated) {
@@ -61,13 +61,13 @@ export default function WalletsPage() {
 
   const processedWallets = useMemo(() => {
     if (!wallets || Object.keys(walletTypeMap).length === 0 && wallets.length > 0) {
-      return null; 
+      return null;
     }
     if (!wallets) return null;
 
     return wallets.map(wallet => {
-      const typeKey = wallet.type; 
-      const mappedDisplayValue = typeof typeKey === 'string' ? walletTypeMap[typeKey] : undefined; 
+      const typeKey = wallet.type;
+      const mappedDisplayValue = typeof typeKey === 'string' ? walletTypeMap[typeKey] : undefined;
       const typeIdentifierForTranslation = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey.toUpperCase() : 'UNKNOWN');
       const userFriendlyDefault = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey : 'Unknown');
 
@@ -84,13 +84,13 @@ export default function WalletsPage() {
     let typeForSwitch: string;
 
     if (mappedTypeEnum) {
-      typeForSwitch = mappedTypeEnum; 
+      typeForSwitch = mappedTypeEnum;
     } else if (typeKey) {
-      typeForSwitch = typeKey.toUpperCase(); 
+      typeForSwitch = typeKey.toUpperCase();
     } else {
-      typeForSwitch = 'UNKNOWN'; 
+      typeForSwitch = 'UNKNOWN';
     }
-    
+
     switch (typeForSwitch) {
       case 'MAIN':
         return <Landmark className="h-6 w-6 text-primary" />;
@@ -160,7 +160,7 @@ export default function WalletsPage() {
       </MainLayout>
     );
   }
-  
+
   if (!processedWallets || processedWallets.length === 0) {
     return (
       <MainLayout>
@@ -289,3 +289,5 @@ export default function WalletsPage() {
     </MainLayout>
   );
 }
+
+    
