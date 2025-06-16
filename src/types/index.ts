@@ -111,6 +111,7 @@ export interface ApiError {
   errors?: Record<string, string[]>; // Field-specific errors for validation
   error?: string; // Sometimes error is a single string
   detail?: string; // For other error structures
+  rawResponse?: string; // To store the raw server response text
 }
 
 

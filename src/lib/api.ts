@@ -29,23 +29,45 @@ interface RequestOptions extends RequestInit {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    let errorData: ApiError;
+    let errorData: ApiError = {
+      message: response.statusText || 'An unknown error occurred',
+      code: response.status,
+    };
+    let rawResponseBody = '';
+
     try {
-      errorData = await response.json();
-      if (typeof errorData !== 'object' || errorData === null) {
-        errorData = { message: response.statusText || 'An unknown error occurred', code: response.status };
+      rawResponseBody = await response.text(); // Read raw text first
+      errorData.rawResponse = rawResponseBody; // Store it
+
+      // Attempt to parse the raw text as JSON
+      const jsonData = JSON.parse(rawResponseBody);
+
+      if (typeof jsonData === 'object' && jsonData !== null) {
+        // If JSON parsing is successful, use its details
+        errorData.message = jsonData.message || jsonData.error || jsonData.detail || errorData.message;
+        errorData.code = jsonData.code || response.status;
+        errorData.errors = jsonData.errors;
+        // rawResponse is already set
       } else {
-        errorData.message = errorData.message || errorData.error || errorData.detail || 'An error occurred';
-        errorData.code = errorData.code || response.status;
+        // If jsonData is not an object (e.g. plain string, number), use raw text as primary message
+        errorData.message = rawResponseBody || errorData.message;
       }
     } catch (e) {
-      errorData = { message: response.statusText || 'An unknown error occurred', code: response.status };
+      // If JSON.parse fails, the rawResponseBody is likely not JSON.
+      // Use rawResponseBody as the message if it's not empty.
+      errorData.message = rawResponseBody || errorData.message;
+      // errorData.rawResponse is already set or will be empty if response.text() also failed.
     }
+    console.error(`[API Error Response] Status: ${response.status}, URL: ${response.url}`);
+    console.error('[API Error Response] Raw body:', rawResponseBody);
+    console.error('[API Error Response] Processed error object to be thrown:', errorData);
     throw errorData;
   }
+
   if (response.status === 204) { // No Content
     return undefined as T;
   }
+  // For successful responses, assume JSON. If non-JSON success is expected, more handling is needed.
   return response.json();
 }
 
@@ -55,10 +77,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   const headers = new Headers(fetchOptions.headers || {});
 
   console.log(`[API Request] Attempting to call: ${fetchOptions.method || 'GET'} ${url}`);
-  if (options.body) {
-    console.log('[API Request] Body (pre-stringify):', options.body);
-  }
-
+  
 
   if (token && token.trim() !== "") {
     headers.set('Authorization', `Bearer ${token.trim()}`);
@@ -73,18 +92,22 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
       }
       fetchOptions.body = JSON.stringify(fetchOptions.body);
       console.log('[API Request] Body (post-stringify):', fetchOptions.body);
+    } else {
+       console.log('[API Request] Body (as-is string):', fetchOptions.body);
     }
   } else {
     if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
         if (headers.get('Content-Type')?.includes('application/json')) {
+            // Remove Content-Type for GET requests if it was accidentally set to application/json without a body
             headers.delete('Content-Type');
         }
     }
   }
 
-  headers.set('Accept', 'application/json');
+  if (!headers.has('Accept') && !isFormData) { // FormData might have its own Accept behavior or it's not typically needed
+    headers.set('Accept', 'application/json');
+  }
   
-  // Convert Headers object to a plain object for logging
   const headersToLog: Record<string, string> = {};
   headers.forEach((value, key) => {
     headersToLog[key] = value;
@@ -93,12 +116,17 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 
 
   const response = await fetch(url, {
-    mode: 'cors', // Explicitly set mode to cors
+    mode: 'cors', 
     ...fetchOptions,
     headers,
   });
 
   console.log(`[API Response] Status for ${fetchOptions.method || 'GET'} ${url}: ${response.status}`);
+  if (!response.ok) {
+    const responseContentType = response.headers.get("content-type");
+    console.log(`[API Response] Content-Type for error: ${responseContentType}`);
+  }
+
 
   return handleResponse<T>(response);
 }

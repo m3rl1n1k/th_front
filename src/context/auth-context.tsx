@@ -86,10 +86,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           await fetchAndSetUser(initialToken, false);
         } catch (error) {
+          const apiError = error as ApiError;
+          console.error("Initialization fetchAndSetUser error:", apiError);
+          if (apiError.rawResponse) {
+            console.error("Raw server response on init error:", apiError.rawResponse);
+          }
           toast({
             variant: "destructive",
             title: t('sessionExpiredTitle'),
-            description: (error as ApiError).message || t('sessionExpiredDesc'),
+            description: apiError.message || t('sessionExpiredDesc'),
           });
           if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/terms') && pathname !== '/') {
             router.replace('/login');
@@ -113,8 +118,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
       router.push('/dashboard');
     } catch (error) {
+      const apiError = error as ApiError;
+      console.error("Login error:", apiError);
+      if (apiError.rawResponse) {
+        console.error("Raw server response on login error:", apiError.rawResponse);
+      }
+      toast({
+        variant: "destructive",
+        title: t('loginFailedTitle'),
+        description: apiError.message || t('loginFailedDesc'),
+      });
       clearAuthArtefacts();
-      throw error;
+      // No re-throw here, error is handled by showing toast
     } finally {
       setIsLoading(false);
     }
@@ -125,6 +140,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiRegisterUser(payload);
     } catch (error) {
+      const apiError = error as ApiError;
+      console.error("Registration error:", apiError);
+      if (apiError.rawResponse) {
+        console.error("Raw server response on registration error:", apiError.rawResponse);
+      }
+      // Re-throw to be handled by the form's catch block
       throw error;
     } finally {
       setIsLoading(false);
@@ -147,7 +168,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         await fetchAndSetUser(currentTokenValue, false);
       } catch (error) {
-        toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
+        const apiError = error as ApiError;
+        console.error("fetchUser error:", apiError);
+        if (apiError.rawResponse) {
+            console.error("Raw server response on fetchUser error:", apiError.rawResponse);
+        }
+        toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
         router.replace('/login');
       } finally {
         setIsLoading(false);
