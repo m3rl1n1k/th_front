@@ -210,5 +210,12 @@
   "transactionDeletedTitle": "Транзакцію видалено",
   "transactionDeletedDesc": "Транзакцію було успішно видалено.",
   "errorDeletingTransaction": "Помилка видалення транзакції",
-  "pleaseLoginAgain": "Будь ласка, спробуйте увійти знову або встановіть новий токен, якщо проблема не зникне."
+  "pleaseLoginAgain": "Будь ласка, спробуйте увійти знову або встановіть новий токен, якщо проблема не зникне.",
+  "viewTransactionTitle": "Перегляд транзакції",
+  "transactionDetailsTitle": "Деталі транзакції",
+  "transactionDetailsDesc": "Детальна інформація для транзакції ID {id}.",
+  "editTransactionButton": "Редагувати транзакцію",
+  "backToListButton": "Назад до списку",
+  "transactionNotFoundTitle": "Транзакцію не знайдено",
+  "transactionNotFoundDesc": "Транзакцію, яку ви шукаєте, не знайдено або у вас немає дозволу на її перегляд."
 }

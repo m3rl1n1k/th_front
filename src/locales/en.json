@@ -210,5 +210,12 @@
   "transactionDeletedTitle": "Transaction Deleted",
   "transactionDeletedDesc": "The transaction has been successfully deleted.",
   "errorDeletingTransaction": "Error Deleting Transaction",
-  "pleaseLoginAgain": "Please try logging in again or set a new token if the issue persists."
+  "pleaseLoginAgain": "Please try logging in again or set a new token if the issue persists.",
+  "viewTransactionTitle": "View Transaction",
+  "transactionDetailsTitle": "Transaction Details",
+  "transactionDetailsDesc": "Detailed information for transaction ID {id}.",
+  "editTransactionButton": "Edit Transaction",
+  "backToListButton": "Back to List",
+  "transactionNotFoundTitle": "Transaction Not Found",
+  "transactionNotFoundDesc": "The transaction you are looking for could not be found or you do not have permission to view it."
 }
