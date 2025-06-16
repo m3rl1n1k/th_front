@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, KeyRound, UserPlus } from 'lucide-react'; // Added UserPlus
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, UserPlus } from 'lucide-react'; // Removed KeyRound
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
@@ -30,7 +30,7 @@ const navItems = [
 ];
 
 const publicNavItems = [
-  { href: '/login', labelKey: 'loginButtonNav', icon: LogOut }, // Changed icon for login
+  { href: '/login', labelKey: 'loginButtonNav', icon: LogOut },
   { href: '/register', labelKey: 'registerButtonNav', icon: UserPlus },
 ];
 
@@ -48,7 +48,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/set-token', '/terms', '/'];
+    const publicPaths = ['/login', '/register', '/terms', '/'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       router.replace('/login');
     }
@@ -94,15 +94,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-     const publicPaths = ['/login', '/register', '/set-token', '/terms', '/'];
+     const publicPaths = ['/login', '/register', '/terms', '/'];
      if (!publicPaths.includes(pathname)) {
-        return null; // Should be redirected by useEffect
+        return null; 
      }
-     // If it's a public path, allow children (which would be PublicLayout content)
-     // This MainLayout shouldn't be wrapping public pages directly.
-     // This path indicates a potential structural issue if MainLayout is wrapping a PublicLayout page.
-     // For now, if we hit this and it's a public path, we assume PublicLayout is handling it.
-     // If it's NOT a public path, the useEffect should have redirected.
   }
   
   const currentNavItems = isAuthenticated ? navItems : [];
@@ -150,16 +145,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                       {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
                     </Button>
                   ))}
-                   <Button
-                      variant={'ghost'}
-                      className="justify-start text-left"
-                      onClick={() => handleNavLinkClick('/set-token')}
-                      aria-current={pathname === '/set-token' ? 'page' : undefined}
-                      disabled={isNavigating}
-                    >
-                      <KeyRound className="mr-2 h-5 w-5" />
-                      {t('setTokenLink')}
-                    </Button>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -245,7 +230,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                           disabled={isNavigating}
                         >
                           <Link href={item.href} onClick={(e) => {if (pathname !== item.href) setIsNavigating(true); else e.preventDefault();}}>
-                             {/* @ts-ignore Icon component */}
                             {item.icon && <item.icon className="mr-2 h-4 w-4" />} 
                             {t(item.labelKey as keyof ReturnType<typeof useTranslation>["translations"])}
                           </Link>
@@ -274,21 +258,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
                 </Button>
               ))}
-              <Button
-                  variant={pathname === '/set-token' ? 'secondary' : 'ghost'}
-                  className="w-full justify-start"
-                  onClick={() => handleNavLinkClick('/set-token')}
-                  aria-current={pathname === '/set-token' ? 'page' : undefined}
-                  disabled={isNavigating}
-                >
-                  <KeyRound className="mr-2 h-5 w-5" />
-                  {t('setTokenLink')}
-              </Button>
             </nav>
           </aside>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          {isAuthenticated || ['/login', '/register', '/set-token', '/terms', '/'].includes(pathname) ? children : null}
+          {isAuthenticated || ['/login', '/register', '/terms', '/'].includes(pathname) ? children : null}
         </main>
       </div>
     </div>

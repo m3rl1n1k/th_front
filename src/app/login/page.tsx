@@ -16,7 +16,7 @@ import { SimpleCaptcha, type SimpleCaptchaRef } from '@/components/common/simple
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, Mail, Lock, UserPlus } from 'lucide-react';
+import { LogIn, Mail, Lock } from 'lucide-react';
 import type { ApiError } from '@/types';
 
 const createLoginSchema = (t: Function) => z.object({
@@ -57,9 +57,7 @@ export default function LoginPage() {
     }
     setIsSubmittingForm(true);
     try {
-      // AuthContext login expects username and password. We send email as username.
       await login({ username: data.email, password: data.password });
-      // Successful login is handled by AuthContext (toast and navigation)
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -73,7 +71,7 @@ export default function LoginPage() {
     }
   };
 
-  if (authIsLoading && !isAuthenticated) { // Show loader if auth is loading and not yet authenticated
+  if (authIsLoading && !isAuthenticated) { 
     return (
       <PublicLayout>
         <div className="flex flex-col items-center">
@@ -87,8 +85,8 @@ export default function LoginPage() {
     );
   }
   
-  if (isAuthenticated) { // If authenticated after loading, this component will soon unmount due to redirect
-      return null; // Or a minimal loader
+  if (isAuthenticated) { 
+      return null;
   }
 
   return (
@@ -151,11 +149,6 @@ export default function LoginPage() {
             {t('noAccountPrompt')}{' '}
             <Link href="/register" className="font-medium text-primary hover:underline">
               {t('registerHereLink')}
-            </Link>
-          </p>
-           <p className="mt-2 text-muted-foreground">
-            <Link href="/set-token" className="text-xs text-muted-foreground hover:underline">
-              {t('manualTokenSetupLink')}
             </Link>
           </p>
         </CardFooter>

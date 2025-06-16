@@ -16,7 +16,6 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
-  setTokenManually: (newToken: string) => Promise<void>;
   fetchUser: () => Promise<void>;
 }
 
@@ -28,7 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Changed to state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -51,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const clearAuthArtefacts = useCallback(() => {
     setUser(null);
     setToken(null);
-    setIsAuthenticated(false); // Update isAuthenticated state
+    setIsAuthenticated(false);
     removeTokenFromStorages();
   }, []);
 
@@ -60,14 +59,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = await fetchUserProfile(currentTokenValue);
       setUser(userData);
       setToken(currentTokenValue);
-      setIsAuthenticated(true); // Update isAuthenticated state
+      setIsAuthenticated(true);
       if (shouldSaveToken) {
         saveTokenToStorages(currentTokenValue);
       }
       return userData;
     } catch (error) {
       clearAuthArtefacts();
-      throw error;
+      throw error; 
     }
   }, [clearAuthArtefacts]);
 
@@ -97,21 +96,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } else {
-        clearAuthArtefacts(); // Ensure state is cleared if no token
+        clearAuthArtefacts(); 
       }
       if (isActive) setIsLoading(false);
     };
 
     initializeAuth();
     return () => { isActive = false; };
-  }, [fetchAndSetUser, t, pathname, router, clearAuthArtefacts]); // Added clearAuthArtefacts
+  }, [fetchAndSetUser, t, pathname, router, clearAuthArtefacts]); 
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
       const response: LoginResponse = await apiLoginUser(credentials);
       await fetchAndSetUser(response.token);
-      // setIsAuthenticated(true) is called within fetchAndSetUser
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
       router.push('/dashboard');
     } catch (error) {
@@ -141,28 +139,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/login');
   }, [router, toast, t, clearAuthArtefacts]);
 
-  const setTokenManually = useCallback(async (newTokenValue: string) => {
-    setIsLoading(true);
-    const trimmedNewToken = newTokenValue.trim();
-    
-    if (!trimmedNewToken) { 
-      clearAuthArtefacts();
-      toast({ title: t('tokenClearedTitle'), description: t('manualTokenClearedDesc') });
-      setIsLoading(false);
-      router.push('/login');
-    } else {
-      try {
-        await fetchAndSetUser(trimmedNewToken);
-        // setIsAuthenticated(true) is called within fetchAndSetUser
-        toast({ title: t('tokenSetSuccessTitle'), description: t('tokenSetSuccessDesc') });
-        router.push('/dashboard');
-      } catch (error) {
-        toast({ variant: "destructive", title: t('tokenSetFailedTitle'), description: (error as ApiError).message || t('tokenSetFailedDesc') });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, [fetchAndSetUser, toast, t, router, clearAuthArtefacts]);
 
   const fetchUser = useCallback(async () => {
     const currentTokenValue = token || (typeof window !== 'undefined' ? (sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY)) : null);
@@ -170,7 +146,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       try {
         await fetchAndSetUser(currentTokenValue, false);
-         // setIsAuthenticated(true) is called within fetchAndSetUser
       } catch (error) {
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
         router.replace('/login');
@@ -178,16 +153,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     } else {
-       // If no token, and not currently loading and not already authenticated (which implies state is settled)
       if (!isLoading && !isAuthenticated) {
-        clearAuthArtefacts(); // Ensure state is fully cleared
-        // router.replace('/login'); // Redirect if on a protected page
+        clearAuthArtefacts();
       }
     }
-  }, [token, fetchAndSetUser, toast, t, router, isLoading, isAuthenticated, clearAuthArtefacts]); // Added clearAuthArtefacts
+  }, [token, fetchAndSetUser, toast, t, router, isLoading, isAuthenticated, clearAuthArtefacts]); 
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, setTokenManually, fetchUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser }}>
       {children}
     </AuthContext.Provider>
   );
