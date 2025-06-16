@@ -33,15 +33,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
     try {
       errorData = await response.json();
       if (typeof errorData !== 'object' || errorData === null) {
-        // Handle cases where response.json() doesn't return a valid object
         errorData = { message: response.statusText || 'An unknown error occurred', code: response.status };
       } else {
-        // Ensure 'message' exists, fallback to a generic error or API provided error string
         errorData.message = errorData.message || errorData.error || errorData.detail || 'An error occurred';
         errorData.code = errorData.code || response.status;
       }
     } catch (e) {
-      // If response.json() fails (e.g., empty or non-JSON response)
       errorData = { message: response.statusText || 'An unknown error occurred', code: response.status };
     }
     throw errorData;
@@ -57,6 +54,12 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   const { token, isFormData, ...fetchOptions } = options;
   const headers = new Headers(fetchOptions.headers || {});
 
+  console.log(`[API Request] Attempting to call: ${fetchOptions.method || 'GET'} ${url}`);
+  if (options.body) {
+    console.log('[API Request] Body (pre-stringify):', options.body);
+  }
+
+
   if (token && token.trim() !== "") {
     headers.set('Authorization', `Bearer ${token.trim()}`);
   }
@@ -69,6 +72,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
         headers.set('Content-Type', 'application/json');
       }
       fetchOptions.body = JSON.stringify(fetchOptions.body);
+      console.log('[API Request] Body (post-stringify):', fetchOptions.body);
     }
   } else {
     if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
@@ -79,12 +83,22 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   }
 
   headers.set('Accept', 'application/json');
+  
+  // Convert Headers object to a plain object for logging
+  const headersToLog: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    headersToLog[key] = value;
+  });
+  console.log('[API Request] Headers:', headersToLog);
+
 
   const response = await fetch(url, {
     mode: 'cors', // Explicitly set mode to cors
     ...fetchOptions,
     headers,
   });
+
+  console.log(`[API Response] Status for ${fetchOptions.method || 'GET'} ${url}: ${response.status}`);
 
   return handleResponse<T>(response);
 }
