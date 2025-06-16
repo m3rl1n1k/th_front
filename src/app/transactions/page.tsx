@@ -61,17 +61,6 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
-const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
-  "ONE_TIME": "0",
-  "DAILY": "1",
-  "WEEKLY": "7",
-  "EVERY_TWO_WEEKS": "14",
-  "MONTHLY": "30",
-  "EVERY_6_MONTHS": "180",
-  "HALFYEARLY": "180", // Added to handle this variation
-  "YEARLY": "365",
-};
-
 export default function TransactionsPage() {
   const { token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation(); 
@@ -233,14 +222,10 @@ export default function TransactionsPage() {
     return { groups: newGroups, sortedDateKeys: newSortedDateKeys };
   }, [processedTransactions]);
 
-  const getFrequencyNameById = useCallback((apiId: string) => {
-    const freqObj = frequencies.find(f => f.id === apiId);
+  const getFrequencyNameById = useCallback((frequencyApiId: string) => {
+    const freqObj = frequencies.find(f => f.id === frequencyApiId);
     if (freqObj) {
-      const suffix = FREQUENCY_NAME_TO_TRANSLATION_SUFFIX[freqObj.name.toUpperCase()];
-      if (suffix) {
-        return t(`frequency_${suffix}` as any, {defaultValue: freqObj.name});
-      }
-      return t(freqObj.name.toLowerCase().replace(/\s+/g, '_') as any, {defaultValue: freqObj.name});
+      return t(`frequency_${freqObj.id}` as any, {defaultValue: freqObj.name});
     }
     return t('notApplicable');
   }, [frequencies, t]);
@@ -454,7 +439,7 @@ export default function TransactionsPage() {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center">
+          <TableCell colSpan={5} className="h-60 text-center"> 
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -467,7 +452,7 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground"> 
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
@@ -489,9 +474,9 @@ export default function TransactionsPage() {
             <Button 
               variant="link" 
               className="p-0 h-auto text-primary hover:underline" 
-              onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)} // Use transaction.id for edit
+              onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)}
             >
-              {t('templateId')} #{templateTransactionId} 
+               {t('templateId')} #{templateTransactionId} 
             </Button>
           ) : (
             <span>{t('templateId')} N/A</span>

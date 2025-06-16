@@ -32,17 +32,6 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
-const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
-  "ONE_TIME": "0",
-  "DAILY": "1",
-  "WEEKLY": "7",
-  "EVERY_TWO_WEEKS": "14",
-  "MONTHLY": "30",
-  "EVERY_6_MONTHS": "180",
-  "HALFYEARLY": "180", // Added to handle this variation
-  "YEARLY": "365",
-};
-
 export default function ViewTransactionPage() {
   const { token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation(); 
@@ -86,19 +75,12 @@ export default function ViewTransactionPage() {
       setTypeName(typeDetail ? t(`transactionType_${typeDetail[1]}` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
       
       const freqIdFromTx = String(txData.frequencyId);
-      // Find the frequency object from the fetched frequencies array
       const freqObject = Object.entries(frequenciesData.periods)
                             .map(([id, name]) => ({ id, name: name as string }))
                             .find(f => f.id === freqIdFromTx);
 
       if (freqObject) {
-        const suffix = FREQUENCY_NAME_TO_TRANSLATION_SUFFIX[freqObject.name.toUpperCase()];
-        if (suffix) {
-          setFrequencyName(t(`frequency_${suffix}` as any, {defaultValue: freqObject.name}));
-        } else {
-           // Fallback if name not in map, use direct translation of the name
-          setFrequencyName(t(freqObject.name.toLowerCase().replace(/\s+/g, '_') as any, {defaultValue: freqObject.name}));
-        }
+        setFrequencyName(t(`frequency_${freqObject.id}` as any, {defaultValue: freqObject.name}));
       } else {
         setFrequencyName(t('notApplicable'));
       }

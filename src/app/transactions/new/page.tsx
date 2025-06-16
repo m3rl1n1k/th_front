@@ -36,17 +36,6 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
-const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
-  "ONE_TIME": "0",
-  "DAILY": "1",
-  "WEEKLY": "7",
-  "EVERY_TWO_WEEKS": "14",
-  "MONTHLY": "30",
-  "EVERY_6_MONTHS": "180",
-  "HALFYEARLY": "180", // Added to handle this variation
-  "YEARLY": "365",
-};
-
 export default function NewTransactionPage() {
   const { token, isAuthenticated, user } = useAuth();
   const { t, dateFnsLocale } = useTranslation(); 
@@ -149,7 +138,7 @@ export default function NewTransactionPage() {
       
       const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main');
       const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE');
-      const defaultOneTimeFrequency = frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME');
+      const defaultOneTimeFrequency = frequencies.find(f => f.id === '0'); // Find by ID "0" for "Once"
 
       const currentFormValues = getValues();
       const newDefaults: Partial<NewTransactionFormData> = {};
@@ -394,15 +383,11 @@ export default function NewTransactionPage() {
                             <SelectValue placeholder={isLoadingFrequencies ? t('loading') : t('selectFrequencyPlaceholder')} />
                             </SelectTrigger>
                             <SelectContent>
-                            {frequencies.map(freq => {
-                                const suffix = FREQUENCY_NAME_TO_TRANSLATION_SUFFIX[freq.name.toUpperCase()];
-                                const translationKey = suffix ? `frequency_${suffix}` : freq.name.toLowerCase().replace(/\s+/g, '_');
-                                return (
-                                    <SelectItem key={freq.id} value={freq.id}>
-                                    {t(translationKey as any, {defaultValue: freq.name})}
-                                    </SelectItem>
-                                );
-                            })}
+                            {frequencies.map(freq => (
+                                <SelectItem key={freq.id} value={freq.id}>
+                                {t(`frequency_${freq.id}` as any, {defaultValue: freq.name})}
+                                </SelectItem>
+                            ))}
                             </SelectContent>
                         </Select>
                         )}
