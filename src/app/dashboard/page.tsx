@@ -15,7 +15,7 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType } from '@/types';
@@ -99,7 +99,7 @@ const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: F
 interface ProcessedLastTransactionItem {
   id: string | number;
   icon: React.ReactElement;
-  description: string;
+  displayText: string;
   amount: number; // in cents
   currencyCode: string;
   date: string; // Formatted date
@@ -212,11 +212,13 @@ export default function DashboardPage() {
       } else {
         icon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
       }
+      
+      const displayText = tx.description || t('noDescription');
 
       return {
         id: tx.id,
         icon: icon,
-        description: tx.description || t('noDescription'),
+        displayText: displayText,
         amount: tx.amount.amount, // in cents
         currencyCode: tx.amount.currency.code,
         date: format(parseISO(tx.date), "PP", { locale: dateFnsLocale }),
@@ -373,7 +375,21 @@ export default function DashboardPage() {
                   <PieChart>
                     <ChartTooltip
                       cursor={false}
-                      content={<ChartTooltipContent hideLabel className="bg-card text-card-foreground shadow-lg border" />}
+                      content={
+                        <ChartTooltipContent
+                          hideLabel
+                          className="bg-card text-card-foreground shadow-lg border"
+                          formatter={(value, name, itemProps) => {
+                            const currency = user?.userCurrency?.code || 'USD';
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-medium text-foreground">{itemProps.payload.categoryName}</span>
+                                <CurrencyDisplay amountInCents={value as number} currencyCode={currency} />
+                              </div>
+                            );
+                          }}
+                        />
+                      }
                     />
                     <Pie
                       data={transformedChartData}
@@ -447,8 +463,8 @@ export default function DashboardPage() {
                             <div className="flex items-center space-x-3">
                                 {item.icon}
                                 <div className="flex-grow">
-                                    <p className="text-sm font-medium text-foreground truncate max-w-[150px] sm:max-w-[180px]" title={item.description}>
-                                        {item.description}
+                                    <p className="text-sm font-medium text-foreground truncate max-w-[150px] sm:max-w-[180px]" title={item.displayText}>
+                                        {item.displayText}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{item.date}</p>
                                 </div>
