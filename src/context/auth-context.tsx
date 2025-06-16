@@ -39,6 +39,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  const saveTokenToStorages = (tokenValue: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TOKEN_STORAGE_KEY, tokenValue);
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, tokenValue);
+    }
+  };
+
+  const removeTokenFromStorages = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  };
+
   const fetchUserCallback = useCallback(async (currentTokenValue: string) => {
     setIsLoading(true);
     if (currentTokenValue === DUMMY_TOKEN) {
@@ -51,13 +65,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = await fetchUserProfile(currentTokenValue);
       setUser(userData);
       setToken(currentTokenValue);
-      // toast({ title: t('tokenValidationSuccess') }); // Optional: can be noisy
+      saveTokenToStorages(currentTokenValue); // Ensure it's in both if valid
     } catch (error) {
       setUser(null);
-      setToken(null); // Clear token state
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(TOKEN_STORAGE_KEY); // Remove invalid token from storage
-      }
+      setToken(null);
+      removeTokenFromStorages();
       toast({
         variant: "destructive",
         title: t('profileFetchErrorTitle'),
@@ -71,16 +83,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let isActive = true;
     setIsLoading(true);
-    const storedToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+    
+    let initialToken: string | null = null;
+    if (typeof window !== 'undefined') {
+      initialToken = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!initialToken) {
+        initialToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+        if (initialToken) {
+          // If found in localStorage but not sessionStorage, copy to sessionStorage for current session
+          sessionStorage.setItem(TOKEN_STORAGE_KEY, initialToken);
+        }
+      }
+    }
 
-    if (storedToken) {
-      fetchUserCallback(storedToken); // This sets isLoading internally and then false in finally
+    if (initialToken) {
+      fetchUserCallback(initialToken);
     } else {
-      // No stored token logic (Dev mode fallback)
       if (process.env.NODE_ENV === 'development' || true) { 
         setUser(DUMMY_USER);
         setToken(DUMMY_TOKEN);
-        if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
+        saveTokenToStorages(DUMMY_TOKEN);
       } else {
         setUser(null);
         setToken(null);
@@ -89,14 +111,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     return () => { isActive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUserCallback]); // fetchUserCallback is memoized
+  }, [fetchUserCallback]);
 
   const login = useCallback(async (email: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500)); 
     setUser(DUMMY_USER);
     setToken(DUMMY_TOKEN);
-    if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
+    saveTokenToStorages(DUMMY_TOKEN);
     toast({ title: "Dev Mode Active", description: "Login is bypassed. Welcome!" });
     setIsLoading(false);
     router.push('/dashboard');
@@ -106,41 +128,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     setUser(null);
     setToken(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-    }
+    removeTokenFromStorages();
     toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
     setIsLoading(false);
     router.push('/login');
   }, [router, toast, t]);
 
-  const setTokenManually = useCallback(async (newToken: string) => {
+  const setTokenManually = useCallback(async (newTokenValue: string) => {
     setIsLoading(true);
-    const trimmedNewToken = newToken.trim();
+    const trimmedNewToken = newTokenValue.trim();
     
-    if (!trimmedNewToken) { // User cleared the token input
-      setUser(DUMMY_USER); // Revert to dummy user for dev
+    if (!trimmedNewToken) { 
+      setUser(DUMMY_USER);
       setToken(DUMMY_TOKEN);
-      if (typeof window !== 'undefined') localStorage.setItem(TOKEN_STORAGE_KEY, DUMMY_TOKEN);
+      saveTokenToStorages(DUMMY_TOKEN);
       toast({ title: t('tokenClearedTitle'), description: t('revertedToDevModeDesc') });
       setIsLoading(false);
     } else {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(TOKEN_STORAGE_KEY, trimmedNewToken);
-      }
-      await fetchUserCallback(trimmedNewToken); // This will set isLoading to false in its finally
+      // Save to storages first, then attempt fetch. 
+      // fetchUserCallback will handle removal if validation fails.
+      saveTokenToStorages(trimmedNewToken); 
+      await fetchUserCallback(trimmedNewToken);
     }
   }, [fetchUserCallback, toast, t]);
 
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
-    const currentTokenValue = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+    let currentTokenValue: string | null = null;
+    if (typeof window !== 'undefined') {
+      currentTokenValue = sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY);
+    }
+    
     if (currentTokenValue) {
-      await fetchUserCallback(currentTokenValue); // Manages its own isLoading
+      await fetchUserCallback(currentTokenValue);
     } else {
       if (process.env.NODE_ENV === 'development' || true) {
           setUser(DUMMY_USER);
           setToken(DUMMY_TOKEN);
+          saveTokenToStorages(DUMMY_TOKEN);
       } else {
         setUser(null);
         setToken(null);
