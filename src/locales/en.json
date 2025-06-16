@@ -150,13 +150,6 @@
   "walletType_CASH": "Cash",
   "walletType_CREDIT": "Credit Account",
   "walletType_UNKNOWN": "Unknown Type",
-  "one_time": "One-time",
-  "daily_frequency": "Daily",
-  "weekly_frequency": "Weekly",
-  "every_two_weeks": "Every two weeks",
-  "monthly_frequency": "Monthly",
-  "every_6_months": "Every 6 months",
-  "yearly": "Yearly",
   "notApplicable": "N/A",
   "noCategory": "No Category",
   "noCategoryOption": "No Category (Optional)",
@@ -251,5 +244,14 @@
   "definitionRemovedDesc": "The recurring transaction definition has been removed.",
   "errorRemovingDefinition": "Error Removing Definition",
   "noRecurringDefinitionsFound": "No recurring transaction definitions found.",
-  "manageRecurringDefinitions": "Manage your scheduled recurring transactions."
+  "manageRecurringDefinitions": "Manage your scheduled recurring transactions.",
+  "frequency_0": "One-time",
+  "frequency_1": "Daily",
+  "frequency_7": "Weekly",
+  "frequency_14": "Every two weeks",
+  "frequency_30": "Monthly",
+  "frequency_180": "Every 6 months",
+  "frequency_365": "Yearly"
 }
+
+    

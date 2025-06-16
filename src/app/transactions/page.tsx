@@ -61,9 +61,19 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
+const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
+  "ONE_TIME": "0",
+  "DAILY": "1",
+  "WEEKLY": "7",
+  "EVERY_TWO_WEEKS": "14",
+  "MONTHLY": "30",
+  "EVERY_6_MONTHS": "180",
+  "YEARLY": "365",
+};
+
 export default function TransactionsPage() {
   const { token, isAuthenticated } = useAuth();
-  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
+  const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -222,9 +232,16 @@ export default function TransactionsPage() {
     return { groups: newGroups, sortedDateKeys: newSortedDateKeys };
   }, [processedTransactions]);
 
-  const getFrequencyNameById = useCallback((id: string) => {
-    const freq = frequencies.find(f => f.id === id);
-    return freq ? t(freq.name.toLowerCase().replace(/\s+/g, '_') as any, {defaultValue: freq.name}) : t('notApplicable');
+  const getFrequencyNameById = useCallback((apiId: string) => {
+    const freqObj = frequencies.find(f => f.id === apiId);
+    if (freqObj) {
+      const suffix = FREQUENCY_NAME_TO_TRANSLATION_SUFFIX[freqObj.name.toUpperCase()];
+      if (suffix) {
+        return t(`frequency_${suffix}` as any, {defaultValue: freqObj.name});
+      }
+      return t(freqObj.name.toLowerCase().replace(/\s+/g, '_') as any, {defaultValue: freqObj.name});
+    }
+    return t('notApplicable');
   }, [frequencies, t]);
 
   const getStatusName = useCallback((status: number) => {
@@ -366,10 +383,6 @@ export default function TransactionsPage() {
               typeIcon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
           }
           
-          const categoryText = tx.categoryName 
-            ? t(generateCategoryTranslationKey(tx.categoryName), { defaultValue: tx.categoryName }) 
-            : t('noCategory');
-
           const showLoaderForThisTx = 
             (initiatingActionForTxId === tx.id) ||
             (selectedTransactionForDelete?.id === tx.id && (isDeleting || deleteConfirmationOpen));
@@ -727,3 +740,5 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
+    

@@ -32,9 +32,19 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
+const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
+  "ONE_TIME": "0",
+  "DAILY": "1",
+  "WEEKLY": "7",
+  "EVERY_TWO_WEEKS": "14",
+  "MONTHLY": "30",
+  "EVERY_6_MONTHS": "180",
+  "YEARLY": "365",
+};
+
 export default function ViewTransactionPage() {
   const { token, isAuthenticated } = useAuth();
-  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
+  const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
@@ -74,8 +84,19 @@ export default function ViewTransactionPage() {
       const typeDetail = Object.entries(typesData.types).find(([typeId]) => typeId === String(txData.type));
       setTypeName(typeDetail ? t(`transactionType_${typeDetail[1]}` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
       
-      const freqDetail = Object.entries(frequenciesData.periods).find(([freqId]) => freqId === String(txData.frequencyId));
-      setFrequencyName(freqDetail ? t(`${freqDetail[1].toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freqDetail[1]}) : t('notApplicable'));
+      const freqIdFromTx = String(txData.frequencyId);
+      const freqDetailNameFromApi = frequenciesData.periods[freqIdFromTx];
+
+      if (freqDetailNameFromApi) {
+        const suffix = FREQUENCY_NAME_TO_TRANSLATION_SUFFIX[freqDetailNameFromApi.toUpperCase()];
+        if (suffix) {
+          setFrequencyName(t(`frequency_${suffix}` as any, {defaultValue: freqDetailNameFromApi}));
+        } else {
+          setFrequencyName(t(freqDetailNameFromApi.toLowerCase().replace(/\s+/g, '_') as any, {defaultValue: freqDetailNameFromApi}));
+        }
+      } else {
+        setFrequencyName(t('notApplicable'));
+      }
       
       if (txData.subCategory?.id) {
         const allSubCategories = mainCategoriesData.flatMap(mc => mc.subCategories);
@@ -103,7 +124,7 @@ export default function ViewTransactionPage() {
   }, [isAuthenticated, token, fetchTransactionDetails]);
 
   useEffect(() => {
-    if (transaction && typeName && frequencyName && categoryName !== null) { // Ensure categoryName resolved (even to 'No Category')
+    if (transaction && typeName && frequencyName && categoryName !== null) { 
       const items = [
         { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: <DollarSign className="text-primary" /> },
         { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
@@ -227,3 +248,5 @@ export default function ViewTransactionPage() {
     </MainLayout>
   );
 }
+
+    

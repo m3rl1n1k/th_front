@@ -36,9 +36,19 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
+const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
+  "ONE_TIME": "0",
+  "DAILY": "1",
+  "WEEKLY": "7",
+  "EVERY_TWO_WEEKS": "14",
+  "MONTHLY": "30",
+  "EVERY_6_MONTHS": "180",
+  "YEARLY": "365",
+};
+
 export default function NewTransactionPage() {
   const { token, isAuthenticated, user } = useAuth();
-  const { t, dateFnsLocale } = useTranslation(); // Get dateFnsLocale
+  const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
   
@@ -358,7 +368,7 @@ export default function NewTransactionPage() {
                             onSelect={field.onChange}
                             disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                             initialFocus
-                            locale={dateFnsLocale} // Pass locale to Calendar
+                            locale={dateFnsLocale} 
                           />
                         </PopoverContent>
                       </Popover>
@@ -383,11 +393,15 @@ export default function NewTransactionPage() {
                             <SelectValue placeholder={isLoadingFrequencies ? t('loading') : t('selectFrequencyPlaceholder')} />
                             </SelectTrigger>
                             <SelectContent>
-                            {frequencies.map(freq => (
-                                <SelectItem key={freq.id} value={freq.id}>
-                                 {t(`${freq.name.toLowerCase().replace(/\s+/g, '_')}` as any, {defaultValue: freq.name})}
-                                </SelectItem>
-                            ))}
+                            {frequencies.map(freq => {
+                                const suffix = FREQUENCY_NAME_TO_TRANSLATION_SUFFIX[freq.name.toUpperCase()];
+                                const translationKey = suffix ? `frequency_${suffix}` : freq.name.toLowerCase().replace(/\s+/g, '_');
+                                return (
+                                    <SelectItem key={freq.id} value={freq.id}>
+                                    {t(translationKey as any, {defaultValue: freq.name})}
+                                    </SelectItem>
+                                );
+                            })}
                             </SelectContent>
                         </Select>
                         )}
@@ -413,3 +427,5 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
+
+    
