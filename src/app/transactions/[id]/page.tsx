@@ -8,7 +8,7 @@ import { format, parseISO } from 'date-fns';
 
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
@@ -25,7 +25,7 @@ import type {
   Frequency, 
   SubCategory 
 } from '@/types';
-import { ArrowLeft, Edit3, Loader2, AlertTriangle, DollarSign, Tag, CalendarDays, Repeat, WalletIcon, Info } from 'lucide-react'; // Added relevant icons
+import { ArrowLeft, Edit3, Loader2, AlertTriangle, DollarSign, Tag, CalendarDays, Repeat, WalletIcon, Info } from 'lucide-react';
 
 export default function ViewTransactionPage() {
   const { token, isAuthenticated } = useAuth();
@@ -120,12 +120,12 @@ export default function ViewTransactionPage() {
           <CardContent className="pt-6">
             <p>{error}</p>
           </CardContent>
-           <CardFooter className="flex justify-end">
+          <div className="flex justify-end p-4">
             <Button variant="outline" onClick={() => router.push('/transactions')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('backButton')}
             </Button>
-          </CardFooter>
+          </div>
         </Card>
       </MainLayout>
     );
@@ -138,15 +138,15 @@ export default function ViewTransactionPage() {
           <CardHeader>
             <CardTitle>{t('transactionNotFoundTitle')}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <p>{t('transactionNotFoundDesc')}</p>
           </CardContent>
-           <CardFooter className="flex justify-end">
+          <div className="flex justify-end p-4">
             <Button variant="outline" onClick={() => router.push('/transactions')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('backButton')}
             </Button>
-          </CardFooter>
+          </div>
         </Card>
       </MainLayout>
     );
@@ -192,20 +192,21 @@ export default function ViewTransactionPage() {
                     </div>
                 ))}
             </CardContent>
-            <CardFooter className="bg-muted/30 dark:bg-muted/10 border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={() => router.push('/transactions')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    {t('backToListButton')}
-                </Button>
-                <Button asChild variant="default">
-                    <Link href={\`/transactions/\${transaction.id}/edit\`}>
-                        <Edit3 className="mr-2 h-4 w-4" />
-                        {t('editTransactionButton')}
-                    </Link>
-                </Button>
-            </CardFooter>
         </Card>
+        <div className="mt-6 flex justify-between">
+            <Button variant="outline" onClick={() => router.push('/transactions')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('backToListButton')}
+            </Button>
+            <Button asChild variant="default">
+                <Link href={\`/transactions/\${transaction.id}/edit\`}>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    {t('editTransactionButton')}
+                </Link>
+            </Button>
+        </div>
       </div>
     </MainLayout>
   );
 }
+
