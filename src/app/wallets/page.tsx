@@ -60,7 +60,7 @@ export default function WalletsPage() {
   }, [token, isAuthenticated, t, toast]);
 
   const processedWallets = useMemo(() => {
-    if (!wallets || Object.keys(walletTypeMap).length === 0 && wallets.length > 0) {
+    if (!wallets || (Object.keys(walletTypeMap).length === 0 && wallets.length > 0)) {
       return null;
     }
     if (!wallets) return null;
@@ -68,12 +68,22 @@ export default function WalletsPage() {
     return wallets.map(wallet => {
       const typeKey = wallet.type;
       const mappedDisplayValue = typeof typeKey === 'string' ? walletTypeMap[typeKey] : undefined;
-      const typeIdentifierForTranslation = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey.toUpperCase() : 'UNKNOWN');
-      const userFriendlyDefault = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey : 'Unknown');
+      let typeIdentifierForTranslation: string;
 
+      if (mappedDisplayValue) {
+        typeIdentifierForTranslation = mappedDisplayValue;
+      } else if (typeKey) {
+        typeIdentifierForTranslation = typeKey.toUpperCase();
+      } else {
+        typeIdentifierForTranslation = 'UNKNOWN';
+      }
+      
+      const userFriendlyDefault = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey : 'Unknown');
+      
+      const translationKey = `walletType_${typeIdentifierForTranslation}`;
       return {
         ...wallet,
-        typeName: t(\`walletType_\${typeIdentifierForTranslation}\` as any, { defaultValue: userFriendlyDefault })
+        typeName: t(translationKey as any, { defaultValue: userFriendlyDefault })
       };
     });
   }, [wallets, walletTypeMap, t]);
@@ -121,7 +131,7 @@ export default function WalletsPage() {
                 </Button>
             </div>
           </div>
-          <div className={\`grid gap-6 \${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}\`}>
+          <div className={`grid gap-6 ${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
             {viewMode === 'card' ? (
               [1, 2, 3, 4].map(i => (
                 <Card key={i} className="shadow-lg">
@@ -289,5 +299,3 @@ export default function WalletsPage() {
     </MainLayout>
   );
 }
-
-    
