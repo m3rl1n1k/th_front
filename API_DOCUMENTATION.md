@@ -43,13 +43,13 @@ Authentication is handled via JWT (JSON Web Tokens).
 
 ### 1. Authentication
 
-#### `POST /auth/login`
-Logs in a user. The backend should associate the provided email with a username (this could be the email itself, a generated username, or a user-chosen one if you implement registration).
-
+#### `POST /auth/login` (or `/login_check`)
+Logs in a user.
 *   **Request Body**:
     ```json
     {
-      "email": "user@example.com"
+      "username": "user@example.com", // User's email address
+      "password": "user_password"
     }
     ```
 *   **Success Response (200 OK)**:
@@ -57,7 +57,7 @@ Logs in a user. The backend should associate the provided email with a username 
     {
       "user": {
         "id": 1,
-        "login": "user_login_name",
+        "login": "user_login_name", // The actual username/login
         "email": "user@example.com",
         "userCurrency": {
            "code": "USD"
@@ -69,6 +69,38 @@ Logs in a user. The backend should associate the provided email with a username 
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format.
 
+#### `POST /auth/register`
+Registers a new user.
+*   **Request Body**:
+    ```json
+    {
+      "email": "user@example.com",
+      "login": "user_chosen_login_name", // Desired username
+      "password": "securepassword123"
+    }
+    ```
+*   **Success Response (201 Created)**:
+    ```json
+    {
+      "message": "User registered successfully. Please login."
+      // Optionally, can return the created user object as in GET /users/me
+    }
+    ```
+    Or simply a `201 Created` status with no body.
+*   **Failure Response (400 Bad Request)**: Standard error format, especially if email/login already exists or password is too weak.
+    ```json
+    // Example validation error for registration
+    {
+      "message": "Validation Failed",
+      "errors": {
+        "email": ["This email address is already registered."],
+        "login": ["This username is already taken."],
+        "password": ["Password must be at least 6 characters long."]
+      }
+    }
+    ```
+
+
 #### `POST /auth/logout` (Optional)
 Invalidates the user's session/token if server-side session management or token blocklisting is implemented.
 
@@ -77,7 +109,7 @@ Invalidates the user's session/token if server-side session management or token 
 
 ### 2. User Profile
 
-#### `GET /users/me`
+#### `GET /users/me` (or `/user`)
 Retrieves the profile information for the currently authenticated user.
 
 *   **Request Body**: None (token in header)
@@ -101,9 +133,10 @@ Updates the profile information for the currently authenticated user.
 *   **Request Body**:
     ```json
     {
-      "login": "new_user_login_name",
+      "login": "new_user_login_name", // Username
       "email": "new_email@example.com",
-      "userCurrencyCode": "EUR"
+      "userCurrencyCode": "EUR" // User's preferred currency code
+      // Password changes should ideally be a separate endpoint with current password confirmation
     }
     ```
 *   **Success Response (200 OK)**: Returns the updated user profile (same format as `GET /users/me`).
@@ -134,6 +167,43 @@ Retrieves summary financial data for the dashboard. *(Deprecated in favor of ind
 #### `GET /dashboard/average-expenses` (Backend might send month_expense)
 *   **Success Response (200 OK)**: `{"month_expense": 363637}`
 
+#### `GET /dashboard/chart/total-expense`
+Retrieves data for the monthly expenses by category chart.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "month_expense_chart": {
+        "Food & Dining": { "amount": 150000, "color": "#FFD700" },
+        "Transportation": { "amount": 80000, "color": "#FF6384" },
+        "no_category": { "amount": 50000, "color": "#CCCCCC" }
+        // ... other categories, amounts in cents
+      }
+    }
+    ```
+
+#### `GET /dashboard/last-transactions/{limit}`
+Retrieves a list of the last N transactions.
+*   **Path Parameter**: `limit` (integer, e.g., 10)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "last_transactions": [
+        {
+          "id": 123,
+          "amount": { "amount": 5000, "currency": { "code": "USD" } }, // in cents
+          "currency": { "code": "USD" },
+          "exchangeRate": 1,
+          "type": 2, // Numeric type ID
+          "description": "Groceries",
+          "wallet": { "id": 1, "name": "Main", "number": "ACCT123" },
+          "subCategory": { "id": 101, "name": "Groceries"}, // null if not set
+          "source": "manual", // or other source if applicable
+          "date": "2024-07-28T14:30:00Z" // ISO date string
+        }
+        // ... more transactions up to limit
+      ]
+    }
+    ```
 
 ### 4. Transactions
 
@@ -196,7 +266,7 @@ Creates a new transaction.
       "exchangeRate": 1,
       "type": 2, // Numeric type ID
       "description": "Groceries for the week",
-      "wallet": { "id": 1, "name": "Main" },
+      "wallet": { "id": 1, "name": "Main", "number": "ACCT123" },
       "subCategory": { "id": 101, "name": "Groceries"}, // subCategory object, null if not provided
       "user": { "id": 1 },
       "source": "manual", // or other source if applicable
@@ -227,7 +297,7 @@ Retrieves a list of transactions for the authenticated user. The response should
           "exchangeRate": 1,
           "type": 2, // Numeric type ID
           "description": "Groceries",
-          "wallet": { "id": 1, "name": "Main" },
+          "wallet": { "id": 1, "name": "Main", "number": "ACCT123" },
           "subCategory": { "id": 101, "name": "Groceries"}, // null if not set
           "user": { "id": 1 },
           "source": "store_x",
@@ -241,14 +311,12 @@ Retrieves a list of transactions for the authenticated user. The response should
 *   **Failure Response (401 Unauthorized)**
 
 #### `GET /transactions/{id}`
-Retrieves a specific transaction by its ID.
-
+Retrieves a specific transaction by its ID. The response should be `{"transaction": {...}}`.
 *   **Success Response (200 OK)**: Single transaction object (same format as items in `GET /transactions` list).
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `PUT /transactions/{id}`
 Updates a specific transaction.
-
 *   **Request Body**: Similar to `POST /transactions`, containing fields to update. `category_id` can be `null`. `frequencyId` should be provided.
     ```json
     {
@@ -267,6 +335,18 @@ Updates a specific transaction.
 #### `DELETE /transactions/{id}`
 Deletes a specific transaction.
 
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `GET /transactions/repeated/{id}/status/toggle`
+Toggles the status (active/inactive) of a repeated transaction definition.
+*   **Path Parameter**: `id` (integer ID of the repeated transaction definition)
+*   **Success Response (200 OK)**: Returns the updated `RepeatedTransactionEntry` object.
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /transactions/repeated/{id}`
+Deletes a repeated transaction definition. This does not delete already created transactions.
+*   **Path Parameter**: `id` (integer ID of the repeated transaction definition)
 *   **Success Response (204 No Content)**
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
@@ -395,9 +475,9 @@ Consider these when designing your database and PHP classes/objects.
 
 ### User
 *   `id` (int, primary key)
-*   `login` (string, unique, used for display)
+*   `login` (string, unique, used for display and actual username)
 *   `email` (string, unique)
-*   `password_hash` (string, if implementing direct password auth instead of email-only link)
+*   `password_hash` (string)
 *   `user_currency_code` (string, e.g., "USD", "EUR")
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
@@ -412,7 +492,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `type_id` (int, e.g., 1 for INCOME, 2 for EXPENSE - refers to an internal mapping or TransactionType table)
 *   `wallet_id` (int, foreign key to Wallet)
 *   `subcategory_id` (int, nullable, foreign key to SubCategory)
-*   `source` (string, nullable)
+*   `source` (string, nullable, system-internal or for imports)
 *   `transaction_date` (datetime) // The actual date of the transaction event
 *   `frequency_id` (string/int, foreign key or reference to a Frequency table/enum, linked to values from `/transactions/frequency`)
 *   `created_at` (datetime) // Record creation timestamp

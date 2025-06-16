@@ -1,40 +1,80 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslation } from '@/context/i18n-context';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { PublicLayout } from '@/components/layout/public-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { SimpleCaptcha, type SimpleCaptchaRef } from '@/components/common/simple-captcha';
 import { useAuth } from '@/context/auth-context';
+import { useTranslation } from '@/context/i18n-context';
+import { useToast } from '@/hooks/use-toast';
+import { LogIn, Mail, Lock, UserPlus } from 'lucide-react';
+import type { ApiError } from '@/types';
+
+const createLoginSchema = (t: Function) => z.object({
+  email: z.string().email({ message: t('invalidEmail') }),
+  password: z.string().min(1, { message: t('passwordRequiredError') }),
+  captcha: z.string().min(1, { message: t('captchaRequiredError') }),
+});
+
+type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { isLoading: authIsLoading, isAuthenticated } = useAuth();
-  // Start with true to show loader initially, or while auth state is being determined.
-  const [isProcessingLogin, setIsProcessingLogin] = useState(true); 
+  const { login, isAuthenticated, isLoading: authIsLoading } = useAuth();
+  const { toast } = useToast();
+  const captchaRef = useRef<SimpleCaptchaRef>(null);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+
+  const loginSchema = createLoginSchema(t);
+
+  const { control, handleSubmit, setError, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '', captcha: '' },
+  });
 
   useEffect(() => {
-    if (!authIsLoading) {
-      // Auth state is resolved
-      if (isAuthenticated) {
-        // Already authenticated, redirect to dashboard
-        // Loader will show via isProcessingLogin (which is still true or will be set by this effect)
-        router.replace('/dashboard');
-      } else {
-        // Not authenticated, redirect to set-token page
-        router.replace('/set-token');
-      }
-      // In either case of redirection, we don't need to set isProcessingLogin to false,
-      // as the component will unmount. If it didn't unmount, we would set it false here.
+    if (!authIsLoading && isAuthenticated) {
+      router.replace('/dashboard');
     }
-    // If authIsLoading is true, we keep isProcessingLogin as true (or let it be set by default)
-    // to continue showing the loader.
   }, [authIsLoading, isAuthenticated, router]);
 
-  // This condition covers both initial auth check and the brief moment of redirection.
-  if (authIsLoading || isProcessingLogin) { 
+  const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
+    if (captchaRef.current && !captchaRef.current.validate()) {
+      setError("captcha", { type: "manual", message: t('captchaIncorrectError') });
+      captchaRef.current.refresh();
+      return;
+    }
+    setIsSubmittingForm(true);
+    try {
+      // AuthContext login expects username and password. We send email as username.
+      await login({ username: data.email, password: data.password });
+      // Successful login is handled by AuthContext (toast and navigation)
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        variant: "destructive",
+        title: t('loginFailedTitle'),
+        description: apiError.message || t('loginFailedDesc'),
+      });
+      captchaRef.current?.refresh();
+    } finally {
+      setIsSubmittingForm(false);
+    }
+  };
+
+  if (authIsLoading && !isAuthenticated) { // Show loader if auth is loading and not yet authenticated
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <PublicLayout>
         <div className="flex flex-col items-center">
           <svg className="animate-spin h-12 w-12 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -42,11 +82,83 @@ export default function LoginPage() {
           </svg>
           <p className="text-lg font-medium text-foreground">{t('loading')}</p>
         </div>
-      </div>
+      </PublicLayout>
     );
   }
+  
+  if (isAuthenticated) { // If authenticated after loading, this component will soon unmount due to redirect
+      return null; // Or a minimal loader
+  }
 
-  // This part should ideally not be reached if redirection logic is sound and covers all cases.
-  // It acts as a fallback.
-  return null; 
+  return (
+    <PublicLayout>
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <LogIn size={32} />
+          </div>
+          <CardTitle className="font-headline text-3xl">{t('loginTitle')}</CardTitle>
+          <CardDescription>{t('loginSubtitle')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('emailLabel')}</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <Input id="email" type="email" placeholder={t('emailPlaceholder')} {...field} className={`pl-10 ${errors.email ? 'border-destructive' : ''}`} />
+                  )}
+                />
+              </div>
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('passwordLabel')}</Label>
+              <div className="relative">
+                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Controller
+                  name="password"
+                  control={control}
+                  render={({ field }) => (
+                    <Input id="password" type="password" placeholder="••••••••" {...field} className={`pl-10 ${errors.password ? 'border-destructive' : ''}`} />
+                  )}
+                />
+              </div>
+              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+            </div>
+            
+            <Controller
+              name="captcha"
+              control={control}
+              render={({ field }) => (
+                <SimpleCaptcha ref={captchaRef} {...field} error={errors.captcha?.message} />
+              )}
+            />
+
+            <Button type="submit" className="w-full" disabled={isSubmittingForm || authIsLoading}>
+              {isSubmittingForm || authIsLoading ? t('loggingInButton') : t('loginButton')}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="mt-4 flex-col items-center justify-center text-sm">
+          <p className="text-muted-foreground">
+            {t('noAccountPrompt')}{' '}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              {t('registerHereLink')}
+            </Link>
+          </p>
+           <p className="mt-2 text-muted-foreground">
+            <Link href="/set-token" className="text-xs text-muted-foreground hover:underline">
+              {t('manualTokenSetupLink')}
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
+    </PublicLayout>
+  );
 }

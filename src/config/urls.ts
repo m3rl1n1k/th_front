@@ -6,8 +6,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 
 export const URLS = {
   // Auth
-  login: `${API_BASE_URL}/login_check`,
-  logout: `${API_BASE_URL}/auth/logout`,
+  login: `${API_BASE_URL}/login_check`, // Existing, will send {username, password}
+  register: `${API_BASE_URL}/register`, // New registration endpoint
+  logout: `${API_BASE_URL}/auth/logout`, // This might need to be aligned if backend changes logout
   me: `${API_BASE_URL}/user`,
 
   // Dashboard
@@ -23,7 +24,6 @@ export const URLS = {
   transactionById: (id: string | number) => `${API_BASE_URL}/transactions/${id}`,
   transactionTypes: `${API_BASE_URL}/transactions/types`,
   transactionFrequencies: `${API_BASE_URL}/transactions/frequency`,
-  transactionCategoriesFlat: `${API_BASE_URL}/transactions/categories`, // Deprecated or for specific use
 
 
   // Repeated Transactions
@@ -33,7 +33,7 @@ export const URLS = {
 
 
   // User Profile
-  userProfile: `${API_BASE_URL}/profile`, // Assuming this is GET /users/me from docs, or a specific /profile if exists
+  userProfile: `${API_BASE_URL}/profile`,
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
@@ -44,4 +44,3 @@ export const URLS = {
   createMainCategory: `${API_BASE_URL}/main/categories`, // POST new main category
   createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
 };
-

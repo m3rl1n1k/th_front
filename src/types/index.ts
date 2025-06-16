@@ -1,13 +1,35 @@
 
 export interface User {
   id: string | number;
-  login: string;
+  login: string; // This is the username
   email: string;
   memberSince?: string;
   userCurrency?: {
     code: string;
   };
 }
+
+export interface LoginCredentials {
+  username: string; // Will contain the email input
+  password?: string; // Password will be optional if we keep set-token for dev
+}
+
+export interface LoginResponse {
+  user: User;
+  token: string;
+}
+
+export interface RegistrationPayload {
+  email: string;
+  login: string; // This is the username
+  password?: string;
+}
+
+export interface RegistrationResponse {
+  message?: string;
+  user?: User; // Optional: API might return the created user
+}
+
 
 export interface TransactionAmount {
   amount: number; // This is in cents from the API
@@ -86,8 +108,11 @@ export interface TransactionType {
 export interface ApiError {
   message: string;
   code?: number;
-  errors?: Record<string, string[]>;
+  errors?: Record<string, string[]>; // Field-specific errors for validation
+  error?: string; // Sometimes error is a single string
+  detail?: string; // For other error structures
 }
+
 
 export interface Frequency {
   id: string;
@@ -110,7 +135,7 @@ export interface WalletDetails {
 }
 
 export interface FormCategory {
-  id: string;
+  id:string;
   name: string;
   icon?: string | null;
   color?: string | null;
@@ -181,5 +206,5 @@ export interface MonthlyExpensesByCategoryResponse {
 
 // Dashboard Last Activity: List of individual transactions
 export interface DashboardLastTransactionsResponse {
-  last_transactions: Transaction[]; // API now returns a list of full Transaction objects
+  last_transactions: Transaction[];
 }

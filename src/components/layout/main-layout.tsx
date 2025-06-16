@@ -18,20 +18,27 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon } from 'lucide-react';
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, KeyRound } from 'lucide-react';
 
 const navItems = [
-  { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
-  { href: '/transactions', labelKey: 'transactions', icon: ListChecks },
-  { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards },
-  { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes },
-  { href: '/profile', labelKey: 'profile', icon: UserCircle },
-  { href: '/settings', labelKey: 'settings', icon: Settings },
-  { href: '/set-token', labelKey: 'setToken', icon: Settings }, // Original settings, possibly for token
+  { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
+  { href: '/transactions', labelKey: 'transactions', icon: ListChecks, authRequired: true },
+  { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards, authRequired: true },
+  { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes, authRequired: true },
+  { href: '/profile', labelKey: 'profile', icon: UserCircle, authRequired: true },
+  { href: '/settings', labelKey: 'settings', icon: Settings, authRequired: true },
 ];
 
+// Public nav items for when user is not authenticated, shown in header of PublicLayout
+// For MainLayout, if not authenticated, we redirect, so these are mainly for conceptual clarity
+const publicNavItems = [
+  { href: '/login', labelKey: 'loginButtonNav', icon: LogIn },
+  { href: '/register', labelKey: 'registerButtonNav', icon: UserPlus },
+];
+
+
 export function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
@@ -42,12 +49,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => setMounted(true), []);
 
-
   useEffect(() => {
-    if (!authLoading && !isAuthenticated && pathname !== '/login' && pathname !== '/set-token') {
-      router.push('/login');
+    // If auth is resolved, not loading, and user is not authenticated,
+    // and current page is not public, redirect to login.
+    const publicPaths = ['/login', '/register', '/set-token', '/terms', '/']; // Home page is public
+    if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
+      router.replace('/login');
     }
-  }, [authLoading, isAuthenticated, router, pathname]);
+  }, [authIsLoading, isAuthenticated, router, pathname]);
 
   const handleNavLinkClick = (href: string) => {
     if (pathname === href) {
@@ -56,7 +65,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
     setIsNavigating(true); 
     router.push(href);
-    setIsSheetOpen(false);
+    // setIsSheetOpen(false); // Closing sheet handled by useEffect on pathname change
   };
 
   const handleLanguageChange = async (lang: string) => {
@@ -65,18 +74,20 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     try {
       await setLanguage(lang);
     } catch (error) {
-      // Error changing language
+      // Error handled by i18n context
     } finally {
-      setIsNavigating(false); 
+       // setIsNavigating(false); // Handled by useEffect on pathname change
     }
   };
-
+  
+  // Reset navigation loader when pathname changes (navigation completes)
   useEffect(() => {
-    setIsNavigating(false); 
+    setIsNavigating(false);
+    setIsSheetOpen(false); 
   }, [pathname]);
 
 
-  if (authLoading && !user) {
+  if (authIsLoading && !isAuthenticated) { // Only show full page loader if truly unauthenticated and loading
      return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center">
@@ -90,13 +101,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  if (pathname === '/login' || pathname === '/set-token') {
-    return <>{children}</>;
+  // If auth is resolved and user is not authenticated, this layout shouldn't render its content.
+  // The useEffect above should handle redirection.
+  // This check is a safeguard or for brief moments before redirect.
+  if (!authIsLoading && !isAuthenticated) {
+    return null; // Or a minimal loader / message if redirection takes time
   }
+  
+  const currentNavItems = isAuthenticated ? navItems : []; // Only show auth items if authenticated
 
-  if (!authLoading && !isAuthenticated) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -111,6 +124,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center">
+            {isAuthenticated && (
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden mr-2">
@@ -126,7 +140,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
                       </div>
                   </Link>
-                  {navItems.map((item) => (
+                  {currentNavItems.map((item) => (
                     <Button
                       key={item.href}
                       variant={pathname === item.href ? 'secondary' : 'ghost'}
@@ -139,10 +153,21 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                       {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
                     </Button>
                   ))}
+                   <Button
+                      variant={'ghost'}
+                      className="justify-start text-left"
+                      onClick={() => handleNavLinkClick('/set-token')}
+                      aria-current={pathname === '/set-token' ? 'page' : undefined}
+                      disabled={isNavigating}
+                    >
+                      <KeyRound className="mr-2 h-5 w-5" />
+                      {t('setTokenLink')}
+                    </Button>
                 </nav>
               </SheetContent>
             </Sheet>
-            <Link href="/" onClick={() => handleNavLinkClick('/')} className="hidden md:flex items-center space-x-2">
+            )}
+            <Link href="/" onClick={() => handleNavLinkClick('/')} className="flex items-center space-x-2">
               <DollarSign className="h-8 w-8 text-primary" />
               <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
             </Link>
@@ -168,7 +193,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{t('changeLanguage')}</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('selectLanguage')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleLanguageChange('en')} disabled={language === 'en' || isNavigating}>
                   English
@@ -179,7 +204,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {mounted && user && (
+            {mounted && user && isAuthenticated && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled={isNavigating}>
@@ -213,30 +238,53 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+             {!isAuthenticated && !authIsLoading && mounted && (
+                <div className="flex items-center space-x-2">
+                    <Button variant="ghost" asChild>
+                        <Link href="/login">{t('loginButtonNav')}</Link>
+                    </Button>
+                    <Button variant="default" asChild>
+                        <Link href="/register">{t('registerButtonNav')}</Link>
+                    </Button>
+                </div>
+            )}
           </div>
         </div>
       </header>
 
       <div className="flex flex-1">
-        <aside className="hidden md:flex md:flex-col w-64 border-r bg-card p-4 space-y-2">
-          <nav className="flex-1 space-y-1">
-            {navItems.map((item) => (
+        {isAuthenticated && (
+          <aside className="hidden md:flex md:flex-col w-64 border-r bg-card p-4 space-y-2">
+            <nav className="flex-1 space-y-1">
+              {currentNavItems.map((item) => (
+                <Button
+                  key={item.href}
+                  variant={pathname === item.href ? 'secondary' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => handleNavLinkClick(item.href)}
+                  aria-current={pathname === item.href ? 'page' : undefined}
+                  disabled={isNavigating}
+                >
+                  <item.icon className="mr-2 h-5 w-5" />
+                  {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
+                </Button>
+              ))}
               <Button
-                key={item.href}
-                variant={pathname === item.href ? 'secondary' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => handleNavLinkClick(item.href)}
-                aria-current={pathname === item.href ? 'page' : undefined}
-                disabled={isNavigating}
-              >
-                <item.icon className="mr-2 h-5 w-5" />
-                {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
+                  variant={pathname === '/set-token' ? 'secondary' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => handleNavLinkClick('/set-token')}
+                  aria-current={pathname === '/set-token' ? 'page' : undefined}
+                  disabled={isNavigating}
+                >
+                  <KeyRound className="mr-2 h-5 w-5" />
+                  {t('setTokenLink')}
               </Button>
-            ))}
-          </nav>
-        </aside>
+            </nav>
+          </aside>
+        )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          {children}
+          {/* Only render children if authenticated or if it's a public page already handled by PublicLayout */}
+          {(isAuthenticated || ['/login', '/register', '/set-token', '/terms', '/'].includes(pathname)) ? children : null}
         </main>
       </div>
     </div>

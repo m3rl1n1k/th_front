@@ -4,6 +4,10 @@ import type {
   ApiError,
   Transaction,
   User,
+  LoginCredentials,
+  LoginResponse,
+  RegistrationPayload,
+  RegistrationResponse,
   WalletDetails,
   MainCategory,
   WalletTypeApiResponse,
@@ -25,14 +29,29 @@ interface RequestOptions extends RequestInit {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const errorData: ApiError = await response.json().catch(() => ({ message: 'An unknown error occurred', code: response.status }));
+    let errorData: ApiError;
+    try {
+      errorData = await response.json();
+      if (typeof errorData !== 'object' || errorData === null) {
+        // Handle cases where response.json() doesn't return a valid object
+        errorData = { message: response.statusText || 'An unknown error occurred', code: response.status };
+      } else {
+        // Ensure 'message' exists, fallback to a generic error or API provided error string
+        errorData.message = errorData.message || errorData.error || errorData.detail || 'An error occurred';
+        errorData.code = errorData.code || response.status;
+      }
+    } catch (e) {
+      // If response.json() fails (e.g., empty or non-JSON response)
+      errorData = { message: response.statusText || 'An unknown error occurred', code: response.status };
+    }
     throw errorData;
   }
-  if (response.status === 204) {
+  if (response.status === 204) { // No Content
     return undefined as T;
   }
   return response.json();
 }
+
 
 async function request<T>(url: string, options: RequestOptions = {}): Promise<T> {
   const { token, isFormData, ...fetchOptions } = options;
@@ -70,8 +89,11 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 }
 
 // Auth
-export const loginUser = (email: string): Promise<{ user: User; token: string }> =>
-  request(URLS.login, { method: 'POST', body: { email } });
+export const loginUser = (credentials: LoginCredentials): Promise<LoginResponse> =>
+  request(URLS.login, { method: 'POST', body: credentials });
+
+export const registerUser = (payload: RegistrationPayload): Promise<RegistrationResponse> =>
+  request(URLS.register, { method: 'POST', body: payload });
 
 export const fetchUserProfile = (token: string): Promise<User> =>
   request(URLS.me, { method: 'GET', token });
