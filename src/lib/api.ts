@@ -1,6 +1,18 @@
 
 import { URLS } from '@/config/urls';
-import type { ApiError, Transaction, User, WalletDetails, MainCategory, WalletTypeApiResponse, CreateMainCategoryPayload, CreateSubCategoryPayload, SubCategory } from '@/types';
+import type { 
+  ApiError, 
+  Transaction, 
+  User, 
+  WalletDetails, 
+  MainCategory, 
+  WalletTypeApiResponse, 
+  CreateMainCategoryPayload, 
+  CreateSubCategoryPayload, 
+  SubCategory,
+  CreateTransactionPayload, // Added
+  UpdateTransactionPayload  // Added
+} from '@/types';
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
@@ -22,7 +34,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
     throw errorData;
   }
-  if (response.status === 204) {
+  if (response.status === 204) { // Handle No Content for DELETE
     return undefined as T;
   }
   return response.json();
@@ -90,7 +102,7 @@ export const getDashboardMonthExpenses = (token: string): Promise<{ month_expens
 export const getTransactionTypes = (token: string): Promise<{ types: Record<string, string> }> =>
   request(URLS.transactionTypes, { method: 'GET', token });
 
-export const createTransaction = (data: any, token: string): Promise<Transaction> =>
+export const createTransaction = (data: CreateTransactionPayload, token: string): Promise<Transaction> =>
   request(URLS.transactions, { method: 'POST', body: data, token });
 
 export const getTransactionsList = (
@@ -108,12 +120,18 @@ export const getTransactionsList = (
   return request<{ transactions: Transaction[] }>(url, { method: 'GET', token });
 };
 
+export const getTransactionById = (id: string | number, token: string): Promise<Transaction> =>
+  request<Transaction>(URLS.transactionById(id), { method: 'GET', token });
+
+export const updateTransaction = (id: string | number, data: UpdateTransactionPayload, token: string): Promise<Transaction> =>
+  request<Transaction>(URLS.transactionById(id), { method: 'PUT', body: data, token });
+
+export const deleteTransaction = (id: string | number, token: string): Promise<void> =>
+  request<void>(URLS.transactionById(id), { method: 'DELETE', token });
+
+
 export const getTransactionFrequencies = (token: string): Promise<{ periods: Record<string, string> }> =>
   request(URLS.transactionFrequencies, { method: 'GET', token });
-
-export const getTransactionCategoriesFlat = (token: string): Promise<{ categories: Record<string, string> }> =>
-  request(URLS.transactionCategoriesFlat, { method: 'GET', token });
-
 
 // Wallets
 export const getWalletsList = (token: string): Promise<{ wallets: WalletDetails[] }> =>
@@ -125,7 +143,7 @@ export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiRes
 // Categories Page & Management
 export const getMainCategories = async (token: string): Promise<MainCategory[]> => {
   const response = await request<{ categories: MainCategory[] }>(URLS.mainCategories, { method: 'GET', token });
-  return response.categories || []; // Ensure it returns an array
+  return response.categories || []; 
 }
 
 export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
@@ -136,4 +154,3 @@ export const createSubCategory = (mainCategoryId: string | number, data: CreateS
 
 
 export { request };
-

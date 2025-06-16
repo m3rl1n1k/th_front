@@ -197,6 +197,16 @@
   "mainCategoriesOnlyListTitle": "Main Categories",
   "mainCategoriesOnlyListDescription": "A list of your top-level main categories.",
   "switchToDarkMode": "Switch to Dark Mode",
-  "switchToLightMode": "Switch to Light Mode"
+  "switchToLightMode": "Switch to Light Mode",
+  "actions": "Actions",
+  "viewAction": "View",
+  "editAction": "Edit",
+  "deleteAction": "Delete",
+  "deleteTransactionConfirmTitle": "Confirm Deletion",
+  "deleteTransactionConfirmMessage": "Are you sure you want to delete this transaction? This action cannot be undone.",
+  "deleteButtonConfirm": "Delete",
+  "deleting": "Deleting...",
+  "transactionDeletedTitle": "Transaction Deleted",
+  "transactionDeletedDesc": "The transaction has been successfully deleted.",
+  "errorDeletingTransaction": "Error Deleting Transaction"
 }
-

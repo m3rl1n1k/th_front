@@ -172,21 +172,6 @@ Retrieves available transaction recurrence frequencies for forms.
     ```
 *   **Failure Response (401 Unauthorized)**
 
-#### `GET /transactions/categories`
-Retrieves a flat list of available transaction categories (subcategories) for form dropdowns. *(Deprecated in favor of GET /main/categories for hierarchical data)*
-*   **Request Body**: None (token in header)
-*   **Success Response (200 OK)**:
-    ```json
-    {
-      "categories": {
-        "101": "Groceries",
-        "102": "Salary",
-        "205": "Dining Out"
-      }
-    }
-    ```
-*   **Failure Response (401 Unauthorized)**
-
 #### `POST /transactions`
 Creates a new transaction.
 
@@ -209,13 +194,13 @@ Creates a new transaction.
       "amount": { "amount": 5000, "currency": { "code": "USD" } },
       "currency": { "code": "USD" },
       "exchangeRate": 1,
-      "type": 2,
+      "type": 2, // Numeric type ID
       "description": "Groceries for the week",
       "wallet": { "id": 1, "name": "Main" },
       "subCategory": { "id": 101, "name": "Groceries"}, // subCategory object, null if not provided
       "user": { "id": 1 },
       "source": "manual", // or other source if applicable
-      "date": "2024-07-28T14:30:00Z",
+      "date": "2024-07-28T14:30:00Z", // ISO date string
       "frequencyId": "1" // Or the actual frequency identifier stored by backend
     }
     ```
@@ -227,7 +212,7 @@ Retrieves a list of transactions for the authenticated user. The response should
 *   **Query Parameters (Examples)**:
     *   `page=1`
     *   `limit=20`
-    *   `typeId=1` (numeric)
+    *   `typeId=1` (numeric ID)
     *   `startDate=2024-01-01`
     *   `endDate=2024-01-31`
     *   `categoryId=101` (numeric, subCategory ID)
@@ -240,15 +225,15 @@ Retrieves a list of transactions for the authenticated user. The response should
           "amount": { "amount": 5000, "currency": { "code": "USD" } },
           "currency": { "code": "USD" },
           "exchangeRate": 1,
-          "type": 2,
+          "type": 2, // Numeric type ID
           "description": "Groceries",
           "wallet": { "id": 1, "name": "Main" },
           "subCategory": { "id": 101, "name": "Groceries"}, // null if not set
           "user": { "id": 1 },
           "source": "store_x",
-          "date": "2024-07-28T14:30:00Z",
+          "date": "2024-07-28T14:30:00Z", // ISO date string
           "isRecurring": false, // This field might change if frequencyId is adopted
-          "frequencyId": "1" // Example if backend starts returning this
+          "frequencyId": "1" 
         }
       ]
     }
@@ -258,14 +243,25 @@ Retrieves a list of transactions for the authenticated user. The response should
 #### `GET /transactions/{id}`
 Retrieves a specific transaction by its ID.
 
-*   **Success Response (200 OK)**: Single transaction object.
+*   **Success Response (200 OK)**: Single transaction object (same format as items in `GET /transactions` list).
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `PUT /transactions/{id}`
 Updates a specific transaction.
 
 *   **Request Body**: Similar to `POST /transactions`, containing fields to update. `category_id` can be `null`. `frequencyId` should be provided.
-*   **Success Response (200 OK)**: Updated transaction object.
+    ```json
+    {
+      "amount": 5500, // integer, in cents
+      "description": "Updated description", // string, optional
+      "typeId": "1", // string, required (ID from GET /transactions/types)
+      "date": "2024-07-29", // string, YYYY-MM-DD, required
+      "wallet_id": 2, // integer ID, required
+      "category_id": null, // integer ID or null
+      "frequencyId": "5" // string, required
+    }
+    ```
+*   **Success Response (200 OK)**: Updated transaction object (same format as `GET /transactions/{id}`).
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
 
 #### `DELETE /transactions/{id}`
@@ -413,22 +409,24 @@ Consider these when designing your database and PHP classes/objects.
 *   `currency_code` (string, e.g., "USD", related to this specific transaction)
 *   `exchange_rate` (decimal/float, if supporting multi-currency conversions)
 *   `description` (string, nullable)
-*   `type` (int, e.g., 1 for INCOME, 2 for EXPENSE - refers to TransactionType.id)
+*   `type_id` (int, e.g., 1 for INCOME, 2 for EXPENSE - refers to an internal mapping or TransactionType table)
 *   `wallet_id` (int, foreign key to Wallet)
 *   `subcategory_id` (int, nullable, foreign key to SubCategory)
 *   `source` (string, nullable)
-*   `transaction_date` (datetime)
-*   `frequency_id` (string/int, foreign key or reference to Frequency.id from /transactions/frequency)
-*   `created_at` (datetime)
-*   `updated_at` (datetime)
+*   `transaction_date` (datetime) // The actual date of the transaction event
+*   `frequency_id` (string/int, foreign key or reference to a Frequency table/enum, linked to values from `/transactions/frequency`)
+*   `created_at` (datetime) // Record creation timestamp
+*   `updated_at` (datetime) // Record update timestamp
 
-### TransactionType (Conceptual, might be an ENUM or simple mapping in code)
-*   `id` (int, e.g., 1, 2)
+### TransactionType (Conceptual, might be an ENUM or simple mapping in code, corresponds to `GET /transactions/types`)
+*   `id` (string, e.g., "1", "2" - as used by frontend)
 *   `name` (string, e.g., "INCOME", "EXPENSE")
+*   *(Backend might store `type_id` as an integer that maps to these string IDs internally)*
 
-### FrequencyType (Conceptual, based on GET /transactions/frequency)
-* `id` (string/int, e.g., "1", "5")
-* `name` (string, e.g., "ONE_TIME", "MONTHLY")
+### FrequencyType (Conceptual, based on `GET /transactions/frequency`)
+*   `id` (string, e.g., "1", "5" - as used by frontend)
+*   `name` (string, e.g., "ONE_TIME", "MONTHLY")
+*   *(Backend might store `frequency_id` that maps to these string IDs internally)*
 
 
 ### Wallet
@@ -438,7 +436,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `current_balance_cents` (int)
 *   `currency_code` (string)
 *   `account_number` (string, nullable)
-*   `type_key` (string, e.g., "main", "deposit" - links to a wallet_types table/enum)
+*   `type_key` (string, e.g., "main", "deposit" - links to a wallet_types table/enum from `GET /wallets/types`)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
@@ -484,5 +482,3 @@ Consider these when designing your database and PHP classes/objects.
     ```
 
 This documentation provides a starting point. Adapt and expand it based on the full feature set of FinanceFlow.
-
-    

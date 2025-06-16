@@ -197,6 +197,16 @@
   "mainCategoriesOnlyListTitle": "Основні категорії",
   "mainCategoriesOnlyListDescription": "Список ваших основних категорій верхнього рівня.",
   "switchToDarkMode": "Перемкнути на темну тему",
-  "switchToLightMode": "Перемкнути на світлу тему"
+  "switchToLightMode": "Перемкнути на світлу тему",
+  "actions": "Дії",
+  "viewAction": "Перегляд",
+  "editAction": "Редагувати",
+  "deleteAction": "Видалити",
+  "deleteTransactionConfirmTitle": "Підтвердити видалення",
+  "deleteTransactionConfirmMessage": "Ви впевнені, що хочете видалити цю транзакцію? Цю дію неможливо буде скасувати.",
+  "deleteButtonConfirm": "Видалити",
+  "deleting": "Видалення...",
+  "transactionDeletedTitle": "Транзакцію видалено",
+  "transactionDeletedDesc": "Транзакцію було успішно видалено.",
+  "errorDeletingTransaction": "Помилка видалення транзакції"
 }
-

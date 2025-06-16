@@ -16,15 +16,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
-import { getTransactionTypes, getTransactionsList, getMainCategories } from '@/lib/api';
+import { getTransactionTypes, getTransactionsList, getMainCategories, deleteTransaction } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { 
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
-  ArrowUpCircle, ArrowDownCircle, HelpCircle 
+  ArrowUpCircle, ArrowDownCircle, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2 
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType as AppTransactionType, SubCategory } from '@/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface GroupedTransactions {
   [date: string]: Transaction[];
@@ -52,6 +70,10 @@ export default function TransactionsPage() {
     typeId?: string;
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
+
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [selectedTransactionForDelete, setSelectedTransactionForDelete] = useState<Transaction | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
 
   useEffect(() => {
@@ -90,9 +112,9 @@ export default function TransactionsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, toast]);
 
-  const fetchTransactions = useCallback(() => {
+  const fetchTransactions = useCallback((showLoadingIndicator = true) => {
     if (isAuthenticated && token) {
-      setIsLoadingTransactions(true);
+      if(showLoadingIndicator) setIsLoadingTransactions(true);
       const params: Record<string, string> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
@@ -110,10 +132,12 @@ export default function TransactionsPage() {
           }
           setRawTransactions([]);
         })
-        .finally(() => setIsLoadingTransactions(false));
+        .finally(() => {
+          if(showLoadingIndicator) setIsLoadingTransactions(false);
+        });
     } else if (!isAuthenticated || !token) {
       setRawTransactions([]);
-      setIsLoadingTransactions(false);
+      if(showLoadingIndicator) setIsLoadingTransactions(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId]); 
@@ -170,10 +194,9 @@ export default function TransactionsPage() {
 
   const handleClearFilters = () => {
     setFilters({});
-    // Refetch with empty filters explicitly
      if (isAuthenticated && token) {
       setIsLoadingTransactions(true);
-      getTransactionsList(token, {}) // Pass empty object for params
+      getTransactionsList(token, {}) 
         .then(result => {
           setRawTransactions(result.transactions || []);
         })
@@ -193,11 +216,32 @@ export default function TransactionsPage() {
     router.push('/transactions/new');
   };
 
+  const openDeleteDialog = (transaction: Transaction) => {
+    setSelectedTransactionForDelete(transaction);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!selectedTransactionForDelete || !token) return;
+    setIsDeleting(true);
+    try {
+      await deleteTransaction(selectedTransactionForDelete.id, token);
+      toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
+      fetchTransactions(false); // Refetch without full page loader
+    } catch (error: any) {
+      toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmationOpen(false);
+      setSelectedTransactionForDelete(null);
+    }
+  };
+
   const renderTransactionTableContent = () => {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center">
+          <TableCell colSpan={7} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <RefreshCwIcon className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -210,7 +254,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t(activeTab === 'recurring' ? 'noRecurringTransactionsFound' : 'noTransactionsFound')}</p>
@@ -224,7 +268,7 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md">
+          <TableCell colSpan={7} className="py-3 px-4 font-semibold text-foreground text-md">
             {format(parseISO(dateKey), "PPP")}
           </TableCell>
         </TableRow>
@@ -239,7 +283,7 @@ export default function TransactionsPage() {
           const detailsText = tx.description || t('noDetailsPlaceholder');
           const categoryText = tx.categoryName 
             ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) 
-            : t('noCategory'); // Display "No Category" if not present
+            : t('noCategory');
 
           return (
             <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
@@ -260,6 +304,38 @@ export default function TransactionsPage() {
               </TableCell>
               <TableCell className="py-3 px-4 align-top text-sm">
                 {detailsText}
+              </TableCell>
+              <TableCell className="py-3 px-4 align-top text-sm text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">{t('actions')}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/transactions/${tx.id}`} className="flex items-center cursor-pointer">
+                        <Eye className="mr-2 h-4 w-4" />
+                        {t('viewAction')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/transactions/${tx.id}/edit`} className="flex items-center cursor-pointer">
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        {t('editAction')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => openDeleteDialog(tx)}
+                      className="text-destructive focus:text-destructive flex items-center cursor-pointer"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('deleteAction')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           );
@@ -395,6 +471,7 @@ export default function TransactionsPage() {
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -422,6 +499,7 @@ export default function TransactionsPage() {
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('detailsLabel')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -434,7 +512,22 @@ export default function TransactionsPage() {
           </TabsContent>
         </Tabs>
       </div>
+      <AlertDialog open={deleteConfirmationOpen} onOpenChange={setDeleteConfirmationOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteTransactionConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('deleteTransactionConfirmMessage')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedTransactionForDelete(null)}>{t('cancelButton')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirmed} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting ? t('deleting') : t('deleteButtonConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
-
