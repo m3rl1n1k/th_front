@@ -4,33 +4,35 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/context/i18n-context';
-import { useAuth } from '@/context/auth-context'; // Import useAuth
+import { useAuth } from '@/context/auth-context';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const auth = useAuth(); // Use the auth context
-  const [isPageLoading, setIsPageLoading] = useState(true); // Local loader for this page
+  const { isLoading: authIsLoading, isAuthenticated } = useAuth();
+  // Start with true to show loader initially, or while auth state is being determined.
+  const [isProcessingLogin, setIsProcessingLogin] = useState(true); 
 
   useEffect(() => {
-    // Wait for auth context to finish its initial loading
-    if (!auth.isLoading) {
-      if (auth.isAuthenticated) {
-        setIsPageLoading(true); // Show loader while redirecting
+    if (!authIsLoading) {
+      // Auth state is resolved
+      if (isAuthenticated) {
+        // Already authenticated, redirect to dashboard
+        // Loader will show via isProcessingLogin (which is still true or will be set by this effect)
         router.replace('/dashboard');
-        // No need to setIsPageLoading(false) here as the component will unmount
       } else {
-        // Not authenticated, stay on login page, hide page loader
-        setIsPageLoading(false);
+        // Not authenticated, redirect to set-token page
+        router.replace('/set-token');
       }
-    } else {
-      // Auth is still loading its state, keep page loader active
-      setIsPageLoading(true);
+      // In either case of redirection, we don't need to set isProcessingLogin to false,
+      // as the component will unmount. If it didn't unmount, we would set it false here.
     }
-  }, [auth.isLoading, auth.isAuthenticated, router]);
+    // If authIsLoading is true, we keep isProcessingLogin as true (or let it be set by default)
+    // to continue showing the loader.
+  }, [authIsLoading, isAuthenticated, router]);
 
-  // Display a loading/redirecting message if page is loading
-  if (isPageLoading) {
+  // This condition covers both initial auth check and the brief moment of redirection.
+  if (authIsLoading || isProcessingLogin) { 
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col items-center">
@@ -44,17 +46,7 @@ export default function LoginPage() {
     );
   }
 
-  // If not loading and not authenticated, render the actual login form content
-  // For this example, we redirect to set-token if not authenticated to allow manual token entry
-  // In a real app, this would be the actual login form.
-  // Since this page is effectively a redirector or placeholder if auth fails,
-  // we might want to redirect to /set-token or show the actual login form (which isn't built yet).
-  // For now, if it reaches here, it means user is not authenticated and should see the login page.
-  // Since the FinanceFlow app's login page redirects to set-token, we do that here.
-  if (!auth.isAuthenticated && !auth.isLoading) {
-     router.replace('/set-token'); // Or render actual login form
-     return null; // Or loading indicator for the brief moment of redirection
-  }
-  
-  return null; // Fallback, ideally should not be reached if logic above is sound
+  // This part should ideally not be reached if redirection logic is sound and covers all cases.
+  // It acts as a fallback.
+  return null; 
 }

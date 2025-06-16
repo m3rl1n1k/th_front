@@ -12,9 +12,10 @@ import type {
   SubCategory,
   CreateTransactionPayload,
   UpdateTransactionPayload,
-  RepeatedTransactionsApiResponse, // New
-  RepeatedTransactionEntry, // New
-  ToggleStatusPayload // New
+  RepeatedTransactionsApiResponse,
+  RepeatedTransactionEntry,
+  ToggleStatusPayload,
+  Frequency // Added Frequency for the return type of getTransactionFrequencies
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -150,7 +151,7 @@ export const createMainCategory = (data: CreateMainCategoryPayload, token: strin
 export const createSubCategory = (mainCategoryId: string | number, data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
   request<SubCategory>(URLS.createSubCategory(mainCategoryId), { method: 'POST', body: data, token });
 
-// Repeated Transactions (New)
+// Repeated Transactions
 export const getRepeatedTransactionsList = (token: string): Promise<RepeatedTransactionsApiResponse> =>
   request(URLS.repeatedTransactionsList, { method: 'GET', token });
 

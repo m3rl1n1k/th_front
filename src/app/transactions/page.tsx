@@ -21,9 +21,10 @@ import {
   getTransactionsList, 
   getMainCategories, 
   deleteTransaction,
-  getRepeatedTransactionsList, // New
-  toggleRepeatedTransactionStatus, // New
-  deleteRepeatedTransactionDefinition // New
+  getRepeatedTransactionsList,
+  toggleRepeatedTransactionStatus,
+  deleteRepeatedTransactionDefinition,
+  getTransactionFrequencies // Ensured import
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { 
@@ -32,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, ToggleStatusPayload } from '@/types'; // Updated imports
+import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, ToggleStatusPayload } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,16 +70,16 @@ export default function TransactionsPage() {
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
-  const [frequencies, setFrequencies] = useState<AppFrequency[]>([]); // State for frequencies
+  const [frequencies, setFrequencies] = useState<AppFrequency[]>([]); 
   
   const [rawTransactions, setRawTransactions] = useState<Transaction[] | null>(null);
-  const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null); // New state for repeated definitions
+  const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null); 
   
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); // Loading state for frequencies
+  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
-  const [isLoadingRepeatedDefinitions, setIsLoadingRepeatedDefinitions] = useState(false); // New loading state
+  const [isLoadingRepeatedDefinitions, setIsLoadingRepeatedDefinitions] = useState(false); 
 
   const [filters, setFilters] = useState<{
     startDate?: Date;
@@ -93,7 +94,6 @@ export default function TransactionsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [initiatingActionForTxId, setInitiatingActionForTxId] = useState<string | number | null>(null);
 
-  // New states for repeated definitions actions
   const [definitionActionStates, setDefinitionActionStates] = useState<Record<string | number, { isLoading: boolean }>>({});
   const [showDeleteDefinitionDialog, setShowDeleteDefinitionDialog] = useState(false);
   const [selectedDefinitionForDelete, setSelectedDefinitionForDelete] = useState<RepeatedTransactionEntry | null>(null);
@@ -116,7 +116,7 @@ export default function TransactionsPage() {
       setIsLoadingCategories(true);
       getMainCategories(token)
         .then(data => {
-          const subCategories = data.flatMap(mainCat => mainCat.subCategories || []);
+          const subCategories = (Array.isArray(data) ? data : []).flatMap(mainCat => mainCat.subCategories || []);
           setAllSubCategories(subCategories);
         })
         .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
@@ -131,7 +131,10 @@ export default function TransactionsPage() {
           }));
           setFrequencies(formattedFrequencies);
         })
-        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
+        .catch(error => {
+            console.error("Error fetching frequencies:", error);
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+        })
         .finally(() => setIsLoadingFrequencies(false));
 
     } else {
@@ -193,17 +196,19 @@ export default function TransactionsPage() {
       fetchRepeatedDefinitions();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, activeTab]);
+  }, [isAuthenticated, token, activeTab]); // fetchTransactions and fetchRepeatedDefinitions are useCallback deps
 
   useEffect(() => {
     setInitiatingActionForTxId(null);
   }, [pathname]);
 
-  const processedTransactions = useMemo(() => {
-    if (!rawTransactions) return [];
+ const processedTransactions = useMemo(() => {
+    if (!rawTransactions) return []; // Guard against null rawTransactions
     return rawTransactions.map(tx => ({
       ...tx,
+      // typeName can be set even if transactionTypes is still loading, will default or update later
       typeName: transactionTypes.find(tt => tt.id === String(tx.type))?.name || t('transactionType_UNKNOWN'),
+      // categoryName relies only on tx.subCategory which is part of rawTransactions
       categoryName: tx.subCategory?.name || null 
     }));
   }, [rawTransactions, transactionTypes, t]);
@@ -291,7 +296,7 @@ export default function TransactionsPage() {
     try {
       await toggleRepeatedTransactionStatus(definition.id, payload, token);
       toast({ title: t('statusToggledTitle'), description: t('statusToggledDesc')});
-      fetchRepeatedDefinitions(false); // Refetch to update list
+      fetchRepeatedDefinitions(false); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorTogglingStatus'), description: error.message || t('unexpectedError') });
     } finally {
@@ -310,7 +315,7 @@ export default function TransactionsPage() {
     try {
       await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token);
       toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
-      fetchRepeatedDefinitions(false); // Refetch to update list
+      fetchRepeatedDefinitions(false); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorRemovingDefinition'), description: error.message || t('unexpectedError') });
     } finally {
@@ -324,7 +329,7 @@ export default function TransactionsPage() {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center">
+          <TableCell colSpan={5} className="h-60 text-center"> {/* Adjusted colSpan */}
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -337,7 +342,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground"> {/* Adjusted colSpan */}
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noTransactionsFound')}</p>
@@ -351,7 +356,7 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md">
+          <TableCell colSpan={5} className="py-3 px-4 font-semibold text-foreground text-md"> {/* Adjusted colSpan */}
             {format(parseISO(dateKey), "PPP")}
           </TableCell>
         </TableRow>
@@ -385,9 +390,7 @@ export default function TransactionsPage() {
               <TableCell className="py-3 px-4 align-top text-sm">
                 {tx.wallet.name}
               </TableCell>
-              <TableCell className="py-3 px-4 align-top text-sm">
-                {categoryText}
-              </TableCell>
+              {/* Removed Details Cell */}
               <TableCell className="py-3 px-4 align-top text-sm text-center">
                 <DropdownMenu onOpenChange={(open) => { if (!open) setInitiatingActionForTxId(null); }}>
                   <DropdownMenuTrigger asChild>
@@ -440,7 +443,7 @@ export default function TransactionsPage() {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center">
+          <TableCell colSpan={7} className="h-60 text-center"> {/* Adjusted colSpan */}
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -453,7 +456,7 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground"> {/* Adjusted colSpan */}
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
@@ -466,15 +469,16 @@ export default function TransactionsPage() {
     
     return repeatedDefinitions.map(def => {
       const isActionLoading = definitionActionStates[def.id]?.isLoading || false;
+      const templateDescription = def.transaction?.description || t('noDescription');
       return (
       <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
         <TableCell className="py-3 px-4 align-top text-sm">
-          <Link href={`/transactions/${def.id}`} className="text-primary hover:underline">
-            {t('templateId')} #{def.id}
-          </Link>
+          <Button variant="link" className="p-0 h-auto text-primary hover:underline" onClick={() => router.push(`/transactions/${def.id}/edit`)}>
+             {t('templateId')} #{def.id}
+          </Button>
         </TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">
-            {def.transaction?.description || t('noDescription')}
+            {templateDescription}
         </TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">{getStatusName(def.status)}</TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">{getFrequencyNameById(def.frequency)}</TableCell>
@@ -636,7 +640,7 @@ export default function TransactionsPage() {
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
-                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
+                        {/* <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('details')}</TableHead> */} {/* Removed Details Header */}
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -696,7 +700,6 @@ export default function TransactionsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Dialog for deleting repeated transaction definition */}
       <AlertDialog open={showDeleteDefinitionDialog} onOpenChange={setShowDeleteDefinitionDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
