@@ -81,6 +81,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   headers.set('Accept', 'application/json');
 
   const response = await fetch(url, {
+    mode: 'cors', // Explicitly set mode to cors
     ...fetchOptions,
     headers,
   });
