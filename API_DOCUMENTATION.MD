@@ -545,8 +545,10 @@ Consider these when designing your database and PHP classes/objects.
 
 *   **Database**: Choose a suitable database (e.g., MySQL, PostgreSQL).
 *   **PHP Framework**: Using a PHP framework (e.g., Laravel, Symfony) is highly recommended to handle routing, ORM, security, etc.
-*   **PHP Server Binding for Local Network Access**: When running your PHP development server locally (e.g., using `php -S ...`), ensure it's bound to `0.0.0.0` or your specific local network IP, not just `127.0.0.1`. For example:
+*   **PHP Server Binding for Local Network Access**: When running your PHP development server locally (e.g., using `php -S ...` or Symfony's `symfony server:start`), ensure it's bound to `0.0.0.0` or your specific local network IP, not just `127.0.0.1`. For example:
     `php -S 0.0.0.0:8000`
+    Or for Symfony:
+    `symfony server:start --port=8000 --allow-http` (Symfony often binds to `0.0.0.0` by default if not specified, but verify).
     This allows other devices on your local network (like your mobile phone) to connect to the backend. If it's bound only to `127.0.0.1`, it will only be accessible from your development PC.
 *   **Security**:
     *   Sanitize all user inputs.
@@ -555,7 +557,7 @@ Consider these when designing your database and PHP classes/objects.
 *   **Validation**: Implement robust server-side validation for all incoming data.
 *   **CORS (Cross-Origin Resource Sharing)**:
     *   Configure Cross-Origin Resource Sharing (CORS) headers appropriately in your PHP backend to allow requests from your Next.js frontend domain.
-    *   **Development with Mobile**: When testing from a mobile device accessing your Next.js app via your computer's local IP (e.g., `http://192.168.1.100:9002`), your PHP backend's `Access-Control-Allow-Origin` header must explicitly include this origin.
+    *   **Development with Mobile**: When testing from a mobile device accessing your Next.js app via your computer's local IP (e.g., `http://192.168.1.100:9002`), your PHP backend's `Access-Control-Allow-Origin` header must explicitly include this origin. Your NelmioCorsBundle configuration provided (`allow_origin: [ '^http://localhost(:[0-9]+)?$', '^http://192.168.0.41(:[0-9]+)?' ]`) seems to address this if `192.168.0.41` is your computer's correct current local IP.
         ```php
         // Example PHP CORS headers (actual implementation depends on framework)
 
@@ -589,6 +591,25 @@ Consider these when designing your database and PHP classes/objects.
         ```
     *   **Important for `POST` requests with `Authorization` or `Content-Type: application/json`**: The browser will send an `OPTIONS` preflight request. Your server *must* respond to this `OPTIONS` request with a `200 OK` or `204 No Content` and the correct CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`). If the `OPTIONS` request fails, the browser will block the actual `POST` request.
 
+## Troubleshooting Mobile Connectivity
+
+If you experience "fetch failed" errors or similar issues when accessing the application from a mobile device on your local network, even after configuring `NEXT_PUBLIC_API_BASE_URL` with your computer's local IP:
+
+1.  **Verify IP Address**: Double-check that the IP address used in `NEXT_PUBLIC_API_BASE_URL` is the *current* local IP address of the machine running your PHP backend. IP addresses can change if your network uses DHCP. Ensure this IP matches what's in your backend's CORS `allow_origin` (e.g., `192.168.0.41` in your example).
+2.  **PHP Server Binding**: Re-confirm your PHP server (e.g., Symfony's built-in server, `php -S`) is bound to `0.0.0.0:<port>` or `<YOUR_COMPUTER_IP_ADDRESS>:<port>`, not just `127.0.0.1`. If it's bound to `127.0.0.1`, it won't accept external local network connections.
+3.  **CORS Configuration (Backend)**:
+    *   Ensure your backend's `Access-Control-Allow-Origin` correctly includes the origin from which your mobile device is accessing the Next.js app (e.g., `http://<YOUR_COMPUTER_IP_ADDRESS>:<NEXTJS_PORT>`).
+    *   **Crucially, verify your backend correctly handles preflight `OPTIONS` requests for `POST`, `PUT`, `DELETE` operations, returning a `200 OK` or `204 No Content` with necessary CORS headers (`Access-Control-Allow-Methods` including `POST`, `OPTIONS`; `Access-Control-Allow-Headers` including `Content-Type`, `Authorization`).** Your provided NelmioCorsBundle configuration seems to aim for this, but it's essential to confirm it's active and working as expected for the specific mobile origin.
+4.  **Mobile Browser Developer Tools**: **This is the most important step.**
+    *   Connect your mobile device to your computer via USB.
+    *   Use your desktop browser's developer tools to inspect the mobile browser's Network tab and Console.
+        *   **Chrome (Android)**: Go to `chrome://inspect` on your desktop Chrome.
+        *   **Safari (iOS)**: Enable Web Inspector in Safari settings on your iPhone/iPad, then find it under the Develop menu in Safari on your Mac.
+    *   Examine the failed network request (both the `OPTIONS` preflight and the actual `POST` request for login). Look for the exact HTTP status code, response headers, and any console errors (especially CORS errors). This will provide specific clues.
+5.  **Firewall**: Check if a firewall on your development machine is blocking incoming connections to your PHP backend's port from other devices on your local network.
+6.  **Clear Mobile Browser Cache**: Sometimes, outdated cached responses or service workers can cause issues. Try clearing your mobile browser's cache and data for the site.
+7.  **HTTPS vs HTTP Mismatch**: Ensure both frontend and backend are using the same protocol (HTTP for local IP testing is fine, but if one is HTTPS and the other HTTP, it will cause issues).
+
 This documentation provides a starting point. Adapt and expand it based on the full feature set of FinanceFlow.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
-```
+
