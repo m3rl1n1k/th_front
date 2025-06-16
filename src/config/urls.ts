@@ -44,3 +44,4 @@ export const URLS = {
   createMainCategory: `${API_BASE_URL}/main/categories`, // POST new main category
   createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
 };
+

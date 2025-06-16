@@ -43,7 +43,7 @@ Authentication is handled via JWT (JSON Web Tokens).
 
 ### 1. Authentication
 
-#### `POST /auth/login` (or `/login_check`)
+#### `POST /login_check`
 Logs in a user.
 *   **Request Body**:
     ```json
