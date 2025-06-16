@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   const loginSchema = createLoginSchema(t);
 
-  const { control, handleSubmit, setError, formState: { errors } } = useForm<LoginFormData>({
+  const { control, handleSubmit, setError, getValues, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '', captcha: '' },
   });
@@ -49,7 +49,8 @@ export default function LoginPage() {
   }, [authIsLoading, isAuthenticated, router]);
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
-    if (captchaRef.current && !captchaRef.current.validate()) {
+    const captchaValueFromRHF = getValues("captcha");
+    if (captchaRef.current && !captchaRef.current.validateWithValue(captchaValueFromRHF)) {
       setError("captcha", { type: "manual", message: t('captchaIncorrectError') });
       captchaRef.current.refresh();
       return;

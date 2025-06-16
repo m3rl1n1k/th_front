@@ -42,13 +42,14 @@ export default function RegisterPage() {
 
   const registrationSchema = createRegistrationSchema(t);
 
-  const { control, handleSubmit, setError, formState: { errors } } = useForm<RegistrationFormData>({
+  const { control, handleSubmit, setError, getValues, formState: { errors } } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { email: '', login: '', password: '', confirmPassword: '', captcha: '' },
   });
 
   const onSubmit: SubmitHandler<RegistrationFormData> = async (data) => {
-    if (captchaRef.current && !captchaRef.current.validate()) {
+    const captchaValueFromRHF = getValues("captcha");
+    if (captchaRef.current && !captchaRef.current.validateWithValue(captchaValueFromRHF)) {
       setError("captcha", { type: "manual", message: t('captchaIncorrectError') });
       captchaRef.current.refresh();
       return;

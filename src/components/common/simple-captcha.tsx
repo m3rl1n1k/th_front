@@ -16,7 +16,7 @@ interface SimpleCaptchaProps {
 }
 
 export interface SimpleCaptchaRef {
-  validate: () => boolean;
+  validateWithValue: (currentValue: string) => boolean; // Changed method signature
   refresh: () => void;
 }
 
@@ -42,8 +42,9 @@ const SimpleCaptcha = forwardRef<SimpleCaptchaRef, SimpleCaptchaProps>(
     }, []);
 
     useImperativeHandle(ref, () => ({
-      validate: () => {
-        return parseInt(value, 10) === expectedSum;
+      validateWithValue: (currentValue: string) => {
+        const numericValue = parseInt(currentValue, 10);
+        return !isNaN(numericValue) && numericValue === expectedSum;
       },
       refresh: generateNewChallenge,
     }));
@@ -65,11 +66,15 @@ const SimpleCaptcha = forwardRef<SimpleCaptchaRef, SimpleCaptchaProps>(
         </Label>
         <Input
           id={id}
-          type="number"
+          type="text" // Changed type to text
+          inputMode="numeric" // Added inputMode
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={t('captchaPlaceholder')}
           className={error ? 'border-destructive' : ''}
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck="false"
         />
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
@@ -79,3 +84,4 @@ const SimpleCaptcha = forwardRef<SimpleCaptchaRef, SimpleCaptchaProps>(
 
 SimpleCaptcha.displayName = 'SimpleCaptcha';
 export { SimpleCaptcha };
+
