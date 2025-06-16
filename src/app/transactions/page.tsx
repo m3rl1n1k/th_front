@@ -20,7 +20,7 @@ import { getTransactionTypes, getTransactionsList, getMainCategories, deleteTran
 import { useTranslation } from '@/context/i18n-context';
 import { 
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
-  ArrowUpCircle, ArrowDownCircle, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2 
+  ArrowUpCircle, ArrowDownCircle, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -41,8 +41,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"; // AlertDialogTrigger removed as it's not directly used here for menu item
 
 interface GroupedTransactions {
   [date: string]: Transaction[];
@@ -164,7 +163,7 @@ export default function TransactionsPage() {
   
   const currentTabTransactions = useMemo(() => {
     if (activeTab === "recurring") {
-      return processedTransactions.filter(tx => tx.isRecurring);
+      return processedTransactions.filter(tx => tx.isRecurring); // Note: API currently sends frequencyId, not isRecurring. This filter might need adjustment.
     }
     return processedTransactions;
   }, [processedTransactions, activeTab]);
@@ -309,7 +308,11 @@ export default function TransactionsPage() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
+                       {isDeleting && selectedTransactionForDelete?.id === tx.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MoreHorizontal className="h-4 w-4" />
+                      )}
                       <span className="sr-only">{t('actions')}</span>
                     </Button>
                   </DropdownMenuTrigger>
@@ -330,6 +333,7 @@ export default function TransactionsPage() {
                     <DropdownMenuItem
                       onClick={() => openDeleteDialog(tx)}
                       className="text-destructive focus:text-destructive flex items-center cursor-pointer"
+                      disabled={isDeleting && selectedTransactionForDelete?.id === tx.id}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       {t('deleteAction')}
@@ -406,7 +410,7 @@ export default function TransactionsPage() {
                             <SelectItem value="all">{t('allCategories')}</SelectItem>
                             {allSubCategories.map(subCat => (
                               <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                 {t(`categoryName_${subCat.name.replace(/\s+/g, '_').toLowerCase()}` as keyof ReturnType<typeof useTranslation>['translations'], { defaultValue: subCat.name })}
+                                 {t(`categoryName_${subCat.name.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: subCat.name })}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -422,7 +426,7 @@ export default function TransactionsPage() {
                             <SelectItem value="all">{t('allTypes')}</SelectItem>
                             {transactionTypes.map(type => (
                               <SelectItem key={type.id} value={type.id}>
-                                {t(`transactionType_${type.name}` as keyof ReturnType<typeof useTranslation>['translations'], {defaultValue: type.name})}
+                                {t(`transactionType_${type.name}` as any, {defaultValue: type.name})}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -523,6 +527,7 @@ export default function TransactionsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSelectedTransactionForDelete(null)}>{t('cancelButton')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirmed} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isDeleting ? t('deleting') : t('deleteButtonConfirm')}
             </AlertDialogAction>
           </AlertDialogFooter>

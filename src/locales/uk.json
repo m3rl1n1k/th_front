@@ -217,5 +217,14 @@
   "editTransactionButton": "Редагувати транзакцію",
   "backToListButton": "Назад до списку",
   "transactionNotFoundTitle": "Транзакцію не знайдено",
-  "transactionNotFoundDesc": "Транзакцію, яку ви шукаєте, не знайдено або у вас немає дозволу на її перегляд."
+  "transactionNotFoundDesc": "Транзакцію, яку ви шукаєте, не знайдено або у вас немає дозволу на її перегляд.",
+  "editTransactionTitle": "Редагувати транзакцію",
+  "updateTransactionButton": "Оновити транзакцію",
+  "updateTransactionDetails": "Оновити деталі транзакції",
+  "modifyFormBelow": "Змініть форму нижче, щоб оновити транзакцію.",
+  "transactionUpdatedTitle": "Транзакцію оновлено",
+  "transactionUpdatedDesc": "Вашу транзакцію успішно оновлено.",
+  "transactionUpdateFailedTitle": "Не вдалося оновити транзакцію",
+  "errorFetchingTransactionForEdit": "Помилка завантаження транзакції",
+  "couldNotLoadTransactionEdit": "Не вдалося завантажити транзакцію для редагування. Будь ласка, спробуйте знову."
 }

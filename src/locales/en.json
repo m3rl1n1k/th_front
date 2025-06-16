@@ -217,5 +217,14 @@
   "editTransactionButton": "Edit Transaction",
   "backToListButton": "Back to List",
   "transactionNotFoundTitle": "Transaction Not Found",
-  "transactionNotFoundDesc": "The transaction you are looking for could not be found or you do not have permission to view it."
+  "transactionNotFoundDesc": "The transaction you are looking for could not be found or you do not have permission to view it.",
+  "editTransactionTitle": "Edit Transaction",
+  "updateTransactionButton": "Update Transaction",
+  "updateTransactionDetails": "Update Transaction Details",
+  "modifyFormBelow": "Modify the form below to update the transaction.",
+  "transactionUpdatedTitle": "Transaction Updated",
+  "transactionUpdatedDesc": "Your transaction has been successfully updated.",
+  "transactionUpdateFailedTitle": "Failed to Update Transaction",
+  "errorFetchingTransactionForEdit": "Error Fetching Transaction",
+  "couldNotLoadTransactionEdit": "Could not load the transaction for editing. Please try again."
 }
