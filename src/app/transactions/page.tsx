@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, ToggleStatusPayload } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,7 +70,7 @@ export default function TransactionsPage() {
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
-  const [frequencies, setFrequencies] = useState<AppFrequency[]>([]); 
+  const [apiFrequencies, setApiFrequencies] = useState<AppFrequency[]>([]); 
   
   const [rawTransactions, setRawTransactions] = useState<Transaction[] | null>(null);
   const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null); 
@@ -129,7 +129,7 @@ export default function TransactionsPage() {
             id: id,
             name: name as string
           }));
-          setFrequencies(formattedFrequencies);
+          setApiFrequencies(formattedFrequencies);
         })
         .catch(error => {
             console.error("Error fetching frequencies:", error);
@@ -223,12 +223,12 @@ export default function TransactionsPage() {
   }, [processedTransactions]);
 
   const getFrequencyNameById = useCallback((frequencyApiId: string) => {
-    const freqObj = frequencies.find(f => f.id === frequencyApiId);
+    const freqObj = apiFrequencies.find(f => f.id === frequencyApiId);
     if (freqObj) {
       return t(`frequency_${freqObj.name}` as any, {defaultValue: freqObj.name});
     }
     return t('notApplicable');
-  }, [frequencies, t]);
+  }, [apiFrequencies, t]);
 
   const getStatusName = useCallback((status: number) => {
     return status === 1 ? t('statusActive') : t('statusInactive');
@@ -292,10 +292,8 @@ export default function TransactionsPage() {
   const handleToggleDefinitionStatus = async (definition: RepeatedTransactionEntry) => {
     if (!token) return;
     setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } })); 
-    const newStatus = definition.status === 1 ? 0 : 1;
-    const payload: ToggleStatusPayload = { status: newStatus };
     try {
-      await toggleRepeatedTransactionStatus(definition.id, payload, token); 
+      await toggleRepeatedTransactionStatus(definition.id, token); 
       toast({ title: t('statusToggledTitle'), description: t('statusToggledDesc')});
       fetchRepeatedDefinitions(false); 
     } catch (error: any) {
