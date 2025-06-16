@@ -3,13 +3,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { DollarSign, Moon, Sun } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTheme } from 'next-themes';
+// import { useTheme } from 'next-themes'; // Removed useTheme
 import { useTranslation } from '@/context/i18n-context';
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  // const { theme, setTheme, resolvedTheme } = useTheme(); // Removed theme variables
   const [mounted, setMounted] = React.useState(false);
   const { t } = useTranslation();
 
@@ -24,16 +24,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
           </Link>
           <div className="flex items-center space-x-2">
-            {mounted && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-                aria-label={t(resolvedTheme === 'dark' ? 'switchToLightMode' : 'switchToDarkMode')}
-              >
-                {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-            )}
+            {/* Theme switcher button removed */}
              <Button variant="ghost" asChild>
                 <Link href="/login">{t('loginButtonNav')}</Link>
             </Button>
