@@ -27,7 +27,7 @@ export const URLS = {
   // Repeated Transactions (New)
   repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`,
   repeatedTransactionById: (id: string | number) => `${API_BASE_URL}/repeated-transactions/${id}`, // For delete
-  toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/repeated-transactions/${id}/status`, // For PATCH status
+  toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`,
 
 
   // User Profile
@@ -42,3 +42,4 @@ export const URLS = {
   createMainCategory: `${API_BASE_URL}/main/categories`, // POST new main category
   createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
 };
+
