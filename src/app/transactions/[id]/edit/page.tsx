@@ -44,6 +44,7 @@ const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
   "EVERY_TWO_WEEKS": "14",
   "MONTHLY": "30",
   "EVERY_6_MONTHS": "180",
+  "HALFYEARLY": "180", // Added to handle this variation
   "YEARLY": "365",
 };
 
@@ -439,5 +440,4 @@ export default function EditTransactionPage() {
     </MainLayout>
   );
 }
-
     

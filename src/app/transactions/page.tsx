@@ -68,6 +68,7 @@ const FREQUENCY_NAME_TO_TRANSLATION_SUFFIX: Record<string, string> = {
   "EVERY_TWO_WEEKS": "14",
   "MONTHLY": "30",
   "EVERY_6_MONTHS": "180",
+  "HALFYEARLY": "180", // Added to handle this variation
   "YEARLY": "365",
 };
 
@@ -488,9 +489,9 @@ export default function TransactionsPage() {
             <Button 
               variant="link" 
               className="p-0 h-auto text-primary hover:underline" 
-              onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)}
+              onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)} // Use transaction.id for edit
             >
-              {t('templateId')} #{templateTransactionId}
+              {t('templateId')} #{templateTransactionId} 
             </Button>
           ) : (
             <span>{t('templateId')} N/A</span>
@@ -740,5 +741,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-
     
