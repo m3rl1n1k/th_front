@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // Added usePathname
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -41,7 +41,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"; // AlertDialogTrigger removed as it's not directly used here for menu item
+} from "@/components/ui/alert-dialog";
 
 interface GroupedTransactions {
   [date: string]: Transaction[];
@@ -52,6 +52,7 @@ export default function TransactionsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
+  const pathname = usePathname(); // For resetting action state on navigation
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
@@ -73,6 +74,7 @@ export default function TransactionsPage() {
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [selectedTransactionForDelete, setSelectedTransactionForDelete] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [initiatingActionForTxId, setInitiatingActionForTxId] = useState<string | number | null>(null);
 
 
   useEffect(() => {
@@ -144,7 +146,12 @@ export default function TransactionsPage() {
   useEffect(() => {
     fetchTransactions();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token]); // Only fetch on auth change initially
+  }, [isAuthenticated, token]); 
+
+  // Reset initiatingActionForTxId when pathname changes (navigation occurs)
+  useEffect(() => {
+    setInitiatingActionForTxId(null);
+  }, [pathname]);
 
   const processedTransactions = useMemo(() => {
     if (!rawTransactions || transactionTypes.length === 0) {
@@ -163,7 +170,7 @@ export default function TransactionsPage() {
   
   const currentTabTransactions = useMemo(() => {
     if (activeTab === "recurring") {
-      return processedTransactions.filter(tx => tx.isRecurring); // Note: API currently sends frequencyId, not isRecurring. This filter might need adjustment.
+      return processedTransactions.filter(tx => tx.isRecurring); 
     }
     return processedTransactions;
   }, [processedTransactions, activeTab]);
@@ -226,7 +233,7 @@ export default function TransactionsPage() {
     try {
       await deleteTransaction(selectedTransactionForDelete.id, token);
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
-      fetchTransactions(false); // Refetch without full page loader
+      fetchTransactions(false); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
     } finally {
@@ -235,6 +242,17 @@ export default function TransactionsPage() {
       setSelectedTransactionForDelete(null);
     }
   };
+
+  const handleViewAction = (txId: string | number) => {
+    setInitiatingActionForTxId(txId);
+    router.push(`/transactions/${txId}`);
+  };
+
+  const handleEditAction = (txId: string | number) => {
+    setInitiatingActionForTxId(txId);
+    router.push(`/transactions/${txId}/edit`);
+  };
+  
 
   const renderTransactionTableContent = () => {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
@@ -284,6 +302,10 @@ export default function TransactionsPage() {
             ? t(`categoryName_${tx.categoryName.replace(/\s+/g, '_').toLowerCase()}` as any, { defaultValue: tx.categoryName }) 
             : t('noCategory');
 
+          const showLoaderForThisTx = 
+            (initiatingActionForTxId === tx.id) ||
+            (selectedTransactionForDelete?.id === tx.id && (isDeleting || deleteConfirmationOpen));
+
           return (
             <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
               <TableCell className="py-3 px-4 align-top text-sm">
@@ -305,10 +327,10 @@ export default function TransactionsPage() {
                 {detailsText}
               </TableCell>
               <TableCell className="py-3 px-4 align-top text-sm text-center">
-                <DropdownMenu>
+                <DropdownMenu onOpenChange={(open) => { if (!open) setInitiatingActionForTxId(null); }}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
-                       {isDeleting && selectedTransactionForDelete?.id === tx.id ? (
+                       {showLoaderForThisTx ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <MoreHorizontal className="h-4 w-4" />
@@ -317,21 +339,25 @@ export default function TransactionsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/transactions/${tx.id}`} className="flex items-center cursor-pointer">
-                        <Eye className="mr-2 h-4 w-4" />
-                        {t('viewAction')}
-                      </Link>
+                    <DropdownMenuItem 
+                      onSelect={() => handleViewAction(tx.id)} 
+                      className="flex items-center cursor-pointer"
+                      disabled={initiatingActionForTxId === tx.id}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      {t('viewAction')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/transactions/${tx.id}/edit`} className="flex items-center cursor-pointer">
-                        <Edit3 className="mr-2 h-4 w-4" />
-                        {t('editAction')}
-                      </Link>
+                    <DropdownMenuItem 
+                      onSelect={() => handleEditAction(tx.id)} 
+                      className="flex items-center cursor-pointer"
+                      disabled={initiatingActionForTxId === tx.id}
+                    >
+                      <Edit3 className="mr-2 h-4 w-4" />
+                      {t('editAction')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => openDeleteDialog(tx)}
+                      onSelect={() => openDeleteDialog(tx)} // onSelect is fine here too
                       className="text-destructive focus:text-destructive flex items-center cursor-pointer"
                       disabled={isDeleting && selectedTransactionForDelete?.id === tx.id}
                     >
