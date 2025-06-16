@@ -10,7 +10,7 @@ import {
   getDashboardTotalBalance,
   getDashboardMonthlyIncome,
   getDashboardMonthExpenses,
-  getDashboardChartTotalExpense, // Updated to use the correct name if it changed, or keep as is
+  getDashboardChartTotalExpense,
   getDashboardLastTransactions,
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
@@ -25,14 +25,14 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 
 interface DashboardSummaryData {
-  total_balance: number;
-  month_income: number;
-  month_expense: number;
+  total_balance: number; // in cents
+  month_income: number; // in cents
+  month_expense: number; // in cents
 }
 
 interface TransformedChartItem {
   categoryName: string;
-  amount: number;
+  amount: number; // in cents
   color?: string;
 }
 
@@ -45,9 +45,9 @@ interface ActiveShapeProps {
   startAngle: number;
   endAngle: number;
   fill: string;
-  payload: TransformedChartItem; // Updated payload type
+  payload: TransformedChartItem;
   percent: number;
-  value: number; // This is `amount` from payload
+  value: number; // This is `amount` from payload, in cents
 }
 
 const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: Function) => {
@@ -87,7 +87,7 @@ const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: F
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
       <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
       <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" dy={0} className="text-xs">
-        {payload.categoryName} 
+        {payload.categoryName}
       </text>
       <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={16} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">
          <CurrencyDisplay amountInCents={value} currencyCode={currencyCode}/> {`(${(percent * 100).toFixed(2)}%)`}
@@ -115,7 +115,7 @@ export default function DashboardPage() {
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
   const [lastTransactions, setLastTransactions] = useState<TransactionType[] | null>(null);
-  
+
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingExpensesChart, setIsLoadingExpensesChart] = useState(true);
   const [isLoadingLastActivity, setIsLoadingLastActivity] = useState(true);
@@ -143,7 +143,7 @@ export default function DashboardPage() {
         getDashboardTotalBalance(token),
         getDashboardMonthlyIncome(token),
         getDashboardMonthExpenses(token),
-        getDashboardChartTotalExpense(token), // API call for chart data
+        getDashboardChartTotalExpense(token),
         getDashboardLastTransactions(token, limit),
       ])
         .then(([balanceData, incomeData, expenseData, chartDataResponse, lastTransactionsResp]) => {
@@ -152,7 +152,7 @@ export default function DashboardPage() {
             month_income: incomeData.month_income,
             month_expense: expenseData.month_expense,
           });
-          setExpensesByCategoryData(chartDataResponse); // Set the raw API response
+          setExpensesByCategoryData(chartDataResponse);
           setLastTransactions(lastTransactionsResp.last_transactions || []);
         })
         .catch(error => {
@@ -177,12 +177,12 @@ export default function DashboardPage() {
       setIsLoadingLastActivity(false);
     }
   }, [token, isAuthenticated, t, toast]);
-  
+
   const transformedChartData = useMemo((): TransformedChartItem[] => {
     if (!expensesByCategoryData?.month_expense_chart) return [];
     return Object.entries(expensesByCategoryData.month_expense_chart).map(([categoryName, data]) => ({
       categoryName: categoryName === 'no_category' ? t('noCategory') : categoryName,
-      amount: data.amount,
+      amount: data.amount, // in cents
       color: data.color
     }));
   }, [expensesByCategoryData, t]);
@@ -192,7 +192,7 @@ export default function DashboardPage() {
     const config: ChartConfig = {};
     Object.entries(expensesByCategoryData.month_expense_chart).forEach(([key, item], index) => {
       const displayName = key === 'no_category' ? t('noCategory') : key;
-      config[displayName] = { // Use display name as key for config
+      config[displayName] = {
         label: displayName,
         color: item.color || `hsl(var(--chart-${(index % 5) + 1}))`,
       };
@@ -202,12 +202,12 @@ export default function DashboardPage() {
 
   const processedLastActivity = useMemo((): ProcessedLastTransactionItem[] | null => {
     if (!lastTransactions) return null;
-    
+
     return lastTransactions.map(tx => {
       let icon;
-      if (tx.type === 1) { 
+      if (tx.type === 1) { // Income
         icon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
-      } else if (tx.type === 2) {
+      } else if (tx.type === 2) { // Expense
         icon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
       } else {
         icon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
@@ -216,8 +216,8 @@ export default function DashboardPage() {
       return {
         id: tx.id,
         icon: icon,
-        description: tx.description || tx.source || t('noDescription'),
-        amount: tx.amount.amount,
+        description: tx.description || t('noDescription'),
+        amount: tx.amount.amount, // in cents
         currencyCode: tx.amount.currency.code,
         date: format(parseISO(tx.date), "PP", { locale: dateFnsLocale }),
       };
@@ -225,13 +225,13 @@ export default function DashboardPage() {
   }, [lastTransactions, t, dateFnsLocale]);
 
 
-  const calculateAverageExpense = (monthlyExpense: number, period: 'daily' | 'weekly' | 'monthly') => {
-    if (period === 'monthly') return monthlyExpense;
-    if (period === 'daily') return Math.round(monthlyExpense / 30); // Simplified assumption
-    if (period === 'weekly') return Math.round(monthlyExpense / 4); // Simplified assumption
+  const calculateAverageExpense = (monthlyExpenseInCents: number, period: 'daily' | 'weekly' | 'monthly') => {
+    if (period === 'monthly') return monthlyExpenseInCents;
+    if (period === 'daily') return Math.round(monthlyExpenseInCents / 30); // Simplified assumption
+    if (period === 'weekly') return Math.round(monthlyExpenseInCents / 4); // Simplified assumption
     return 0;
   };
-  
+
   const onPieEnter = (_: any, index: number) => {
     setActiveChartIndex(index);
   };
@@ -377,7 +377,7 @@ export default function DashboardPage() {
                     />
                     <Pie
                       data={transformedChartData}
-                      dataKey="amount"
+                      dataKey="amount" // in cents
                       nameKey="categoryName"
                       innerRadius="60%"
                       outerRadius="80%"

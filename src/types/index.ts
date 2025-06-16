@@ -10,7 +10,7 @@ export interface User {
 }
 
 export interface TransactionAmount {
-  amount: number; // This is in cents from the API for GET requests
+  amount: number; // This is in cents from the API
   currency: {
     code: string;
   };
@@ -26,13 +26,13 @@ export interface TransactionSubCategory {
 export interface TransactionWallet {
   id: string | number;
   name: string;
-  number?: string; 
+  number?: string;
 }
 
 export interface Transaction {
   id: string | number;
-  amount: TransactionAmount;
-  currency: { 
+  amount: TransactionAmount; // Amount is in cents
+  currency: {
     code: string;
   };
   exchangeRate: number;
@@ -40,13 +40,13 @@ export interface Transaction {
   description: string | null;
   wallet: TransactionWallet;
   subCategory: TransactionSubCategory | null;
-  user?: { 
+  user?: {
     id: string | number;
   };
   source: string | null;
   date: string; // ISO date string
-  isRecurring?: boolean; 
-  frequencyId?: string; 
+  isRecurring?: boolean;
+  frequencyId?: string;
 
   // Frontend derived/display properties
   typeName?: string;
@@ -90,23 +90,23 @@ export interface ApiError {
 }
 
 export interface Frequency {
-  id: string; 
-  name: string; 
+  id: string;
+  name: string;
 }
 
 export interface WalletDetails {
   id: number;
   name: string;
-  amount: TransactionAmount;
+  amount: TransactionAmount; // Amount is in cents
   number: string;
   currency: {
     code: string;
   };
-  type: string | null; 
+  type: string | null;
   user: {
     id: number;
   };
-  typeName?: string; 
+  typeName?: string;
 }
 
 export interface FormCategory {
@@ -150,15 +150,15 @@ export interface CreateSubCategoryPayload {
 }
 
 export interface RepeatedTransactionEntry {
-  id: number | string; 
+  id: number | string;
   transaction: {
-    id: number | string; 
+    id: number | string;
     description?: string | null;
   };
-  status: number; 
-  frequency: string; 
-  createdAt: string; 
-  nextExecution: string; 
+  status: number;
+  frequency: string;
+  createdAt: string;
+  nextExecution: string;
 
   frequencyName?: string;
   statusName?: string;
@@ -175,12 +175,11 @@ export interface MonthlyExpenseByCategoryItem {
 }
 
 export interface MonthlyExpensesByCategoryResponse {
-  // The top-level key in the API response is "month_expense_chart"
-  month_expense_chart: Record<string, MonthlyExpenseByCategoryItem>;
+  month_expense_chart: Record<string, MonthlyExpenseByCategoryItem>; // Keys are category names
 }
 
 
 // Dashboard Last Activity: List of individual transactions
 export interface DashboardLastTransactionsResponse {
-  last_transactions: Transaction[];
+  last_transactions: Transaction[]; // API now returns a list of full Transaction objects
 }
