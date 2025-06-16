@@ -20,7 +20,7 @@ export interface TransactionSubCategory {
   id: string | number;
   name: string;
   icon?: string | null;
-  color?: string | null; // Added color as per API_DOCUMENTATION
+  color?: string | null; 
 }
 
 export interface Transaction {
@@ -154,12 +154,18 @@ export interface CreateSubCategoryPayload {
 
 // For the new repeated transactions feature
 export interface RepeatedTransactionEntry {
-  id: number | string; // ID of the *template* transaction (assumption)
+  id: number | string; // ID of the RECURRENCE RULE/DEFINITION
+  transaction: {
+    id: number | string; // ID of the TEMPLATE TRANSACTION
+    description?: string | null;
+    // Other potential fields from the template transaction might be here
+    // e.g. amount: { amount: number; currency: { code: string } };
+    // e.g. type: number;
+  };
   status: number; // e.g., 1 for active, 0 for inactive
   frequency: string; // Frequency ID (e.g., "1", "5")
   createdAt: string; // ISO date string
   nextExecution: string; // ISO date string
-  transaction?: Partial<Pick<Transaction, 'description' | 'amount' | 'type' | 'currency'>>; // Optional: API might send some template details
 
   // Frontend derived
   frequencyName?: string;

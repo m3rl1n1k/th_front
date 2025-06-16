@@ -24,7 +24,7 @@ import {
   getRepeatedTransactionsList,
   toggleRepeatedTransactionStatus,
   deleteRepeatedTransactionDefinition,
-  getTransactionFrequencies // Ensured import
+  getTransactionFrequencies
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { 
@@ -196,19 +196,17 @@ export default function TransactionsPage() {
       fetchRepeatedDefinitions();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, activeTab]); // fetchTransactions and fetchRepeatedDefinitions are useCallback deps
+  }, [isAuthenticated, token, activeTab]);
 
   useEffect(() => {
     setInitiatingActionForTxId(null);
   }, [pathname]);
 
  const processedTransactions = useMemo(() => {
-    if (!rawTransactions) return []; // Guard against null rawTransactions
+    if (!rawTransactions) return [];
     return rawTransactions.map(tx => ({
       ...tx,
-      // typeName can be set even if transactionTypes is still loading, will default or update later
       typeName: transactionTypes.find(tt => tt.id === String(tx.type))?.name || t('transactionType_UNKNOWN'),
-      // categoryName relies only on tx.subCategory which is part of rawTransactions
       categoryName: tx.subCategory?.name || null 
     }));
   }, [rawTransactions, transactionTypes, t]);
@@ -290,11 +288,11 @@ export default function TransactionsPage() {
   
   const handleToggleDefinitionStatus = async (definition: RepeatedTransactionEntry) => {
     if (!token) return;
-    setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } }));
+    setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } })); // Use definition.id for the rule
     const newStatus = definition.status === 1 ? 0 : 1;
     const payload: ToggleStatusPayload = { status: newStatus };
     try {
-      await toggleRepeatedTransactionStatus(definition.id, payload, token);
+      await toggleRepeatedTransactionStatus(definition.id, payload, token); // API uses definition.id
       toast({ title: t('statusToggledTitle'), description: t('statusToggledDesc')});
       fetchRepeatedDefinitions(false); 
     } catch (error: any) {
@@ -311,9 +309,9 @@ export default function TransactionsPage() {
 
   const handleDeleteDefinitionConfirmed = async () => {
     if (!selectedDefinitionForDelete || !token) return;
-    setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: true } }));
+    setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: true } })); // Use definition.id for the rule
     try {
-      await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token);
+      await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token); // API uses definition.id
       toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
       fetchRepeatedDefinitions(false); 
     } catch (error: any) {
@@ -329,7 +327,7 @@ export default function TransactionsPage() {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="h-60 text-center"> {/* Adjusted colSpan */}
+          <TableCell colSpan={5} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -342,7 +340,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground"> {/* Adjusted colSpan */}
+          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground">
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noTransactionsFound')}</p>
@@ -356,7 +354,7 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={5} className="py-3 px-4 font-semibold text-foreground text-md"> {/* Adjusted colSpan */}
+          <TableCell colSpan={5} className="py-3 px-4 font-semibold text-foreground text-md">
             {format(parseISO(dateKey), "PPP")}
           </TableCell>
         </TableRow>
@@ -390,7 +388,6 @@ export default function TransactionsPage() {
               <TableCell className="py-3 px-4 align-top text-sm">
                 {tx.wallet.name}
               </TableCell>
-              {/* Removed Details Cell */}
               <TableCell className="py-3 px-4 align-top text-sm text-center">
                 <DropdownMenu onOpenChange={(open) => { if (!open) setInitiatingActionForTxId(null); }}>
                   <DropdownMenuTrigger asChild>
@@ -443,7 +440,7 @@ export default function TransactionsPage() {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="h-60 text-center"> {/* Adjusted colSpan */}
+          <TableCell colSpan={7} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -456,7 +453,7 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground"> {/* Adjusted colSpan */}
+          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
@@ -468,14 +465,24 @@ export default function TransactionsPage() {
     }
     
     return repeatedDefinitions.map(def => {
-      const isActionLoading = definitionActionStates[def.id]?.isLoading || false;
+      const isActionLoading = definitionActionStates[def.id]?.isLoading || false; // definition.id is the rule id
       const templateDescription = def.transaction?.description || t('noDescription');
+      const templateTransactionId = def.transaction?.id;
+
       return (
       <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
         <TableCell className="py-3 px-4 align-top text-sm">
-          <Button variant="link" className="p-0 h-auto text-primary hover:underline" onClick={() => router.push(`/transactions/${def.id}/edit`)}>
-             {t('templateId')} #{def.id}
-          </Button>
+          {templateTransactionId ? (
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-primary hover:underline" 
+              onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)}
+            >
+              {t('templateId')} #{templateTransactionId}
+            </Button>
+          ) : (
+            <span>{t('templateId')} N/A</span>
+          )}
         </TableCell>
         <TableCell className="py-3 px-4 align-top text-sm">
             {templateDescription}
@@ -493,10 +500,12 @@ export default function TransactionsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => router.push(`/transactions/${def.id}/edit`)} className="flex items-center cursor-pointer">
-                <Edit3 className="mr-2 h-4 w-4" />
-                {t('editTemplateButton')}
-              </DropdownMenuItem>
+              {templateTransactionId && (
+                <DropdownMenuItem onSelect={() => router.push(`/transactions/${templateTransactionId}/edit`)} className="flex items-center cursor-pointer">
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  {t('editTemplateButton')}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onSelect={() => handleToggleDefinitionStatus(def)} className="flex items-center cursor-pointer">
                 {def.status === 1 ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" /> }
                 {t('toggleStatusButton')}
@@ -640,7 +649,6 @@ export default function TransactionsPage() {
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
-                        {/* <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('details')}</TableHead> */} {/* Removed Details Header */}
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
