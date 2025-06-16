@@ -255,7 +255,8 @@
   "monthlyExpensesByCategoryChartTitle": "Monthly Expenses by Category",
   "totalExpensesLabel": "Total Expenses",
   "tryAddingExpenses": "Try adding some expenses to see them here.",
-  "lastActivityTitle": "Last Activity",
-  "noRecentActivity": "No recent activity found.",
+  "lastActivityTitle": "Recent Activity Summary",
+  "noRecentActivity": "No recent individual transactions found.",
+  "noRecentCategoryActivity": "No category spending to display for recent activity.",
   "viewAllTransactions": "View All Transactions"
 }

@@ -185,18 +185,11 @@ export interface MonthlyExpensesByCategoryResponse {
   expensesByCategory: MonthlyExpenseByCategoryItem[];
 }
 
-// Dashboard Last Transactions
-export interface DashboardLastTransactionItem {
-  id: string | number;
-  date: string; // ISO date string
-  description: string | null;
-  amount: TransactionAmount; 
-  type: number; // Numeric type ID from API (e.g., 1 for INCOME, 2 for EXPENSE)
-  // Frontend derived optional properties
-  typeName?: string; 
-  icon?: React.ReactElement;
+// Dashboard Last Activity Summary
+export interface LastActivityByCategory {
+  [categoryName: string]: number; // Amount in cents
 }
 
 export interface DashboardLastTransactionsResponse {
-  transactions: DashboardLastTransactionItem[];
+  "last-transactions": LastActivityByCategory;
 }

@@ -10,21 +10,18 @@ import {
   getDashboardTotalBalance,
   getDashboardMonthlyIncome,
   getDashboardMonthExpenses,
-  getDashboardChartTotalExpense, // Updated
-  getDashboardLastTransactions,   // New
-  getTransactionTypes
+  getDashboardChartTotalExpense,
+  getDashboardLastTransactions,
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Wallet, PieChart as PieChartIcon, ExternalLink, ListChecks, ArrowUpCircle, ArrowDownCircle, HelpCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Wallet, PieChart as PieChartIcon, ExternalLink, ListChecks, HelpCircle, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import type { MonthlyExpensesByCategoryResponse, MonthlyExpenseByCategoryItem, DashboardLastTransactionsResponse, DashboardLastTransactionItem, TransactionType } from '@/types';
+import type { MonthlyExpensesByCategoryResponse, MonthlyExpenseByCategoryItem, DashboardLastTransactionsResponse } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, Tooltip, Legend, Sector } from "recharts"
 import Link from 'next/link';
-import { format, parseISO } from 'date-fns';
-
 
 interface DashboardSummaryData {
   total_balance: number;
@@ -92,20 +89,23 @@ const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: F
   );
 };
 
+interface ProcessedLastActivityItem {
+  categoryName: string;
+  amountInCents: number;
+}
+
 
 export default function DashboardPage() {
   const { user, token, isAuthenticated } = useAuth();
-  const { t, dateFnsLocale } = useTranslation();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
-  const [lastTransactions, setLastTransactions] = useState<DashboardLastTransactionItem[] | null>(null);
-  const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
+  const [lastActivityData, setLastActivityData] = useState<DashboardLastTransactionsResponse | null>(null);
   
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingExpensesChart, setIsLoadingExpensesChart] = useState(true);
-  const [isLoadingLastTransactions, setIsLoadingLastTransactions] = useState(true);
-  const [isLoadingTxTypes, setIsLoadingTxTypes] = useState(true);
+  const [isLoadingLastActivity, setIsLoadingLastActivity] = useState(true);
 
   const [activeChartIndex, setActiveChartIndex] = useState(0);
 
@@ -114,8 +114,7 @@ export default function DashboardPage() {
     if (isAuthenticated && token) {
       setIsLoadingSummary(true);
       setIsLoadingExpensesChart(true);
-      setIsLoadingLastTransactions(true);
-      setIsLoadingTxTypes(true);
+      setIsLoadingLastActivity(true);
 
       Promise.all([
         getDashboardTotalBalance(token),
@@ -123,17 +122,15 @@ export default function DashboardPage() {
         getDashboardMonthExpenses(token),
         getDashboardChartTotalExpense(token),
         getDashboardLastTransactions(token),
-        getTransactionTypes(token)
       ])
-        .then(([balanceData, incomeData, expenseData, chartData, lastTransactionsData, txTypesData]) => {
+        .then(([balanceData, incomeData, expenseData, chartData, lastActivityResp]) => {
           setSummaryData({
             total_balance: balanceData.total_balance,
             month_income: incomeData.month_income,
             month_expense: expenseData.month_expense,
           });
           setExpensesByCategoryData(chartData);
-          setLastTransactions(lastTransactionsData.transactions || []);
-          setTransactionTypes(Object.entries(txTypesData.types).map(([id, name]) => ({ id, name: name as string })));
+          setLastActivityData(lastActivityResp);
         })
         .catch(error => {
           toast({
@@ -143,41 +140,30 @@ export default function DashboardPage() {
           });
           setSummaryData(null);
           setExpensesByCategoryData(null);
-          setLastTransactions(null);
-          setTransactionTypes([]);
+          setLastActivityData(null);
         })
         .finally(() => {
           setIsLoadingSummary(false);
           setIsLoadingExpensesChart(false);
-          setIsLoadingLastTransactions(false);
-          setIsLoadingTxTypes(false);
+          setIsLoadingLastActivity(false);
         });
 
     } else if (!isAuthenticated) {
       setIsLoadingSummary(false);
       setIsLoadingExpensesChart(false);
-      setIsLoadingLastTransactions(false);
-      setIsLoadingTxTypes(false);
+      setIsLoadingLastActivity(false);
     }
   }, [token, isAuthenticated, t, toast]);
 
-  const processedLastTransactions = useMemo(() => {
-    if (!lastTransactions || !transactionTypes.length) return null;
-    return lastTransactions.map(tx => {
-      const typeInfo = transactionTypes.find(tt => tt.id === String(tx.type));
-      let icon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
-      if (typeInfo?.name.toUpperCase() === 'INCOME') {
-        icon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
-      } else if (typeInfo?.name.toUpperCase() === 'EXPENSE') {
-        icon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
-      }
-      return {
-        ...tx,
-        typeName: typeInfo ? t(`transactionType_${typeInfo.name}` as any, { defaultValue: typeInfo.name }) : t('transactionType_UNKNOWN'),
-        icon: icon
-      };
-    });
-  }, [lastTransactions, transactionTypes, t]);
+  const processedLastActivity = useMemo((): ProcessedLastActivityItem[] | null => {
+    if (!lastActivityData || !lastActivityData["last-transactions"]) return null;
+    
+    const activity = lastActivityData["last-transactions"];
+    return Object.entries(activity).map(([categoryName, amountInCents]) => ({
+      categoryName,
+      amountInCents,
+    })).sort((a,b) => b.amountInCents - a.amountInCents); // Sort by amount descending for example
+  }, [lastActivityData]);
 
 
   const calculateAverageExpense = (monthlyExpense: number, period: 'daily' | 'weekly' | 'monthly') => {
@@ -379,26 +365,25 @@ export default function DashboardPage() {
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
-              <ListChecks className="h-6 w-6 text-primary" />
+              <Activity className="h-6 w-6 text-primary" />
             </CardHeader>
             <CardContent className="pt-4">
-              {isLoadingLastTransactions || isLoadingTxTypes ? (
+              {isLoadingLastActivity ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className="flex items-center space-x-3">
-                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-6 w-6 rounded-md" />
                       <div className="flex-1 space-y-1">
                         <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
                       </div>
                       <Skeleton className="h-4 w-1/4" />
                     </div>
                   ))}
                 </div>
-              ) : !processedLastTransactions || processedLastTransactions.length === 0 ? (
+              ) : !processedLastActivity || processedLastActivity.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48 text-center">
                   <ListChecks className="h-12 w-12 text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">{t('noRecentActivity')}</p>
+                  <p className="text-muted-foreground">{t('noRecentCategoryActivity')}</p>
                    <Button variant="link" asChild className="mt-2">
                     <Link href="/transactions/new">
                       {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
@@ -407,25 +392,20 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {processedLastTransactions.slice(0, 10).map((tx) => (
-                    <Link href={`/transactions/${tx.id}`} key={tx.id} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">{tx.icon}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate" title={tx.description || t('noDescription')}>
-                            {tx.description || t('noDescription')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(parseISO(tx.date), 'PP', { locale: dateFnsLocale })} - {tx.typeName}
-                          </p>
+                  {processedLastActivity.slice(0, 10).map((item) => (
+                    <div key={item.categoryName} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center space-x-3">
+                            <HelpCircle className="h-5 w-5 text-muted-foreground" /> {/* Generic icon for category */}
+                            <p className="text-sm font-medium text-foreground truncate" title={item.categoryName}>
+                                {item.categoryName}
+                            </p>
                         </div>
                         <div className="text-sm font-medium text-right">
-                          <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
+                        <CurrencyDisplay amountInCents={item.amountInCents} currencyCode={user?.userCurrency?.code} />
                         </div>
-                      </div>
-                    </Link>
+                    </div>
                   ))}
-                  {processedLastTransactions.length > 0 && (
+                  {processedLastActivity.length > 0 && (
                      <Button variant="outline" asChild className="w-full mt-4">
                         <Link href="/transactions">
                             {t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4"/>
