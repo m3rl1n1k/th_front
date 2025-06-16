@@ -26,13 +26,13 @@ export interface TransactionSubCategory {
 export interface TransactionWallet {
   id: string | number;
   name: string;
-  number?: string; // Added as it's in server responses
+  number?: string; 
 }
 
 export interface Transaction {
   id: string | number;
   amount: TransactionAmount;
-  currency: { // This might be redundant if amount.currency is always present and the same
+  currency: { 
     code: string;
   };
   exchangeRate: number;
@@ -40,13 +40,13 @@ export interface Transaction {
   description: string | null;
   wallet: TransactionWallet;
   subCategory: TransactionSubCategory | null;
-  user?: { // Marking as optional as it wasn't in all examples
+  user?: { 
     id: string | number;
   };
   source: string | null;
   date: string; // ISO date string
-  isRecurring?: boolean; // Derived or sent by backend
-  frequencyId?: string; // From GET /transactions/frequency
+  isRecurring?: boolean; 
+  frequencyId?: string; 
 
   // Frontend derived/display properties
   typeName?: string;
@@ -90,11 +90,10 @@ export interface ApiError {
 }
 
 export interface Frequency {
-  id: string; // Numeric ID from API, like "0", "1", "7"
-  name: string; // String name from API, like "Once", "Daily"
+  id: string; 
+  name: string; 
 }
 
-// Note: WalletDetails has more fields than TransactionWallet, used for wallets page
 export interface WalletDetails {
   id: number;
   name: string;
@@ -103,11 +102,11 @@ export interface WalletDetails {
   currency: {
     code: string;
   };
-  type: string | null; // key for wallet type
+  type: string | null; 
   user: {
     id: number;
   };
-  typeName?: string; // Frontend derived
+  typeName?: string; 
 }
 
 export interface FormCategory {
@@ -150,19 +149,17 @@ export interface CreateSubCategoryPayload {
   mainCategoryId: string;
 }
 
-// For the new repeated transactions feature
 export interface RepeatedTransactionEntry {
-  id: number | string; // ID of the RECURRENCE RULE/DEFINITION
+  id: number | string; 
   transaction: {
-    id: number | string; // ID of the TEMPLATE TRANSACTION
+    id: number | string; 
     description?: string | null;
   };
-  status: number; // e.g., 1 for active, 0 for inactive
-  frequency: string; // Frequency ID (e.g., "0", "1")
-  createdAt: string; // ISO date string
-  nextExecution: string; // ISO date string
+  status: number; 
+  frequency: string; 
+  createdAt: string; 
+  nextExecution: string; 
 
-  // Frontend derived
   frequencyName?: string;
   statusName?: string;
 }
@@ -173,15 +170,15 @@ export interface RepeatedTransactionsApiResponse {
 
 // Dashboard Chart Data
 export interface MonthlyExpenseByCategoryItem {
-  categoryName: string;
   amount: number; // in cents
   color?: string; // Optional color from backend
 }
 
 export interface MonthlyExpensesByCategoryResponse {
-  totalMonthlyExpense: number; // in cents
-  expensesByCategory: MonthlyExpenseByCategoryItem[];
+  // The top-level key in the API response is "month_expense_chart"
+  month_expense_chart: Record<string, MonthlyExpenseByCategoryItem>;
 }
+
 
 // Dashboard Last Activity: List of individual transactions
 export interface DashboardLastTransactionsResponse {

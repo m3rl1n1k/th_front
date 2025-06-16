@@ -10,17 +10,17 @@ import {
   getDashboardTotalBalance,
   getDashboardMonthlyIncome,
   getDashboardMonthExpenses,
-  getDashboardChartTotalExpense,
+  getDashboardChartTotalExpense, // Updated to use the correct name if it changed, or keep as is
   getDashboardLastTransactions,
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Wallet, PieChart as PieChartIcon, ExternalLink, ListChecks, HelpCircle, Activity, ArrowUpCircle, ArrowDownCircle, CalendarDays } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import type { MonthlyExpensesByCategoryResponse, MonthlyExpenseByCategoryItem, DashboardLastTransactionsResponse, Transaction as TransactionType } from '@/types';
+import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { PieChart, Pie, Cell, Tooltip, Legend, Sector } from "recharts"
+import { PieChart, Pie, Cell, Legend, Sector } from "recharts"
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 
@@ -28,6 +28,12 @@ interface DashboardSummaryData {
   total_balance: number;
   month_income: number;
   month_expense: number;
+}
+
+interface TransformedChartItem {
+  categoryName: string;
+  amount: number;
+  color?: string;
 }
 
 interface ActiveShapeProps {
@@ -39,9 +45,9 @@ interface ActiveShapeProps {
   startAngle: number;
   endAngle: number;
   fill: string;
-  payload: MonthlyExpenseByCategoryItem;
+  payload: TransformedChartItem; // Updated payload type
   percent: number;
-  value: number;
+  value: number; // This is `amount` from payload
 }
 
 const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: Function) => {
@@ -81,7 +87,7 @@ const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: F
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
       <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
       <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" dy={0} className="text-xs">
-        {payload.categoryName}
+        {payload.categoryName} 
       </text>
       <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={16} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">
          <CurrencyDisplay amountInCents={value} currencyCode={currencyCode}/> {`(${(percent * 100).toFixed(2)}%)`}
@@ -116,7 +122,6 @@ export default function DashboardPage() {
 
   const [activeChartIndex, setActiveChartIndex] = useState(0);
 
-
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingSummary(true);
@@ -138,16 +143,16 @@ export default function DashboardPage() {
         getDashboardTotalBalance(token),
         getDashboardMonthlyIncome(token),
         getDashboardMonthExpenses(token),
-        getDashboardChartTotalExpense(token),
+        getDashboardChartTotalExpense(token), // API call for chart data
         getDashboardLastTransactions(token, limit),
       ])
-        .then(([balanceData, incomeData, expenseData, chartData, lastTransactionsResp]) => {
+        .then(([balanceData, incomeData, expenseData, chartDataResponse, lastTransactionsResp]) => {
           setSummaryData({
             total_balance: balanceData.total_balance,
             month_income: incomeData.month_income,
             month_expense: expenseData.month_expense,
           });
-          setExpensesByCategoryData(chartData);
+          setExpensesByCategoryData(chartDataResponse); // Set the raw API response
           setLastTransactions(lastTransactionsResp.last_transactions || []);
         })
         .catch(error => {
@@ -172,13 +177,34 @@ export default function DashboardPage() {
       setIsLoadingLastActivity(false);
     }
   }, [token, isAuthenticated, t, toast]);
+  
+  const transformedChartData = useMemo((): TransformedChartItem[] => {
+    if (!expensesByCategoryData?.month_expense_chart) return [];
+    return Object.entries(expensesByCategoryData.month_expense_chart).map(([categoryName, data]) => ({
+      categoryName: categoryName === 'no_category' ? t('noCategory') : categoryName,
+      amount: data.amount,
+      color: data.color
+    }));
+  }, [expensesByCategoryData, t]);
+
+  const chartConfig = useMemo((): ChartConfig => {
+    if (!expensesByCategoryData?.month_expense_chart) return {} as ChartConfig;
+    const config: ChartConfig = {};
+    Object.entries(expensesByCategoryData.month_expense_chart).forEach(([key, item], index) => {
+      const displayName = key === 'no_category' ? t('noCategory') : key;
+      config[displayName] = { // Use display name as key for config
+        label: displayName,
+        color: item.color || `hsl(var(--chart-${(index % 5) + 1}))`,
+      };
+    });
+    return config;
+  }, [expensesByCategoryData, t]);
 
   const processedLastActivity = useMemo((): ProcessedLastTransactionItem[] | null => {
     if (!lastTransactions) return null;
     
     return lastTransactions.map(tx => {
       let icon;
-      // Assuming type 1 is INCOME, type 2 is EXPENSE from API_DOCUMENTATION.md
       if (tx.type === 1) { 
         icon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
       } else if (tx.type === 2) {
@@ -201,21 +227,10 @@ export default function DashboardPage() {
 
   const calculateAverageExpense = (monthlyExpense: number, period: 'daily' | 'weekly' | 'monthly') => {
     if (period === 'monthly') return monthlyExpense;
-    if (period === 'daily') return Math.round(monthlyExpense / 30);
-    if (period === 'weekly') return Math.round(monthlyExpense / 4);
+    if (period === 'daily') return Math.round(monthlyExpense / 30); // Simplified assumption
+    if (period === 'weekly') return Math.round(monthlyExpense / 4); // Simplified assumption
     return 0;
   };
-
-  const chartConfig = useMemo(() => {
-    if (!expensesByCategoryData) return {} as ChartConfig;
-    return expensesByCategoryData.expensesByCategory.reduce((acc, item, index) => {
-      acc[item.categoryName] = {
-        label: item.categoryName,
-        color: item.color || `hsl(var(--chart-${(index % 5) + 1}))`,
-      };
-      return acc;
-    }, {} as ChartConfig);
-  }, [expensesByCategoryData]);
   
   const onPieEnter = (_: any, index: number) => {
     setActiveChartIndex(index);
@@ -340,7 +355,7 @@ export default function DashboardPage() {
                 <div className="flex justify-center items-center h-72">
                   <Skeleton className="h-64 w-64 rounded-full" />
                 </div>
-              ) : !expensesByCategoryData || expensesByCategoryData.expensesByCategory.length === 0 ? (
+              ) : !expensesByCategoryData || transformedChartData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-72 text-center">
                     <PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">{t('noDataAvailable')}</p>
@@ -356,12 +371,12 @@ export default function DashboardPage() {
               ) : (
                 <ChartContainer config={chartConfig} className="aspect-square h-[300px] sm:h-[350px] w-full mx-auto">
                   <PieChart>
-                    <Tooltip
+                    <ChartTooltip
                       cursor={false}
                       content={<ChartTooltipContent hideLabel className="bg-card text-card-foreground shadow-lg border" />}
                     />
                     <Pie
-                      data={expensesByCategoryData.expensesByCategory}
+                      data={transformedChartData}
                       dataKey="amount"
                       nameKey="categoryName"
                       innerRadius="60%"
@@ -371,7 +386,7 @@ export default function DashboardPage() {
                       onMouseEnter={onPieEnter}
                       className="cursor-pointer"
                     >
-                      {expensesByCategoryData.expensesByCategory.map((entry, index) => (
+                      {transformedChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color || chartConfig[entry.categoryName]?.color || `hsl(var(--chart-${(index % 5) + 1}))`} />
                       ))}
                     </Pie>
@@ -382,7 +397,7 @@ export default function DashboardPage() {
                             {payload.map((entry, index) => (
                               <div key={`item-${index}`} className="flex items-center gap-1.5">
                                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                                <span>{entry.value}</span>
+                                <span>{entry.value}</span> {/* entry.value is categoryName here */}
                               </div>
                             ))}
                           </div>
