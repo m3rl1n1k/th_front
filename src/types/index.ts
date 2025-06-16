@@ -23,21 +23,24 @@ export interface TransactionSubCategory {
   color?: string | null;
 }
 
+export interface TransactionWallet {
+  id: string | number;
+  name: string;
+  number?: string; // Added as it's in server responses
+}
+
 export interface Transaction {
   id: string | number;
   amount: TransactionAmount;
-  currency: {
+  currency: { // This might be redundant if amount.currency is always present and the same
     code: string;
   };
   exchangeRate: number;
   type: number; // Numeric ID from API
   description: string | null;
-  wallet: {
-    id: string | number;
-    name: string;
-  };
+  wallet: TransactionWallet;
   subCategory: TransactionSubCategory | null;
-  user: {
+  user?: { // Marking as optional as it wasn't in all examples
     id: string | number;
   };
   source: string | null;
@@ -91,12 +94,7 @@ export interface Frequency {
   name: string; // String name from API, like "Once", "Daily"
 }
 
-export interface Wallet {
-  id: string | number;
-  name: string;
-  amount: TransactionAmount;
-}
-
+// Note: WalletDetails has more fields than TransactionWallet, used for wallets page
 export interface WalletDetails {
   id: number;
   name: string;
@@ -105,11 +103,11 @@ export interface WalletDetails {
   currency: {
     code: string;
   };
-  type: string | null;
+  type: string | null; // key for wallet type
   user: {
     id: number;
   };
-  typeName?: string;
+  typeName?: string; // Frontend derived
 }
 
 export interface FormCategory {
@@ -185,11 +183,7 @@ export interface MonthlyExpensesByCategoryResponse {
   expensesByCategory: MonthlyExpenseByCategoryItem[];
 }
 
-// Dashboard Last Activity Summary
-export interface LastActivityByCategory {
-  [categoryName: string]: number; // Amount in cents
-}
-
+// Dashboard Last Activity: List of individual transactions
 export interface DashboardLastTransactionsResponse {
-  "last-transactions": LastActivityByCategory;
+  last_transactions: Transaction[];
 }

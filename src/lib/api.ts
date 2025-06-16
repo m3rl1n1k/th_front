@@ -15,7 +15,7 @@ import type {
   RepeatedTransactionsApiResponse,
   RepeatedTransactionEntry,
   MonthlyExpensesByCategoryResponse,
-  DashboardLastTransactionsResponse // This type has been updated for the new structure
+  DashboardLastTransactionsResponse
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -159,10 +159,10 @@ export const getRepeatedTransactionsList = (token: string): Promise<RepeatedTran
   request(URLS.repeatedTransactionsList, { method: 'GET', token });
 
 export const toggleRepeatedTransactionStatus = (id: string | number, token: string): Promise<RepeatedTransactionEntry> =>
-  request(URLS.toggleRepeatedTransactionStatus(id), { method: 'GET', token });
+  request(URLS.toggleRepeatedTransactionStatus(id), { method: 'GET', token }); // Changed to GET and no body
 
 export const deleteRepeatedTransactionDefinition = (id: string | number, token: string): Promise<void> =>
-  request<void>(URLS.repeatedTransactionById(id), { method: 'DELETE', token });
+  request<void>(URLS.deleteRepeatedTransaction(id), { method: 'DELETE', token }); // Changed URL
 
 
 export { request };

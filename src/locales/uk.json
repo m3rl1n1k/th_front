@@ -255,8 +255,7 @@
   "monthlyExpensesByCategoryChartTitle": "Щомісячні витрати за категоріями",
   "totalExpensesLabel": "Загальні витрати",
   "tryAddingExpenses": "Спробуйте додати витрати, щоб побачити їх тут.",
-  "lastActivityTitle": "Останні дії (за категоріями)",
-  "noRecentActivity": "Не знайдено нещодавніх окремих транзакцій.",
-  "noRecentCategoryActivity": "Немає даних про витрати за категоріями за останній період.",
+  "lastActivityTitle": "Останні Транзакції",
+  "noRecentTransactions": "Нещодавніх транзакцій не знайдено.",
   "viewAllTransactions": "Переглянути всі транзакції"
 }
