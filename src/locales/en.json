@@ -231,7 +231,7 @@
   "templateId": "Template ID",
   "toggleStatusButton": "Toggle Status",
   "editTemplateButton": "Edit Template",
-  "removeDefinitionButton": "Remove Definition",
+  "removeDefinitionButton": "Remove",
   "confirmToggleStatusTitle": "Confirm Status Change",
   "confirmToggleStatusMessage": "Are you sure you want to change the status of this recurring definition?",
   "confirmRemoveDefinitionTitle": "Confirm Removal",
@@ -251,6 +251,7 @@
   "frequency_Two_weeks": "Two weeks",
   "frequency_Monthly": "Monthly",
   "frequency_HalfYearly": "HalfYearly",
-  "frequency_Yearly": "Yearly"
+  "frequency_Yearly": "Yearly",
+  "monthlyExpensesByCategoryChartTitle": "Monthly Expenses by Category",
+  "totalExpensesLabel": "Total Expenses"
 }
-    

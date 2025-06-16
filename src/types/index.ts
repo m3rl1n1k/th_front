@@ -20,7 +20,7 @@ export interface TransactionSubCategory {
   id: string | number;
   name: string;
   icon?: string | null;
-  color?: string | null; 
+  color?: string | null;
 }
 
 export interface Transaction {
@@ -159,24 +159,29 @@ export interface RepeatedTransactionEntry {
     id: number | string; // ID of the TEMPLATE TRANSACTION
     description?: string | null;
     // Other potential fields from the template transaction might be here
-    // e.g. amount: { amount: number; currency: { code: string } };
-    // e.g. type: number;
   };
   status: number; // e.g., 1 for active, 0 for inactive
-  frequency: string; // Frequency ID (e.g., "1", "5")
+  frequency: string; // Frequency ID (e.g., "0", "1")
   createdAt: string; // ISO date string
   nextExecution: string; // ISO date string
 
   // Frontend derived
   frequencyName?: string;
   statusName?: string;
-  templateTransactionDescription?: string; // For display
 }
 
 export interface RepeatedTransactionsApiResponse {
   repeated_transactions: RepeatedTransactionEntry[];
 }
 
-export interface ToggleStatusPayload {
-  status: number;
+// Dashboard Chart Data
+export interface MonthlyExpenseByCategoryItem {
+  categoryName: string;
+  amount: number; // in cents
+  color?: string; // Optional color from backend
+}
+
+export interface MonthlyExpensesByCategoryResponse {
+  totalMonthlyExpense: number; // in cents
+  expensesByCategory: MonthlyExpenseByCategoryItem[];
 }

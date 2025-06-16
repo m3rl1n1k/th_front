@@ -14,6 +14,7 @@ export const URLS = {
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,
   dashboardMonthlyIncome: `${API_BASE_URL}/dashboard/monthly-income`,
   dashboardMonthExpenses: `${API_BASE_URL}/dashboard/average-expenses`,
+  dashboardMonthlyExpensesByCategory: `${API_BASE_URL}/dashboard/monthly-expenses-by-category`,
 
 
   // Transactions
@@ -26,7 +27,7 @@ export const URLS = {
 
   // Repeated Transactions (New)
   repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`,
-  repeatedTransactionById: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`, // For delete
+  repeatedTransactionById: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`,
   toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`,
 
 

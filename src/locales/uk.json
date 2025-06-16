@@ -251,6 +251,7 @@
   "frequency_Two_weeks": "Два тижні",
   "frequency_Monthly": "Щомісяця",
   "frequency_HalfYearly": "Півріччя",
-  "frequency_Yearly": "Щорічно"
+  "frequency_Yearly": "Щорічно",
+  "monthlyExpensesByCategoryChartTitle": "Щомісячні витрати за категоріями",
+  "totalExpensesLabel": "Загальні витрати"
 }
-    
