@@ -68,7 +68,7 @@ export default function ViewWalletPage() {
     const mappedDisplayValue = walletTypeMap[typeKey];
     const typeIdentifierForTranslation = mappedDisplayValue || typeKey.toUpperCase();
     const userFriendlyDefault = mappedDisplayValue || typeKey;
-    return t(`walletType_${typeIdentifierForTranslation}` as any, { defaultValue: userFriendlyDefault });
+    return t(\`walletType_\${typeIdentifierForTranslation}\` as any, { defaultValue: userFriendlyDefault });
   };
   
   const getWalletVisualIcon = (walletDetails: WalletDetails | null) => {
@@ -77,13 +77,13 @@ export default function ViewWalletPage() {
     const iconClass = "h-8 w-8";
     
     switch (typeKey) {
-      case 'main': return <Landmark className={`${iconClass} text-blue-500`} />;
-      case 'deposit': return <PiggyBank className={`${iconClass} text-green-500`} />;
-      case 'cash': return <WalletIcon className={`${iconClass} text-yellow-600`} />;
-      case 'credit': return <CreditCard className={`${iconClass} text-purple-500`} />;
-      case 'archive': return <Archive className={`${iconClass} text-gray-500`} />;
-      case 'block': return <ShieldCheck className={`${iconClass} text-red-500`} />;
-      default: return <HelpCircle className={`${iconClass} text-muted-foreground`} />;
+      case 'main': return <Landmark className={\`\${iconClass} text-blue-500\`} />;
+      case 'deposit': return <PiggyBank className={\`\${iconClass} text-green-500\`} />;
+      case 'cash': return <WalletIcon className={\`\${iconClass} text-yellow-600\`} />;
+      case 'credit': return <CreditCard className={\`\${iconClass} text-purple-500\`} />;
+      case 'archive': return <Archive className={\`\${iconClass} text-gray-500\`} />;
+      case 'block': return <ShieldCheck className={\`\${iconClass} text-red-500\`} />;
+      default: return <HelpCircle className={\`\${iconClass} text-muted-foreground\`} />;
     }
   };
 
@@ -184,12 +184,12 @@ export default function ViewWalletPage() {
                 ))}
             </CardContent>
         </Card>
-        <div className="mt-6 flex justify-between">
-            <Button variant="outline" onClick={() => router.push('/wallets')}>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+            <Button variant="outline" onClick={() => router.push('/wallets')} className="w-full sm:w-auto">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 {t('backToListButton')}
             </Button>
-            <Button asChild variant="default">
+            <Button asChild variant="default" className="w-full sm:w-auto">
                 <Link href={`/wallets/${wallet.id}/edit`}>
                     <Edit3 className="mr-2 h-4 w-4" />
                     {t('editWalletButton')}

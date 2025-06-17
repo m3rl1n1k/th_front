@@ -5,13 +5,13 @@ import React from 'react';
 import Link from 'next/link';
 import { DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-// import { useTheme } from 'next-themes'; // Removed useTheme
 import { useTranslation } from '@/context/i18n-context';
+import { usePathname } from 'next/navigation'; // Added
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
-  // const { theme, setTheme, resolvedTheme } = useTheme(); // Removed theme variables
   const [mounted, setMounted] = React.useState(false);
   const { t } = useTranslation();
+  const pathname = usePathname(); // Added
 
   React.useEffect(() => setMounted(true), []);
 
@@ -23,14 +23,27 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             <DollarSign className="h-8 w-8 text-primary" />
             <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
           </Link>
-          <div className="flex items-center space-x-2">
-            {/* Theme switcher button removed */}
-             <Button variant="ghost" asChild>
-                <Link href="/login">{t('loginButtonNav')}</Link>
-            </Button>
-            <Button variant="default" asChild>
+          <div className="flex items-center">
+            {pathname === '/login' && (
+              <Button variant="default" asChild>
                 <Link href="/register">{t('registerButtonNav')}</Link>
-            </Button>
+              </Button>
+            )}
+            {pathname === '/register' && (
+              <Button variant="default" asChild>
+                <Link href="/login">{t('loginButtonNav')}</Link>
+              </Button>
+            )}
+            {pathname !== '/login' && pathname !== '/register' && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
+                <Button variant="ghost" asChild className="w-full sm:w-auto">
+                  <Link href="/login">{t('loginButtonNav')}</Link>
+                </Button>
+                <Button variant="default" asChild className="w-full sm:w-auto">
+                  <Link href="/register">{t('registerButtonNav')}</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </header>

@@ -111,7 +111,7 @@ export default function WalletsPage() {
       let typeIdentifierForTranslation = mappedDisplayValue || typeKey.toUpperCase();
       
       const userFriendlyDefault = mappedDisplayValue || typeKey;
-      const translationKey = `walletType_${typeIdentifierForTranslation}`;
+      const translationKey = \`walletType_\${typeIdentifierForTranslation}\`;
       
       return {
         ...wallet,
@@ -138,13 +138,13 @@ export default function WalletsPage() {
     const iconClass = "h-6 w-6";
     
     switch (typeKey) {
-      case 'main': return <Landmark className={`${iconClass} text-blue-500`} />;
-      case 'deposit': return <PiggyBank className={`${iconClass} text-green-500`} />;
-      case 'cash': return <WalletCards className={`${iconClass} text-yellow-600`} />;
-      case 'credit': return <CreditCard className={`${iconClass} text-purple-500`} />;
-      case 'archive': return <Archive className={`${iconClass} text-gray-500`} />;
-      case 'block': return <ShieldCheck className={`${iconClass} text-red-500`} />;
-      default: return <HelpCircle className={`${iconClass} text-muted-foreground`} />;
+      case 'main': return <Landmark className={\`\${iconClass} text-blue-500\`} />;
+      case 'deposit': return <PiggyBank className={\`\${iconClass} text-green-500\`} />;
+      case 'cash': return <WalletCards className={\`\${iconClass} text-yellow-600\`} />;
+      case 'credit': return <CreditCard className={\`\${iconClass} text-purple-500\`} />;
+      case 'archive': return <Archive className={\`\${iconClass} text-gray-500\`} />;
+      case 'block': return <ShieldCheck className={\`\${iconClass} text-red-500\`} />;
+      default: return <HelpCircle className={\`\${iconClass} text-muted-foreground\`} />;
     }
   };
   
@@ -153,11 +153,11 @@ export default function WalletsPage() {
   };
 
   const handleViewDetails = (walletId: string | number) => {
-    router.push(`/wallets/${walletId}`);
+    router.push(\`/wallets/\${walletId}\`);
   };
 
   const handleEditWallet = (walletId: string | number) => {
-    router.push(`/wallets/${walletId}/edit`);
+    router.push(\`/wallets/\${walletId}/edit\`);
   };
 
   const handleDeleteWallet = (wallet: WalletDetails) => {
@@ -188,15 +188,15 @@ export default function WalletsPage() {
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 className="font-headline text-3xl font-bold text-foreground">{t('walletsTitle')}</h1>
-            <div className="flex items-center space-x-4">
-                <Skeleton className="h-10 w-20 rounded-md" />
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:space-x-4 w-full sm:w-auto">
+                <Skeleton className="h-10 w-full sm:w-20 rounded-md" />
                 <Button disabled className="w-full sm:w-auto">
                   <PlusCircle className="mr-2 h-5 w-5" />
                   {t('addNewWalletButton')}
                 </Button>
             </div>
           </div>
-          <div className={`grid gap-6 ${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+          <div className={\`grid gap-6 \${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}\`}>
             {viewMode === 'card' ? (
               [1, 2, 3, 4].map(i => (
                 <Card key={i} className="shadow-lg">
@@ -271,14 +271,15 @@ export default function WalletsPage() {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="font-headline text-4xl font-bold text-foreground">{t('walletsTitle')}</h1>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1 border p-1 rounded-md bg-muted/50 dark:bg-muted/20">
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:space-x-4 w-full sm:w-auto">
+            <div className="flex items-center space-x-1 border p-1 rounded-md bg-muted/50 dark:bg-muted/20 w-full justify-center sm:w-auto">
               <Button
                 variant={viewMode === 'card' ? 'secondary' : 'ghost'}
                 size="icon"
                 onClick={() => setViewMode('card')}
                 title={t('viewAsCards')}
                 aria-label={t('viewAsCards')}
+                className="flex-1 sm:flex-none"
               >
                 <LayoutGrid className="h-5 w-5" />
               </Button>
@@ -288,11 +289,12 @@ export default function WalletsPage() {
                 onClick={() => setViewMode('table')}
                 title={t('viewAsTable')}
                 aria-label={t('viewAsTable')}
+                className="flex-1 sm:flex-none"
               >
                 <List className="h-5 w-5" />
               </Button>
             </div>
-            <Button onClick={handleAddNewWallet} className="shadow-md hover:shadow-lg transition-shadow">
+            <Button onClick={handleAddNewWallet} className="shadow-md hover:shadow-lg transition-shadow w-full sm:w-auto">
               <PlusCircle className="mr-2 h-5 w-5" />
               {t('addNewWalletButton')}
             </Button>

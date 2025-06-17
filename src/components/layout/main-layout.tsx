@@ -221,13 +221,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </DropdownMenu>
             )}
              {!isAuthenticated && !authIsLoading && mounted && (
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
                     {publicNavItems.map(item => (
                        <Button 
                           key={item.href}
                           variant={item.href === '/register' ? 'default' : 'ghost'} 
                           asChild
                           disabled={isNavigating}
+                          className="w-full sm:w-auto"
                         >
                           <Link href={item.href} onClick={(e) => {if (pathname !== item.href) setIsNavigating(true); else e.preventDefault();}}>
                             {item.icon && <item.icon className="mr-2 h-4 w-4" />} 

@@ -72,14 +72,14 @@ export default function ViewTransactionPage() {
       setTransaction(txData);
 
       const typeDetail = Object.entries(typesData.types).find(([typeId]) => typeId === String(txData.type));
-      setTypeName(typeDetail ? t(`transactionType_${typeDetail[1]}` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
+      setTypeName(typeDetail ? t(\`transactionType_\${typeDetail[1]}\` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
       
       const formattedFrequencies = Object.entries(frequenciesDataResponse.periods).map(([id, name]) => ({ id, name: name as string }));
       const freqIdFromTx = String(txData.frequencyId);
       const freqObject = formattedFrequencies.find(f => f.id === freqIdFromTx);
 
       if (freqObject) {
-        setFrequencyName(t(`frequency_${freqObject.name}` as any, {defaultValue: freqObject.name}));
+        setFrequencyName(t(\`frequency_\${freqObject.name}\` as any, {defaultValue: freqObject.name}));
       } else {
         setFrequencyName(t('notApplicable'));
       }
@@ -217,12 +217,12 @@ export default function ViewTransactionPage() {
                 ))}
             </CardContent>
         </Card>
-        <div className="mt-6 flex justify-between">
-            <Button variant="outline" onClick={() => router.push('/transactions')}>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+            <Button variant="outline" onClick={() => router.push('/transactions')} className="w-full sm:w-auto">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 {t('backToListButton')}
             </Button>
-            <Button asChild variant="default">
+            <Button asChild variant="default" className="w-full sm:w-auto">
                 <Link href={`/transactions/${transaction.id}/edit`}>
                     <Edit3 className="mr-2 h-4 w-4" />
                     {t('editTransactionButton')}
