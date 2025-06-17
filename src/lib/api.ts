@@ -21,8 +21,10 @@ import type {
   MonthlyExpensesByCategoryResponse,
   DashboardLastTransactionsResponse,
   CreateWalletPayload,
-  UpdateWalletPayload as AppUpdateWalletPayload, // Renamed to avoid conflict
-  CurrenciesApiResponse
+  UpdateWalletPayload as AppUpdateWalletPayload,
+  CurrenciesApiResponse,
+  UpdateMainCategoryPayload,
+  UpdateSubCategoryPayload
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -39,8 +41,8 @@ async function handleResponse<T>(response: Response): Promise<T> {
     let rawResponseBody = '';
 
     try {
-      rawResponseBody = await response.text(); 
-      errorData.rawResponse = rawResponseBody; 
+      rawResponseBody = await response.text();
+      errorData.rawResponse = rawResponseBody;
 
       const jsonData = JSON.parse(rawResponseBody);
 
@@ -60,7 +62,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
     throw errorData;
   }
 
-  if (response.status === 204) { 
+  if (response.status === 204) {
     return undefined as T;
   }
   return response.json();
@@ -72,7 +74,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   const headers = new Headers(fetchOptions.headers || {});
 
   console.log(`[API Request] Attempting to call: ${fetchOptions.method || 'GET'} ${url}`);
-  
+
 
   if (token && token.trim() !== "") {
     headers.set('Authorization', `Bearer ${token.trim()}`);
@@ -97,10 +99,10 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     }
   }
 
-  if (!headers.has('Accept') && !isFormData) { 
+  if (!headers.has('Accept') && !isFormData) {
     headers.set('Accept', 'application/json');
   }
-  
+
   const headersToLog: Record<string, string> = {};
   headers.forEach((value, key) => {
     headersToLog[key] = value;
@@ -109,7 +111,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 
 
   const response = await fetch(url, {
-    mode: 'cors', 
+    mode: 'cors',
     ...fetchOptions,
     headers,
   });
@@ -204,15 +206,10 @@ export const createWallet = (data: CreateWalletPayload, token: string): Promise<
   request<WalletDetails>(URLS.createWallet, { method: 'POST', body: data, token });
 
 export const getWalletById = async (id: string | number, token: string): Promise<WalletDetails> => {
-   // API doc has a single wallet wrapped in a "wallet" key, but this needs to be consistent
-   // For now, assuming it returns WalletDetails directly or an object like { wallet: WalletDetails }
-   // Let's assume it returns the WalletDetails directly for now based on prior structure for lists.
-   // If the API wraps it, this will need adjustment (e.g. `return (await request<{wallet: WalletDetails}>(...)).wallet;`)
   return request<WalletDetails>(URLS.walletById(id), { method: 'GET', token });
 }
 
 export const updateWallet = async (id: string | number, data: AppUpdateWalletPayload, token: string): Promise<WalletDetails> => {
- // API returns the updated wallet object directly
  return request<WalletDetails>(URLS.walletById(id), { method: 'PUT', body: data, token });
 }
 
@@ -226,11 +223,29 @@ export const getMainCategories = async (token: string): Promise<MainCategory[]> 
   return response.categories || [];
 }
 
+export const getMainCategoryById = async (id: string | number, token: string): Promise<MainCategory> => {
+  return request<MainCategory>(URLS.mainCategoryById(id), { method: 'GET', token });
+};
+
 export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
   request<MainCategory>(URLS.createMainCategory, { method: 'POST', body: data, token });
 
+export const updateMainCategory = (id: string | number, data: UpdateMainCategoryPayload, token: string): Promise<MainCategory> =>
+  request<MainCategory>(URLS.updateMainCategory(id), { method: 'PUT', body: data, token });
+
+export const deleteMainCategory = (id: string | number, token: string): Promise<void> =>
+  request<void>(URLS.deleteMainCategory(id), { method: 'DELETE', token });
+
+// SubCategories
 export const createSubCategory = (mainCategoryId: string | number, data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
   request<SubCategory>(URLS.createSubCategory(mainCategoryId), { method: 'POST', body: data, token });
+
+export const updateSubCategory = (id: string | number, data: UpdateSubCategoryPayload, token: string): Promise<SubCategory> =>
+  request<SubCategory>(URLS.updateSubCategory(id), { method: 'PUT', body: data, token });
+
+export const deleteSubCategory = (id: string | number, token: string): Promise<void> =>
+  request<void>(URLS.deleteSubCategory(id), { method: 'DELETE', token });
+
 
 // Repeated Transactions
 export const getRepeatedTransactionsList = (token: string): Promise<RepeatedTransactionsApiResponse> =>
@@ -245,6 +260,3 @@ export const deleteRepeatedTransactionDefinition = (id: string | number, token: 
 // General
 export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
   request(URLS.currencies, { method: 'GET', token });
-
-
-export { request };

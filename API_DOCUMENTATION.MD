@@ -386,7 +386,7 @@ Creates a new wallet.
       "type": "cash" // Wallet type key from GET /wallets/types
     }
     ```
-*   **Success Response (201 Created)**: Returns the created wallet object (similar to `GET /wallets` item).
+*   **Success Response (201 Created)**: Returns the created wallet object (similar to `GET /wallets` item, but `number` might be null/absent initially).
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 #### `GET /wallets/{id}`
@@ -396,11 +396,11 @@ Retrieves a specific wallet by its ID.
 
 #### `PUT /wallets/{id}`
 Updates a specific wallet.
-*   **Request Body**: Similar to `POST /wallets`, containing fields to update.
+*   **Request Body**: Similar to `POST /wallets`, containing fields to update. `amount_cents` here represents the new total balance for the wallet.
     ```json
     {
       "name": "Updated Wallet Name",
-      "amount_cents": 75000,
+      "amount_cents": 75000, // New balance in cents
       "currency": "EUR",
       "type": "deposit"
     }
@@ -447,21 +447,27 @@ Retrieves main categories along with their subcategories.
             { "id": 101, "name": "Groceries", "icon": "ShoppingCart", "color": "#FFA500" },
             { "id": 102, "name": "Restaurants", "icon": "Plate", "color": "#FF8C00" }
           ]
-        },
-        {
-          "id": 2,
-          "name": "Income",
-          "icon": "CircleDollarSign",
-          "color": "#32CD32",
-          "subCategories": [
-            { "id": 201, "name": "Salary", "icon": "Briefcase", "color": "#2E8B57" },
-            { "id": 202, "name": "Freelance", "icon": "Laptop", "color": "#90EE90" }
-          ]
         }
+        // ... other main categories
       ]
     }
     ```
 *   **Failure Response (401 Unauthorized)**
+
+#### `GET /main/categories/{id}`
+Retrieves a specific main category by its ID.
+*   **Success Response (200 OK)**: Single `MainCategory` object (possibly including its `subCategories`).
+    ```json
+    {
+      // MainCategory structure, e.g.:
+      "id": 1,
+      "name": "Food & Dining",
+      "icon": "Utensils",
+      "color": "#FFD700",
+      "subCategories": [ /* ... */ ]
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `POST /main/categories`
 Creates a new main category.
@@ -473,7 +479,7 @@ Creates a new main category.
       "color": "#RRGGBB" // Optional, hex color code
     }
     ```
-*   **Success Response (201 Created)**: Returns the created `MainCategory` object (without subCategories initially).
+*   **Success Response (201 Created)**: Returns the created `MainCategory` object (without subCategories initially or with an empty array).
     ```json
     {
       "id": 3,
@@ -485,8 +491,27 @@ Creates a new main category.
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
+#### `PUT /main/categories/{id}`
+Updates a specific main category.
+*   **Request Body**:
+    ```json
+    {
+      "name": "Updated Main Category Name", // Optional
+      "icon": "NewIconName",             // Optional
+      "color": "#112233"                 // Optional
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated `MainCategory` object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /main/categories/{id}`
+Deletes a specific main category. This will likely also delete its associated subcategories (backend logic).
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+
 #### `POST /main/categories/{mainCategoryId}/subcategories`
-Creates a new subcategory under a specified main category.
+Creates a new subcategory under a specified main category. (This is the current implemented endpoint for creation)
 *   **Path Parameter**: `mainCategoryId` (integer)
 *   **Request Body**:
     ```json
@@ -503,10 +528,45 @@ Creates a new subcategory under a specified main category.
       "name": "New Subcategory Name",
       "icon": "LucideIconName",
       "color": "#RRGGBB",
-      "mainCategoryId": 3
+      "mainCategoryId": 3 // This might be part of the response or inferred
     }
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for mainCategoryId)**
+
+#### `POST /sub/categories` (Alternative/Newer for Subcategory Creation, as per user request)
+Creates a new sub category.
+*   **Request Body**:
+    ```json
+    {
+      "name": "SubCategory 1",
+      "main_category": 1, // ID of the parent MainCategory
+      "icon": null,
+      "color": null
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created `SubCategory` object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `PUT /sub/categories/{id}`
+Updates a specific subcategory.
+*   **Path Parameter**: `id` (integer, ID of the subcategory to update)
+*   **Request Body**:
+    ```json
+    {
+      "name": "SubCategory Updated Name", // Optional
+      "main_category": 2,               // Optional, ID of the new/current parent MainCategory
+      "icon": "NewIconName",            // Optional
+      "color": "#AABBCC"                // Optional
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated `SubCategory` object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /sub/categories/{id}`
+Deletes a specific subcategory.
+*   **Path Parameter**: `id` (integer, ID of the subcategory to delete)
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 ### 7. General
 
@@ -576,7 +636,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `name` (string)
 *   `current_balance_cents` (int)
 *   `currency_code` (string)
-*   `account_number` (string, nullable) // Note: This field is part of the GET response but not part of POST/PUT for creation/update from frontend.
+*   `account_number` (string, nullable) // Note: This field is part of the GET response but NOT for POST/PUT from frontend.
 *   `type_key` (string, e.g., "main", "deposit" - links to a wallet_types table/enum from `GET /wallets/types`)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
@@ -691,3 +751,4 @@ If you experience "Failed to fetch" errors or similar network issues when access
 
 By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
+```

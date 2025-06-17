@@ -7,9 +7,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 export const URLS = {
   // Auth
   login: `${API_BASE_URL}/login_check`,
-  register: `${API_BASE_URL}/auth/register`, 
+  register: `${API_BASE_URL}/auth/register`,
   logout: `${API_BASE_URL}/auth/logout`,
-  me: `${API_BASE_URL}/user`, 
+  me: `${API_BASE_URL}/user`,
 
   // Dashboard
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,
@@ -27,26 +27,32 @@ export const URLS = {
 
 
   // Repeated Transactions
-  repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`, 
+  repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`,
   toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`,
   deleteRepeatedTransaction: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`,
 
 
   // User Profile
-  userProfile: `${API_BASE_URL}/user`, 
+  userProfile: `${API_BASE_URL}/user`,
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
   walletById: (id: string | number) => `${API_BASE_URL}/wallets/${id}`,
-  createWallet: `${API_BASE_URL}/wallets`, 
+  createWallet: `${API_BASE_URL}/wallets`,
   walletTypes: `${API_BASE_URL}/wallets/types`,
 
   // Categories Page & Management
   mainCategories: `${API_BASE_URL}/main/categories`,
+  mainCategoryById: (id: string | number) => `${API_BASE_URL}/main/categories/${id}`,
   createMainCategory: `${API_BASE_URL}/main/categories`,
-  createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
+  updateMainCategory: (id: string | number) => `${API_BASE_URL}/main/categories/${id}`,
+  deleteMainCategory: (id: string | number) => `${API_BASE_URL}/main/categories/${id}`,
 
-  // General
-  currencies: `${API_BASE_URL}/currencies`,
-};
+  // SubCategories
+  // Note: createSubCategory uses a different pattern as per existing implementation
+  createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
+  // updateSubCategory and deleteSubCategory use /sub/categories/ endpoint as per user request
+  updateSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
+  deleteSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
+
 

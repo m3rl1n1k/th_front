@@ -1,4 +1,3 @@
-
 {
   "appName": "FinanceFlow",
   "loading": "Завантаження...",
@@ -372,5 +371,33 @@
   "calculator.operator": "Оператор {op}",
   "calculator.displayLabel": "Дисплей калькулятора",
   "calculator.error.divByZero": "Помилка: Ділення на 0",
-  "calculator.error.invalidFormat": "Помилка: Неправильний формат"
+  "calculator.error.invalidFormat": "Помилка: Неправильний формат",
+
+  "editMainCategoryPageTitle": "Редагувати основну категорію: {categoryName}",
+  "updateMainCategoryDetails": "Оновити деталі основної категорії",
+  "modifyCategoryFormBelow": "Змініть форму, щоб оновити деталі категорії.",
+  "updateCategoryButton": "Оновити категорію",
+  "mainCategoryUpdatedTitle": "Основну категорію оновлено",
+  "mainCategoryUpdatedDesc": "Основну категорію успішно оновлено.",
+  "errorUpdatingMainCategory": "Помилка оновлення основної категорії",
+  "errorFetchingCategory": "Помилка завантаження категорії",
+  "couldNotLoadCategoryEdit": "Не вдалося завантажити категорію для редагування. Будь ласка, спробуйте ще раз.",
+  "tokenOrIdMissingError": "Токен або ID відсутні. Неможливо продовжити.",
+  "editSubCategoryPageTitle": "Редагувати підкатегорію: {categoryName}",
+  "updateSubCategoryDetails": "Оновити деталі підкатегорії",
+  "updateSubCategoryButton": "Оновити підкатегорію",
+  "subCategoryUpdatedTitle": "Підкатегорію оновлено",
+  "subCategoryUpdatedDesc": "Підкатегорію успішно оновлено.",
+  "errorUpdatingSubCategory": "Помилка оновлення підкатегорії",
+  "subCategoryNotFound": "Запитану підкатегорію не знайдено.",
+  "deleteMainCategoryConfirmTitle": "Видалити основну категорію?",
+  "deleteMainCategoryConfirmMessage": "Ви впевнені, що хочете видалити основну категорію \"{categoryName}\"? Усі її підкатегорії також будуть видалені. Цю дію неможливо скасувати.",
+  "deleteSubCategoryConfirmTitle": "Видалити підкатегорію?",
+  "deleteSubCategoryConfirmMessage": "Ви впевнені, що хочете видалити підкатегорію \"{categoryName}\"? Цю дію неможливо скасувати.",
+  "mainCategoryDeletedTitle": "Основну категорію видалено",
+  "mainCategoryDeletedDesc": "Основну категорію та її підкатегорії видалено.",
+  "subCategoryDeletedTitle": "Підкатегорію видалено",
+  "subCategoryDeletedDesc": "Підкатегорію видалено.",
+  "errorDeletingMainCategory": "Помилка видалення основної категорії",
+  "errorDeletingSubCategory": "Помилка видалення підкатегорії"
 }

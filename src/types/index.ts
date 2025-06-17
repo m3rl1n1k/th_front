@@ -11,7 +11,7 @@ export interface User {
 
 export interface LoginCredentials {
   username: string; // Will contain the email input
-  password?: string; 
+  password?: string;
 }
 
 export interface LoginResponse {
@@ -53,12 +53,12 @@ export interface TransactionWallet {
 
 export interface Transaction {
   id: string | number;
-  amount: TransactionAmount; 
+  amount: TransactionAmount;
   currency: {
     code: string;
   };
   exchangeRate: number;
-  type: number; 
+  type: number;
   description: string | null;
   wallet: TransactionWallet;
   subCategory: TransactionSubCategory | null;
@@ -66,7 +66,7 @@ export interface Transaction {
     id: string | number;
   };
   source: string | null;
-  date: string; 
+  date: string;
   isRecurring?: boolean;
   frequencyId?: string;
 
@@ -78,20 +78,20 @@ export interface Transaction {
 }
 
 export interface CreateTransactionPayload {
-  amount: number; 
+  amount: number;
   description: string | null;
-  typeId: string; 
-  date: string; 
-  wallet_id: number; 
-  category_id: number | null; 
-  frequencyId: string; 
+  typeId: string;
+  date: string;
+  wallet_id: number;
+  category_id: number | null;
+  frequencyId: string;
 }
 
 export interface UpdateTransactionPayload {
-  amount: number; 
+  amount: number;
   description?: string | null;
   typeId: string;
-  date: string; 
+  date: string;
   wallet_id: number;
   category_id?: number | null;
   frequencyId: string;
@@ -106,10 +106,10 @@ export interface TransactionType {
 export interface ApiError {
   message: string;
   code?: number;
-  errors?: Record<string, string[]>; 
-  error?: string; 
-  detail?: string; 
-  rawResponse?: string; 
+  errors?: Record<string, string[]>;
+  error?: string;
+  detail?: string;
+  rawResponse?: string;
 }
 
 
@@ -121,30 +121,30 @@ export interface Frequency {
 export interface WalletDetails {
   id: number;
   name: string;
-  amount: TransactionAmount; 
+  amount: TransactionAmount;
   number: string; // Account number
-  currency: { 
+  currency: {
     code: string;
   };
-  type: string; 
+  type: string;
   user: {
     id: number;
   };
-  typeName?: string; 
+  typeName?: string;
 }
 
 export interface CreateWalletPayload {
   name: string;
-  amount_cents: number; 
-  currency: string; 
-  type: string; 
+  amount_cents: number;
+  currency: string;
+  type: string;
 }
 
 export interface UpdateWalletPayload {
   name?: string;
-  amount_cents?: number; 
-  currency?: string; 
-  type?: string; 
+  amount_cents?: number;
+  currency?: string;
+  type?: string;
 }
 
 
@@ -164,7 +164,7 @@ export interface SubCategory {
   name: string;
   icon: string | null;
   color: string | null;
-  mainCategoryId?: string | number;
+  mainCategoryId?: string | number; // Ensure this exists for relating back
 }
 
 export interface MainCategory {
@@ -181,12 +181,26 @@ export interface CreateMainCategoryPayload {
   color?: string | null;
 }
 
+export interface UpdateMainCategoryPayload {
+  name?: string;
+  icon?: string | null;
+  color?: string | null;
+}
+
 export interface CreateSubCategoryPayload {
   name: string;
   icon?: string | null;
   color?: string | null;
-  mainCategoryId: string;
+  mainCategoryId: string; // Used for POST /main/categories/{mainCategoryId}/subcategories
 }
+
+export interface UpdateSubCategoryPayload {
+  name?: string;
+  main_category?: number; // Used for PUT /sub/categories/{id}
+  icon?: string | null;
+  color?: string | null;
+}
+
 
 export interface RepeatedTransactionEntry {
   id: number | string;
@@ -208,12 +222,12 @@ export interface RepeatedTransactionsApiResponse {
 }
 
 export interface MonthlyExpenseByCategoryItem {
-  amount: number; 
-  color?: string; 
+  amount: number;
+  color?: string;
 }
 
 export interface MonthlyExpensesByCategoryResponse {
-  month_expense_chart: Record<string, MonthlyExpenseByCategoryItem>; 
+  month_expense_chart: Record<string, MonthlyExpenseByCategoryItem>;
 }
 
 export interface DashboardLastTransactionsResponse {
@@ -227,5 +241,4 @@ export interface CurrenciesApiResponse {
 export interface CurrencyInfo {
   code: string; // "AED"
   nameKey: string; // "uae_dirham"
-  displayName?: string; // "AED - UAE Dirham" (to be constructed)
-}
+  displayName

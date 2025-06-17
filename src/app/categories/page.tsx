@@ -1,19 +1,38 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { MainLayout } from '@/components/layout/main-layout';
 import { useAuth } from '@/context/auth-context';
-import { getMainCategories } from '@/lib/api';
-import type { MainCategory } from '@/types';
+import { getMainCategories, deleteMainCategory, deleteSubCategory } from '@/lib/api';
+import type { MainCategory, SubCategory } from '@/types';
 import { useTranslation } from '@/context/i18n-context';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, Shapes, PlusCircle, Folder } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+import { AlertTriangle, Shapes, PlusCircle, Folder, Edit3, Trash2, MoreHorizontal, Loader2 } from 'lucide-react';
 import { IconRenderer } from '@/components/common/icon-renderer';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
@@ -24,11 +43,18 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 export default function CategoriesPage() {
   const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const router = useRouter();
+
   const [mainCategories, setMainCategories] = useState<MainCategory[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("all");
 
-  useEffect(() => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ type: 'main' | 'sub'; item: MainCategory | SubCategory } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchCategories = useCallback(() => {
     if (isAuthenticated && token) {
       setIsLoading(true);
       getMainCategories(token)
@@ -36,14 +62,58 @@ export default function CategoriesPage() {
           setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch(error => {
-          setMainCategories([]); 
+          setMainCategories([]);
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoading(false));
     } else if (!isAuthenticated) {
       setIsLoading(false);
       setMainCategories([]);
     }
-  }, [token, isAuthenticated]);
+  }, [token, isAuthenticated, toast, t]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const handleEditMainCategory = (id: string | number) => {
+    router.push(`/categories/${id}/edit`);
+  };
+
+  const handleEditSubCategory = (id: string | number) => {
+    router.push(`/categories/sub/${id}/edit`);
+  };
+
+  const openDeleteDialog = (type: 'main' | 'sub', item: MainCategory | SubCategory) => {
+    setItemToDelete({ type, item });
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!itemToDelete || !token) return;
+    setIsDeleting(true);
+    try {
+      if (itemToDelete.type === 'main') {
+        await deleteMainCategory(itemToDelete.item.id, token);
+        toast({ title: t('mainCategoryDeletedTitle'), description: t('mainCategoryDeletedDesc') });
+      } else {
+        await deleteSubCategory(itemToDelete.item.id, token);
+        toast({ title: t('subCategoryDeletedTitle'), description: t('subCategoryDeletedDesc') });
+      }
+      fetchCategories(); // Refresh list
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: itemToDelete.type === 'main' ? t('errorDeletingMainCategory') : t('errorDeletingSubCategory'),
+        description: error.message,
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -141,33 +211,69 @@ export default function CategoriesPage() {
                 <Accordion type="multiple" className="w-full">
                   {mainCategories.map((mainCat) => (
                     <AccordionItem value={`main-${mainCat.id}`} key={`all-${mainCat.id}`}>
-                      <AccordionTrigger className="hover:bg-muted/50 px-4 py-3 rounded-md transition-colors">
-                        <div className="flex items-center space-x-3">
-                          <IconRenderer iconName={mainCat.icon} className="text-primary" />
-                          <span 
-                            className="h-4 w-4 rounded-full border" 
-                            style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
-                            title={mainCat.color || undefined}
-                          ></span>
-                          <span className="font-medium text-foreground">
-                            {t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}
-                          </span>
-                        </div>
-                      </AccordionTrigger>
+                      <div className="flex items-center justify-between hover:bg-muted/50 px-4 rounded-t-md transition-colors">
+                        <AccordionTrigger className="flex-1 py-3 pr-2">
+                          <div className="flex items-center space-x-3">
+                            <IconRenderer iconName={mainCat.icon} className="text-primary" />
+                            <span
+                              className="h-4 w-4 rounded-full border"
+                              style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
+                              title={mainCat.color || undefined}
+                            ></span>
+                            <span className="font-medium text-foreground">
+                              {t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">{t('actions')}</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => handleEditMainCategory(mainCat.id)} className="cursor-pointer">
+                              <Edit3 className="mr-2 h-4 w-4" /> {t('editAction')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => openDeleteDialog('main', mainCat)} className="text-destructive focus:text-destructive cursor-pointer">
+                              <Trash2 className="mr-2 h-4 w-4" /> {t('deleteAction')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                       <AccordionContent className="pt-2 pb-3 pl-8 pr-2">
                         {mainCat.subCategories && mainCat.subCategories.length > 0 ? (
-                          <ul className="space-y-2 mt-1">
+                          <ul className="space-y-1 mt-1">
                             {mainCat.subCategories.map((subCat) => (
-                              <li key={subCat.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/30 transition-colors">
-                                <IconRenderer iconName={subCat.icon} className="text-secondary-foreground h-4 w-4" />
-                                <span 
-                                  className="h-3 w-3 rounded-full border" 
-                                  style={{ backgroundColor: subCat.color || 'hsl(var(--muted))' }}
-                                  title={subCat.color || undefined}
-                                ></span>
-                                <span className="text-sm text-muted-foreground">
-                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
-                                </span>
+                              <li key={subCat.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center space-x-3">
+                                  <IconRenderer iconName={subCat.icon} className="text-secondary-foreground h-4 w-4" />
+                                  <span
+                                    className="h-3 w-3 rounded-full border"
+                                    style={{ backgroundColor: subCat.color || 'hsl(var(--muted))' }}
+                                    title={subCat.color || undefined}
+                                  ></span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
+                                  </span>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                      <MoreHorizontal className="h-3 w-3" />
+                                      <span className="sr-only">{t('actions')}</span>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => handleEditSubCategory(subCat.id)} className="cursor-pointer">
+                                      <Edit3 className="mr-2 h-4 w-4" /> {t('editAction')}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => openDeleteDialog('sub', subCat)} className="text-destructive focus:text-destructive cursor-pointer">
+                                      <Trash2 className="mr-2 h-4 w-4" /> {t('deleteAction')}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </li>
                             ))}
                           </ul>
@@ -188,18 +294,36 @@ export default function CategoriesPage() {
                 <CardTitle>{t('mainCategoriesOnlyListTitle')}</CardTitle>
                 <CardDescription>{t('mainCategoriesOnlyListDescription')}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-1">
                 {mainCategories.map(mainCat => (
-                  <div key={`main-only-${mainCat.id}`} className="flex items-center space-x-3 p-3 border-b last:border-b-0 hover:bg-muted/50 rounded-md transition-colors">
-                    <IconRenderer iconName={mainCat.icon} className="text-primary" />
-                    <span 
-                      className="h-4 w-4 rounded-full border" 
-                      style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
-                      title={mainCat.color || undefined}
-                    ></span>
-                    <span className="font-medium text-foreground">
-                       {t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}
-                    </span>
+                  <div key={`main-only-${mainCat.id}`} className="flex items-center justify-between p-3 border-b last:border-b-0 hover:bg-muted/50 rounded-md transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <IconRenderer iconName={mainCat.icon} className="text-primary" />
+                      <span
+                        className="h-4 w-4 rounded-full border"
+                        style={{ backgroundColor: mainCat.color || 'hsl(var(--muted))' }}
+                        title={mainCat.color || undefined}
+                      ></span>
+                      <span className="font-medium text-foreground">
+                        {t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}
+                      </span>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">{t('actions')}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => handleEditMainCategory(mainCat.id)} className="cursor-pointer">
+                          <Edit3 className="mr-2 h-4 w-4" /> {t('editAction')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => openDeleteDialog('main', mainCat)} className="text-destructive focus:text-destructive cursor-pointer">
+                          <Trash2 className="mr-2 h-4 w-4" /> {t('deleteAction')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
               </CardContent>
@@ -207,6 +331,27 @@ export default function CategoriesPage() {
           </TabsContent>
         </Tabs>
       </div>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {itemToDelete?.type === 'main' ? t('deleteMainCategoryConfirmTitle') : t('deleteSubCategoryConfirmTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {itemToDelete?.type === 'main'
+                ? t('deleteMainCategoryConfirmMessage', { categoryName: itemToDelete.item.name || '' })
+                : t('deleteSubCategoryConfirmMessage', { categoryName: itemToDelete?.item.name || '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setItemToDelete(null)}>{t('cancelButton')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirmed} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isDeleting ? t('deleting') : t('deleteButtonConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
