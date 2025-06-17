@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -14,7 +13,7 @@ type Translations = typeof en;
 interface I18nContextType {
   language: string;
   setLanguage: (lang: string) => Promise<void>;
-  t: (key: keyof Translations, replacements?: Record<string, string | number>) => string;
+  t: (key: keyof Translations | string, options?: { defaultValue?: string } & Record<string, string | number>) => string;
   translations: Translations;
   dateFnsLocale: Locale; // Add date-fns locale to context
 }
@@ -72,15 +71,30 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const t = useCallback((key: keyof Translations, replacements?: Record<string, string | number>): string => {
-    let translation = currentTranslations[key] || en[key] || String(key);
-    if (replacements) {
-      Object.entries(replacements).forEach(([placeholder, value]) => {
-        translation = translation.replace(new RegExp(`{${placeholder}}`, 'g'), String(value));
-      });
-    }
-    return translation;
-  }, [currentTranslations]);
+  const t = useCallback(
+    (key: keyof Translations | string, options?: { defaultValue?: string } & Record<string, string | number>): string => {
+      const { defaultValue, ...replacements } = options || {};
+      const lookupKey = key as keyof Translations; // Assume key is valid for lookups
+
+      let translation = currentTranslations[lookupKey];
+
+      if (translation === undefined) { // Not found in current language
+        translation = en[lookupKey]; // Try English
+      }
+
+      if (translation === undefined) { // Still not found
+        translation = defaultValue !== undefined ? defaultValue : String(key); // Use defaultValue or key itself
+      }
+      
+      if (replacements && Object.keys(replacements).length > 0) {
+        Object.entries(replacements).forEach(([placeholder, value]) => {
+          translation = translation.replace(new RegExp(`{${placeholder}}`, 'g'), String(value));
+        });
+      }
+      return translation;
+    },
+    [currentTranslations]
+  );
 
   return (
     <I18nContext.Provider value={{ language, setLanguage, t, translations: currentTranslations, dateFnsLocale: currentDateFnsLocale }}>

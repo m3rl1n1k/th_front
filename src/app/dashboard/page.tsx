@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -31,7 +30,7 @@ interface DashboardSummaryData {
 }
 
 interface TransformedChartItem {
-  categoryName: string;
+  categoryName: string; // This will be the translated name or original if no translation
   amount: number; // in cents
   color?: string;
 }
@@ -49,6 +48,11 @@ interface ActiveShapeProps {
   percent: number;
   value: number; // This is `amount` from payload, in cents
 }
+
+const generateCategoryTranslationKey = (name: string | undefined | null): string => {
+  if (!name) return '';
+  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
 
 const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: Function) => {
   const RADIAN = Math.PI / 180;
@@ -180,8 +184,10 @@ export default function DashboardPage() {
 
   const transformedChartData = useMemo((): TransformedChartItem[] => {
     if (!expensesByCategoryData?.month_expense_chart) return [];
-    return Object.entries(expensesByCategoryData.month_expense_chart).map(([categoryName, data]) => ({
-      categoryName: categoryName === 'no_category' ? t('noCategory') : categoryName,
+    return Object.entries(expensesByCategoryData.month_expense_chart).map(([categoryNameFromApi, data]) => ({
+      categoryName: categoryNameFromApi === 'no_category' 
+                    ? t('noCategory') 
+                    : t(generateCategoryTranslationKey(categoryNameFromApi), { defaultValue: categoryNameFromApi }),
       amount: data.amount, // in cents
       color: data.color
     }));
@@ -190,10 +196,12 @@ export default function DashboardPage() {
   const chartConfig = useMemo((): ChartConfig => {
     if (!expensesByCategoryData?.month_expense_chart) return {} as ChartConfig;
     const config: ChartConfig = {};
-    Object.entries(expensesByCategoryData.month_expense_chart).forEach(([key, item], index) => {
-      const displayName = key === 'no_category' ? t('noCategory') : key;
-      config[displayName] = {
-        label: displayName,
+    Object.entries(expensesByCategoryData.month_expense_chart).forEach(([keyFromApi, item], index) => {
+      const displayName = keyFromApi === 'no_category' 
+                          ? t('noCategory') 
+                          : t(generateCategoryTranslationKey(keyFromApi), { defaultValue: keyFromApi });
+      config[displayName] = { // Use the (potentially translated) displayName as the key for config
+        label: displayName, // And as the label
         color: item.color || `hsl(var(--chart-${(index % 5) + 1}))`,
       };
     });
@@ -381,9 +389,11 @@ export default function DashboardPage() {
                           className="bg-card text-card-foreground shadow-lg border"
                           formatter={(value, name, itemProps) => {
                             const currency = user?.userCurrency?.code || 'USD';
+                            // itemProps.payload.categoryName should already be translated from transformedChartData
+                            const categoryDisplayName = itemProps.payload.categoryName;
                             return (
                               <div className="flex flex-col gap-0.5">
-                                <span className="font-medium text-foreground">{itemProps.payload.categoryName}</span>
+                                <span className="font-medium text-foreground">{categoryDisplayName}</span>
                                 <CurrencyDisplay amountInCents={value as number} currencyCode={currency} />
                               </div>
                             );
@@ -394,7 +404,7 @@ export default function DashboardPage() {
                     <Pie
                       data={transformedChartData}
                       dataKey="amount" // in cents
-                      nameKey="categoryName"
+                      nameKey="categoryName" // This is the translated name
                       innerRadius="60%"
                       outerRadius="80%"
                       activeIndex={activeChartIndex}
@@ -410,10 +420,10 @@ export default function DashboardPage() {
                         if (!payload) return null;
                         return (
                           <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-4 text-xs">
-                            {payload.map((entry, index) => (
+                            {payload.map((entry, index) => ( // entry.value here is the categoryName from Pie's nameKey
                               <div key={`item-${index}`} className="flex items-center gap-1.5">
                                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                                <span>{entry.value}</span> {/* entry.value is categoryName here */}
+                                <span>{entry.value}</span> 
                               </div>
                             ))}
                           </div>
