@@ -18,12 +18,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
-import { 
-  getTransactionTypes, 
+import {
+  getTransactionTypes,
   createTransaction,
   getTransactionFrequencies,
   getWalletsList,
-  getMainCategories 
+  getMainCategories
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -39,28 +39,28 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 
 export default function NewTransactionPage() {
   const { token, isAuthenticated, user } = useAuth();
-  const { t, dateFnsLocale } = useTranslation(); 
+  const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
-  
+
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [frequencies, setFrequencies] = useState<Frequency[]>([]);
   const [wallets, setWallets] = useState<WalletDetails[]>([]);
   const [mainCategoriesHierarchical, setMainCategoriesHierarchical] = useState<ApiMainCategory[]>([]);
 
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
-  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
+  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true);
   const [isLoadingWallets, setIsLoadingWallets] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
-  
+
   const NewTransactionSchema = z.object({
     amount: z.coerce.number().positive({ message: t('amountPositiveError') }),
     description: z.string().max(255, { message: t('descriptionTooLongError')}).optional().nullable(),
     typeId: z.string().min(1, { message: t('typeRequired') }),
     date: z.date({ required_error: t('dateRequired') }),
     walletId: z.string().min(1, { message: t('walletRequiredError') }),
-    categoryId: z.string().optional().nullable(), 
+    categoryId: z.string().optional().nullable(),
     frequencyId: z.string().min(1, { message: t('frequencyRequiredError')}),
   });
 
@@ -71,11 +71,11 @@ export default function NewTransactionPage() {
     defaultValues: {
       amount: undefined,
       description: '',
-      typeId: '', 
+      typeId: '',
       date: new Date(),
       walletId: '',
-      categoryId: null, 
-      frequencyId: '', 
+      categoryId: null,
+      frequencyId: '',
     },
   });
 
@@ -86,7 +86,7 @@ export default function NewTransactionPage() {
         .then(data => {
           const formattedTypes = Object.entries(data.types)
             .map(([id, name]) => ({ id, name: name as string }))
-            .filter(type => type.name.toUpperCase() !== 'TRANSFER'); 
+            .filter(type => type.name.toUpperCase() !== 'TRANSFER');
           setTransactionTypes(formattedTypes);
         })
         .catch(error => {
@@ -97,15 +97,15 @@ export default function NewTransactionPage() {
       setIsLoadingWallets(true);
       getWalletsList(token)
         .then(data => {
-           setWallets(data.wallets || []); 
+           setWallets(data.wallets || []);
         })
         .catch(error => {
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingWallets(false));
-      
+
       setIsLoadingCategories(true);
-      getMainCategories(token) 
+      getMainCategories(token)
         .then(mainCategoriesResponse => {
           setMainCategoriesHierarchical(Array.isArray(mainCategoriesResponse) ? mainCategoriesResponse : []);
         })
@@ -114,7 +114,7 @@ export default function NewTransactionPage() {
           setMainCategoriesHierarchical([]);
         })
         .finally(() => setIsLoadingCategories(false));
-      
+
       setIsLoadingFrequencies(true);
       getTransactionFrequencies(token)
         .then(data => {
@@ -131,37 +131,61 @@ export default function NewTransactionPage() {
   }, [token, isAuthenticated, t, toast]);
 
   useEffect(() => {
-    if (!isLoadingWallets && !isLoadingTypes && !isLoadingFrequencies && 
-        wallets.length > 0 && transactionTypes.length > 0 && frequencies.length > 0) {
-      
-      const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main');
-      const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE');
-      
-      const defaultOneTimeFrequency = frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME') || frequencies.find(f => f.id === "1");
+    // This effect is for setting default values once all necessary data is loaded
+    if (isLoadingWallets || isLoadingTypes || isLoadingFrequencies) {
+      return; // Exit if any critical data is still loading
+    }
 
+    const currentFormValues = getValues(); // Get current values once
+    const newDefaultsToSet: Partial<NewTransactionFormData> = {};
+    let RHF_stateUpdated = false;
 
-      const currentFormValues = getValues();
-      const newDefaults: Partial<NewTransactionFormData> = {};
-
-      if (!currentFormValues.walletId && defaultWallet) {
-        newDefaults.walletId = String(defaultWallet.id);
-      }
-      if (!currentFormValues.typeId && defaultExpenseType) {
-        newDefaults.typeId = defaultExpenseType.id;
-      }
-      if (!currentFormValues.frequencyId && defaultOneTimeFrequency) {
-        newDefaults.frequencyId = defaultOneTimeFrequency.id;
-      }
-
-      if (Object.keys(newDefaults).length > 0) {
-        reset(prev => ({
-          ...prev,
-          ...newDefaults,
-        }));
+    // Default Wallet
+    if (!currentFormValues.walletId && wallets.length > 0) {
+      const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main') || wallets[0];
+      if (defaultWallet) {
+        newDefaultsToSet.walletId = String(defaultWallet.id);
+        RHF_stateUpdated = true;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoadingWallets, isLoadingTypes, isLoadingFrequencies, wallets, transactionTypes, frequencies, reset, getValues]);
+
+    // Default Transaction Type
+    if (!currentFormValues.typeId && transactionTypes.length > 0) {
+      const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE') || transactionTypes[0];
+      if (defaultExpenseType) {
+        newDefaultsToSet.typeId = defaultExpenseType.id;
+        RHF_stateUpdated = true;
+      }
+    }
+
+    // Default Frequency to "ONE_TIME" (ID "1")
+    if (!currentFormValues.frequencyId && frequencies.length > 0) {
+      // API Docs state "1": "ONE_TIME"
+      const defaultOneTimeFrequency = frequencies.find(f => f.id === "1") || frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME');
+      if (defaultOneTimeFrequency) {
+        newDefaultsToSet.frequencyId = defaultOneTimeFrequency.id;
+        RHF_stateUpdated = true;
+      } else if (frequencies.length > 0) {
+        // Fallback if "ONE_TIME" (ID "1") is somehow not found, though it should be.
+        // To avoid leaving it blank if other frequencies exist.
+        // However, for this specific fix, we want to ensure "ONE_TIME" if available.
+        // If "ONE_TIME" is critical, we might not want a different fallback here.
+      }
+    }
+
+    if (RHF_stateUpdated && Object.keys(newDefaultsToSet).length > 0) {
+      reset(prev => ({
+        ...prev,
+        ...newDefaultsToSet,
+      }), {
+        // keepDirty: true // Could be useful if user typed something before defaults loaded
+      });
+    }
+  }, [
+    isLoadingWallets, isLoadingTypes, isLoadingFrequencies,
+    wallets, transactionTypes, frequencies,
+    reset, getValues // getValues is called inside, reset is stable
+  ]);
 
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
@@ -172,13 +196,13 @@ export default function NewTransactionPage() {
 
     try {
       const payload = {
-        amount: Math.round(data.amount * 100), 
+        amount: Math.round(data.amount * 100),
         description: data.description || null,
-        typeId: data.typeId, 
+        typeId: data.typeId,
         date: format(data.date, 'yyyy-MM-dd'),
-        wallet_id: parseInt(data.walletId), 
+        wallet_id: parseInt(data.walletId),
         category_id: data.categoryId ? parseInt(data.categoryId) : null,
-        frequencyId: data.frequencyId, 
+        frequencyId: data.frequencyId,
       };
       await createTransaction(payload, token);
       toast({
@@ -194,7 +218,7 @@ export default function NewTransactionPage() {
       });
     }
   };
-  
+
   const anyDataLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || isLoadingFrequencies;
 
   return (
@@ -224,7 +248,7 @@ export default function NewTransactionPage() {
                       type="number"
                       step="0.01"
                       {...register('amount')}
-                      placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })} 
+                      placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })}
                       className={errors.amount ? 'border-destructive flex-grow' : 'flex-grow'}
                     />
                     <Popover open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen}>
@@ -275,7 +299,7 @@ export default function NewTransactionPage() {
                   {errors.typeId && <p className="text-sm text-destructive">{errors.typeId.message}</p>}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="walletId">{t('wallet')}</Label>
@@ -312,7 +336,7 @@ export default function NewTransactionPage() {
                     render={({ field }) => (
                       <Select
                         onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                        value={field.value || "none"} 
+                        value={field.value || "none"}
                         disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
                       >
                         <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
@@ -350,7 +374,7 @@ export default function NewTransactionPage() {
                 />
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <div className="space-y-2">
                   <Label htmlFor="date">{t('date')}</Label>
@@ -376,7 +400,7 @@ export default function NewTransactionPage() {
                             onSelect={field.onChange}
                             disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                             initialFocus
-                            locale={dateFnsLocale} 
+                            locale={dateFnsLocale}
                           />
                         </PopoverContent>
                       </Popover>
@@ -413,7 +437,7 @@ export default function NewTransactionPage() {
                     {errors.frequencyId && <p className="text-sm text-destructive">{errors.frequencyId.message}</p>}
                 </div>
               </div>
-              
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isSubmitting || anyDataLoading}>
                   {isSubmitting || anyDataLoading ? (
@@ -431,4 +455,3 @@ export default function NewTransactionPage() {
     </MainLayout>
   );
 }
-    
