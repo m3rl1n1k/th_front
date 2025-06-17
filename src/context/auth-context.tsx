@@ -35,14 +35,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const saveTokenToStorages = (tokenValue: string) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(TOKEN_STORAGE_KEY, tokenValue);
       sessionStorage.setItem(TOKEN_STORAGE_KEY, tokenValue);
     }
   };
 
   const removeTokenFromStorages = () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
     }
   };
@@ -76,10 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       let initialToken: string | null = null;
       if (typeof window !== 'undefined') {
-        initialToken = sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY);
-        if (initialToken && sessionStorage.getItem(TOKEN_STORAGE_KEY) !== initialToken) {
-          sessionStorage.setItem(TOKEN_STORAGE_KEY, initialToken);
-        }
+        initialToken = sessionStorage.getItem(TOKEN_STORAGE_KEY);
       }
 
       if (initialToken) {
@@ -129,7 +124,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: apiError.message || t('loginFailedDesc'),
       });
       clearAuthArtefacts();
-      // No re-throw here, error is handled by showing toast
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +139,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (apiError.rawResponse) {
         console.error("Raw server response on registration error:", apiError.rawResponse);
       }
-      // Re-throw to be handled by the form's catch block
       throw error;
     } finally {
       setIsLoading(false);
@@ -162,7 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   const fetchUser = useCallback(async () => {
-    const currentTokenValue = token || (typeof window !== 'undefined' ? (sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY)) : null);
+    const currentTokenValue = token || (typeof window !== 'undefined' ? sessionStorage.getItem(TOKEN_STORAGE_KEY) : null);
     if (currentTokenValue) {
       setIsLoading(true);
       try {
