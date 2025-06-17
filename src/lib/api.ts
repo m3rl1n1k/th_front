@@ -21,6 +21,7 @@ import type {
   MonthlyExpensesByCategoryResponse,
   DashboardLastTransactionsResponse,
   CreateWalletPayload,
+  UpdateWalletPayload as AppUpdateWalletPayload, // Renamed to avoid conflict
   CurrenciesApiResponse
 } from '@/types';
 
@@ -203,13 +204,16 @@ export const createWallet = (data: CreateWalletPayload, token: string): Promise<
   request<WalletDetails>(URLS.createWallet, { method: 'POST', body: data, token });
 
 export const getWalletById = async (id: string | number, token: string): Promise<WalletDetails> => {
-  const response = await request<{ wallet: WalletDetails }>(URLS.walletById(id), { method: 'GET', token });
-  return response.wallet;
+   // API doc has a single wallet wrapped in a "wallet" key, but this needs to be consistent
+   // For now, assuming it returns WalletDetails directly or an object like { wallet: WalletDetails }
+   // Let's assume it returns the WalletDetails directly for now based on prior structure for lists.
+   // If the API wraps it, this will need adjustment (e.g. `return (await request<{wallet: WalletDetails}>(...)).wallet;`)
+  return request<WalletDetails>(URLS.walletById(id), { method: 'GET', token });
 }
 
-export const updateWallet = async (id: string | number, data: Partial<CreateWalletPayload>, token: string): Promise<WalletDetails> => {
- const response = await request<{ wallet: WalletDetails }>(URLS.walletById(id), { method: 'PUT', body: data, token });
- return response.wallet;
+export const updateWallet = async (id: string | number, data: AppUpdateWalletPayload, token: string): Promise<WalletDetails> => {
+ // API returns the updated wallet object directly
+ return request<WalletDetails>(URLS.walletById(id), { method: 'PUT', body: data, token });
 }
 
 export const deleteWallet = (id: string | number, token: string): Promise<void> =>

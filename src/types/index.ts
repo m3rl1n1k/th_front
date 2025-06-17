@@ -122,7 +122,7 @@ export interface WalletDetails {
   id: number;
   name: string;
   amount: TransactionAmount; 
-  number: string; // Account number - Note: This field is being removed from create/update forms
+  number: string; // Account number
   currency: { 
     code: string;
   };
@@ -138,6 +138,13 @@ export interface CreateWalletPayload {
   amount_cents: number; 
   currency: string; 
   type: string; 
+}
+
+export interface UpdateWalletPayload {
+  name?: string;
+  amount_cents?: number; 
+  currency?: string; 
+  type?: string; 
 }
 
 

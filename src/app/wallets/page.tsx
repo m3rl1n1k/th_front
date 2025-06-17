@@ -153,17 +153,11 @@ export default function WalletsPage() {
   };
 
   const handleViewDetails = (walletId: string | number) => {
-    // Implement navigation to wallet details page or modal
-    // For now, placeholder
-    toast({ title: t('featureComingSoonTitle'), description: t('walletViewDetailsDesc') });
-    // router.push(`/wallets/${walletId}`);
+    router.push(`/wallets/${walletId}`);
   };
 
   const handleEditWallet = (walletId: string | number) => {
-    // Implement navigation to wallet edit page
-    // For now, placeholder
-    toast({ title: t('featureComingSoonTitle'), description: t('walletEditDesc') });
-    // router.push(`/wallets/${walletId}/edit`);
+    router.push(`/wallets/${walletId}/edit`);
   };
 
   const handleDeleteWallet = (wallet: WalletDetails) => {
