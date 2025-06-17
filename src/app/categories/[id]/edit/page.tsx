@@ -168,7 +168,7 @@ export default function EditMainCategoryPage() {
     );
   }
 
-  if (errorOccurred || !mainCategory) { // Check !mainCategory after loading is complete
+  if (errorOccurred || !mainCategory) { 
     return (
       <MainLayout>
         <Card className="max-w-md mx-auto mt-10">
@@ -187,7 +187,6 @@ export default function EditMainCategoryPage() {
   }
   
   let titleCategoryNameDisplay;
-  // This logic runs when isLoading and authIsLoading are false, and errorOccurred is false, and mainCategory is not null.
   if (mainCategory.name && mainCategory.name.trim() !== "") {
     titleCategoryNameDisplay = mainCategory.name;
   } else { 
@@ -273,3 +272,5 @@ export default function EditMainCategoryPage() {
     </MainLayout>
   );
 }
+
+    
