@@ -388,7 +388,7 @@
   "subCategoryUpdatedTitle": "Subcategory Updated",
   "subCategoryUpdatedDesc": "The subcategory has been successfully updated.",
   "errorUpdatingSubCategory": "Error Updating Subcategory",
-  "subCategoryNotFound": "The requested subcategory was not found.",
+  "subCategoryNotFound": "Subcategory Not Found",
   "deleteMainCategoryConfirmTitle": "Delete Main Category?",
   "deleteMainCategoryConfirmMessage": "Are you sure you want to delete the main category \"{categoryName}\"? All its subcategories will also be deleted. This action cannot be undone.",
   "deleteSubCategoryConfirmTitle": "Delete Subcategory?",
@@ -401,7 +401,6 @@
   "errorDeletingSubCategory": "Error Deleting Subcategory",
   "unnamedCategoryPlaceholder": "Unnamed Category",
   "categoryNotFoundPlaceholder": "Category Not Found",
-
   "transfersTitle": "Transfers",
   "createTransferTitle": "Create New Transfer",
   "createTransferDesc": "Move funds between your wallets.",
@@ -431,5 +430,6 @@
   "transferDeletedDesc": "The transfer record has been successfully deleted.",
   "transferDeleteFailedTitle": "Failed to Delete Transfer",
   "unknownWallet": "Unknown Wallet",
-  "transferNotEnoughWalletsError": "You need at least two wallets to make a transfer."
+  "transferNotEnoughWalletsError": "You need at least two wallets to make a transfer.",
+  "yourWalletsGroupLabel": "Your Wallets"
 }

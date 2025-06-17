@@ -11,7 +11,7 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -29,7 +29,7 @@ const createTransferFormSchema = (t: Function) => z.object({
   incomeWalletId: z.string().min(1, { message: t('transferIncomeWalletRequired') }),
 }).refine(data => data.outcomeWalletId !== data.incomeWalletId, {
   message: t('transferWalletsMustBeDifferentError'),
-  path: ["incomeWalletId"], // Error applies to the second wallet field
+  path: ["incomeWalletId"],
 });
 
 type TransferFormData = z.infer<ReturnType<typeof createTransferFormSchema>>;
@@ -40,6 +40,7 @@ export default function TransfersPage() {
   const { toast } = useToast();
 
   const [userWallets, setUserWallets] = useState<TransferUserWallet[]>([]);
+  const [capitalWalletsGrouped, setCapitalWalletsGrouped] = useState<Record<string, TransferUserWallet[]>>({});
   const [transfersList, setTransfersList] = useState<TransferListItem[]>([]);
 
   const [isLoadingFormData, setIsLoadingFormData] = useState(true);
@@ -69,6 +70,7 @@ export default function TransfersPage() {
     try {
       const data = await getTransferFormData(token);
       setUserWallets(data.user_wallets || []);
+      setCapitalWalletsGrouped(data.capital_wallets || {});
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
     } finally {
@@ -94,11 +96,6 @@ export default function TransfersPage() {
     fetchTransfers();
   }, [fetchFormData, fetchTransfers]);
 
-  const availableIncomeWallets = useMemo(() => {
-    if (!selectedOutcomeWalletId) return userWallets;
-    return userWallets.filter(wallet => String(wallet.id) !== selectedOutcomeWalletId);
-  }, [userWallets, selectedOutcomeWalletId]);
-
   const onSubmit: SubmitHandler<TransferFormData> = async (data) => {
     if (!token) return;
     setIsSubmittingForm(true);
@@ -111,7 +108,7 @@ export default function TransfersPage() {
       await createTransfer(payload, token);
       toast({ title: t('transferCreatedTitle'), description: t('transferCreatedDesc') });
       reset();
-      fetchTransfers(); // Refresh list
+      fetchTransfers(); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
     } finally {
@@ -130,7 +127,7 @@ export default function TransfersPage() {
     try {
       await deleteTransfer(transferToDelete.id, token);
       toast({ title: t('transferDeletedTitle'), description: t('transferDeletedDesc') });
-      fetchTransfers(); // Refresh list
+      fetchTransfers();
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferDeleteFailedTitle'), description: error.message });
     } finally {
@@ -140,10 +137,24 @@ export default function TransfersPage() {
     }
   };
   
-  const getWalletNameAndCurrency = (walletId: number) => {
-    const wallet = userWallets.find(w => w.id === walletId);
-    return wallet ? `${wallet.name} (${wallet.currency.code})` : t('unknownWallet');
-  };
+  const getWalletNameAndCurrency = useCallback((walletId: number): string => {
+    const foundUserWallet = userWallets.find(w => w.id === walletId);
+    if (foundUserWallet) {
+      return `${foundUserWallet.name} (${foundUserWallet.currency.code})`;
+    }
+
+    for (const username in capitalWalletsGrouped) {
+      const foundCapitalWallet = capitalWalletsGrouped[username]?.find(w => w.id === walletId);
+      if (foundCapitalWallet) {
+        return `${foundCapitalWallet.name} (${foundCapitalWallet.currency.code}) (@${username})`;
+      }
+    }
+    return t('unknownWallet');
+  }, [userWallets, capitalWalletsGrouped, t]);
+
+  const hasAnyWallets = userWallets.length > 0 || Object.keys(capitalWalletsGrouped).length > 0;
+  const hasSufficientWalletsForTransfer = userWallets.length >=1 && (userWallets.length >=2 || Object.keys(capitalWalletsGrouped).length > 0);
+
 
   return (
     <MainLayout>
@@ -165,7 +176,7 @@ export default function TransfersPage() {
               <div className="flex justify-center items-center h-32">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : userWallets.length < 2 ? (
+            ) : !hasSufficientWalletsForTransfer ? (
                 <div className="text-center py-6">
                     <AlertTriangle className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
                     <p className="text-muted-foreground">{t('transferNotEnoughWalletsError')}</p>
@@ -215,15 +226,44 @@ export default function TransfersPage() {
                       name="incomeWalletId"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value} disabled={availableIncomeWallets.length === 0 || !selectedOutcomeWalletId}>
+                        <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value} 
+                            disabled={!hasAnyWallets || !selectedOutcomeWalletId}
+                        >
                           <SelectTrigger id="incomeWalletId" className={errors.incomeWalletId ? 'border-destructive' : ''}>
                             <SelectValue placeholder={t('transferSelectIncomeWalletPlaceholder')} />
                           </SelectTrigger>
-                          <SelectContent>
-                            {availableIncomeWallets.map(wallet => (
-                              <SelectItem key={wallet.id} value={String(wallet.id)}>
-                                {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
-                              </SelectItem>
+                          <SelectContent className="max-h-72">
+                            {userWallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 && (
+                                <SelectGroup>
+                                    <SelectLabel>{t('yourWalletsGroupLabel')}</SelectLabel>
+                                    {userWallets
+                                    .filter(wallet => String(wallet.id) !== selectedOutcomeWalletId)
+                                    .map(wallet => (
+                                        <SelectItem key={`user-${wallet.id}`} value={String(wallet.id)}>
+                                        {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            )}
+                            
+                            {Object.entries(capitalWalletsGrouped).map(([username, wallets], groupIndex) => (
+                               wallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 && (
+                                <React.Fragment key={username}>
+                                    {(userWallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 || groupIndex > 0) && <SelectSeparator />}
+                                    <SelectGroup>
+                                        <SelectLabel>{username}</SelectLabel>
+                                        {wallets
+                                        .filter(wallet => String(wallet.id) !== selectedOutcomeWalletId)
+                                        .map(wallet => (
+                                            <SelectItem key={`capital-${wallet.id}`} value={String(wallet.id)}>
+                                            {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
+                                            </SelectItem>
+                                        ))}
+                                    </SelectGroup>
+                                </React.Fragment>
+                               )
                             ))}
                           </SelectContent>
                         </Select>
@@ -233,7 +273,7 @@ export default function TransfersPage() {
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={isSubmittingForm || userWallets.length < 2}>
+                  <Button type="submit" disabled={isSubmittingForm || !hasSufficientWalletsForTransfer}>
                     {isSubmittingForm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                     {t('transferCreateButton')}
                   </Button>

@@ -263,7 +263,7 @@ export interface TransferUserWallet {
 
 export interface TransferFormDataResponse {
   user_wallets: TransferUserWallet[];
-  capital_wallets: TransferUserWallet[]; // Assuming same structure
+  capital_wallets: Record<string, TransferUserWallet[]>; // Updated: username as key
 }
 
 export interface TransferWalletInfo {
@@ -292,4 +292,3 @@ export interface CreateTransferPayload {
   income_wallet_id: number;
   amount_cents: number;
 }
-

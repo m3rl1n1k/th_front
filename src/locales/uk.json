@@ -388,7 +388,7 @@
   "subCategoryUpdatedTitle": "Підкатегорію оновлено",
   "subCategoryUpdatedDesc": "Підкатегорію успішно оновлено.",
   "errorUpdatingSubCategory": "Помилка оновлення підкатегорії",
-  "subCategoryNotFound": "Запитану підкатегорію не знайдено.",
+  "subCategoryNotFound": "Підкатегорію не знайдено",
   "deleteMainCategoryConfirmTitle": "Видалити основну категорію?",
   "deleteMainCategoryConfirmMessage": "Ви впевнені, що хочете видалити основну категорію \"{categoryName}\"? Усі її підкатегорії також будуть видалені. Цю дію неможливо скасувати.",
   "deleteSubCategoryConfirmTitle": "Видалити підкатегорію?",
@@ -401,7 +401,6 @@
   "errorDeletingSubCategory": "Помилка видалення підкатегорії",
   "unnamedCategoryPlaceholder": "Без назви",
   "categoryNotFoundPlaceholder": "Категорію не знайдено",
-
   "transfersTitle": "Перекази",
   "createTransferTitle": "Створити новий переказ",
   "createTransferDesc": "Переміщуйте кошти між своїми гаманцями.",
@@ -431,5 +430,6 @@
   "transferDeletedDesc": "Запис про переказ успішно видалено.",
   "transferDeleteFailedTitle": "Не вдалося видалити переказ",
   "unknownWallet": "Невідомий гаманець",
-  "transferNotEnoughWalletsError": "Для здійснення переказу потрібно щонайменше два гаманці."
+  "transferNotEnoughWalletsError": "Для здійснення переказу потрібно щонайменше два гаманці.",
+  "yourWalletsGroupLabel": "Ваші гаманці"
 }
