@@ -182,7 +182,7 @@ export default function EditSubCategoryPage() {
           title={color}
           aria-label={`Color ${color}`}
         >
-          {value === color && <Check className={cn("h-3.5 w-3.5 text-primary-foreground mix-blend-difference")} />}
+          {value === color && <Check className={cn("h-3.5 w-3.5", (color === '#FFFFFF' || color === '#F3F4F6') ? 'text-gray-700' : 'text-primary-foreground mix-blend-difference')} />}
         </button>
       ))}
     </div>

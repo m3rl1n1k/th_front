@@ -24,13 +24,41 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const predefinedColors = [
-  '#F3F4F6', '#D1D5DB', '#6B7280', '#374151',
-  '#FECACA', '#F87171', '#FCA5A5',
-  '#FDE68A', '#FBBF24', '#FCD34D',
-  '#A7F3D0', '#34D399', '#6EE7B7',
-  '#BFDBFE', '#60A5FA', '#93C5FD',
-  '#C4B5FD', '#A78BFA', '#DDD6FE',
-  '#FBCFE8', '#A5B4FC', '#7DD3FC',
+  // Soft neutrals & grays
+  '#F3F4F6', // Tailwind gray-100 (Light Gray)
+  '#D1D5DB', // Tailwind gray-300 (Medium Gray)
+  '#6B7280', // Tailwind gray-500 (Darker Gray)
+  '#374151', // Tailwind gray-700 (Very Dark Gray)
+
+  // Muted Reds/Pinks
+  '#FECACA', // Tailwind red-200 (Light Red/Pink)
+  '#F87171', // Tailwind red-400 (Soft Red)
+  '#FCA5A5', // Tailwind red-300 (Salmon Pink)
+  
+  // Muted Oranges/Yellows
+  '#FDE68A', // Tailwind yellow-200 (Pale Yellow)
+  '#FBBF24', // Tailwind amber-400 (Soft Orange)
+  '#FCD34D', // Tailwind amber-300 (Light Orange)
+
+  // Muted Greens
+  '#A7F3D0', // Tailwind emerald-200 (Light Mint Green)
+  '#34D399', // Tailwind emerald-400 (Soft Green)
+  '#6EE7B7', // Tailwind emerald-300 (Mint Green)
+
+  // Muted Blues
+  '#BFDBFE', // Tailwind blue-200 (Light Blue)
+  '#60A5FA', // Tailwind blue-400 (Soft Blue)
+  '#93C5FD', // Tailwind blue-300 (Sky Blue)
+
+  // Muted Purples/Indigos
+  '#C4B5FD', // Tailwind indigo-300 (Light Lavender)
+  '#A78BFA', // Tailwind violet-400 (Soft Purple)
+  '#DDD6FE', // Tailwind violet-200 (Very Light Purple)
+
+  // Other muted tones
+  '#FBCFE8', // Tailwind pink-200 (Light Pink)
+  '#A5B4FC', // Tailwind indigo-400 (Muted Indigo)
+  '#7DD3FC', // Tailwind sky-300 (Soft Sky Blue)
 ];
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
