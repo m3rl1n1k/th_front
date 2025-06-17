@@ -8,7 +8,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins } from 'lucide-react';
+import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2 } from 'lucide-react'; // Added Loader2
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,7 @@ const createEditProfileSchema = (t: Function) => z.object({
   login: z.string().min(3, { message: t('loginMinLengthError') }),
   email: z.string().email({ message: t('invalidEmail') }),
   userCurrencyCode: z.string()
-    .refine(value => value === '' || currencyCodeRegex.test(value), {
+    .refine(value => value === NO_CURRENCY_SELECTED_PLACEHOLDER || value === '' || currencyCodeRegex.test(value), { // Allow placeholder
       message: t('invalidCurrencyCodeFormat'),
     })
     .optional()
@@ -66,7 +66,7 @@ export default function ProfilePage() {
     defaultValues: {
       login: '',
       email: '',
-      userCurrencyCode: null, // Initialize with null
+      userCurrencyCode: null, 
     }
   });
 
@@ -99,7 +99,7 @@ export default function ProfilePage() {
       reset({
         login: newProfileData.login,
         email: newProfileData.email,
-        userCurrencyCode: user.userCurrency?.code || null, // Use null if not set
+        userCurrencyCode: user.userCurrency?.code || null,
       });
 
       if (!user.userCurrency?.code) {
@@ -152,14 +152,14 @@ export default function ProfilePage() {
     const payload = {
       login: data.login,
       email: data.email,
-      userCurrencyCode: data.userCurrencyCode || undefined, 
+      userCurrencyCode: data.userCurrencyCode === NO_CURRENCY_SELECTED_PLACEHOLDER ? undefined : (data.userCurrencyCode || undefined),
     };
 
     try {
       await updateUserProfile(payload, token);
       await fetchUser(); 
       toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDescApi') });
-      setShowCurrencyPrompt(false); // Hide prompt if currency was set
+      setShowCurrencyPrompt(false); 
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -337,11 +337,7 @@ export default function ProfilePage() {
                         render={({ field }) => (
                           <Select
                             onValueChange={(value) => {
-                              if (value === NO_CURRENCY_SELECTED_PLACEHOLDER) {
-                                field.onChange(null);
-                              } else {
                                 field.onChange(value);
-                              }
                             }}
                             value={field.value || NO_CURRENCY_SELECTED_PLACEHOLDER}
                             disabled={isLoadingCurrencies || allCurrencies.length === 0}
@@ -395,3 +391,5 @@ export default function ProfilePage() {
     </MainLayout>
   );
 }
+
+    
