@@ -23,16 +23,45 @@ import { Save, ArrowLeft, PlusCircle, Tag, Check } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { cn } from '@/lib/utils';
 
-// Predefined color palette
+// Updated predefined color palette for a softer, less contrasted look
 const predefinedColors = [
-  '#FFFFFF', '#000000', '#808080', '#D3D3D3', // Basics
-  '#FF0000', '#FA8072', '#FFC0CB', '#DC143C', // Reds/Pinks
-  '#FFA500', '#FFD700', '#FFFF00',             // Oranges/Yellows
-  '#008000', '#90EE90', '#2E8B57', '#32CD32', // Greens
-  '#0000FF', '#ADD8E6', '#4682B4', '#00008B', // Blues
-  '#800080', '#DA70D6', '#9370DB',             // Purples
-  '#A52A2A', '#DEB887', '#F5F5DC'              // Browns/Others
+  // Soft neutrals & grays
+  '#F3F4F6', // Tailwind gray-100 (Light Gray)
+  '#D1D5DB', // Tailwind gray-300 (Medium Gray)
+  '#6B7280', // Tailwind gray-500 (Darker Gray)
+  '#374151', // Tailwind gray-700 (Very Dark Gray)
+
+  // Muted Reds/Pinks
+  '#FECACA', // Tailwind red-200 (Light Red/Pink)
+  '#F87171', // Tailwind red-400 (Soft Red)
+  '#FCA5A5', // Tailwind red-300 (Salmon Pink)
+  
+  // Muted Oranges/Yellows
+  '#FDE68A', // Tailwind yellow-200 (Pale Yellow)
+  '#FBBF24', // Tailwind amber-400 (Soft Orange)
+  '#FCD34D', // Tailwind amber-300 (Light Orange)
+
+  // Muted Greens
+  '#A7F3D0', // Tailwind emerald-200 (Light Mint Green)
+  '#34D399', // Tailwind emerald-400 (Soft Green)
+  '#6EE7B7', // Tailwind emerald-300 (Mint Green)
+
+  // Muted Blues
+  '#BFDBFE', // Tailwind blue-200 (Light Blue)
+  '#60A5FA', // Tailwind blue-400 (Soft Blue)
+  '#93C5FD', // Tailwind blue-300 (Sky Blue)
+
+  // Muted Purples/Indigos
+  '#C4B5FD', // Tailwind indigo-300 (Light Lavender)
+  '#A78BFA', // Tailwind violet-400 (Soft Purple)
+  '#DDD6FE', // Tailwind violet-200 (Very Light Purple)
+
+  // Other muted tones
+  '#FBCFE8', // Tailwind pink-200 (Light Pink)
+  '#A5B4FC', // Tailwind indigo-400 (Muted Indigo)
+  '#7DD3FC', // Tailwind sky-300 (Soft Sky Blue)
 ];
+
 
 // Schemas
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
@@ -110,7 +139,7 @@ export default function CreateCategoryPage() {
     if (!token) return;
     const payload: CreateSubCategoryPayload = {
       name: data.name,
-      main_category: parseInt(data.mainCategoryId, 10), // API expects 'main_category' as number
+      main_category: parseInt(data.mainCategoryId, 10),
       icon: data.icon || null,
       color: data.color || null,
     };
@@ -127,7 +156,7 @@ export default function CreateCategoryPage() {
   const isFormsLoading = isSubmitting || isLoadingCategories;
 
   const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
-    <div className="grid grid-cols-8 gap-1.5 p-1 border rounded-md bg-muted/20 max-w-xs">
+    <div className="grid grid-cols-7 gap-2 p-1 border rounded-md bg-muted/20 max-w-xs">
       {predefinedColors.map((color) => (
         <button
           type="button"
@@ -136,13 +165,13 @@ export default function CreateCategoryPage() {
           className={cn(
             "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-            color === '#FFFFFF' && 'border-input' // Add border for white swatch for visibility
+            (color === '#FFFFFF' || color === '#F3F4F6') && 'border-input' // Add border for very light swatches for visibility
           )}
           style={{ backgroundColor: color }}
           title={color}
           aria-label={`Color ${color}`}
         >
-          {value === color && <Check className={cn("h-3.5 w-3.5 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' || color === '#DC143C' || color === '#4682B4' || color === '#2E8B57' ? 'text-white' : 'text-black')} />}
+          {value === color && <Check className={cn("h-3.5 w-3.5 text-primary-foreground mix-blend-difference")} />}
         </button>
       ))}
     </div>
