@@ -25,7 +25,7 @@ import type {
   Frequency, 
   SubCategory 
 } from '@/types';
-import { ArrowLeft, Edit3, Loader2, AlertTriangle, DollarSign, Tag, CalendarDays, Repeat, WalletIcon, Info } from 'lucide-react';
+import { ArrowLeft, Edit3, Loader2, AlertTriangle, DollarSign, Tag, CalendarDays, Repeat, WalletIcon, Info, ArrowRightLeft } from 'lucide-react';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -71,21 +71,29 @@ export default function ViewTransactionPage() {
       const txData = txResponse; 
       setTransaction(txData);
 
-      const typeDetail = Object.entries(typesData.types).find(([typeId]) => typeId === String(txData.type));
-      setTypeName(typeDetail ? t(\`transactionType_\${typeDetail[1]}\` as any, {defaultValue: typeDetail[1]}) : t('transactionType_UNKNOWN'));
+      const txTypeString = String(txData.type);
+      const typeDetail = Object.entries(typesData.types).find(([apiTypeId]) => apiTypeId === txTypeString);
       
-      const formattedFrequencies = Object.entries(frequenciesDataResponse.periods).map(([id, name]) => ({ id, name: name as string }));
+      if (typeDetail) {
+        const apiTypeName = typeDetail[1]; // e.g., "INCOME", "EXPENSE"
+        const keyForTranslation = `transactionType_${apiTypeName}`;
+        setTypeName(t(keyForTranslation, { defaultValue: apiTypeName }));
+      } else {
+        setTypeName(t('transactionType_UNKNOWN'));
+      }
+      
+      const formattedFrequencies = Object.entries(frequenciesDataResponse.periods).map(([freqId, name]) => ({ id: freqId, name: name as string }));
       const freqIdFromTx = String(txData.frequencyId);
       const freqObject = formattedFrequencies.find(f => f.id === freqIdFromTx);
 
       if (freqObject) {
-        setFrequencyName(t(\`frequency_\${freqObject.name}\` as any, {defaultValue: freqObject.name}));
+        setFrequencyName(t(`frequency_${freqObject.name}` as any, {defaultValue: freqObject.name}));
       } else {
         setFrequencyName(t('notApplicable'));
       }
       
       if (txData.subCategory?.id) {
-        const allSubCategories = mainCategoriesData.flatMap(mc => mc.subCategories);
+        const allSubCategories = mainCategoriesData.flatMap(mc => mc.subCategories || []);
         const catDetail = allSubCategories.find(sc => String(sc.id) === String(txData.subCategory!.id));
         setCategoryName(catDetail ? t(generateCategoryTranslationKey(catDetail.name), { defaultValue: catDetail.name }) : t('noCategory'));
       } else {
@@ -110,8 +118,18 @@ export default function ViewTransactionPage() {
 
   useEffect(() => {
     if (transaction && typeName && frequencyName && categoryName !== null) { 
+      let typeIconElement = <Info className="text-primary" />;
+      if (typeName === t('transactionType_INCOME')) {
+        typeIconElement = <DollarSign className="text-green-500" />;
+      } else if (typeName === t('transactionType_EXPENSE')) {
+        typeIconElement = <DollarSign className="text-red-500" />;
+      } else if (typeName === t('transactionType_TRANSFER')) {
+        typeIconElement = <ArrowRightLeft className="text-blue-500" />;
+      }
+
+
       const items = [
-        { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: <DollarSign className="text-primary" /> },
+        { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: typeIconElement },
         { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
         { labelKey: 'date', value: format(parseISO(transaction.date), "PPPp", { locale: dateFnsLocale }), icon: <CalendarDays className="text-primary" /> },
         { labelKey: 'wallet', value: transaction.wallet.name, icon: <WalletIcon className="text-primary" /> },

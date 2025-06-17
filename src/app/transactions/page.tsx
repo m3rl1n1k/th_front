@@ -29,7 +29,7 @@ import {
 import { useTranslation } from '@/context/i18n-context';
 import { 
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
-  ArrowUpCircle, ArrowDownCircle, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText
+  ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -364,6 +364,8 @@ export default function TransactionsPage() {
               typeIcon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
           } else if (tx.typeName?.toUpperCase() === 'EXPENSE') {
               typeIcon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
+          } else if (tx.typeName?.toUpperCase() === 'TRANSFER') {
+              typeIcon = <ArrowRightLeft className="h-5 w-5 text-blue-500" />;
           }
           
           const showLoaderForThisTx = 
