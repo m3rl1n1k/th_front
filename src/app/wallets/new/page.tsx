@@ -10,7 +10,7 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { createWallet, getWalletTypes, getWalletsList, getCurrencies } from '@/lib/api';
@@ -38,7 +38,6 @@ export default function NewWalletPage() {
   const router = useRouter();
 
   const [walletTypes, setWalletTypes] = useState<WalletTypeMap>({});
-  const [existingWallets, setExistingWallets] = useState<WalletDetails[]>([]);
   const [allCurrencies, setAllCurrencies] = useState<CurrencyInfo[]>([]);
 
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -70,7 +69,6 @@ export default function NewWalletPage() {
       getWalletsList(token)
         .then(data => {
           const currentWallets = data.wallets || [];
-          setExistingWallets(currentWallets);
           setHasMainWallet(currentWallets.some(wallet => wallet.type === 'main'));
         })
         .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
@@ -93,10 +91,22 @@ export default function NewWalletPage() {
   }, [token, isAuthenticated, t, toast]);
 
   useEffect(() => {
-    if (user?.userCurrency?.code) {
-      setValue('currency', user.userCurrency.code);
+    if (user?.userCurrency?.code && !isLoadingCurrencies && allCurrencies.length > 0) {
+       if (allCurrencies.some(c => c.code === user.userCurrency!.code)) {
+            setValue('currency', user.userCurrency.code);
+        } else if (MOST_USEFUL_CURRENCY_CODES.includes('USD')) {
+             setValue('currency', 'USD');
+        } else if (allCurrencies.length > 0) {
+            setValue('currency', allCurrencies[0].code);
+        }
+    } else if (!user?.userCurrency?.code && !isLoadingCurrencies && allCurrencies.length > 0) {
+        if (MOST_USEFUL_CURRENCY_CODES.includes('USD')) {
+             setValue('currency', 'USD');
+        } else if (allCurrencies.length > 0) {
+            setValue('currency', allCurrencies[0].code);
+        }
     }
-  }, [user, setValue]);
+  }, [user, setValue, isLoadingCurrencies, allCurrencies]);
 
   const { mostUsefulCurrenciesList, otherCurrenciesList } = useMemo(() => {
     const useful = allCurrencies
@@ -227,6 +237,7 @@ export default function NewWalletPage() {
                               ))}
                             </SelectGroup>
                           )}
+                          {mostUsefulCurrenciesList.length > 0 && otherCurrenciesList.length > 0 && <SelectSeparator />}
                           {otherCurrenciesList.length > 0 && (
                             <SelectGroup>
                               <SelectLabel>{t('allCurrenciesLabel')}</SelectLabel>
