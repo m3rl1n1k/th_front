@@ -49,9 +49,15 @@ export const URLS = {
   deleteMainCategory: (id: string | number) => `${API_BASE_URL}/main/categories/${id}`,
 
   // SubCategories
-  createSubCategory: `${API_BASE_URL}/sub/categories`, // Updated from /main/categories/{id}/subcategories
+  createSubCategory: `${API_BASE_URL}/sub/categories`, 
   updateSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
   deleteSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
+
+  // Transfers
+  transferFormData: `${API_BASE_URL}/transfer/form-data`,
+  transfersList: `${API_BASE_URL}/transfers`,
+  createTransfer: `${API_BASE_URL}/transfers`,
+  deleteTransfer: (id: string | number) => `${API_BASE_URL}/transfers/${id}`,
 
   // General
   currencies: `${API_BASE_URL}/currencies`,

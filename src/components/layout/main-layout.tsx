@@ -18,13 +18,14 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, UserPlus } from 'lucide-react'; // Removed KeyRound
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, UserPlus, ArrowRightLeft } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
   { href: '/transactions', labelKey: 'transactions', icon: ListChecks, authRequired: true },
   { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards, authRequired: true },
   { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes, authRequired: true },
+  { href: '/transfers', labelKey: 'transfersTitle', icon: ArrowRightLeft, authRequired: true },
   { href: '/profile', labelKey: 'profile', icon: UserCircle, authRequired: true },
   { href: '/settings', labelKey: 'settings', icon: Settings, authRequired: true },
 ];
@@ -69,10 +70,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     try {
       await setLanguage(lang);
     } catch (error) {
-      // Error handled by i18n context
       console.error("Error changing language:", error);
     } finally {
-      setIsNavigating(false); // Ensure loader is always turned off
+      setIsNavigating(false); 
     }
   };
   

@@ -176,7 +176,7 @@ export interface MainCategory {
   name: string;
   icon: string | null;
   color: string | null;
-  user?: MainCategoryUser; // Added user property
+  user?: MainCategoryUser;
   subCategories: SubCategory[];
 }
 
@@ -247,5 +247,49 @@ export interface CurrencyInfo {
   code: string; // "AED"
   nameKey: string; // "uae_dirham"
   displayName: string; // "AED - UAE Dirham"
+}
+
+// Transfer specific types
+export interface TransferUserWallet {
+  id: number;
+  name: string;
+  amount: {
+    amount: number; // in cents
+  };
+  currency: {
+    code: string;
+  };
+}
+
+export interface TransferFormDataResponse {
+  user_wallets: TransferUserWallet[];
+  capital_wallets: TransferUserWallet[]; // Assuming same structure
+}
+
+export interface TransferWalletInfo {
+  id: number;
+  name: string;
+  number: string;
+  currency: {
+    code: string;
+  };
+}
+
+export interface TransferListItem {
+  id: number;
+  outcomeWallet: TransferWalletInfo;
+  incomeWallet: TransferWalletInfo;
+  amount: number; // in cents
+  createdAt: string; // ISO date string
+}
+
+export interface TransfersListResponse {
+  transfers: TransferListItem[];
+}
+
+export interface CreateTransferPayload {
+  outcome_wallet_id: number;
+  income_wallet_id: number;
+  amount_cents: number;
 }
 

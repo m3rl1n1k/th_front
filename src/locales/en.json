@@ -400,8 +400,36 @@
   "errorDeletingMainCategory": "Error Deleting Main Category",
   "errorDeletingSubCategory": "Error Deleting Subcategory",
   "unnamedCategoryPlaceholder": "Unnamed Category",
-  "categoryNotFoundPlaceholder": "Category Not Found"
+  "categoryNotFoundPlaceholder": "Category Not Found",
+
+  "transfersTitle": "Transfers",
+  "createTransferTitle": "Create New Transfer",
+  "createTransferDesc": "Move funds between your wallets.",
+  "transferOutcomeWalletLabel": "From Wallet",
+  "transferIncomeWalletLabel": "To Wallet",
+  "transferAmountLabel": "Amount",
+  "transferSelectOutcomeWalletPlaceholder": "Select source wallet",
+  "transferSelectIncomeWalletPlaceholder": "Select destination wallet",
+  "transferCreateButton": "Create Transfer",
+  "transferOutcomeWalletRequired": "Source wallet is required.",
+  "transferIncomeWalletRequired": "Destination wallet is required.",
+  "transferAmountPositiveError": "Transfer amount must be a positive number.",
+  "transferWalletsMustBeDifferentError": "Source and destination wallets must be different.",
+  "transferCreatedTitle": "Transfer Successful",
+  "transferCreatedDesc": "The funds have been successfully transferred.",
+  "transferFailedTitle": "Transfer Failed",
+  "transferHistoryTitle": "Transfer History",
+  "transferHistoryDesc": "View your past wallet-to-wallet transfers.",
+  "noTransfersFound": "No transfers found.",
+  "transferFromWallet": "From",
+  "transferToWallet": "To",
+  "transferAmount": "Amount",
+  "transferDate": "Date",
+  "transferDeleteConfirmTitle": "Confirm Delete Transfer",
+  "transferDeleteConfirmMessage": "Are you sure you want to delete this transfer record? This action cannot be undone.",
+  "transferDeletedTitle": "Transfer Deleted",
+  "transferDeletedDesc": "The transfer record has been successfully deleted.",
+  "transferDeleteFailedTitle": "Failed to Delete Transfer",
+  "unknownWallet": "Unknown Wallet",
+  "transferNotEnoughWalletsError": "You need at least two wallets to make a transfer."
 }
-
-
-    

@@ -24,7 +24,11 @@ import type {
   UpdateWalletPayload as AppUpdateWalletPayload,
   CurrenciesApiResponse,
   UpdateMainCategoryPayload,
-  UpdateSubCategoryPayload
+  UpdateSubCategoryPayload,
+  TransferFormDataResponse,
+  TransfersListResponse,
+  CreateTransferPayload,
+  TransferListItem
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -225,7 +229,7 @@ export const getMainCategories = async (token: string): Promise<MainCategory[]> 
 
 export const getMainCategoryById = async (id: string | number, token: string): Promise<MainCategory> => {
   const response = await request<{ category: MainCategory }>(URLS.mainCategoryById(id), { method: 'GET', token });
-  return response.category; // Unwrap the category object
+  return response.category;
 };
 
 export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
@@ -258,8 +262,20 @@ export const toggleRepeatedTransactionStatus = (id: string | number, token: stri
 export const deleteRepeatedTransactionDefinition = (id: string | number, token: string): Promise<void> =>
   request<void>(URLS.deleteRepeatedTransaction(id), { method: 'DELETE', token });
 
+// Transfers
+export const getTransferFormData = (token: string): Promise<TransferFormDataResponse> =>
+  request(URLS.transferFormData, { method: 'GET', token });
+
+export const getTransfersList = (token: string): Promise<TransfersListResponse> =>
+  request(URLS.transfersList, { method: 'GET', token });
+
+export const createTransfer = (data: CreateTransferPayload, token: string): Promise<TransferListItem> => // Assuming API returns the created transfer
+  request<TransferListItem>(URLS.createTransfer, { method: 'POST', body: data, token });
+
+export const deleteTransfer = (id: string | number, token: string): Promise<void> =>
+  request<void>(URLS.deleteTransfer(id), { method: 'DELETE', token });
+
 // General
 export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
   request(URLS.currencies, { method: 'GET', token });
-
 
