@@ -456,15 +456,22 @@ Retrieves main categories along with their subcategories.
 
 #### `GET /main/categories/{id}`
 Retrieves a specific main category by its ID.
-*   **Success Response (200 OK)**: Single `MainCategory` object (possibly including its `subCategories`).
+*   **Success Response (200 OK)**:
     ```json
     {
-      // MainCategory structure, e.g.:
-      "id": 1,
-      "name": "Food & Dining",
-      "icon": "Utensils",
-      "color": "#FFD700",
-      "subCategories": [ /* ... */ ]
+      "category": {
+        "id": 1,
+        "name": "Food & Dining",
+        "icon": "Utensils",
+        "color": "#FFD700",
+        "user": {
+          "id": 1
+        },
+        "subCategories": [
+          { "id": 101, "name": "Groceries", "icon": "ShoppingCart", "color": "#FFA500" },
+          { "id": 102, "name": "Restaurants", "icon": "Plate", "color": "#FF8C00" }
+        ]
+      }
     }
     ```
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
@@ -737,3 +744,4 @@ If you experience "Failed to fetch" errors or similar network issues when access
 
 By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
+

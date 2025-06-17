@@ -224,7 +224,8 @@ export const getMainCategories = async (token: string): Promise<MainCategory[]> 
 }
 
 export const getMainCategoryById = async (id: string | number, token: string): Promise<MainCategory> => {
-  return request<MainCategory>(URLS.mainCategoryById(id), { method: 'GET', token });
+  const response = await request<{ category: MainCategory }>(URLS.mainCategoryById(id), { method: 'GET', token });
+  return response.category; // Unwrap the category object
 };
 
 export const createMainCategory = (data: CreateMainCategoryPayload, token: string): Promise<MainCategory> =>
@@ -260,4 +261,5 @@ export const deleteRepeatedTransactionDefinition = (id: string | number, token: 
 // General
 export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
   request(URLS.currencies, { method: 'GET', token });
+
 

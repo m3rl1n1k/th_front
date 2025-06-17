@@ -167,11 +167,16 @@ export interface SubCategory {
   mainCategoryId?: string | number; // Ensure this exists for relating back
 }
 
+export interface MainCategoryUser {
+  id: string | number;
+}
+
 export interface MainCategory {
   id: string | number;
   name: string;
   icon: string | null;
   color: string | null;
+  user?: MainCategoryUser; // Added user property
   subCategories: SubCategory[];
 }
 
@@ -189,14 +194,14 @@ export interface UpdateMainCategoryPayload {
 
 export interface CreateSubCategoryPayload {
   name: string;
-  main_category: number; // ID of the parent MainCategory, as per POST /sub/categories
+  main_category: number; 
   icon?: string | null;
   color?: string | null;
 }
 
 export interface UpdateSubCategoryPayload {
   name?: string;
-  main_category?: number; // ID of the new/current parent MainCategory, as per PUT /sub/categories/{id}
+  main_category?: number; 
   icon?: string | null;
   color?: string | null;
 }
@@ -243,3 +248,4 @@ export interface CurrencyInfo {
   nameKey: string; // "uae_dirham"
   displayName: string; // "AED - UAE Dirham"
 }
+
