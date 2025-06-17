@@ -172,6 +172,9 @@
   "notSet": "Not Set",
   "profileUpdateSuccessTitle": "Profile Updated",
   "profileUpdateSuccessDesc": "Your profile changes have been saved (locally for now).",
+  "profileUpdateSuccessDescApi": "Your profile changes have been successfully saved.",
+  "errorUpdatingProfile": "Error Updating Profile",
+  "invalidCurrencyCodeFormat": "Invalid currency code. It must be 3 uppercase letters (e.g., USD, EUR).",
   "viewAllYourTransactions": "View and manage all your recorded financial transactions.",
   "viewYourRecurringTransactions": "Track and manage your repeating transaction definitions.",
   "tryAdjustingFilters": "Try adjusting your filters or add new transactions.",
@@ -436,5 +439,9 @@
   "captchaPlaceholder": "Enter the sum",
   "captchaRequiredError": "Captcha is required.",
   "captchaIncorrectError": "Incorrect captcha answer. Please try again.",
-  "refreshCaptchaLabel": "Refresh captcha"
+  "refreshCaptchaLabel": "Refresh captcha",
+  "setYourCurrencyTitle": "Set Your Currency",
+  "setYourCurrencyDesc": "Please set your preferred currency in your profile to continue.",
+  "completeYourProfileTitle": "Complete Your Profile",
+  "completeYourProfileDesc": "Please set your preferred currency using the 'Edit Profile' button below to ensure accurate financial tracking."
 }

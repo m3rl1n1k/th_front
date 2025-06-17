@@ -172,6 +172,9 @@
   "notSet": "Не встановлено",
   "profileUpdateSuccessTitle": "Профіль оновлено",
   "profileUpdateSuccessDesc": "Зміни у вашому профілі збережено (локально на даний момент).",
+  "profileUpdateSuccessDescApi": "Зміни у вашому профілі успішно збережено.",
+  "errorUpdatingProfile": "Помилка оновлення профілю",
+  "invalidCurrencyCodeFormat": "Неправильний код валюти. Він повинен складатися з 3 великих літер (напр., USD, EUR).",
   "viewAllYourTransactions": "Переглядайте та керуйте всіма вашими записаними фінансовими операціями.",
   "viewYourRecurringTransactions": "Відстежуйте та керуйте визначеннями ваших повторюваних транзакцій.",
   "tryAdjustingFilters": "Спробуйте змінити фільтри або додати нові транзакції.",
@@ -436,5 +439,9 @@
   "captchaPlaceholder": "Введіть суму",
   "captchaRequiredError": "Капча обов'язкова.",
   "captchaIncorrectError": "Неправильна відповідь капчі. Будь ласка, спробуйте ще раз.",
-  "refreshCaptchaLabel": "Оновити капчу"
+  "refreshCaptchaLabel": "Оновити капчу",
+  "setYourCurrencyTitle": "Встановіть Валюту",
+  "setYourCurrencyDesc": "Будь ласка, встановіть бажану валюту у своєму профілі, щоб продовжити.",
+  "completeYourProfileTitle": "Завершіть Налаштування Профілю",
+  "completeYourProfileDesc": "Будь ласка, встановіть бажану валюту за допомогою кнопки 'Редагувати профіль' нижче для точного фінансового обліку."
 }

@@ -18,7 +18,8 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, UserPlus, ArrowRightLeft } from 'lucide-react';
+import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, UserPlus, ArrowRightLeft, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
@@ -42,6 +43,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false); 
@@ -49,11 +51,26 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/'];
+    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       router.replace('/login');
+    } else if (
+        !authIsLoading && 
+        isAuthenticated && 
+        user && 
+        (!user.userCurrency || !user.userCurrency.code) && 
+        pathname !== '/profile' && 
+        !publicPaths.includes(pathname)
+      ) {
+        toast({
+          title: t('setYourCurrencyTitle'),
+          description: t('setYourCurrencyDesc'),
+          variant: 'default',
+          duration: 7000,
+        });
+        router.replace('/profile');
     }
-  }, [authIsLoading, isAuthenticated, router, pathname]);
+  }, [authIsLoading, isAuthenticated, user, router, pathname, t, toast]);
 
   const handleNavLinkClick = (href: string) => {
     if (pathname === href) {
@@ -97,7 +114,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-     const publicPaths = ['/login', '/register', '/terms', '/'];
+     const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
      if (!publicPaths.includes(pathname)) {
         return null; 
      }
@@ -266,7 +283,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </aside>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          {isAuthenticated || ['/login', '/register', '/terms', '/'].includes(pathname) ? children : null}
+          {isAuthenticated || ['/login', '/register', '/terms', '/', '/set-token'].includes(pathname) ? children : null}
         </main>
       </div>
     </div>

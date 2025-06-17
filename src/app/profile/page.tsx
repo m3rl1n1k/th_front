@@ -8,13 +8,16 @@ import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase } from 'lucide-react';
+import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { updateUserProfile } from '@/lib/api';
+import type { ApiError } from '@/types';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface UserProfileData {
   login: string; 
@@ -34,6 +37,8 @@ export default function ProfilePage() {
   const [editLogin, setEditLogin] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editCurrencyCode, setEditCurrencyCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCurrencyPrompt, setShowCurrencyPrompt] = useState(false);
 
 
   useEffect(() => {
@@ -50,7 +55,13 @@ export default function ProfilePage() {
       setProfileData(newProfileData);
       setEditLogin(newProfileData.login);
       setEditEmail(newProfileData.email);
-      setEditCurrencyCode(newProfileData.userCurrencyCode || '');
+      setEditCurrencyCode(user.userCurrency?.code || '');
+
+      if (!user.userCurrency?.code) {
+        setShowCurrencyPrompt(true);
+      } else {
+        setShowCurrencyPrompt(false);
+      }
 
       setIsLoading(false);
     } else if (isAuthenticated && !user && token) {
@@ -63,6 +74,49 @@ export default function ProfilePage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, token, fetchUser, t]);
+
+
+  const handleProfileUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!token) {
+      toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
+      return;
+    }
+
+    // Basic validation for currency code (3 uppercase letters)
+    if (editCurrencyCode && !/^[A-Z]{3}$/.test(editCurrencyCode)) {
+        toast({
+            variant: "destructive",
+            title: t('errorUpdatingProfile'),
+            description: t('invalidCurrencyCodeFormat'),
+        });
+        return;
+    }
+
+
+    setIsSubmitting(true);
+    const payload = {
+      login: editLogin,
+      email: editEmail,
+      userCurrencyCode: editCurrencyCode || undefined, // Send undefined if empty to let backend handle
+    };
+
+    try {
+      await updateUserProfile(payload, token);
+      await fetchUser(); // Refresh user data in context
+      toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDescApi') });
+      // Dialog will close automatically due to DialogClose asChild on Button
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        variant: "destructive",
+        title: t('errorUpdatingProfile'),
+        description: apiError.message || t('unexpectedError'),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
 
   if (isLoading || authIsLoading || (!isAuthenticated && !token)) {
@@ -130,22 +184,6 @@ export default function ProfilePage() {
     )
   }
 
-  const handleProfileUpdate = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const updatedData = {
-      login: editLogin,
-      email: editEmail,
-      userCurrencyCode: editCurrencyCode,
-    };
-    setProfileData(prev => prev ? ({
-        ...prev,
-        login: updatedData.login,
-        email: updatedData.email,
-        userCurrencyCode: updatedData.userCurrencyCode || t('notSet')
-    }) : null);
-    
-    toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDesc') });
-  };
 
   let formattedMemberSince = "N/A";
   try {
@@ -159,6 +197,15 @@ export default function ProfilePage() {
   return (
     <MainLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
+        {showCurrencyPrompt && (
+          <Alert variant="default" className="mb-6 bg-primary/10 border-primary/30 text-primary-foreground dark:bg-primary/20 dark:border-primary/40 dark:text-primary-foreground">
+            <InfoIcon className="h-5 w-5 text-primary" />
+            <AlertTitle>{t('completeYourProfileTitle')}</AlertTitle>
+            <AlertDescription>
+              {t('completeYourProfileDesc')}
+            </AlertDescription>
+          </Alert>
+        )}
         <h1 className="font-headline text-3xl font-bold text-foreground text-center">{t('userProfileTitle')}</h1>
 
         <Card className="shadow-xl overflow-hidden">
@@ -229,16 +276,17 @@ export default function ProfilePage() {
                       <Label htmlFor="currencyCode" className="text-right">
                         {t('currencyCodeLabel')}
                       </Label>
-                      <Input id="currencyCode" value={editCurrencyCode} onChange={(e) => setEditCurrencyCode(e.target.value.toUpperCase())} className="col-span-3" placeholder="USD, EUR, PLN..." />
+                      <Input id="currencyCode" value={editCurrencyCode} onChange={(e) => setEditCurrencyCode(e.target.value.toUpperCase())} className="col-span-3" placeholder="USD, EUR, PLN..." maxLength={3} />
                     </div>
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
                        <Button type="button" variant="outline">{t('cancelButton')}</Button>
                     </DialogClose>
-                    <DialogClose asChild>
-                        <Button type="submit">{t('saveChangesButton')}</Button>
-                    </DialogClose>
+                    {/* For DialogClose on submit to work, form submission must be handled by the button itself */}
+                     <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? t('saving') : t('saveChangesButton')}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
