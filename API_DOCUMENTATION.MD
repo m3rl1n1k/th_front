@@ -85,7 +85,7 @@ Registers a new user.
     ```json
     {
       "message": "User registered successfully. Please login."
-      // Optionally, can return the created user object as in GET /users/me
+      // Optionally, can return the created user object as in GET /user
     }
     ```
     Or simply a `201 Created` status with no body.
@@ -111,8 +111,8 @@ Invalidates the user's session/token if server-side session management or token 
 
 ### 2. User Profile
 
-#### `GET /user` (or `/users/me`)
-Retrieves the profile information for the currently authenticated user.
+#### `GET /user`
+Retrieves the profile information for the currently authenticated user. (Frontend uses this endpoint)
 
 *   **Request Body**: None (token in header)
 *   **Success Response (200 OK)**:
@@ -129,8 +129,8 @@ Retrieves the profile information for the currently authenticated user.
     ```
 *   **Failure Response (401 Unauthorized)**
 
-#### `PUT /profile` (Or `/users/me`)
-Updates the profile information for the currently authenticated user.
+#### `PUT /user` (Or `/profile`)
+Updates the profile information for the currently authenticated user. (Frontend uses `/user` for PUT)
 
 *   **Request Body**:
     ```json
@@ -305,7 +305,7 @@ Retrieves a list of transactions for the authenticated user. The response should
           "source": "store_x",
           "date": "2024-07-28T14:30:00Z", // ISO date string
           "isRecurring": false, // This field might change if frequencyId is adopted
-          "frequencyId": "1" 
+          "frequencyId": "1"
         }
       ]
     }
@@ -632,5 +632,6 @@ If you experience "Failed to fetch" errors or similar network issues when access
 
 By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
+
 
 

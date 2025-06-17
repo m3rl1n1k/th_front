@@ -8,8 +8,8 @@ export const URLS = {
   // Auth
   login: `${API_BASE_URL}/login_check`,
   register: `${API_BASE_URL}/auth/register`, // API_DOCUMENTATION.md uses /register. Frontend uses /auth/register. Keep Frontend for now.
-  logout: `${API_BASE_URL}/auth/logout`, 
-  me: `${API_BASE_URL}/users/me`, // API_DOCUMENTATION.md uses /user or /users/me. Frontend uses /users/me.
+  logout: `${API_BASE_URL}/auth/logout`,
+  me: `${API_BASE_URL}/user`, // Changed from /users/me
 
   // Dashboard
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,
@@ -33,7 +33,7 @@ export const URLS = {
 
 
   // User Profile
-  userProfile: `${API_BASE_URL}/users/me`, // Using /users/me as per existing usage for PUT
+  userProfile: `${API_BASE_URL}/user`, // Changed from /users/me
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
@@ -42,7 +42,8 @@ export const URLS = {
   walletTypes: `${API_BASE_URL}/wallets/types`,
 
   // Categories Page & Management
-  mainCategories: `${API_BASE_URL}/main/categories`, 
-  createMainCategory: `${API_BASE_URL}/main/categories`, 
+  mainCategories: `${API_BASE_URL}/main/categories`,
+  createMainCategory: `${API_BASE_URL}/main/categories`,
   createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
 };
+
