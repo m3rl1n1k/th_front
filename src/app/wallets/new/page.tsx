@@ -18,14 +18,13 @@ import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { CreateWalletPayload, WalletTypeMap, WalletDetails, CurrenciesApiResponse, CurrencyInfo } from '@/types';
 import { Save, ArrowLeft, Loader2, Coins } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
 const MOST_USEFUL_CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'PLN', 'UAH', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR'];
 
 const createWalletFormSchema = (t: Function) => z.object({
   name: z.string().min(1, { message: t('walletNameRequired') }).max(50, { message: t('walletNameTooLong') }),
-  initialBalance: z.coerce.number().optional().nullable(), 
+  initialBalance: z.coerce.number().optional().nullable(),
   currency: z.string().regex(currencyCodeRegex, { message: t('invalidCurrencyCode') }).min(3, { message: t('currencyRequired') }).max(3),
   type: z.string().min(1, { message: t('walletTypeRequired') }),
 });
@@ -76,7 +75,7 @@ export default function NewWalletPage() {
         })
         .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
         .finally(() => setIsLoadingExistingWallets(false));
-      
+
       setIsLoadingCurrencies(true);
       getCurrencies(token)
         .then((data: CurrenciesApiResponse) => {
@@ -92,7 +91,7 @@ export default function NewWalletPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, t, toast]);
-  
+
   useEffect(() => {
     if (user?.userCurrency?.code) {
       setValue('currency', user.userCurrency.code);
@@ -103,11 +102,11 @@ export default function NewWalletPage() {
     const useful = allCurrencies
       .filter(c => MOST_USEFUL_CURRENCY_CODES.includes(c.code))
       .sort((a, b) => MOST_USEFUL_CURRENCY_CODES.indexOf(a.code) - MOST_USEFUL_CURRENCY_CODES.indexOf(b.code));
-    
+
     const others = allCurrencies
       .filter(c => !MOST_USEFUL_CURRENCY_CODES.includes(c.code))
       .sort((a, b) => (a.displayName || a.code).localeCompare(b.displayName || b.code));
-      
+
     return { mostUsefulCurrenciesList: useful, otherCurrenciesList: others };
   }, [allCurrencies]);
 
@@ -138,7 +137,7 @@ export default function NewWalletPage() {
       toast({ variant: "destructive", title: t('errorCreatingWallet'), description: error.message });
     }
   };
-  
+
   const anyDataLoading = isLoadingTypes || isLoadingExistingWallets || isLoadingCurrencies;
 
   return (
@@ -171,9 +170,9 @@ export default function NewWalletPage() {
                     name="type"
                     control={control}
                     render={({ field }) => (
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value} 
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
                         disabled={isLoadingTypes || Object.keys(walletTypes).length === 0}
                       >
                         <SelectTrigger id="type" className={errors.type ? 'border-destructive' : ''}>
@@ -181,8 +180,8 @@ export default function NewWalletPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(walletTypes).map(([key, value]) => (
-                            <SelectItem 
-                              key={key} 
+                            <SelectItem
+                              key={key}
                               value={key}
                               disabled={key === 'main' && hasMainWallet}
                             >
@@ -195,13 +194,6 @@ export default function NewWalletPage() {
                     )}
                   />
                   {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
-                  {hasMainWallet && (
-                     <Alert variant="default" className="mt-2">
-                        <AlertDescription>
-                          {t('mainWalletInfo')}
-                        </AlertDescription>
-                    </Alert>
-                  )}
                 </div>
               </div>
 
@@ -250,7 +242,7 @@ export default function NewWalletPage() {
                   {errors.currency && <p className="text-sm text-destructive">{errors.currency.message}</p>}
                 </div>
               </div>
-              
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isSubmitting || anyDataLoading}>
                   {isSubmitting || anyDataLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
