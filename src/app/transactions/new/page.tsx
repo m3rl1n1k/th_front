@@ -158,18 +158,14 @@ export default function NewTransactionPage() {
       }
     }
 
-    // Default Frequency to "ONE_TIME" (ID "1")
+    // Default Frequency to "ONE_TIME" (ID "0" as per user request)
     if (!currentFormValues.frequencyId && frequencies.length > 0) {
-      // API Docs state "1": "ONE_TIME"
-      const defaultOneTimeFrequency = frequencies.find(f => f.id === "1") || frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME');
+      const defaultOneTimeFrequency = frequencies.find(f => f.id === "0") || frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME');
       if (defaultOneTimeFrequency) {
         newDefaultsToSet.frequencyId = defaultOneTimeFrequency.id;
         RHF_stateUpdated = true;
       } else if (frequencies.length > 0) {
-        // Fallback if "ONE_TIME" (ID "1") is somehow not found, though it should be.
-        // To avoid leaving it blank if other frequencies exist.
-        // However, for this specific fix, we want to ensure "ONE_TIME" if available.
-        // If "ONE_TIME" is critical, we might not want a different fallback here.
+        // Fallback if "ONE_TIME" is somehow not found.
       }
     }
 
