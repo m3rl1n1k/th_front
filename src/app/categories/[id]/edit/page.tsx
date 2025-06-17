@@ -24,41 +24,13 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const predefinedColors = [
-  // Soft neutrals & grays
-  '#F3F4F6', // Tailwind gray-100 (Light Gray)
-  '#D1D5DB', // Tailwind gray-300 (Medium Gray)
-  '#6B7280', // Tailwind gray-500 (Darker Gray)
-  '#374151', // Tailwind gray-700 (Very Dark Gray)
-
-  // Muted Reds/Pinks
-  '#FECACA', // Tailwind red-200 (Light Red/Pink)
-  '#F87171', // Tailwind red-400 (Soft Red)
-  '#FCA5A5', // Tailwind red-300 (Salmon Pink)
-  
-  // Muted Oranges/Yellows
-  '#FDE68A', // Tailwind yellow-200 (Pale Yellow)
-  '#FBBF24', // Tailwind amber-400 (Soft Orange)
-  '#FCD34D', // Tailwind amber-300 (Light Orange)
-
-  // Muted Greens
-  '#A7F3D0', // Tailwind emerald-200 (Light Mint Green)
-  '#34D399', // Tailwind emerald-400 (Soft Green)
-  '#6EE7B7', // Tailwind emerald-300 (Mint Green)
-
-  // Muted Blues
-  '#BFDBFE', // Tailwind blue-200 (Light Blue)
-  '#60A5FA', // Tailwind blue-400 (Soft Blue)
-  '#93C5FD', // Tailwind blue-300 (Sky Blue)
-
-  // Muted Purples/Indigos
-  '#C4B5FD', // Tailwind indigo-300 (Light Lavender)
-  '#A78BFA', // Tailwind violet-400 (Soft Purple)
-  '#DDD6FE', // Tailwind violet-200 (Very Light Purple)
-
-  // Other muted tones
-  '#FBCFE8', // Tailwind pink-200 (Light Pink)
-  '#A5B4FC', // Tailwind indigo-400 (Muted Indigo)
-  '#7DD3FC', // Tailwind sky-300 (Soft Sky Blue)
+  '#F3F4F6', '#D1D5DB', '#6B7280', '#374151',
+  '#FECACA', '#F87171', '#FCA5A5',
+  '#FDE68A', '#FBBF24', '#FCD34D',
+  '#A7F3D0', '#34D399', '#6EE7B7',
+  '#BFDBFE', '#60A5FA', '#93C5FD',
+  '#C4B5FD', '#A78BFA', '#DDD6FE',
+  '#FBCFE8', '#A5B4FC', '#7DD3FC',
 ];
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
@@ -91,38 +63,41 @@ export default function EditMainCategoryPage() {
     if (!id || !token) {
       setIsLoading(false);
       setErrorOccurred(true);
-      toast({ variant: "destructive", title: t('error'), description: t('tokenOrIdMissingError') });
+      // Do not toast here, let the main useEffect handle auth issues
       return;
     }
     setIsLoading(true);
+    setErrorOccurred(false); 
     try {
       const categoryData = await getMainCategoryById(id, token);
       if (categoryData) {
         setMainCategory(categoryData);
         reset({
-          name: categoryData.name || '',
+          name: categoryData.name || '', 
           icon: categoryData.icon || null,
           color: categoryData.color || predefinedColors[0],
         });
       } else {
         setErrorOccurred(true);
+        setMainCategory(null);
         toast({ variant: "destructive", title: t('errorFetchingCategory'), description: t('categoryNotFoundPlaceholder') });
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingCategory'), description: error.message });
       setErrorOccurred(true);
+      setMainCategory(null); 
     } finally {
       setIsLoading(false);
     }
   }, [id, token, reset, toast, t]);
 
   useEffect(() => {
-    if (isAuthenticated && id) {
+    if (isAuthenticated && id && token) {
       fetchCategoryData();
     } else if (!authIsLoading && !isAuthenticated) {
-      setIsLoading(false);
+      setIsLoading(false); 
       setErrorOccurred(true);
-       toast({ variant: "destructive", title: t('error'), description: t('tokenOrIdMissingError') });
+      toast({ variant: "destructive", title: t('error'), description: t('tokenOrIdMissingError') });
     }
   }, [isAuthenticated, authIsLoading, id, token, fetchCategoryData, t, toast]);
 
@@ -162,7 +137,7 @@ export default function EditMainCategoryPage() {
           title={color}
           aria-label={`Color ${color}`}
         >
-          {value === color && <Check className={cn("h-3.5 w-3.5 text-primary-foreground mix-blend-difference")} />}
+          {value === color && <Check className={cn("h-3.5 w-3.5", (color === '#FFFFFF' || color === '#F3F4F6') ? 'text-gray-700' : 'text-primary-foreground mix-blend-difference')} />}
         </button>
       ))}
     </div>
@@ -193,7 +168,7 @@ export default function EditMainCategoryPage() {
     );
   }
 
-  if (errorOccurred || !mainCategory) {
+  if (errorOccurred || !mainCategory) { // Check !mainCategory after loading is complete
     return (
       <MainLayout>
         <Card className="max-w-md mx-auto mt-10">
@@ -212,12 +187,11 @@ export default function EditMainCategoryPage() {
   }
   
   let titleCategoryNameDisplay;
-  if (mainCategory && mainCategory.name && mainCategory.name.trim() !== "") {
+  // This logic runs when isLoading and authIsLoading are false, and errorOccurred is false, and mainCategory is not null.
+  if (mainCategory.name && mainCategory.name.trim() !== "") {
     titleCategoryNameDisplay = mainCategory.name;
-  } else if (mainCategory) { 
-    titleCategoryNameDisplay = t('unnamedCategoryPlaceholder');
   } else { 
-    titleCategoryNameDisplay = t('categoryNotFoundPlaceholder');
+    titleCategoryNameDisplay = t('unnamedCategoryPlaceholder');
   }
 
 
