@@ -399,7 +399,7 @@
   "subCategoryDeletedTitle": "Subcategory Deleted",
   "subCategoryDeletedDesc": "The subcategory has been deleted.",
   "errorDeletingMainCategory": "Error Deleting Main Category",
-  "errorDeletingSubCategory": "Error Deleting Subcategory"
+  "errorDeletingSubCategory": "Error Deleting Subcategory",
+  "unnamedCategoryPlaceholder": "Unnamed Category",
+  "categoryNotFoundPlaceholder": "Category Not Found"
 }
-
-    

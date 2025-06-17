@@ -18,7 +18,7 @@ import { getMainCategoryById, updateMainCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, UpdateMainCategoryPayload } from '@/types';
-import { Save, ArrowLeft, Loader2, AlertTriangle, Palette, Check } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, AlertTriangle, Check } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,7 +42,7 @@ const EditMainCategorySchema = z.object({
 type EditMainCategoryFormData = z.infer<typeof EditMainCategorySchema>;
 
 export default function EditMainCategoryPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -68,27 +68,36 @@ export default function EditMainCategoryPage() {
     }
     setIsLoading(true);
     try {
-      const data = await getMainCategoryById(id, token);
-      setMainCategory(data);
-      reset({
-        name: data.name || '',
-        icon: data.icon || null,
-        color: data.color || predefinedColors[0],
-      });
+      const categoryData = await getMainCategoryById(id, token);
+      if (categoryData) {
+        setMainCategory(categoryData);
+        reset({
+          name: categoryData.name || '',
+          icon: categoryData.icon || null,
+          color: categoryData.color || predefinedColors[0],
+        });
+      } else {
+        setErrorOccurred(true);
+        toast({ variant: "destructive", title: t('errorFetchingCategory'), description: t('categoryNotFoundPlaceholder') });
+      }
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingCategory'), description: error.message });
       setErrorOccurred(true);
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, token, reset, toast, t]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && id) {
       fetchCategoryData();
+    } else if (!authIsLoading && !isAuthenticated) {
+      setIsLoading(false);
+      setErrorOccurred(true);
+       toast({ variant: "destructive", title: t('error'), description: t('tokenOrIdMissingError') });
     }
-  }, [isAuthenticated, fetchCategoryData]);
+  }, [isAuthenticated, authIsLoading, id, token, fetchCategoryData, t, toast]);
+
 
   const onSubmit: SubmitHandler<EditMainCategoryFormData> = async (data) => {
     if (!token || !id) return;
@@ -119,7 +128,7 @@ export default function EditMainCategoryPage() {
           className={cn(
             "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-            color === '#FFFFFF' && 'border-input' // Add border for white swatch for visibility
+            color === '#FFFFFF' && 'border-input'
           )}
           style={{ backgroundColor: color }}
           title={color}
@@ -131,7 +140,7 @@ export default function EditMainCategoryPage() {
     </div>
   );
 
-  if (isLoading) {
+  if (isLoading || authIsLoading) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -173,13 +182,23 @@ export default function EditMainCategoryPage() {
       </MainLayout>
     );
   }
+  
+  let titleCategoryNameDisplay;
+  if (mainCategory && mainCategory.name) {
+    titleCategoryNameDisplay = mainCategory.name;
+  } else if (mainCategory) { // Category loaded, but name is empty/null
+    titleCategoryNameDisplay = t('unnamedCategoryPlaceholder');
+  } else { // This case should ideally be covered by isLoading or errorOccurred, but as a fallback
+    titleCategoryNameDisplay = t('categoryNotFoundPlaceholder');
+  }
+
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-3xl font-bold text-foreground">
-            {t('editMainCategoryPageTitle', { categoryName: mainCategory?.name || t('loading') })}
+            {t('editMainCategoryPageTitle', { categoryName: titleCategoryNameDisplay })}
           </h1>
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />

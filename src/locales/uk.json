@@ -1,3 +1,4 @@
+
 {
   "appName": "FinanceFlow",
   "loading": "Завантаження...",
@@ -399,5 +400,7 @@
   "subCategoryDeletedTitle": "Підкатегорію видалено",
   "subCategoryDeletedDesc": "Підкатегорію видалено.",
   "errorDeletingMainCategory": "Помилка видалення основної категорії",
-  "errorDeletingSubCategory": "Помилка видалення підкатегорії"
+  "errorDeletingSubCategory": "Помилка видалення підкатегорії",
+  "unnamedCategoryPlaceholder": "Без назви",
+  "categoryNotFoundPlaceholder": "Категорію не знайдено"
 }
