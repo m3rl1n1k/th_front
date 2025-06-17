@@ -166,6 +166,7 @@
   "termsLastUpdated": "Last updated",
   "altFinancialPlanning": "Illustration of financial planning and charts",
   "currencyCodeLabel": "Currency Code",
+  "currencyLabel": "Currency",
   "preferredCurrencyLabel": "Preferred Currency",
   "memberSinceLabel": "Member Since",
   "notSet": "Not Set",
@@ -326,11 +327,8 @@
   "initialBalanceLabel": "Initial Balance (Optional)",
   "initialBalancePlaceholder": "e.g., 1000.00",
   "currencyCodePlaceholder": "e.g., USD, EUR",
-  "currencyCodeRequired": "Currency code is required (3 letters).",
+  "currencyRequired": "Currency is required.",
   "invalidCurrencyCode": "Invalid currency code (must be 3 uppercase letters).",
-  "accountNumberLabelOptional": "Account Number (Optional)",
-  "accountNumberPlaceholder": "e.g., 123-456-789",
-  "accountNumberTooLong": "Account number must be 50 characters or less.",
   "selectWalletTypePlaceholder": "Select wallet type",
   "walletTypeRequired": "Wallet type is required.",
   "saveWalletButton": "Save Wallet",
@@ -348,5 +346,9 @@
   "errorDeletingWallet": "Error Deleting Wallet",
   "mainWalletExistsError": "A main wallet already exists. You can only have one.",
   "mainWalletExistsErrorShort": "Main wallet exists",
-  "mainWalletInfo": "You already have a 'Main Account' wallet. Only one is allowed."
+  "mainWalletInfo": "You already have a 'Main Account' wallet. Only one is allowed.",
+  "errorFetchingCurrencies": "Error fetching currencies",
+  "selectCurrencyPlaceholder": "Select currency",
+  "mostCommonCurrenciesLabel": "Most Common Currencies",
+  "allCurrenciesLabel": "All Currencies"
 }

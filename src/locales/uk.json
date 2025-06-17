@@ -166,6 +166,7 @@
   "termsLastUpdated": "Останнє оновлення",
   "altFinancialPlanning": "Ілюстрація фінансового планування та графіків",
   "currencyCodeLabel": "Код валюти",
+  "currencyLabel": "Валюта",
   "preferredCurrencyLabel": "Бажана валюта",
   "memberSinceLabel": "Учасник з",
   "notSet": "Не встановлено",
@@ -325,12 +326,8 @@
   "walletNameTooLong": "Назва гаманця повинна містити не більше 50 символів.",
   "initialBalanceLabel": "Початковий баланс (необов'язково)",
   "initialBalancePlaceholder": "напр., 1000.00",
-  "currencyCodePlaceholder": "напр., UAH, USD, EUR",
-  "currencyCodeRequired": "Код валюти обов'язковий (3 літери).",
+  "currencyRequired": "Валюта обов'язкова.",
   "invalidCurrencyCode": "Неправильний код валюти (має бути 3 великі літери).",
-  "accountNumberLabelOptional": "Номер рахунку (необов'язково)",
-  "accountNumberPlaceholder": "напр., 123-456-789",
-  "accountNumberTooLong": "Номер рахунку повинен містити не більше 50 символів.",
   "selectWalletTypePlaceholder": "Виберіть тип гаманця",
   "walletTypeRequired": "Тип гаманця обов'язковий.",
   "saveWalletButton": "Зберегти гаманець",
@@ -348,5 +345,9 @@
   "errorDeletingWallet": "Помилка видалення гаманця",
   "mainWalletExistsError": "Основний гаманець вже існує. Ви можете мати лише один.",
   "mainWalletExistsErrorShort": "Основний гаманець існує",
-  "mainWalletInfo": "У вас вже є гаманець типу 'Основний рахунок'. Дозволено лише один."
+  "mainWalletInfo": "У вас вже є гаманець типу 'Основний рахунок'. Дозволено лише один.",
+  "errorFetchingCurrencies": "Помилка завантаження валют",
+  "selectCurrencyPlaceholder": "Виберіть валюту",
+  "mostCommonCurrenciesLabel": "Найпопулярніші валюти",
+  "allCurrenciesLabel": "Всі валюти"
 }

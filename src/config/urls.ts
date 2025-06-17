@@ -7,9 +7,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 export const URLS = {
   // Auth
   login: `${API_BASE_URL}/login_check`,
-  register: `${API_BASE_URL}/auth/register`, // API_DOCUMENTATION.md uses /register. Frontend uses /auth/register. Keep Frontend for now.
+  register: `${API_BASE_URL}/auth/register`, 
   logout: `${API_BASE_URL}/auth/logout`,
-  me: `${API_BASE_URL}/user`, // Changed from /users/me
+  me: `${API_BASE_URL}/user`, 
 
   // Dashboard
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,
@@ -27,23 +27,26 @@ export const URLS = {
 
 
   // Repeated Transactions
-  repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`, // Assuming this endpoint exists
+  repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`, 
   toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`,
   deleteRepeatedTransaction: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`,
 
 
   // User Profile
-  userProfile: `${API_BASE_URL}/user`, // Changed from /users/me
+  userProfile: `${API_BASE_URL}/user`, 
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
   walletById: (id: string | number) => `${API_BASE_URL}/wallets/${id}`,
-  createWallet: `${API_BASE_URL}/wallets`, // POST to /wallets
+  createWallet: `${API_BASE_URL}/wallets`, 
   walletTypes: `${API_BASE_URL}/wallets/types`,
 
   // Categories Page & Management
   mainCategories: `${API_BASE_URL}/main/categories`,
   createMainCategory: `${API_BASE_URL}/main/categories`,
   createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
+
+  // General
+  currencies: `${API_BASE_URL}/currencies`,
 };
 

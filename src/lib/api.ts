@@ -20,7 +20,8 @@ import type {
   RepeatedTransactionEntry,
   MonthlyExpensesByCategoryResponse,
   DashboardLastTransactionsResponse,
-  CreateWalletPayload
+  CreateWalletPayload,
+  CurrenciesApiResponse
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -236,6 +237,10 @@ export const toggleRepeatedTransactionStatus = (id: string | number, token: stri
 
 export const deleteRepeatedTransactionDefinition = (id: string | number, token: string): Promise<void> =>
   request<void>(URLS.deleteRepeatedTransaction(id), { method: 'DELETE', token });
+
+// General
+export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
+  request(URLS.currencies, { method: 'GET', token });
 
 
 export { request };

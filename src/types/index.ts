@@ -122,25 +122,22 @@ export interface WalletDetails {
   id: number;
   name: string;
   amount: TransactionAmount; 
-  number: string; // Account number
-  currency: { // Currency of the wallet itself
+  number: string; // Account number - Note: This field is being removed from create/update forms
+  currency: { 
     code: string;
   };
-  type: string; // Type key like "main", "cash", "credit"
+  type: string; 
   user: {
     id: number;
   };
-  typeName?: string; // For display, translated
-  // Icon and color are typically not part of the GET /wallets response as per API_DOC,
-  // they are determined by 'type' on the frontend or managed separately if customizable.
+  typeName?: string; 
 }
 
 export interface CreateWalletPayload {
   name: string;
-  amount_cents: number; // API expects cents for creation
-  currency: string; // e.g., "USD", "EUR"
-  type: string; // Type key like "main", "cash" from GET /wallets/types
-  account_number?: string | null;
+  amount_cents: number; 
+  currency: string; 
+  type: string; 
 }
 
 
@@ -214,4 +211,14 @@ export interface MonthlyExpensesByCategoryResponse {
 
 export interface DashboardLastTransactionsResponse {
   last_transactions: Transaction[];
+}
+
+export interface CurrenciesApiResponse {
+  currencies: Record<string, string>; // e.g. "uae_dirham": "AED"
+}
+
+export interface CurrencyInfo {
+  code: string; // "AED"
+  nameKey: string; // "uae_dirham"
+  displayName?: string; // "AED - UAE Dirham" (to be constructed)
 }

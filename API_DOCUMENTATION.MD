@@ -71,7 +71,7 @@ Logs in a user.
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format.
 
-#### `POST /register`
+#### `POST /auth/register`
 Registers a new user.
 *   **Request Body**:
     ```json
@@ -129,8 +129,8 @@ Retrieves the profile information for the currently authenticated user. (Fronten
     ```
 *   **Failure Response (401 Unauthorized)**
 
-#### `PUT /user` (Or `/profile`)
-Updates the profile information for the currently authenticated user. (Frontend uses `/user` for PUT)
+#### `PUT /user`
+Updates the profile information for the currently authenticated user.
 
 *   **Request Body**:
     ```json
@@ -365,7 +365,7 @@ Retrieves a list of wallets for the authenticated user.
           "id": 1,
           "name": "Main Wallet",
           "amount": { "amount": 150050, "currency": { "code": "USD" } },
-          "number": "ACCT123456",
+          "number": "ACCT123456", // Note: This field is available in GET response
           "currency": { "code": "USD" },
           "type": "main", // key for wallet type, e.g. "main", "deposit"
           "user": { "id": 1 }
@@ -374,6 +374,44 @@ Retrieves a list of wallets for the authenticated user.
     }
     ```
 *   **Failure Response (401 Unauthorized)**
+
+#### `POST /wallets`
+Creates a new wallet.
+*   **Request Body**:
+    ```json
+    {
+      "name": "My New Cash Wallet",
+      "amount_cents": 50000, // Initial balance in cents
+      "currency": "USD", // Currency code (e.g., USD, EUR)
+      "type": "cash" // Wallet type key from GET /wallets/types
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created wallet object (similar to `GET /wallets` item).
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `GET /wallets/{id}`
+Retrieves a specific wallet by its ID.
+*   **Success Response (200 OK)**: Single wallet object (same format as items in `GET /wallets` list).
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `PUT /wallets/{id}`
+Updates a specific wallet.
+*   **Request Body**: Similar to `POST /wallets`, containing fields to update.
+    ```json
+    {
+      "name": "Updated Wallet Name",
+      "amount_cents": 75000,
+      "currency": "EUR",
+      "type": "deposit"
+    }
+    ```
+*   **Success Response (200 OK)**: Updated wallet object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /wallets/{id}`
+Deletes a specific wallet.
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `GET /wallets/types`
 Retrieves available wallet types mapping.
@@ -470,6 +508,27 @@ Creates a new subcategory under a specified main category.
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for mainCategoryId)**
 
+### 7. General
+
+#### `GET /currencies`
+Retrieves a list of available currencies.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "currencies": {
+        "uae_dirham": "AED",
+        "afghan_afghani": "AFN",
+        // ... and so on for all currencies
+        "united_states_dollar": "USD",
+        "ukrainian_hryvnia": "UAH",
+        "polish_zloty": "PLN",
+        "euro": "EUR",
+        "zimbabwean_dollar": "ZWL"
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
 
 ## Data Models (PHP Representations - Examples)
 
@@ -517,7 +576,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `name` (string)
 *   `current_balance_cents` (int)
 *   `currency_code` (string)
-*   `account_number` (string, nullable)
+*   `account_number` (string, nullable) // Note: This field is part of the GET response but not part of POST/PUT for creation/update from frontend.
 *   `type_key` (string, e.g., "main", "deposit" - links to a wallet_types table/enum from `GET /wallets/types`)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
@@ -632,6 +691,3 @@ If you experience "Failed to fetch" errors or similar network issues when access
 
 By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
-
-
-
