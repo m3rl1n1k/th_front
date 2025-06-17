@@ -7,6 +7,7 @@ import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ import {
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory } from '@/types';
-import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, Calculator } from 'lucide-react';
+import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, Calculator, PlusCircle } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { SimpleAmountCalculator } from '@/components/common/simple-amount-calculator';
 
@@ -131,16 +132,14 @@ export default function NewTransactionPage() {
   }, [token, isAuthenticated, t, toast]);
 
   useEffect(() => {
-    // This effect is for setting default values once all necessary data is loaded
     if (isLoadingWallets || isLoadingTypes || isLoadingFrequencies) {
-      return; // Exit if any critical data is still loading
+      return; 
     }
 
-    const currentFormValues = getValues(); // Get current values once
+    const currentFormValues = getValues(); 
     const newDefaultsToSet: Partial<NewTransactionFormData> = {};
     let RHF_stateUpdated = false;
 
-    // Default Wallet
     if (!currentFormValues.walletId && wallets.length > 0) {
       const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main') || wallets[0];
       if (defaultWallet) {
@@ -149,7 +148,6 @@ export default function NewTransactionPage() {
       }
     }
 
-    // Default Transaction Type
     if (!currentFormValues.typeId && transactionTypes.length > 0) {
       const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE') || transactionTypes[0];
       if (defaultExpenseType) {
@@ -157,15 +155,13 @@ export default function NewTransactionPage() {
         RHF_stateUpdated = true;
       }
     }
-
-    // Default Frequency to "ONE_TIME" (ID "0" as per user request)
+    
     if (!currentFormValues.frequencyId && frequencies.length > 0) {
       const defaultOneTimeFrequency = frequencies.find(f => f.id === "0") || frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME');
       if (defaultOneTimeFrequency) {
         newDefaultsToSet.frequencyId = defaultOneTimeFrequency.id;
         RHF_stateUpdated = true;
       } else if (frequencies.length > 0) {
-        // Fallback if "ONE_TIME" is somehow not found.
       }
     }
 
@@ -173,14 +169,12 @@ export default function NewTransactionPage() {
       reset(prev => ({
         ...prev,
         ...newDefaultsToSet,
-      }), {
-        // keepDirty: true // Could be useful if user typed something before defaults loaded
-      });
+      }));
     }
   }, [
     isLoadingWallets, isLoadingTypes, isLoadingFrequencies,
     wallets, transactionTypes, frequencies,
-    reset, getValues // getValues is called inside, reset is stable
+    reset, getValues
   ]);
 
 
@@ -298,7 +292,15 @@ export default function NewTransactionPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="walletId">{t('wallet')}</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="walletId">{t('wallet')}</Label>
+                    <Button asChild variant="outline" size="sm" className="text-xs px-2 py-1 h-auto">
+                      <Link href="/wallets/new" target="_blank">
+                        <PlusCircle className="mr-1 h-3 w-3" />
+                        {t('createNewButton')}
+                      </Link>
+                    </Button>
+                  </div>
                   <Controller
                     name="walletId"
                     control={control}
@@ -325,7 +327,15 @@ export default function NewTransactionPage() {
                   {errors.walletId && <p className="text-sm text-destructive">{errors.walletId.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="categoryId">{t('category')}</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="categoryId">{t('category')}</Label>
+                    <Button asChild variant="outline" size="sm" className="text-xs px-2 py-1 h-auto">
+                      <Link href="/categories/new" target="_blank">
+                        <PlusCircle className="mr-1 h-3 w-3" />
+                        {t('createNewButton')}
+                      </Link>
+                    </Button>
+                  </div>
                   <Controller
                     name="categoryId"
                     control={control}

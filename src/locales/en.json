@@ -443,5 +443,6 @@
   "setYourCurrencyTitle": "Set Your Currency",
   "setYourCurrencyDesc": "Please set your preferred currency in your profile to continue.",
   "completeYourProfileTitle": "Complete Your Profile",
-  "completeYourProfileDesc": "Please set your preferred currency using the 'Edit Profile' button below to ensure accurate financial tracking."
+  "completeYourProfileDesc": "Please set your preferred currency using the 'Edit Profile' button below to ensure accurate financial tracking.",
+  "createNewButton": "Create New"
 }
