@@ -146,7 +146,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-card p-0">
                 <nav className="flex flex-col p-6 space-y-2">
-                  <Link href="/" className="mb-4" onClick={() => handleNavLinkClick('/')}>
+                  <Link 
+                    href="/" 
+                    className="mb-4" 
+                    onClick={(e) => {
+                      if (pathname === '/') {
+                        setIsSheetOpen(false);
+                        e.preventDefault();
+                      } else {
+                        setIsNavigating(true);
+                      }
+                      // Link component handles navigation if not prevented
+                    }}
+                  >
                      <div className="flex items-center space-x-2">
                         <DollarSign className="h-8 w-8 text-primary" />
                         <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
@@ -169,7 +181,17 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </SheetContent>
             </Sheet>
             )}
-            <Link href="/" onClick={() => handleNavLinkClick('/')} className="flex items-center space-x-2">
+            <Link 
+              href="/" 
+              onClick={(e) => {
+                if (pathname === '/') {
+                  e.preventDefault();
+                } else {
+                  setIsNavigating(true);
+                }
+              }} 
+              className="flex items-center space-x-2"
+            >
               <DollarSign className="h-8 w-8 text-primary" />
               <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
             </Link>
