@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const removeTokenFromStorages = () => {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-      sessionStorage.removeItem(INTENDED_DESTINATION_KEY); // Also clear intended destination on logout
+      sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
     }
   };
 
@@ -88,13 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (apiError.rawResponse) {
             console.error("Raw server response on init error:", apiError.rawResponse);
           }
-          // Don't show toast here, as MainLayout handles unauth redirect and potentially a message
-          // toast({
-          //   variant: "destructive",
-          //   title: t('sessionExpiredTitle'),
-          //   description: apiError.message || t('sessionExpiredDesc'),
-          // });
-          // The MainLayout effect will handle redirecting if needed based on current path
+          clearAuthArtefacts(); 
         }
       } else {
         clearAuthArtefacts(); 
@@ -113,18 +107,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await fetchAndSetUser(response.token);
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
 
-      let redirectTo = '/dashboard';
+      let redirectTo = '/dashboard'; // Default redirect path
+      
       if (typeof window !== 'undefined') {
         const intendedDestination = sessionStorage.getItem(INTENDED_DESTINATION_KEY);
-        if (intendedDestination && intendedDestination !== '/login' && intendedDestination !== '/register' && intendedDestination !== '/') {
-          // Ensure it's a valid relative path or a path within the app
-          if (intendedDestination.startsWith('/') && !intendedDestination.startsWith('//')) {
-            redirectTo = intendedDestination;
-          }
-          sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
+        
+        // CRITICAL: Remove the key from sessionStorage immediately after reading it,
+        // regardless of whether it will be used.
+        if (intendedDestination) {
+            sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
         }
+
+        // Now, validate the intendedDestination if it was found
+        const nonIntendedRedirectPaths = ['/login', '/register', '/terms', '/set-token', '/'];
+        
+        if (intendedDestination && 
+            !nonIntendedRedirectPaths.includes(intendedDestination) &&
+            intendedDestination.startsWith('/') && 
+            !intendedDestination.startsWith('//')) {
+          // If it's a valid, non-problematic path, use it
+          redirectTo = intendedDestination;
+        }
+        // If intendedDestination was null, empty, or one of the nonIntendedRedirectPaths,
+        // redirectTo remains '/dashboard'.
       }
+      
       router.push(redirectTo);
+
     } catch (error) {
       const apiError = error as ApiError;
       console.error("Login error:", apiError);
@@ -181,7 +190,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
         
-        // Store current path before redirecting to login, if it's not already a public path
         const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
         if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
             sessionStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
@@ -212,4 +220,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
