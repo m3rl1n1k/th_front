@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -59,15 +59,17 @@ export default function EditMainCategoryPage() {
     defaultValues: { name: '', icon: null, color: predefinedColors[0] },
   });
 
+  const watchedColor = useWatch({ control, name: 'color' });
+
   const fetchCategoryData = useCallback(async () => {
     if (!id || !token) {
       setIsLoading(false);
       setErrorOccurred(true);
-      // Do not toast here, let the main useEffect handle auth issues
       return;
     }
     setIsLoading(true);
     setErrorOccurred(false); 
+    setMainCategory(null); 
     try {
       const categoryData = await getMainCategoryById(id, token);
       if (categoryData) {
@@ -79,13 +81,11 @@ export default function EditMainCategoryPage() {
         });
       } else {
         setErrorOccurred(true);
-        setMainCategory(null);
         toast({ variant: "destructive", title: t('errorFetchingCategory'), description: t('categoryNotFoundPlaceholder') });
       }
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingCategory'), description: error.message });
       setErrorOccurred(true);
-      setMainCategory(null); 
     } finally {
       setIsLoading(false);
     }
@@ -187,10 +187,14 @@ export default function EditMainCategoryPage() {
   }
   
   let titleCategoryNameDisplay;
-  if (mainCategory.name && mainCategory.name.trim() !== "") {
+  if (isLoading) {
+    titleCategoryNameDisplay = t('loading');
+  } else if (mainCategory && mainCategory.name && mainCategory.name.trim() !== "") {
     titleCategoryNameDisplay = mainCategory.name;
-  } else { 
+  } else if (mainCategory) { 
     titleCategoryNameDisplay = t('unnamedCategoryPlaceholder');
+  } else { 
+    titleCategoryNameDisplay = t('categoryNotFoundPlaceholder');
   }
 
 
@@ -249,7 +253,16 @@ export default function EditMainCategoryPage() {
                 {errors.icon && <p className="text-sm text-destructive">{errors.icon.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="color-swatches">{t('colorLabel')}</Label>
+                <div className="flex items-center gap-2 mb-1">
+                  <Label htmlFor="color-swatches">{t('colorLabel')}</Label>
+                  {watchedColor && (
+                    <span
+                      className="h-4 w-4 rounded-sm border border-input"
+                      style={{ backgroundColor: watchedColor }}
+                      title={watchedColor}
+                    />
+                  )}
+                </div>
                 <Controller
                     name="color"
                     control={control}
@@ -272,5 +285,3 @@ export default function EditMainCategoryPage() {
     </MainLayout>
   );
 }
-
-    
