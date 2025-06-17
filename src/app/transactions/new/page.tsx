@@ -28,8 +28,9 @@ import {
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory } from '@/types';
-import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2 } from 'lucide-react';
+import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, Calculator } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
+import { SimpleAmountCalculator } from '@/components/common/simple-amount-calculator';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -51,6 +52,7 @@ export default function NewTransactionPage() {
   const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
   const [isLoadingWallets, setIsLoadingWallets] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   
   const NewTransactionSchema = z.object({
     amount: z.coerce.number().positive({ message: t('amountPositiveError') }),
@@ -64,7 +66,7 @@ export default function NewTransactionPage() {
 
   type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, register, reset, getValues } = useForm<NewTransactionFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting }, register, reset, getValues, setValue } = useForm<NewTransactionFormData>({
     resolver: zodResolver(NewTransactionSchema),
     defaultValues: {
       amount: undefined,
@@ -134,8 +136,9 @@ export default function NewTransactionPage() {
       
       const defaultWallet = wallets.find(w => w.type?.toLowerCase() === 'main');
       const defaultExpenseType = transactionTypes.find(t => t.name.toUpperCase() === 'EXPENSE');
-      // For frequencies, API sends "0" as ID for "Once".
-      const defaultOneTimeFrequency = frequencies.find(f => f.id === '0'); 
+      
+      const defaultOneTimeFrequency = frequencies.find(f => f.name.toUpperCase() === 'ONE_TIME') || frequencies.find(f => f.id === "1");
+
 
       const currentFormValues = getValues();
       const newDefaults: Partial<NewTransactionFormData> = {};
@@ -215,14 +218,33 @@ export default function NewTransactionPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="amount">{t('amount')}</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    {...register('amount')}
-                    placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })} 
-                    className={errors.amount ? 'border-destructive' : ''}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      {...register('amount')}
+                      placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })} 
+                      className={errors.amount ? 'border-destructive flex-grow' : 'flex-grow'}
+                    />
+                    <Popover open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" type="button" aria-label={t('calculator.open')}>
+                          <Calculator className="h-5 w-5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-0 shadow-none bg-transparent" align="end">
+                        <SimpleAmountCalculator
+                          initialValue={getValues('amount')}
+                          onApply={(val) => {
+                            setValue('amount', val, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                            setIsCalculatorOpen(false);
+                          }}
+                          onClose={() => setIsCalculatorOpen(false)}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
                 </div>
 

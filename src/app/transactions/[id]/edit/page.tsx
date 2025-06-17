@@ -29,8 +29,9 @@ import {
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, UpdateTransactionPayload } from '@/types';
-import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, AlertTriangle, Calculator } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
+import { SimpleAmountCalculator } from '@/components/common/simple-amount-calculator';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -70,8 +71,9 @@ export default function EditTransactionPage() {
   const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true);
   const [isLoadingWallets, setIsLoadingWallets] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-  const { control, handleSubmit, formState: { errors }, register, reset } = useForm<EditTransactionFormData>({
+  const { control, handleSubmit, formState: { errors }, register, reset, getValues, setValue } = useForm<EditTransactionFormData>({
     resolver: zodResolver(EditTransactionSchema),
     defaultValues: {
       amount: undefined,
@@ -232,14 +234,33 @@ export default function EditTransactionPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="amount">{t('amount')}</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    {...register('amount')}
-                    placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })}
-                    className={errors.amount ? 'border-destructive' : ''}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      {...register('amount')}
+                      placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })}
+                      className={errors.amount ? 'border-destructive flex-grow' : 'flex-grow'}
+                    />
+                     <Popover open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" type="button" aria-label={t('calculator.open')}>
+                          <Calculator className="h-5 w-5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-0 shadow-none bg-transparent" align="end">
+                        <SimpleAmountCalculator
+                          initialValue={getValues('amount')}
+                          onApply={(val) => {
+                            setValue('amount', val, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                            setIsCalculatorOpen(false);
+                          }}
+                          onClose={() => setIsCalculatorOpen(false)}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   {errors.amount && <p className="text-sm text-destructive">{t(errors.amount.message as any) || errors.amount.message}</p>}
                 </div>
 

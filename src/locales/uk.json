@@ -335,6 +335,7 @@
   "walletCreatedDesc": "Ваш новий гаманець успішно створено.",
   "errorCreatingWallet": "Помилка створення гаманця",
   "invalidHexColor": "Неправильний формат шістнадцяткового коду кольору (напр., #RRGGBB).",
+  "accountNumberLabel": "Номер рахунку",
   "walletViewDetailsDesc": "Перегляд деталей гаманця буде реалізовано незабаром.",
   "walletEditDesc": "Редагування гаманців буде реалізовано незабаром.",
   "deleteWalletConfirmTitle": "Підтвердити видалення гаманця",
@@ -344,7 +345,6 @@
   "errorDeletingWallet": "Помилка видалення гаманця",
   "mainWalletExistsError": "Основний гаманець вже існує. Ви можете мати лише один.",
   "mainWalletExistsErrorShort": "Основний гаманець існує",
-  "mainWalletInfo": "У вас вже є гаманець типу 'Основний рахунок'. Дозволено лише один.",
   "errorFetchingCurrencies": "Помилка завантаження валют",
   "selectCurrencyPlaceholder": "Виберіть валюту",
   "mostCommonCurrenciesLabel": "Найпопулярніші валюти",
@@ -361,5 +361,16 @@
   "errorUpdatingWallet": "Помилка оновлення гаманця",
   "errorFetchingWalletData": "Помилка завантаження даних гаманця",
   "couldNotLoadWalletEdit": "Не вдалося завантажити дані гаманця для редагування. Будь ласка, спробуйте знову.",
-  "balanceCannotBeNegative": "Баланс не може бути від'ємним."
+  "balanceCannotBeNegative": "Баланс не може бути від'ємним.",
+  "calculator.open": "Відкрити калькулятор",
+  "calculator.title": "Калькулятор суми",
+  "calculator.apply": "Застосувати",
+  "calculator.clear": "C",
+  "calculator.equals": "Дорівнює",
+  "calculator.decimal": "Десятковий розділювач",
+  "calculator.digit": "Цифра {num}",
+  "calculator.operator": "Оператор {op}",
+  "calculator.displayLabel": "Дисплей калькулятора",
+  "calculator.error.divByZero": "Помилка: Ділення на 0",
+  "calculator.error.invalidFormat": "Помилка: Неправильний формат"
 }
