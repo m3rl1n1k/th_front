@@ -18,7 +18,7 @@ import { getMainCategoryById, updateMainCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, UpdateMainCategoryPayload } from '@/types';
-import { Save, ArrowLeft, Loader2, AlertTriangle, Palette } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, AlertTriangle, Palette, Check } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -125,7 +125,7 @@ export default function EditMainCategoryPage() {
           title={color}
           aria-label={`Color ${color}`}
         >
-          {value === color && <Palette className={cn("h-4 w-4 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' ? 'text-white' : 'text-black')} />}
+          {value === color && <Check className={cn("h-4 w-4 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' ? 'text-white' : 'text-black')} />}
         </button>
       ))}
     </div>
@@ -247,4 +247,8 @@ export default function EditMainCategoryPage() {
               </div>
             </form>
           </CardContent>
-        
+        </Card>
+      </div>
+    </MainLayout>
+  );
+}
