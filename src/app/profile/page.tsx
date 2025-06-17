@@ -1,50 +1,91 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon } from 'lucide-react';
+import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile } from '@/lib/api';
-import type { ApiError } from '@/types';
+import { updateUserProfile, getCurrencies } from '@/lib/api';
+import type { ApiError, User as UserType, CurrenciesApiResponse, CurrencyInfo } from '@/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 interface UserProfileData {
-  login: string; 
+  login: string;
   email: string;
   memberSince: string;
   profilePictureUrl?: string;
-  userCurrencyCode?: string; 
+  userCurrencyCode?: string;
 }
+
+const currencyCodeRegex = /^[A-Z]{3}$/;
+const MOST_USEFUL_CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'PLN', 'UAH', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR'];
+
+const createEditProfileSchema = (t: Function) => z.object({
+  login: z.string().min(3, { message: t('loginMinLengthError') }),
+  email: z.string().email({ message: t('invalidEmail') }),
+  userCurrencyCode: z.string()
+    .refine(value => value === '' || currencyCodeRegex.test(value), {
+      message: t('invalidCurrencyCodeFormat'),
+    })
+    .optional()
+    .nullable(),
+});
+
+type EditProfileFormData = z.infer<ReturnType<typeof createEditProfileSchema>>;
 
 export default function ProfilePage() {
   const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
-  const { t, dateFnsLocale } = useTranslation(); 
+  const { t, dateFnsLocale } = useTranslation();
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPage, setIsLoadingPage] = useState(true); // Combined loading state for page
   const { toast } = useToast();
-
-  const [editLogin, setEditLogin] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editCurrencyCode, setEditCurrencyCode] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCurrencyPrompt, setShowCurrencyPrompt] = useState(false);
+  const [allCurrencies, setAllCurrencies] = useState<CurrencyInfo[]>([]);
+  const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
 
+  const EditProfileSchema = createEditProfileSchema(t);
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      setIsLoading(true);
+  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<EditProfileFormData>({
+    resolver: zodResolver(EditProfileSchema),
+    defaultValues: {
+      login: '',
+      email: '',
+      userCurrencyCode: '',
+    }
+  });
 
+  const fetchPageData = useCallback(async () => {
+    if (!isAuthenticated || !user || !token) {
+      setIsLoadingPage(false);
+      return;
+    }
+    setIsLoadingPage(true);
+    setIsLoadingCurrencies(true);
+
+    try {
+      const currenciesData = await getCurrencies(token);
+      const formattedCurrencies = Object.entries(currenciesData.currencies).map(([nameKey, code]) => ({
+        code,
+        nameKey,
+        displayName: `${code} - ${nameKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`,
+      }));
+      setAllCurrencies(formattedCurrencies);
+      setIsLoadingCurrencies(false);
+      
       const newProfileData = {
         login: user.login,
         email: user.email,
@@ -53,9 +94,11 @@ export default function ProfilePage() {
         userCurrencyCode: user.userCurrency?.code || t('notSet'),
       };
       setProfileData(newProfileData);
-      setEditLogin(newProfileData.login);
-      setEditEmail(newProfileData.email);
-      setEditCurrencyCode(user.userCurrency?.code || '');
+      reset({
+        login: newProfileData.login,
+        email: newProfileData.email,
+        userCurrencyCode: user.userCurrency?.code || '',
+      });
 
       if (!user.userCurrency?.code) {
         setShowCurrencyPrompt(true);
@@ -63,49 +106,61 @@ export default function ProfilePage() {
         setShowCurrencyPrompt(false);
       }
 
-      setIsLoading(false);
-    } else if (isAuthenticated && !user && token) {
-        setIsLoading(true);
-        fetchUser().finally(() => {
-            setIsLoading(false);
-        });
-    } else if (!isAuthenticated) {
-      setIsLoading(false);
+    } catch (error) {
+        console.error("Error fetching page data for profile:", error);
+        toast({ variant: "destructive", title: t('errorFetchingData'), description: (error as ApiError).message });
+    } finally {
+        setIsLoadingPage(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, token, fetchUser, t]);
+
+  }, [isAuthenticated, user, token, reset, t, toast]);
 
 
-  const handleProfileUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  useEffect(() => {
+    if (isAuthenticated && user) {
+        fetchPageData();
+    } else if (isAuthenticated && !user && token && !authIsLoading) {
+      // User context might not be loaded yet, trigger fetchUser
+      fetchUser().then(() => {
+        // fetchPageData will be triggered by user state change
+      });
+    } else if (!isAuthenticated && !authIsLoading) {
+      setIsLoadingPage(false);
+      setIsLoadingCurrencies(false);
+    }
+  }, [isAuthenticated, user, token, authIsLoading, fetchUser, fetchPageData]);
+
+
+  const { mostUsefulCurrenciesList, otherCurrenciesList } = useMemo(() => {
+    const useful = allCurrencies
+      .filter(c => MOST_USEFUL_CURRENCY_CODES.includes(c.code))
+      .sort((a, b) => MOST_USEFUL_CURRENCY_CODES.indexOf(a.code) - MOST_USEFUL_CURRENCY_CODES.indexOf(b.code));
+
+    const others = allCurrencies
+      .filter(c => !MOST_USEFUL_CURRENCY_CODES.includes(c.code))
+      .sort((a, b) => (a.displayName || a.code).localeCompare(b.displayName || b.code));
+
+    return { mostUsefulCurrenciesList: useful, otherCurrenciesList: others };
+  }, [allCurrencies]);
+
+  const handleProfileUpdate: SubmitHandler<EditProfileFormData> = async (data) => {
     if (!token) {
       toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
       return;
     }
 
-    // Basic validation for currency code (3 uppercase letters)
-    if (editCurrencyCode && !/^[A-Z]{3}$/.test(editCurrencyCode)) {
-        toast({
-            variant: "destructive",
-            title: t('errorUpdatingProfile'),
-            description: t('invalidCurrencyCodeFormat'),
-        });
-        return;
-    }
-
-
-    setIsSubmitting(true);
     const payload = {
-      login: editLogin,
-      email: editEmail,
-      userCurrencyCode: editCurrencyCode || undefined, // Send undefined if empty to let backend handle
+      login: data.login,
+      email: data.email,
+      userCurrencyCode: data.userCurrencyCode || undefined,
     };
 
     try {
       await updateUserProfile(payload, token);
       await fetchUser(); // Refresh user data in context
       toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDescApi') });
-      // Dialog will close automatically due to DialogClose asChild on Button
+      // Dialog will close automatically if DialogClose is used on the submit button.
+      // For now, assume manual closing or relying on form submission completing.
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -113,17 +168,16 @@ export default function ProfilePage() {
         title: t('errorUpdatingProfile'),
         description: apiError.message || t('unexpectedError'),
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
+  const isLoadingEffectively = isLoadingPage || authIsLoading || (!profileData && isAuthenticated);
 
-  if (isLoading || authIsLoading || (!isAuthenticated && !token)) {
+  if (isLoadingEffectively) {
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <h1 className="font-headline text-3xl font-bold text-foreground">{t('userProfileTitle')}</h1>
+        <div className="space-y-6 max-w-2xl mx-auto">
+          <h1 className="font-headline text-3xl font-bold text-foreground text-center">{t('userProfileTitle')}</h1>
           <Card className="shadow-lg">
             <CardHeader className="items-center text-center">
               <Skeleton className="h-24 w-24 rounded-full mb-4" />
@@ -149,12 +203,12 @@ export default function ProfilePage() {
       </MainLayout>
     );
   }
-
-  if (!profileData && isAuthenticated) {
+  
+  if (!profileData && !authIsLoading && isAuthenticated) {
      return (
       <MainLayout>
-        <div className="space-y-6">
-          <h1 className="font-headline text-3xl font-bold text-foreground">{t('userProfileTitle')}</h1>
+        <div className="space-y-6 max-w-2xl mx-auto">
+          <h1 className="font-headline text-3xl font-bold text-foreground text-center">{t('userProfileTitle')}</h1>
           <Card>
             <CardHeader><CardTitle>{t('errorFetchingData')}</CardTitle></CardHeader>
             <CardContent><p>{t('noDataAvailable')}</p></CardContent>
@@ -165,11 +219,11 @@ export default function ProfilePage() {
   }
 
   if (!profileData) {
-    return (
+     return (
        <MainLayout>
-        <div className="space-y-6">
-          <h1 className="font-headline text-3xl font-bold text-foreground">{t('userProfileTitle')}</h1>
-          <Card className="shadow-lg">
+        <div className="space-y-6 max-w-2xl mx-auto">
+          <h1 className="font-headline text-3xl font-bold text-foreground text-center">{t('userProfileTitle')}</h1>
+           <Card className="shadow-lg">
             <CardHeader className="items-center text-center">
               <Skeleton className="h-24 w-24 rounded-full mb-4" />
               <Skeleton className="h-8 w-48 mb-2" />
@@ -183,7 +237,6 @@ export default function ProfilePage() {
       </MainLayout>
     )
   }
-
 
   let formattedMemberSince = "N/A";
   try {
@@ -252,40 +305,80 @@ export default function ProfilePage() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>{t('editProfileDialogTitle')}</DialogTitle>
-                  <DialogDescription>
-                    {t('editProfileDialogDescription')}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleProfileUpdate}>
+                <form onSubmit={handleSubmit(handleProfileUpdate)}>
+                  <DialogHeader>
+                    <DialogTitle>{t('editProfileDialogTitle')}</DialogTitle>
+                    <DialogDescription>
+                      {t('editProfileDialogDescription')}
+                    </DialogDescription>
+                  </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="login" className="text-right">
-                        {t('loginLabel')}
-                      </Label>
-                      <Input id="login" value={editLogin} onChange={(e) => setEditLogin(e.target.value)} className="col-span-3" />
+                    <div className="space-y-2">
+                      <Label htmlFor="login">{t('loginLabel')}</Label>
+                      <Controller
+                        name="login"
+                        control={control}
+                        render={({ field }) => <Input id="login" {...field} />}
+                      />
+                      {errors.login && <p className="text-sm text-destructive">{errors.login.message}</p>}
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="email" className="text-right">
-                        {t('emailLabel')}
-                      </Label>
-                      <Input id="email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="col-span-3" />
+                    <div className="space-y-2">
+                      <Label htmlFor="email">{t('emailLabel')}</Label>
+                       <Controller
+                        name="email"
+                        control={control}
+                        render={({ field }) => <Input id="email" type="email" {...field} />}
+                      />
+                      {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="currencyCode" className="text-right">
-                        {t('currencyCodeLabel')}
-                      </Label>
-                      <Input id="currencyCode" value={editCurrencyCode} onChange={(e) => setEditCurrencyCode(e.target.value.toUpperCase())} className="col-span-3" placeholder="USD, EUR, PLN..." maxLength={3} />
+                    <div className="space-y-2">
+                      <Label htmlFor="userCurrencyCode">{t('currencyCodeLabel')}</Label>
+                       <Controller
+                        name="userCurrencyCode"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || ''}
+                            disabled={isLoadingCurrencies || allCurrencies.length === 0}
+                          >
+                            <SelectTrigger id="userCurrencyCode" className={errors.userCurrencyCode ? 'border-destructive' : ''}>
+                              <Coins className="mr-2 h-4 w-4 text-muted-foreground" />
+                              <SelectValue placeholder={isLoadingCurrencies ? t('loading') : t('selectCurrencyPlaceholder')} />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                               <SelectItem value="">{t('notSet')}</SelectItem>
+                               <SelectSeparator />
+                              {mostUsefulCurrenciesList.length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel>{t('mostCommonCurrenciesLabel')}</SelectLabel>
+                                  {mostUsefulCurrenciesList.map(curr => (
+                                    <SelectItem key={curr.code} value={curr.code}>{curr.displayName}</SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              )}
+                              {mostUsefulCurrenciesList.length > 0 && otherCurrenciesList.length > 0 && <SelectSeparator />}
+                              {otherCurrenciesList.length > 0 && (
+                                <SelectGroup>
+                                  <SelectLabel>{t('allCurrenciesLabel')}</SelectLabel>
+                                  {otherCurrenciesList.map(curr => (
+                                    <SelectItem key={curr.code} value={curr.code}>{curr.displayName}</SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.userCurrencyCode && <p className="text-sm text-destructive">{errors.userCurrencyCode.message}</p>}
                     </div>
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
                        <Button type="button" variant="outline">{t('cancelButton')}</Button>
                     </DialogClose>
-                    {/* For DialogClose on submit to work, form submission must be handled by the button itself */}
-                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? t('saving') : t('saveChangesButton')}
+                     <Button type="submit" disabled={isSubmitting || isLoadingCurrencies}>
+                        {isSubmitting || isLoadingCurrencies ? t('saving') : t('saveChangesButton')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -297,3 +390,4 @@ export default function ProfilePage() {
     </MainLayout>
   );
 }
+
