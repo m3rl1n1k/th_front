@@ -189,14 +189,14 @@ export interface UpdateMainCategoryPayload {
 
 export interface CreateSubCategoryPayload {
   name: string;
+  main_category: number; // ID of the parent MainCategory, as per POST /sub/categories
   icon?: string | null;
   color?: string | null;
-  mainCategoryId: string; // Used for POST /main/categories/{mainCategoryId}/subcategories
 }
 
 export interface UpdateSubCategoryPayload {
   name?: string;
-  main_category?: number; // Used for PUT /sub/categories/{id}
+  main_category?: number; // ID of the new/current parent MainCategory, as per PUT /sub/categories/{id}
   icon?: string | null;
   color?: string | null;
 }
@@ -241,4 +241,5 @@ export interface CurrenciesApiResponse {
 export interface CurrencyInfo {
   code: string; // "AED"
   nameKey: string; // "uae_dirham"
-  displayName
+  displayName: string; // "AED - UAE Dirham"
+}

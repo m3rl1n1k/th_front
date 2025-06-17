@@ -399,4 +399,7 @@
   "subCategoryDeletedTitle": "Subcategory Deleted",
   "subCategoryDeletedDesc": "The subcategory has been deleted.",
   "errorDeletingMainCategory": "Error Deleting Main Category",
-  "errorDeletingSubCategory": "Error Deleting
+  "errorDeletingSubCategory": "Error Deleting Subcategory"
+}
+
+    

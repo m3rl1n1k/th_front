@@ -237,8 +237,8 @@ export const deleteMainCategory = (id: string | number, token: string): Promise<
   request<void>(URLS.deleteMainCategory(id), { method: 'DELETE', token });
 
 // SubCategories
-export const createSubCategory = (mainCategoryId: string | number, data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
-  request<SubCategory>(URLS.createSubCategory(mainCategoryId), { method: 'POST', body: data, token });
+export const createSubCategory = (data: CreateSubCategoryPayload, token: string): Promise<SubCategory> =>
+  request<SubCategory>(URLS.createSubCategory, { method: 'POST', body: data, token });
 
 export const updateSubCategory = (id: string | number, data: UpdateSubCategoryPayload, token: string): Promise<SubCategory> =>
   request<SubCategory>(URLS.updateSubCategory(id), { method: 'PUT', body: data, token });
@@ -260,3 +260,4 @@ export const deleteRepeatedTransactionDefinition = (id: string | number, token: 
 // General
 export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
   request(URLS.currencies, { method: 'GET', token });
+

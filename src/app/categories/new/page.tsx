@@ -45,7 +45,7 @@ const MainCategorySchema = z.object({
 type MainCategoryFormData = z.infer<typeof MainCategorySchema>;
 
 const SubCategorySchema = z.object({
-  mainCategoryId: z.string().min(1, { message: "Parent category is required." }),
+  mainCategoryId: z.string().min(1, { message: "Parent category is required." }), // This is 'main_category' ID for the API
   name: z.string().min(1, { message: "Name is required." }),
   icon: z.string().nullable().optional(),
   color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
@@ -108,14 +108,14 @@ export default function CreateCategoryPage() {
 
   const onSubCategorySubmit: SubmitHandler<SubCategoryFormData> = async (data) => {
     if (!token) return;
-    const payloadForBody: CreateSubCategoryPayload = {
+    const payload: CreateSubCategoryPayload = {
       name: data.name,
+      main_category: parseInt(data.mainCategoryId, 10), // API expects 'main_category' as number
       icon: data.icon || null,
       color: data.color || null,
-      mainCategoryId: data.mainCategoryId, 
     };
     try {
-      await createSubCategory(data.mainCategoryId, payloadForBody, token);
+      await createSubCategory(payload, token); // Updated API call
       toast({ title: t('subCategoryCreatedTitle'), description: t('subCategoryCreatedDesc') });
       router.push('/categories');
     } catch (error: any) {
@@ -321,6 +321,3 @@ export default function CreateCategoryPage() {
     </MainLayout>
   );
 }
-
-
-    

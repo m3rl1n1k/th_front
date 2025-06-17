@@ -49,10 +49,11 @@ export const URLS = {
   deleteMainCategory: (id: string | number) => `${API_BASE_URL}/main/categories/${id}`,
 
   // SubCategories
-  // Note: createSubCategory uses a different pattern as per existing implementation
-  createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
-  // updateSubCategory and deleteSubCategory use /sub/categories/ endpoint as per user request
+  createSubCategory: `${API_BASE_URL}/sub/categories`, // Updated from /main/categories/{id}/subcategories
   updateSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
   deleteSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
 
+  // General
+  currencies: `${API_BASE_URL}/currencies`,
+};
 

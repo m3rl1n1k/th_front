@@ -386,7 +386,7 @@ Creates a new wallet.
       "type": "cash" // Wallet type key from GET /wallets/types
     }
     ```
-*   **Success Response (201 Created)**: Returns the created wallet object (similar to `GET /wallets` item, but `number` might be null/absent initially).
+*   **Success Response (201 Created)**: Returns the created wallet object (similar to `GET /wallets` item). The `number` field (account number) is not sent by the client for creation.
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 #### `GET /wallets/{id}`
@@ -396,7 +396,7 @@ Retrieves a specific wallet by its ID.
 
 #### `PUT /wallets/{id}`
 Updates a specific wallet.
-*   **Request Body**: Similar to `POST /wallets`, containing fields to update. `amount_cents` here represents the new total balance for the wallet.
+*   **Request Body**: Similar to `POST /wallets`, containing fields to update. `amount_cents` here represents the new total balance for the wallet. The `number` field (account number) is not sent by the client for updates.
     ```json
     {
       "name": "Updated Wallet Name",
@@ -510,13 +510,13 @@ Deletes a specific main category. This will likely also delete its associated su
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 
-#### `POST /main/categories/{mainCategoryId}/subcategories`
-Creates a new subcategory under a specified main category. (This is the current implemented endpoint for creation)
-*   **Path Parameter**: `mainCategoryId` (integer)
+#### `POST /sub/categories`
+Creates a new sub category.
 *   **Request Body**:
     ```json
     {
-      "name": "New Subcategory Name",
+      "name": "SubCategory Name",
+      "main_category": 1, // ID of the parent MainCategory
       "icon": "LucideIconName", // Optional
       "color": "#RRGGBB" // Optional, hex color code
     }
@@ -525,26 +525,12 @@ Creates a new subcategory under a specified main category. (This is the current 
     ```json
     {
       "id": 301,
-      "name": "New Subcategory Name",
+      "name": "SubCategory Name",
       "icon": "LucideIconName",
       "color": "#RRGGBB",
-      "mainCategoryId": 3 // This might be part of the response or inferred
+      "main_category_id": 1 // Or similar structure confirming parent
     }
     ```
-*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for mainCategoryId)**
-
-#### `POST /sub/categories` (Alternative/Newer for Subcategory Creation, as per user request)
-Creates a new sub category.
-*   **Request Body**:
-    ```json
-    {
-      "name": "SubCategory 1",
-      "main_category": 1, // ID of the parent MainCategory
-      "icon": null,
-      "color": null
-    }
-    ```
-*   **Success Response (201 Created)**: Returns the created `SubCategory` object.
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 #### `PUT /sub/categories/{id}`
@@ -751,4 +737,3 @@ If you experience "Failed to fetch" errors or similar network issues when access
 
 By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
-```
