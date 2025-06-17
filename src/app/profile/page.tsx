@@ -28,11 +28,13 @@ interface UserProfileData {
   email: string;
   memberSince: string;
   profilePictureUrl?: string;
-  userCurrencyCode?: string;
+  userCurrencyCode?: string | null; // Allow null
 }
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
 const MOST_USEFUL_CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'PLN', 'UAH', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR'];
+const NO_CURRENCY_SELECTED_PLACEHOLDER = '__NO_CURRENCY_SELECTED__';
+
 
 const createEditProfileSchema = (t: Function) => z.object({
   login: z.string().min(3, { message: t('loginMinLengthError') }),
@@ -51,7 +53,7 @@ export default function ProfilePage() {
   const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
-  const [isLoadingPage, setIsLoadingPage] = useState(true); // Combined loading state for page
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
   const { toast } = useToast();
   const [showCurrencyPrompt, setShowCurrencyPrompt] = useState(false);
   const [allCurrencies, setAllCurrencies] = useState<CurrencyInfo[]>([]);
@@ -64,7 +66,7 @@ export default function ProfilePage() {
     defaultValues: {
       login: '',
       email: '',
-      userCurrencyCode: '',
+      userCurrencyCode: null, // Initialize with null
     }
   });
 
@@ -91,13 +93,13 @@ export default function ProfilePage() {
         email: user.email,
         memberSince: user.memberSince || new Date().toISOString(),
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`,
-        userCurrencyCode: user.userCurrency?.code || t('notSet'),
+        userCurrencyCode: user.userCurrency?.code || null,
       };
       setProfileData(newProfileData);
       reset({
         login: newProfileData.login,
         email: newProfileData.email,
-        userCurrencyCode: user.userCurrency?.code || '',
+        userCurrencyCode: user.userCurrency?.code || null, // Use null if not set
       });
 
       if (!user.userCurrency?.code) {
@@ -120,9 +122,7 @@ export default function ProfilePage() {
     if (isAuthenticated && user) {
         fetchPageData();
     } else if (isAuthenticated && !user && token && !authIsLoading) {
-      // User context might not be loaded yet, trigger fetchUser
       fetchUser().then(() => {
-        // fetchPageData will be triggered by user state change
       });
     } else if (!isAuthenticated && !authIsLoading) {
       setIsLoadingPage(false);
@@ -152,15 +152,14 @@ export default function ProfilePage() {
     const payload = {
       login: data.login,
       email: data.email,
-      userCurrencyCode: data.userCurrencyCode || undefined,
+      userCurrencyCode: data.userCurrencyCode || undefined, 
     };
 
     try {
       await updateUserProfile(payload, token);
-      await fetchUser(); // Refresh user data in context
+      await fetchUser(); 
       toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDescApi') });
-      // Dialog will close automatically if DialogClose is used on the submit button.
-      // For now, assume manual closing or relying on form submission completing.
+      setShowCurrencyPrompt(false); // Hide prompt if currency was set
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -244,7 +243,6 @@ export default function ProfilePage() {
       formattedMemberSince = format(new Date(profileData.memberSince), "MMMM d, yyyy", { locale: dateFnsLocale });
     }
   } catch (error) {
-    // Invalid date format, formattedMemberSince remains "N/A"
   }
 
   return (
@@ -338,8 +336,14 @@ export default function ProfilePage() {
                         control={control}
                         render={({ field }) => (
                           <Select
-                            onValueChange={field.onChange}
-                            value={field.value || ''}
+                            onValueChange={(value) => {
+                              if (value === NO_CURRENCY_SELECTED_PLACEHOLDER) {
+                                field.onChange(null);
+                              } else {
+                                field.onChange(value);
+                              }
+                            }}
+                            value={field.value || NO_CURRENCY_SELECTED_PLACEHOLDER}
                             disabled={isLoadingCurrencies || allCurrencies.length === 0}
                           >
                             <SelectTrigger id="userCurrencyCode" className={errors.userCurrencyCode ? 'border-destructive' : ''}>
@@ -347,7 +351,7 @@ export default function ProfilePage() {
                               <SelectValue placeholder={isLoadingCurrencies ? t('loading') : t('selectCurrencyPlaceholder')} />
                             </SelectTrigger>
                             <SelectContent className="max-h-72">
-                               <SelectItem value="">{t('notSet')}</SelectItem>
+                               <SelectItem value={NO_CURRENCY_SELECTED_PLACEHOLDER}>{t('notSet')}</SelectItem>
                                <SelectSeparator />
                               {mostUsefulCurrenciesList.length > 0 && (
                                 <SelectGroup>
@@ -378,7 +382,8 @@ export default function ProfilePage() {
                        <Button type="button" variant="outline">{t('cancelButton')}</Button>
                     </DialogClose>
                      <Button type="submit" disabled={isSubmitting || isLoadingCurrencies}>
-                        {isSubmitting || isLoadingCurrencies ? t('saving') : t('saveChangesButton')}
+                        {(isSubmitting || isLoadingCurrencies) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {(isSubmitting || isLoadingCurrencies) ? t('saving') : t('saveChangesButton')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -390,4 +395,3 @@ export default function ProfilePage() {
     </MainLayout>
   );
 }
-
