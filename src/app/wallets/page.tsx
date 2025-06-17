@@ -12,7 +12,7 @@ import { getWalletsList, getWalletTypes, deleteWallet } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { WalletCards, Landmark, AlertTriangle, PlusCircle, PiggyBank, CreditCard, LayoutGrid, List, MoreHorizontal, Edit3, Trash2, Eye, Loader2, Archive, ShieldCheck, HelpCircle } from 'lucide-react';
-import type { WalletDetails, WalletTypeMap, WalletTypeApiResponse } from '@/types';
+import type { WalletDetails, WalletTypeMap } from '@/types'; // WalletTypeApiResponse removed as it's an internal detail for api.ts
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -84,7 +84,7 @@ export default function WalletsPage() {
     if (isAuthenticated && token) {
       setIsLoadingTypes(true);
       getWalletTypes(token)
-        .then((data: { types: WalletTypeApiResponse }) => {
+        .then((data: { types: WalletTypeMap }) => { // Adjusted type here
           setWalletTypeMap(data.types || {});
         })
         .catch(error => {
@@ -94,6 +94,7 @@ export default function WalletsPage() {
     } else {
       setIsLoadingTypes(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, t, toast]);
 
   useEffect(() => {
@@ -103,15 +104,16 @@ export default function WalletsPage() {
 
 
   const processedWallets = useMemo(() => {
-    if (!wallets) return null;
+    if (!wallets || isLoadingTypes) return null; // Ensure types are loaded
 
     const translatedWallets = wallets.map(wallet => {
-      const typeKey = wallet.type; // This is "main", "cash" etc.
-      const mappedDisplayValue = walletTypeMap[typeKey]; // This would be "MAIN", "CASH" from API
+      const typeKey = wallet.type;
+      const mappedDisplayValue = walletTypeMap[typeKey];
       let typeIdentifierForTranslation = mappedDisplayValue || typeKey.toUpperCase();
       
       const userFriendlyDefault = mappedDisplayValue || typeKey;
-      const translationKey = \`walletType_\${typeIdentifierForTranslation}\`;
+      // Corrected line:
+      const translationKey = `walletType_${typeIdentifierForTranslation}`;
       
       return {
         ...wallet,
@@ -119,32 +121,30 @@ export default function WalletsPage() {
       };
     });
 
-    // Sort the wallets
     return translatedWallets.sort((a, b) => {
-      const orderA = walletTypeSortOrder[a.type] || 50; // Default order for unlisted types
+      const orderA = walletTypeSortOrder[a.type] || 50;
       const orderB = walletTypeSortOrder[b.type] || 50;
 
       if (orderA !== orderB) {
         return orderA - orderB;
       }
-      // If same order priority, sort by name
       return a.name.localeCompare(b.name);
     });
 
   }, [wallets, walletTypeMap, t, isLoadingTypes]);
 
   const getWalletVisualIcon = (wallet: WalletDetails) => {
-    const typeKey = wallet.type; // e.g., "main", "cash"
+    const typeKey = wallet.type;
     const iconClass = "h-6 w-6";
     
     switch (typeKey) {
-      case 'main': return <Landmark className={\`\${iconClass} text-blue-500\`} />;
-      case 'deposit': return <PiggyBank className={\`\${iconClass} text-green-500\`} />;
-      case 'cash': return <WalletCards className={\`\${iconClass} text-yellow-600\`} />;
-      case 'credit': return <CreditCard className={\`\${iconClass} text-purple-500\`} />;
-      case 'archive': return <Archive className={\`\${iconClass} text-gray-500\`} />;
-      case 'block': return <ShieldCheck className={\`\${iconClass} text-red-500\`} />;
-      default: return <HelpCircle className={\`\${iconClass} text-muted-foreground\`} />;
+      case 'main': return <Landmark className={`${iconClass} text-blue-500`} />;
+      case 'deposit': return <PiggyBank className={`${iconClass} text-green-500`} />;
+      case 'cash': return <WalletCards className={`${iconClass} text-yellow-600`} />;
+      case 'credit': return <CreditCard className={`${iconClass} text-purple-500`} />;
+      case 'archive': return <Archive className={`${iconClass} text-gray-500`} />;
+      case 'block': return <ShieldCheck className={`${iconClass} text-red-500`} />;
+      default: return <HelpCircle className={`${iconClass} text-muted-foreground`} />;
     }
   };
   
@@ -153,11 +153,11 @@ export default function WalletsPage() {
   };
 
   const handleViewDetails = (walletId: string | number) => {
-    router.push(\`/wallets/\${walletId}\`);
+    router.push(`/wallets/${walletId}`);
   };
 
   const handleEditWallet = (walletId: string | number) => {
-    router.push(\`/wallets/\${walletId}/edit\`);
+    router.push(`/wallets/${walletId}/edit`);
   };
 
   const handleDeleteWallet = (wallet: WalletDetails) => {
@@ -171,7 +171,7 @@ export default function WalletsPage() {
     try {
       await deleteWallet(walletToDelete.id, token);
       toast({ title: t('walletDeletedTitle'), description: t('walletDeletedDesc') });
-      fetchWalletData(); // Refresh list
+      fetchWalletData(); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingWallet'), description: error.message });
     } finally {
@@ -196,7 +196,7 @@ export default function WalletsPage() {
                 </Button>
             </div>
           </div>
-          <div className={\`grid gap-6 \${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}\`}>
+          <div className={`grid gap-6 ${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
             {viewMode === 'card' ? (
               [1, 2, 3, 4].map(i => (
                 <Card key={i} className="shadow-lg">
@@ -427,3 +427,4 @@ export default function WalletsPage() {
     </MainLayout>
   );
 }
+
