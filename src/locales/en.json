@@ -372,7 +372,6 @@
   "calculator.displayLabel": "Calculator Display",
   "calculator.error.divByZero": "Error: Div by 0",
   "calculator.error.invalidFormat": "Error: Invalid Format",
-
   "editMainCategoryPageTitle": "Edit Main Category: {categoryName}",
   "updateMainCategoryDetails": "Update Main Category Details",
   "modifyCategoryFormBelow": "Modify the form to update the category details.",

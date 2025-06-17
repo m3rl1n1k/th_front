@@ -18,7 +18,7 @@ import { getMainCategories, updateSubCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, SubCategory, UpdateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, Loader2, AlertTriangle, Palette, Check } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, AlertTriangle, Check } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -123,7 +123,7 @@ export default function EditSubCategoryPage() {
         setSubCategoryToEdit(foundSubCategory);
         reset({
           mainCategoryId: foundParentId,
-          name: foundSubCategory.name,
+          name: foundSubCategory.name || '',
           icon: foundSubCategory.icon || null,
           color: foundSubCategory.color || predefinedColors[0],
         });
@@ -232,13 +232,24 @@ export default function EditSubCategoryPage() {
     );
   }
 
+  let titleCategoryNameDisplay;
+  if (isLoading) {
+    titleCategoryNameDisplay = t('loading');
+  } else if (subCategoryToEdit && subCategoryToEdit.name && subCategoryToEdit.name.trim() !== "") {
+    titleCategoryNameDisplay = subCategoryToEdit.name;
+  } else if (subCategoryToEdit) { 
+    titleCategoryNameDisplay = t('unnamedCategoryPlaceholder');
+  } else { 
+    titleCategoryNameDisplay = t('subCategoryNotFound');
+  }
+
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-3xl font-bold text-foreground">
-            {t('editSubCategoryPageTitle', { categoryName: subCategoryToEdit?.name || t('loading') })}
+            {t('editSubCategoryPageTitle', { categoryName: titleCategoryNameDisplay })}
           </h1>
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />

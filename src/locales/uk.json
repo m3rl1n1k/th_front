@@ -373,7 +373,6 @@
   "calculator.displayLabel": "Дисплей калькулятора",
   "calculator.error.divByZero": "Помилка: Ділення на 0",
   "calculator.error.invalidFormat": "Помилка: Неправильний формат",
-
   "editMainCategoryPageTitle": "Редагувати основну категорію: {categoryName}",
   "updateMainCategoryDetails": "Оновити деталі основної категорії",
   "modifyCategoryFormBelow": "Змініть форму, щоб оновити деталі категорії.",
