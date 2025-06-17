@@ -122,27 +122,25 @@ export interface WalletDetails {
   id: number;
   name: string;
   amount: TransactionAmount; 
-  number: string;
-  currency: {
+  number: string; // Account number
+  currency: { // Currency of the wallet itself
     code: string;
   };
-  type: string | null; 
+  type: string; // Type key like "main", "cash", "credit"
   user: {
     id: number;
   };
-  typeName?: string; 
-  icon?: string | null; 
-  color?: string | null; 
+  typeName?: string; // For display, translated
+  // Icon and color are typically not part of the GET /wallets response as per API_DOC,
+  // they are determined by 'type' on the frontend or managed separately if customizable.
 }
 
 export interface CreateWalletPayload {
   name: string;
-  initial_balance_cents: number; // API likely expects cents
-  currency_code: string;
-  type_key: string; // From GET /wallets/types
+  amount_cents: number; // API expects cents for creation
+  currency: string; // e.g., "USD", "EUR"
+  type: string; // Type key like "main", "cash" from GET /wallets/types
   account_number?: string | null;
-  icon?: string | null;
-  color?: string | null;
 }
 
 

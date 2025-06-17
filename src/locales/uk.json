@@ -345,5 +345,8 @@
   "deleteWalletConfirmMessage": "Ви впевнені, що хочете видалити гаманець \"{walletName}\"? Цю дію неможливо буде скасувати.",
   "walletDeletedTitle": "Гаманець видалено",
   "walletDeletedDesc": "Гаманець успішно видалено.",
-  "errorDeletingWallet": "Помилка видалення гаманця"
+  "errorDeletingWallet": "Помилка видалення гаманця",
+  "mainWalletExistsError": "Основний гаманець вже існує. Ви можете мати лише один.",
+  "mainWalletExistsErrorShort": "Основний гаманець існує",
+  "mainWalletInfo": "У вас вже є гаманець типу 'Основний рахунок'. Дозволено лише один."
 }

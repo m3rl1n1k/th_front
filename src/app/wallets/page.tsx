@@ -11,7 +11,7 @@ import { useAuth } from '@/context/auth-context';
 import { getWalletsList, getWalletTypes, deleteWallet } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { WalletCards, Landmark, AlertTriangle, PlusCircle, PiggyBank, CreditCard, LayoutGrid, List, MoreHorizontal, Edit3, Trash2, Eye, Loader2 } from 'lucide-react';
+import { WalletCards, Landmark, AlertTriangle, PlusCircle, PiggyBank, CreditCard, LayoutGrid, List, MoreHorizontal, Edit3, Trash2, Eye, Loader2, Archive, ShieldCheck, HelpCircle } from 'lucide-react';
 import type { WalletDetails, WalletTypeMap, WalletTypeApiResponse } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +33,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { IconRenderer } from '@/components/common/icon-renderer';
+
+// Define the desired sort order for wallet types
+const walletTypeSortOrder: Record<string, number> = {
+  'main': 1,
+  'deposit': 2,
+  'cash': 3,
+  'credit': 4,
+  // other types will be sorted alphabetically after these
+  'archive': 98,
+  'block': 99,
+};
+
 
 export default function WalletsPage() {
   const { token, isAuthenticated } = useAuth();
@@ -92,61 +103,48 @@ export default function WalletsPage() {
 
 
   const processedWallets = useMemo(() => {
-    if (!wallets || (Object.keys(walletTypeMap).length === 0 && wallets.length > 0 && !isLoadingTypes)) {
-      return wallets.map(wallet => ({
-        ...wallet,
-        typeName: wallet.type ? t(`walletType_${wallet.type.toUpperCase()}` as any, {defaultValue: wallet.type}) : t('walletType_UNKNOWN')
-      }));
-    }
     if (!wallets) return null;
 
-    return wallets.map(wallet => {
-      const typeKey = wallet.type;
-      const mappedDisplayValue = typeof typeKey === 'string' ? walletTypeMap[typeKey] : undefined;
-      let typeIdentifierForTranslation: string;
-
-      if (mappedDisplayValue) {
-        typeIdentifierForTranslation = mappedDisplayValue;
-      } else if (typeKey) {
-        typeIdentifierForTranslation = typeKey.toUpperCase();
-      } else {
-        typeIdentifierForTranslation = 'UNKNOWN';
-      }
+    const translatedWallets = wallets.map(wallet => {
+      const typeKey = wallet.type; // This is "main", "cash" etc.
+      const mappedDisplayValue = walletTypeMap[typeKey]; // This would be "MAIN", "CASH" from API
+      let typeIdentifierForTranslation = mappedDisplayValue || typeKey.toUpperCase();
       
-      const userFriendlyDefault = mappedDisplayValue || (typeof typeKey === 'string' ? typeKey : 'Unknown');
-      
+      const userFriendlyDefault = mappedDisplayValue || typeKey;
       const translationKey = `walletType_${typeIdentifierForTranslation}`;
+      
       return {
         ...wallet,
         typeName: t(translationKey as any, { defaultValue: userFriendlyDefault })
       };
     });
+
+    // Sort the wallets
+    return translatedWallets.sort((a, b) => {
+      const orderA = walletTypeSortOrder[a.type] || 50; // Default order for unlisted types
+      const orderB = walletTypeSortOrder[b.type] || 50;
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      // If same order priority, sort by name
+      return a.name.localeCompare(b.name);
+    });
+
   }, [wallets, walletTypeMap, t, isLoadingTypes]);
 
   const getWalletVisualIcon = (wallet: WalletDetails) => {
-    if (wallet.icon) {
-      return <IconRenderer iconName={wallet.icon} className="h-6 w-6" color={wallet.color || undefined} />;
-    }
-    // Fallback to type-based icon if no specific icon is set
-    const typeKey = typeof wallet.type === 'string' ? wallet.type : null;
-    const mappedTypeEnum = typeKey ? walletTypeMap[typeKey] : undefined;
-    let typeForSwitch: string;
-
-    if (mappedTypeEnum) {
-      typeForSwitch = mappedTypeEnum;
-    } else if (typeKey) {
-      typeForSwitch = typeKey.toUpperCase();
-    } else {
-      typeForSwitch = 'UNKNOWN';
-    }
-
-    switch (typeForSwitch) {
-      case 'MAIN': return <Landmark className="h-6 w-6 text-primary" />;
-      case 'DEPOSIT': return <PiggyBank className="h-6 w-6 text-green-500" />;
-      case 'CREDIT': return <CreditCard className="h-6 w-6 text-blue-500" />;
-      case 'CASH': return <WalletCards className="h-6 w-6 text-yellow-500" />;
-      case 'BLOCK': return <AlertTriangle className="h-6 w-6 text-red-500" />
-      default: return <WalletCards className="h-6 w-6 text-muted-foreground" />;
+    const typeKey = wallet.type; // e.g., "main", "cash"
+    const iconClass = "h-6 w-6";
+    
+    switch (typeKey) {
+      case 'main': return <Landmark className={`${iconClass} text-blue-500`} />;
+      case 'deposit': return <PiggyBank className={`${iconClass} text-green-500`} />;
+      case 'cash': return <WalletCards className={`${iconClass} text-yellow-600`} />;
+      case 'credit': return <CreditCard className={`${iconClass} text-purple-500`} />;
+      case 'archive': return <Archive className={`${iconClass} text-gray-500`} />;
+      case 'block': return <ShieldCheck className={`${iconClass} text-red-500`} />;
+      default: return <HelpCircle className={`${iconClass} text-muted-foreground`} />;
     }
   };
   

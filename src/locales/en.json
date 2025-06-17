@@ -345,5 +345,8 @@
   "deleteWalletConfirmMessage": "Are you sure you want to delete the wallet \"{walletName}\"? This action cannot be undone.",
   "walletDeletedTitle": "Wallet Deleted",
   "walletDeletedDesc": "The wallet has been successfully deleted.",
-  "errorDeletingWallet": "Error Deleting Wallet"
+  "errorDeletingWallet": "Error Deleting Wallet",
+  "mainWalletExistsError": "A main wallet already exists. You can only have one.",
+  "mainWalletExistsErrorShort": "Main wallet exists",
+  "mainWalletInfo": "You already have a 'Main Account' wallet. Only one is allowed."
 }
