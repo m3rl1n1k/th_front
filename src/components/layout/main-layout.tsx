@@ -53,6 +53,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('intended_destination', pathname);
+      }
       router.replace('/login');
     } else if (
         !authIsLoading && 
@@ -155,8 +158,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         e.preventDefault();
                       } else {
                         setIsNavigating(true);
+                        // Let router.push from handleNavLinkClick (if called via that) or Link itself handle actual navigation
                       }
-                      // Link component handles navigation if not prevented
                     }}
                   >
                      <div className="flex items-center space-x-2">
@@ -181,14 +184,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </SheetContent>
             </Sheet>
             )}
-            <Link 
+             <Link 
               href="/" 
               onClick={(e) => {
-                if (pathname === '/') {
-                  e.preventDefault();
-                } else {
-                  setIsNavigating(true);
-                }
+                 if (pathname === '/') {
+                    e.preventDefault();
+                 } else {
+                    setIsNavigating(true);
+                 }
               }} 
               className="flex items-center space-x-2"
             >

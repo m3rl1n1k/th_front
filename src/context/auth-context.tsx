@@ -22,6 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_STORAGE_KEY = 'financeflow_jwt_token';
+const INTENDED_DESTINATION_KEY = 'intended_destination';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const removeTokenFromStorages = () => {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(INTENDED_DESTINATION_KEY); // Also clear intended destination on logout
     }
   };
 
@@ -86,14 +88,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (apiError.rawResponse) {
             console.error("Raw server response on init error:", apiError.rawResponse);
           }
-          toast({
-            variant: "destructive",
-            title: t('sessionExpiredTitle'),
-            description: apiError.message || t('sessionExpiredDesc'),
-          });
-          if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/terms') && pathname !== '/') {
-            router.replace('/login');
-          }
+          // Don't show toast here, as MainLayout handles unauth redirect and potentially a message
+          // toast({
+          //   variant: "destructive",
+          //   title: t('sessionExpiredTitle'),
+          //   description: apiError.message || t('sessionExpiredDesc'),
+          // });
+          // The MainLayout effect will handle redirecting if needed based on current path
         }
       } else {
         clearAuthArtefacts(); 
@@ -103,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initializeAuth();
     return () => { isActive = false; };
-  }, [fetchAndSetUser, t, pathname, router, clearAuthArtefacts]); 
+  }, [fetchAndSetUser, clearAuthArtefacts]); 
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -111,7 +112,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response: LoginResponse = await apiLoginUser(credentials);
       await fetchAndSetUser(response.token);
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
-      router.push('/dashboard');
+
+      let redirectTo = '/dashboard';
+      if (typeof window !== 'undefined') {
+        const intendedDestination = sessionStorage.getItem(INTENDED_DESTINATION_KEY);
+        if (intendedDestination && intendedDestination !== '/login' && intendedDestination !== '/register' && intendedDestination !== '/') {
+          // Ensure it's a valid relative path or a path within the app
+          if (intendedDestination.startsWith('/') && !intendedDestination.startsWith('//')) {
+            redirectTo = intendedDestination;
+          }
+          sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
+        }
+      }
+      router.push(redirectTo);
     } catch (error) {
       const apiError = error as ApiError;
       console.error("Login error:", apiError);
@@ -167,7 +180,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error("Raw server response on fetchUser error:", apiError.rawResponse);
         }
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
+        
+        // Store current path before redirecting to login, if it's not already a public path
+        const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
+        if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
+            sessionStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
+        }
         router.replace('/login');
+
       } finally {
         setIsLoading(false);
       }
@@ -176,7 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         clearAuthArtefacts();
       }
     }
-  }, [token, fetchAndSetUser, toast, t, router, isLoading, isAuthenticated, clearAuthArtefacts]); 
+  }, [token, fetchAndSetUser, toast, t, router, isLoading, isAuthenticated, clearAuthArtefacts, pathname]); 
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser }}>
@@ -192,3 +212,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
