@@ -71,7 +71,7 @@ export default function EditMainCategoryPage() {
       const data = await getMainCategoryById(id, token);
       setMainCategory(data);
       reset({
-        name: data.name,
+        name: data.name || '', // Safeguard: Ensure name is at least an empty string
         icon: data.icon || null,
         color: data.color || predefinedColors[0],
       });
