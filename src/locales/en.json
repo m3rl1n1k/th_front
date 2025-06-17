@@ -431,5 +431,10 @@
   "transferDeleteFailedTitle": "Failed to Delete Transfer",
   "unknownWallet": "Unknown Wallet",
   "transferNotEnoughWalletsError": "You need at least two wallets to make a transfer.",
-  "yourWalletsGroupLabel": "Your Wallets"
+  "yourWalletsGroupLabel": "Your Wallets",
+  "captchaLabel": "Security Check",
+  "captchaPlaceholder": "Enter the sum",
+  "captchaRequiredError": "Captcha is required.",
+  "captchaIncorrectError": "Incorrect captcha answer. Please try again.",
+  "refreshCaptchaLabel": "Refresh captcha"
 }

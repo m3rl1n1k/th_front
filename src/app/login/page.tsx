@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-// import { SimpleCaptcha, type SimpleCaptchaRef } from '@/components/common/simple-captcha';
+import { SimpleCaptcha, type SimpleCaptchaRef } from '@/components/common/simple-captcha';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,7 @@ import type { ApiError } from '@/types';
 const createLoginSchema = (t: Function) => z.object({
   email: z.string().email({ message: t('invalidEmail') }),
   password: z.string().min(1, { message: t('passwordRequiredError') }),
-  // captcha: z.string().min(1, { message: t('captchaRequiredError') }),
+  captcha: z.string().min(1, { message: t('captchaRequiredError') }),
 });
 
 type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
@@ -32,14 +32,14 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
-  // const captchaRef = useRef<SimpleCaptchaRef>(null);
+  const captchaRef = useRef<SimpleCaptchaRef>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const loginSchema = createLoginSchema(t);
 
-  const { control, handleSubmit, /*setError, getValues,*/ formState: { errors } } = useForm<LoginFormData>({
+  const { control, handleSubmit, setError, getValues, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' /*, captcha: '' */ },
+    defaultValues: { email: '', password: '', captcha: '' },
     shouldFocusError: false, 
   });
 
@@ -50,12 +50,12 @@ export default function LoginPage() {
   }, [authIsLoading, isAuthenticated, router]);
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
-    // const captchaValueFromRHF = getValues("captcha");
-    // if (captchaRef.current && !captchaRef.current.validateWithValue(captchaValueFromRHF)) {
-    //   setError("captcha", { type: "manual", message: t('captchaIncorrectError') });
-    //   captchaRef.current.refresh();
-    //   return;
-    // }
+    const captchaValueFromRHF = getValues("captcha");
+    if (captchaRef.current && !captchaRef.current.validateWithValue(captchaValueFromRHF)) {
+      setError("captcha", { type: "manual", message: t('captchaIncorrectError') });
+      captchaRef.current.refresh();
+      return;
+    }
     setIsSubmittingForm(true);
     try {
       await login({ username: data.email, password: data.password });
@@ -67,7 +67,7 @@ export default function LoginPage() {
         title: t('loginFailedTitle'),
         description: apiError.message || t('loginFailedDesc'),
       });
-      // captchaRef.current?.refresh(); // Refresh captcha on API error
+      captchaRef.current?.refresh(); // Refresh captcha on API error
     } finally {
       setIsSubmittingForm(false);
     }
@@ -133,13 +133,13 @@ export default function LoginPage() {
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
             
-            {/* <Controller
+            <Controller
               name="captcha"
               control={control}
               render={({ field }) => (
                 <SimpleCaptcha ref={captchaRef} {...field} error={errors.captcha?.message} />
               )}
-            /> */}
+            />
 
             <Button type="submit" className="w-full" disabled={isSubmittingForm || authIsLoading}>
               {isSubmittingForm || authIsLoading ? t('loggingInButton') : t('loginButton')}

@@ -431,5 +431,10 @@
   "transferDeleteFailedTitle": "Не вдалося видалити переказ",
   "unknownWallet": "Невідомий гаманець",
   "transferNotEnoughWalletsError": "Для здійснення переказу потрібно щонайменше два гаманці.",
-  "yourWalletsGroupLabel": "Ваші гаманці"
+  "yourWalletsGroupLabel": "Ваші гаманці",
+  "captchaLabel": "Перевірка безпеки",
+  "captchaPlaceholder": "Введіть суму",
+  "captchaRequiredError": "Капча обов'язкова.",
+  "captchaIncorrectError": "Неправильна відповідь капчі. Будь ласка, спробуйте ще раз.",
+  "refreshCaptchaLabel": "Оновити капчу"
 }
