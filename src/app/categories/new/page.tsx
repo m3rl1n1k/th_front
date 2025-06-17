@@ -45,7 +45,7 @@ const MainCategorySchema = z.object({
 type MainCategoryFormData = z.infer<typeof MainCategorySchema>;
 
 const SubCategorySchema = z.object({
-  mainCategoryId: z.string().min(1, { message: "Parent category is required." }), // This is 'main_category' ID for the API
+  mainCategoryId: z.string().min(1, { message: "Parent category is required." }),
   name: z.string().min(1, { message: "Name is required." }),
   icon: z.string().nullable().optional(),
   color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
@@ -115,7 +115,7 @@ export default function CreateCategoryPage() {
       color: data.color || null,
     };
     try {
-      await createSubCategory(payload, token); // Updated API call
+      await createSubCategory(payload, token);
       toast({ title: t('subCategoryCreatedTitle'), description: t('subCategoryCreatedDesc') });
       router.push('/categories');
     } catch (error: any) {
@@ -127,14 +127,14 @@ export default function CreateCategoryPage() {
   const isFormsLoading = isSubmitting || isLoadingCategories;
 
   const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
-    <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-1 border rounded-md bg-muted/20 max-w-sm">
+    <div className="grid grid-cols-8 gap-1.5 p-1 border rounded-md bg-muted/20 max-w-xs">
       {predefinedColors.map((color) => (
         <button
           type="button"
           key={color}
           onClick={() => onChange(color)}
           className={cn(
-            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
             color === '#FFFFFF' && 'border-input' // Add border for white swatch for visibility
           )}
@@ -142,7 +142,7 @@ export default function CreateCategoryPage() {
           title={color}
           aria-label={`Color ${color}`}
         >
-          {value === color && <Check className={cn("h-4 w-4 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' ? 'text-white' : 'text-black')} />}
+          {value === color && <Check className={cn("h-3.5 w-3.5 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' || color === '#DC143C' || color === '#4682B4' || color === '#2E8B57' ? 'text-white' : 'text-black')} />}
         </button>
       ))}
     </div>
@@ -171,7 +171,7 @@ export default function CreateCategoryPage() {
                 <CardTitle>{t('createMainCategoryTitle')}</CardTitle>
                 <CardDescription>{t('createMainCategoryDesc')}</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <form onSubmit={mainCategoryForm.handleSubmit(onMainCategorySubmit)} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="main-name">{t('categoryNameLabel')}</Label>
@@ -232,7 +232,7 @@ export default function CreateCategoryPage() {
                 <CardTitle>{t('createSubCategoryTitle')}</CardTitle>
                 <CardDescription>{t('createSubCategoryDesc')}</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <form onSubmit={subCategoryForm.handleSubmit(onSubCategorySubmit)} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="sub-mainCategoryId">{t('parentCategoryLabel')}</Label>

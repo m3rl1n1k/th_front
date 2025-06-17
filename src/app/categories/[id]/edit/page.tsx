@@ -71,7 +71,7 @@ export default function EditMainCategoryPage() {
       const data = await getMainCategoryById(id, token);
       setMainCategory(data);
       reset({
-        name: data.name || '', // Safeguard: Ensure name is at least an empty string
+        name: data.name || '',
         icon: data.icon || null,
         color: data.color || predefinedColors[0],
       });
@@ -110,22 +110,22 @@ export default function EditMainCategoryPage() {
   };
 
   const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
-    <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-1 border rounded-md bg-muted/20 max-w-sm">
+    <div className="grid grid-cols-8 gap-1.5 p-1 border rounded-md bg-muted/20 max-w-xs">
       {predefinedColors.map((color) => (
         <button
           type="button"
           key={color}
           onClick={() => onChange(color)}
           className={cn(
-            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-             color === '#FFFFFF' && 'border-input'
+            color === '#FFFFFF' && 'border-input' // Add border for white swatch for visibility
           )}
           style={{ backgroundColor: color }}
           title={color}
           aria-label={`Color ${color}`}
         >
-          {value === color && <Check className={cn("h-4 w-4 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' ? 'text-white' : 'text-black')} />}
+          {value === color && <Check className={cn("h-3.5 w-3.5 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' || color === '#DC143C' || color === '#4682B4' || color === '#2E8B57' ? 'text-white' : 'text-black')} />}
         </button>
       ))}
     </div>
@@ -179,7 +179,7 @@ export default function EditMainCategoryPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-3xl font-bold text-foreground">
-            {t('editMainCategoryPageTitle', { categoryName: mainCategory.name })}
+            {t('editMainCategoryPageTitle', { categoryName: mainCategory?.name || t('loading') })}
           </h1>
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -192,7 +192,7 @@ export default function EditMainCategoryPage() {
             <CardTitle>{t('updateMainCategoryDetails')}</CardTitle>
             <CardDescription>{t('modifyCategoryFormBelow')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">{t('categoryNameLabel')}</Label>

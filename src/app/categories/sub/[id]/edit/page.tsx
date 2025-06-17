@@ -18,7 +18,7 @@ import { getMainCategories, updateSubCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, SubCategory, UpdateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, Loader2, AlertTriangle, Palette } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, AlertTriangle, Palette, Check } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -56,7 +56,6 @@ export default function EditSubCategoryPage() {
   const id = params?.id as string; // subCategoryId
 
   const [subCategoryToEdit, setSubCategoryToEdit] = useState<SubCategory | null>(null);
-  const [parentMainCategory, setParentMainCategory] = useState<MainCategory | null>(null);
   const [allMainCategories, setAllMainCategories] = useState<MainCategory[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -81,22 +80,21 @@ export default function EditSubCategoryPage() {
       setAllMainCategories(Array.isArray(fetchedMainCategories) ? fetchedMainCategories : []);
 
       let foundSubCategory: SubCategory | null = null;
-      let foundParent: MainCategory | null = null;
+      let foundParentId: string | null = null;
 
       for (const mainCat of fetchedMainCategories) {
         const sub = mainCat.subCategories.find(sc => String(sc.id) === String(id));
         if (sub) {
           foundSubCategory = sub;
-          foundParent = mainCat;
+          foundParentId = String(mainCat.id);
           break;
         }
       }
 
-      if (foundSubCategory && foundParent) {
+      if (foundSubCategory && foundParentId) {
         setSubCategoryToEdit(foundSubCategory);
-        setParentMainCategory(foundParent);
         reset({
-          mainCategoryId: String(foundParent.id),
+          mainCategoryId: foundParentId,
           name: foundSubCategory.name,
           icon: foundSubCategory.icon || null,
           color: foundSubCategory.color || predefinedColors[0],
@@ -125,7 +123,7 @@ export default function EditSubCategoryPage() {
     setIsSubmitting(true);
     const payload: UpdateSubCategoryPayload = {
       name: data.name,
-      main_category: parseInt(data.mainCategoryId, 10), // API expects 'main_category' as number
+      main_category: parseInt(data.mainCategoryId, 10),
       icon: data.icon || null,
       color: data.color || null,
     };
@@ -141,14 +139,14 @@ export default function EditSubCategoryPage() {
   };
 
   const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
-    <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 p-1 border rounded-md bg-muted/20 max-w-sm">
+    <div className="grid grid-cols-8 gap-1.5 p-1 border rounded-md bg-muted/20 max-w-xs">
       {predefinedColors.map((color) => (
         <button
           type="button"
           key={color}
           onClick={() => onChange(color)}
           className={cn(
-            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
             color === '#FFFFFF' && 'border-input'
           )}
@@ -156,7 +154,7 @@ export default function EditSubCategoryPage() {
           title={color}
           aria-label={`Color ${color}`}
         >
-          {value === color && <Palette className={cn("h-4 w-4 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' ? 'text-white' : 'text-black')} />}
+          {value === color && <Check className={cn("h-3.5 w-3.5 text-primary-foreground mix-blend-difference", color === '#000000' || color === '#00008B' || color === '#800080' || color === '#A52A2A' || color === '#DC143C' || color === '#4682B4' || color === '#2E8B57' ? 'text-white' : 'text-black')} />}
         </button>
       ))}
     </div>
@@ -212,7 +210,7 @@ export default function EditSubCategoryPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-3xl font-bold text-foreground">
-            {t('editSubCategoryPageTitle', { categoryName: subCategoryToEdit.name })}
+            {t('editSubCategoryPageTitle', { categoryName: subCategoryToEdit?.name || t('loading') })}
           </h1>
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -225,7 +223,7 @@ export default function EditSubCategoryPage() {
             <CardTitle>{t('updateSubCategoryDetails')}</CardTitle>
             <CardDescription>{t('modifyCategoryFormBelow')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="mainCategoryId">{t('parentCategoryLabel')}</Label>
@@ -312,3 +310,4 @@ export default function EditSubCategoryPage() {
       </div>
     </MainLayout>
   );
+}
