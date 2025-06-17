@@ -70,6 +70,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       await setLanguage(lang);
     } catch (error) {
       // Error handled by i18n context
+      console.error("Error changing language:", error);
+    } finally {
+      setIsNavigating(false); // Ensure loader is always turned off
     }
   };
   
