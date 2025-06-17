@@ -29,7 +29,7 @@ const createTransferFormSchema = (t: Function) => z.object({
   incomeWalletId: z.string().min(1, { message: t('transferIncomeWalletRequired') }),
 }).refine(data => data.outcomeWalletId !== data.incomeWalletId, {
   message: t('transferWalletsMustBeDifferentError'),
-  path: ["incomeWalletId"],
+  path: ["incomeWalletId"], 
 });
 
 type TransferFormData = z.infer<ReturnType<typeof createTransferFormSchema>>;
@@ -155,7 +155,6 @@ export default function TransfersPage() {
   const hasAnyWallets = userWallets.length > 0 || Object.keys(capitalWalletsGrouped).length > 0;
   const hasSufficientWalletsForTransfer = userWallets.length >=1 && (userWallets.length >=2 || Object.keys(capitalWalletsGrouped).length > 0);
 
-
   return (
     <MainLayout>
       <div className="space-y-8">
@@ -248,14 +247,16 @@ export default function TransfersPage() {
                                 </SelectGroup>
                             )}
                             
-                            {Object.entries(capitalWalletsGrouped).map(([username, wallets], groupIndex) => (
-                               wallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 && (
+                            {Object.entries(capitalWalletsGrouped).map(([username, walletsInGroup], groupIndex) => {
+                                const filteredWalletsInGroup = walletsInGroup.filter(w => String(w.id) !== selectedOutcomeWalletId);
+                                if (filteredWalletsInGroup.length === 0) return null;
+
+                                return (
                                 <React.Fragment key={username}>
                                     {(userWallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 || groupIndex > 0) && <SelectSeparator />}
                                     <SelectGroup>
                                         <SelectLabel>{username}</SelectLabel>
-                                        {wallets
-                                        .filter(wallet => String(wallet.id) !== selectedOutcomeWalletId)
+                                        {filteredWalletsInGroup
                                         .map(wallet => (
                                             <SelectItem key={`capital-${wallet.id}`} value={String(wallet.id)}>
                                             {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
@@ -264,7 +265,7 @@ export default function TransfersPage() {
                                     </SelectGroup>
                                 </React.Fragment>
                                )
-                            ))}
+                            })}
                           </SelectContent>
                         </Select>
                       )}
