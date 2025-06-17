@@ -6,10 +6,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 
 export const URLS = {
   // Auth
-  login: `${API_BASE_URL}/login_check`, // Existing, will send {username, password}
-  register: `${API_BASE_URL}/register`, // New registration endpoint
-  logout: `${API_BASE_URL}/auth/logout`, // This might need to be aligned if backend changes logout
-  me: `${API_BASE_URL}/user`,
+  login: `${API_BASE_URL}/login_check`,
+  register: `${API_BASE_URL}/auth/register`, // API_DOCUMENTATION.md uses /register. Frontend uses /auth/register. Keep Frontend for now.
+  logout: `${API_BASE_URL}/auth/logout`, 
+  me: `${API_BASE_URL}/users/me`, // API_DOCUMENTATION.md uses /user or /users/me. Frontend uses /users/me.
 
   // Dashboard
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,
@@ -27,21 +27,22 @@ export const URLS = {
 
 
   // Repeated Transactions
-  repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`,
+  repeatedTransactionsList: `${API_BASE_URL}/repeated-transactions`, // Assuming this endpoint exists
   toggleRepeatedTransactionStatus: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}/status/toggle`,
   deleteRepeatedTransaction: (id: string | number) => `${API_BASE_URL}/transactions/repeated/${id}`,
 
 
   // User Profile
-  userProfile: `${API_BASE_URL}/profile`,
+  userProfile: `${API_BASE_URL}/users/me`, // Using /users/me as per existing usage for PUT
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
+  walletById: (id: string | number) => `${API_BASE_URL}/wallets/${id}`,
+  createWallet: `${API_BASE_URL}/wallets`, // POST to /wallets
   walletTypes: `${API_BASE_URL}/wallets/types`,
 
   // Categories Page & Management
-  mainCategories: `${API_BASE_URL}/main/categories`, // GET main categories (hierarchical)
-  createMainCategory: `${API_BASE_URL}/main/categories`, // POST new main category
+  mainCategories: `${API_BASE_URL}/main/categories`, 
+  createMainCategory: `${API_BASE_URL}/main/categories`, 
   createSubCategory: (mainCategoryId: string | number) => `${API_BASE_URL}/main/categories/${mainCategoryId}/subcategories`,
 };
-

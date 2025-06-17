@@ -19,7 +19,8 @@ import type {
   RepeatedTransactionsApiResponse,
   RepeatedTransactionEntry,
   MonthlyExpensesByCategoryResponse,
-  DashboardLastTransactionsResponse
+  DashboardLastTransactionsResponse,
+  CreateWalletPayload
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -36,27 +37,20 @@ async function handleResponse<T>(response: Response): Promise<T> {
     let rawResponseBody = '';
 
     try {
-      rawResponseBody = await response.text(); // Read raw text first
-      errorData.rawResponse = rawResponseBody; // Store it
+      rawResponseBody = await response.text(); 
+      errorData.rawResponse = rawResponseBody; 
 
-      // Attempt to parse the raw text as JSON
       const jsonData = JSON.parse(rawResponseBody);
 
       if (typeof jsonData === 'object' && jsonData !== null) {
-        // If JSON parsing is successful, use its details
         errorData.message = jsonData.message || jsonData.error || jsonData.detail || errorData.message;
         errorData.code = jsonData.code || response.status;
         errorData.errors = jsonData.errors;
-        // rawResponse is already set
       } else {
-        // If jsonData is not an object (e.g. plain string, number), use raw text as primary message
         errorData.message = rawResponseBody || errorData.message;
       }
     } catch (e) {
-      // If JSON.parse fails, the rawResponseBody is likely not JSON.
-      // Use rawResponseBody as the message if it's not empty.
       errorData.message = rawResponseBody || errorData.message;
-      // errorData.rawResponse is already set or will be empty if response.text() also failed.
     }
     console.error(`[API Error Response] Status: ${response.status}, URL: ${response.url}`);
     console.error('[API Error Response] Raw body:', rawResponseBody);
@@ -64,10 +58,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
     throw errorData;
   }
 
-  if (response.status === 204) { // No Content
+  if (response.status === 204) { 
     return undefined as T;
   }
-  // For successful responses, assume JSON. If non-JSON success is expected, more handling is needed.
   return response.json();
 }
 
@@ -85,7 +78,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
 
   if (fetchOptions.body) {
     if (isFormData) {
-      // For FormData, Content-Type is set by the browser.
     } else if (typeof fetchOptions.body === 'object') {
       if (!headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
@@ -98,13 +90,12 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   } else {
     if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
         if (headers.get('Content-Type')?.includes('application/json')) {
-            // Remove Content-Type for GET requests if it was accidentally set to application/json without a body
             headers.delete('Content-Type');
         }
     }
   }
 
-  if (!headers.has('Accept') && !isFormData) { // FormData might have its own Accept behavior or it's not typically needed
+  if (!headers.has('Accept') && !isFormData) { 
     headers.set('Accept', 'application/json');
   }
   
@@ -206,6 +197,23 @@ export const getWalletsList = (token: string): Promise<{ wallets: WalletDetails[
 
 export const getWalletTypes = (token: string): Promise<{ types: WalletTypeApiResponse }> =>
   request(URLS.walletTypes, { method: 'GET', token });
+
+export const createWallet = (data: CreateWalletPayload, token: string): Promise<WalletDetails> =>
+  request<WalletDetails>(URLS.createWallet, { method: 'POST', body: data, token });
+
+export const getWalletById = async (id: string | number, token: string): Promise<WalletDetails> => {
+  const response = await request<{ wallet: WalletDetails }>(URLS.walletById(id), { method: 'GET', token });
+  return response.wallet;
+}
+
+export const updateWallet = async (id: string | number, data: Partial<CreateWalletPayload>, token: string): Promise<WalletDetails> => {
+ const response = await request<{ wallet: WalletDetails }>(URLS.walletById(id), { method: 'PUT', body: data, token });
+ return response.wallet;
+}
+
+export const deleteWallet = (id: string | number, token: string): Promise<void> =>
+  request<void>(URLS.walletById(id), { method: 'DELETE', token });
+
 
 // Categories Page & Management
 export const getMainCategories = async (token: string): Promise<MainCategory[]> => {

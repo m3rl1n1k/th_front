@@ -11,7 +11,7 @@ export interface User {
 
 export interface LoginCredentials {
   username: string; // Will contain the email input
-  password?: string; // Password will be optional if we keep set-token for dev
+  password?: string; 
 }
 
 export interface LoginResponse {
@@ -53,12 +53,12 @@ export interface TransactionWallet {
 
 export interface Transaction {
   id: string | number;
-  amount: TransactionAmount; // Amount is in cents
+  amount: TransactionAmount; 
   currency: {
     code: string;
   };
   exchangeRate: number;
-  type: number; // Numeric ID from API
+  type: number; 
   description: string | null;
   wallet: TransactionWallet;
   subCategory: TransactionSubCategory | null;
@@ -66,34 +66,32 @@ export interface Transaction {
     id: string | number;
   };
   source: string | null;
-  date: string; // ISO date string
+  date: string; 
   isRecurring?: boolean;
   frequencyId?: string;
 
-  // Frontend derived/display properties
   typeName?: string;
   categoryName?: string | null;
 
-  // Potential form fields
   walletId?: string;
   categoryId?: string;
 }
 
 export interface CreateTransactionPayload {
-  amount: number; // In cents for API
+  amount: number; 
   description: string | null;
-  typeId: string; // String ID from GET /transactions/types
-  date: string; // YYYY-MM-DD
-  wallet_id: number; // Numeric ID
-  category_id: number | null; // Numeric ID (subCategory ID)
-  frequencyId: string; // String ID from GET /transactions/frequency
+  typeId: string; 
+  date: string; 
+  wallet_id: number; 
+  category_id: number | null; 
+  frequencyId: string; 
 }
 
 export interface UpdateTransactionPayload {
-  amount: number; // In cents for API
+  amount: number; 
   description?: string | null;
   typeId: string;
-  date: string; // YYYY-MM-DD
+  date: string; 
   wallet_id: number;
   category_id?: number | null;
   frequencyId: string;
@@ -108,10 +106,10 @@ export interface TransactionType {
 export interface ApiError {
   message: string;
   code?: number;
-  errors?: Record<string, string[]>; // Field-specific errors for validation
-  error?: string; // Sometimes error is a single string
-  detail?: string; // For other error structures
-  rawResponse?: string; // To store the raw server response text
+  errors?: Record<string, string[]>; 
+  error?: string; 
+  detail?: string; 
+  rawResponse?: string; 
 }
 
 
@@ -123,17 +121,30 @@ export interface Frequency {
 export interface WalletDetails {
   id: number;
   name: string;
-  amount: TransactionAmount; // Amount is in cents
+  amount: TransactionAmount; 
   number: string;
   currency: {
     code: string;
   };
-  type: string | null;
+  type: string | null; 
   user: {
     id: number;
   };
-  typeName?: string;
+  typeName?: string; 
+  icon?: string | null; 
+  color?: string | null; 
 }
+
+export interface CreateWalletPayload {
+  name: string;
+  initial_balance_cents: number; // API likely expects cents
+  currency_code: string;
+  type_key: string; // From GET /wallets/types
+  account_number?: string | null;
+  icon?: string | null;
+  color?: string | null;
+}
+
 
 export interface FormCategory {
   id:string;
@@ -194,18 +205,15 @@ export interface RepeatedTransactionsApiResponse {
   repeated_transactions: RepeatedTransactionEntry[];
 }
 
-// Dashboard Chart Data
 export interface MonthlyExpenseByCategoryItem {
-  amount: number; // in cents
-  color?: string; // Optional color from backend
+  amount: number; 
+  color?: string; 
 }
 
 export interface MonthlyExpensesByCategoryResponse {
-  month_expense_chart: Record<string, MonthlyExpenseByCategoryItem>; // Keys are category names
+  month_expense_chart: Record<string, MonthlyExpenseByCategoryItem>; 
 }
 
-
-// Dashboard Last Activity: List of individual transactions
 export interface DashboardLastTransactionsResponse {
   last_transactions: Transaction[];
 }
