@@ -168,8 +168,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
       <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
-        <div className="container mx-auto flex h-16 items-center px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center w-1/2">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center">
             {isAuthenticated && (
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
@@ -233,7 +233,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          <div className="flex items-center justify-end space-x-2 w-1/2">
+          <div className="flex items-center space-x-2">
             {mounted && (
               <Button
                 variant="ghost"
