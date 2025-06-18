@@ -317,13 +317,6 @@ export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => 
   return request(URLS.getBudgets, { method: 'GET', token });
 };
 
-// This function fetches a specific budget item using its global ID (old method)
-export const getBudgetDetailsById_DEPRECATED = async (id: string | number, token: string): Promise<BudgetDetails> => {
-  const response = await request<{ budget: BudgetDetails }>(URLS.getBudgetById(id), { method: 'GET', token });
-  return response.budget;
-};
-
-// New function to fetch a budget item for editing using the summary path and transform it
 export const getBudgetSummaryItemForEdit = async (date: string, id: string | number, token: string): Promise<BudgetDetails> => {
   const responseArray = await request<ApiBudgetDetailItem[]>(URLS.getBudgetSummaryItemForEdit(date, id), { method: 'GET', token });
   
@@ -332,28 +325,25 @@ export const getBudgetSummaryItemForEdit = async (date: string, id: string | num
   }
   const apiItem = responseArray[0];
 
-  // Transform ApiBudgetDetailItem to BudgetDetails (for the form)
   const transformedDetails: BudgetDetails = {
     id: apiItem.id,
     month: apiItem.month,
-    plannedAmount: apiItem.plannedAmount.amount / 100, // Convert cents to units
-    currencyCode: apiItem.currency.code || apiItem.plannedAmount.currency.code, // Prefer top-level currency
+    plannedAmount: apiItem.plannedAmount.amount / 100, 
+    currencyCode: apiItem.currency.code || apiItem.plannedAmount.currency.code,
     subCategory: {
       id: apiItem.subCategory.id,
       name: apiItem.subCategory.name,
     },
-    // actualExpenses is not in the new API response structure for this endpoint
   };
   return transformedDetails;
 };
-
 
 export const createBudget = (data: CreateBudgetPayload, token: string): Promise<BudgetListItem> => {
   return request<BudgetListItem>(URLS.createBudget, { method: 'POST', body: data, token });
 };
 
-export const updateBudget = (id: string | number, data: UpdateBudgetPayload, token: string): Promise<BudgetListItem> => {
-  return request<BudgetListItem>(URLS.updateBudget(id), { method: 'PUT', body: data, token });
+export const updateBudget = (date: string, id: string | number, data: UpdateBudgetPayload, token: string): Promise<BudgetListItem> => {
+  return request<BudgetListItem>(URLS.updateBudget(date, id), { method: 'POST', body: data, token });
 };
 
 export const deleteBudget = (id: string | number, token: string): Promise<void> => {

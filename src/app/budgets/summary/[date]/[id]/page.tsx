@@ -108,7 +108,7 @@ export default function EditBudgetItemPage() {
 
     setFormIsSubmitting(true);
     try {
-      await updateBudget(budgetId, payload, token);
+      await updateBudget(monthYear, budgetId, payload, token);
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit.subCategory?.name || t('category')}) });
       router.push(`/budgets/summary/${monthYear}`);
     } catch (error: any) {
