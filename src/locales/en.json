@@ -476,5 +476,19 @@
   "feedbackSubmittedAtLabel": "Submitted At",
   "anonymousUser": "Anonymous",
   "accessDeniedTitle": "Access Denied",
-  "accessDeniedMessage": "You do not have permission to view this page."
+  "accessDeniedMessage": "You do not have permission to view this page.",
+  "changePasswordTitle": "Change Password",
+  "changePasswordDesc": "Update your account password here. Choose a strong, unique password.",
+  "currentPasswordLabel": "Current Password",
+  "newPasswordLabel": "New Password",
+  "newPasswordPlaceholder": "Enter new password",
+  "confirmNewPasswordLabel": "Confirm New Password",
+  "confirmNewPasswordPlaceholder": "Confirm new password",
+  "changePasswordButton": "Change Password",
+  "currentPasswordRequiredError": "Current password is required.",
+  "newPasswordMinLengthError": "New password must be at least 6 characters.",
+  "newPasswordsDoNotMatchError": "New passwords do not match.",
+  "passwordChangeSuccessTitle": "Password Changed",
+  "passwordChangeSuccessDesc": "Your password has been successfully updated.",
+  "passwordChangeFailedTitle": "Password Change Failed"
 }

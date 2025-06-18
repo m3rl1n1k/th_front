@@ -34,6 +34,7 @@ export const URLS = {
 
   // User Profile
   userProfile: `${API_BASE_URL}/user`,
+  changePassword: `${API_BASE_URL}/user/change-password`, // New endpoint
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
@@ -66,4 +67,3 @@ export const URLS = {
   submitFeedback: `${API_BASE_URL}/feedback`, // Example: POST /api/feedback
   getFeedbacks: `${API_BASE_URL}/admin/feedbacks`, // Example: GET /api/admin/feedbacks
 };
-

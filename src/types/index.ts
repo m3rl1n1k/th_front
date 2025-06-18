@@ -7,7 +7,7 @@ export interface User {
   userCurrency?: {
     code: string;
   };
-  roles?: string[]; // Added roles
+  roles?: string[];
 }
 
 export interface LoginCredentials {
@@ -29,6 +29,11 @@ export interface RegistrationPayload {
 export interface RegistrationResponse {
   message?: string;
   user?: User; // Optional: API might return the created user
+}
+
+export interface ChangePasswordPayload {
+  currentPassword?: string; // Optional in case backend uses session/token to verify user identity primarily
+  newPassword: string;
 }
 
 
@@ -69,8 +74,8 @@ export interface Transaction {
   source: string | null;
   date: string;
   isRecurring?: boolean;
-  frequency?: string;
-  frequencyId?: string;
+  frequency?: string; // From API
+  frequencyId?: string; // Used internally by form
 
   typeName?: string;
   categoryName?: string | null;

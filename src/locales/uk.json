@@ -476,5 +476,19 @@
   "feedbackSubmittedAtLabel": "Дата надсилання",
   "anonymousUser": "Анонім",
   "accessDeniedTitle": "Доступ заборонено",
-  "accessDeniedMessage": "У вас немає дозволу на перегляд цієї сторінки."
+  "accessDeniedMessage": "У вас немає дозволу на перегляд цієї сторінки.",
+  "changePasswordTitle": "Змінити пароль",
+  "changePasswordDesc": "Оновіть пароль свого облікового запису тут. Оберіть надійний, унікальний пароль.",
+  "currentPasswordLabel": "Поточний пароль",
+  "newPasswordLabel": "Новий пароль",
+  "newPasswordPlaceholder": "Введіть новий пароль",
+  "confirmNewPasswordLabel": "Підтвердіть новий пароль",
+  "confirmNewPasswordPlaceholder": "Підтвердіть новий пароль",
+  "changePasswordButton": "Змінити пароль",
+  "currentPasswordRequiredError": "Поточний пароль обов'язковий.",
+  "newPasswordMinLengthError": "Новий пароль повинен містити щонайменше 6 символів.",
+  "newPasswordsDoNotMatchError": "Нові паролі не співпадають.",
+  "passwordChangeSuccessTitle": "Пароль змінено",
+  "passwordChangeSuccessDesc": "Ваш пароль успішно оновлено.",
+  "passwordChangeFailedTitle": "Не вдалося змінити пароль"
 }

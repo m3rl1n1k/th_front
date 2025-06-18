@@ -5,10 +5,10 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2 } from 'lucide-react'; // Added Loader2
+import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2, Lock, KeyRound as KeyIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -16,8 +16,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, getCurrencies } from '@/lib/api';
-import type { ApiError, User as UserType, CurrenciesApiResponse, CurrencyInfo } from '@/types';
+import { updateUserProfile, getCurrencies, changePassword as apiChangePassword } from '@/lib/api';
+import type { ApiError, User as UserType, CurrenciesApiResponse, CurrencyInfo, ChangePasswordPayload } from '@/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,7 +28,7 @@ interface UserProfileData {
   email: string;
   memberSince: string;
   profilePictureUrl?: string;
-  userCurrencyCode?: string | null; // Allow null
+  userCurrencyCode?: string | null;
 }
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
@@ -40,7 +40,7 @@ const createEditProfileSchema = (t: Function) => z.object({
   login: z.string().min(3, { message: t('loginMinLengthError') }),
   email: z.string().email({ message: t('invalidEmail') }),
   userCurrencyCode: z.string()
-    .refine(value => value === NO_CURRENCY_SELECTED_PLACEHOLDER || value === '' || currencyCodeRegex.test(value), { // Allow placeholder
+    .refine(value => value === NO_CURRENCY_SELECTED_PLACEHOLDER || value === '' || currencyCodeRegex.test(value), {
       message: t('invalidCurrencyCodeFormat'),
     })
     .optional()
@@ -48,6 +48,18 @@ const createEditProfileSchema = (t: Function) => z.object({
 });
 
 type EditProfileFormData = z.infer<ReturnType<typeof createEditProfileSchema>>;
+
+const createChangePasswordSchema = (t: Function) => z.object({
+  currentPassword: z.string().min(1, { message: t('currentPasswordRequiredError') }),
+  newPassword: z.string().min(6, { message: t('newPasswordMinLengthError') }),
+  confirmNewPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmNewPassword, {
+  message: t('newPasswordsDoNotMatchError'),
+  path: ["confirmNewPassword"],
+});
+
+type ChangePasswordFormData = z.infer<ReturnType<typeof createChangePasswordSchema>>;
+
 
 export default function ProfilePage() {
   const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
@@ -60,13 +72,23 @@ export default function ProfilePage() {
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
 
   const EditProfileSchema = createEditProfileSchema(t);
+  const ChangePasswordSchema = createChangePasswordSchema(t);
 
-  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<EditProfileFormData>({
+  const editProfileForm = useForm<EditProfileFormData>({
     resolver: zodResolver(EditProfileSchema),
     defaultValues: {
       login: '',
       email: '',
-      userCurrencyCode: null, 
+      userCurrencyCode: null,
+    }
+  });
+
+  const changePasswordForm = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(ChangePasswordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmNewPassword: '',
     }
   });
 
@@ -96,7 +118,7 @@ export default function ProfilePage() {
         userCurrencyCode: user.userCurrency?.code || null,
       };
       setProfileData(newProfileData);
-      reset({
+      editProfileForm.reset({
         login: newProfileData.login,
         email: newProfileData.email,
         userCurrencyCode: user.userCurrency?.code || null,
@@ -114,8 +136,7 @@ export default function ProfilePage() {
     } finally {
         setIsLoadingPage(false);
     }
-
-  }, [isAuthenticated, user, token, reset, t, toast]);
+  }, [isAuthenticated, user, token, editProfileForm, t, toast]);
 
 
   useEffect(() => {
@@ -123,6 +144,7 @@ export default function ProfilePage() {
         fetchPageData();
     } else if (isAuthenticated && !user && token && !authIsLoading) {
       fetchUser().then(() => {
+        // fetchPageData will be called by user state change if successful
       });
     } else if (!isAuthenticated && !authIsLoading) {
       setIsLoadingPage(false);
@@ -169,6 +191,32 @@ export default function ProfilePage() {
       });
     }
   };
+
+  const handleChangePassword: SubmitHandler<ChangePasswordFormData> = async (data) => {
+    if (!token) {
+      toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
+      return;
+    }
+
+    const payload: ChangePasswordPayload = {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    };
+
+    try {
+      await apiChangePassword(payload, token);
+      toast({ title: t('passwordChangeSuccessTitle'), description: t('passwordChangeSuccessDesc') });
+      changePasswordForm.reset();
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        variant: "destructive",
+        title: t('passwordChangeFailedTitle'),
+        description: apiError.message || t('unexpectedError'),
+      });
+    }
+  };
+
 
   const isLoadingEffectively = isLoadingPage || authIsLoading || (!profileData && isAuthenticated);
 
@@ -243,11 +291,12 @@ export default function ProfilePage() {
       formattedMemberSince = format(new Date(profileData.memberSince), "MMMM d, yyyy", { locale: dateFnsLocale });
     }
   } catch (error) {
+    // error formatting date
   }
 
   return (
     <MainLayout>
-      <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="space-y-8 max-w-2xl mx-auto">
         {showCurrencyPrompt && (
           <Alert variant="default" className="mb-6 bg-primary/10 border-primary/30 text-primary-foreground dark:bg-primary/20 dark:border-primary/40 dark:text-primary-foreground">
             <InfoIcon className="h-5 w-5 text-primary" />
@@ -303,7 +352,7 @@ export default function ProfilePage() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
-                <form onSubmit={handleSubmit(handleProfileUpdate)}>
+                <form onSubmit={editProfileForm.handleSubmit(handleProfileUpdate)}>
                   <DialogHeader>
                     <DialogTitle>{t('editProfileDialogTitle')}</DialogTitle>
                     <DialogDescription>
@@ -315,25 +364,25 @@ export default function ProfilePage() {
                       <Label htmlFor="login">{t('loginLabel')}</Label>
                       <Controller
                         name="login"
-                        control={control}
+                        control={editProfileForm.control}
                         render={({ field }) => <Input id="login" {...field} />}
                       />
-                      {errors.login && <p className="text-sm text-destructive">{errors.login.message}</p>}
+                      {editProfileForm.formState.errors.login && <p className="text-sm text-destructive">{editProfileForm.formState.errors.login.message}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">{t('emailLabel')}</Label>
                        <Controller
                         name="email"
-                        control={control}
+                        control={editProfileForm.control}
                         render={({ field }) => <Input id="email" type="email" {...field} />}
                       />
-                      {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                      {editProfileForm.formState.errors.email && <p className="text-sm text-destructive">{editProfileForm.formState.errors.email.message}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="userCurrencyCode">{t('currencyCodeLabel')}</Label>
                        <Controller
                         name="userCurrencyCode"
-                        control={control}
+                        control={editProfileForm.control}
                         render={({ field }) => (
                           <Select
                             onValueChange={(value) => {
@@ -342,7 +391,7 @@ export default function ProfilePage() {
                             value={field.value || NO_CURRENCY_SELECTED_PLACEHOLDER}
                             disabled={isLoadingCurrencies || allCurrencies.length === 0}
                           >
-                            <SelectTrigger id="userCurrencyCode" className={errors.userCurrencyCode ? 'border-destructive' : ''}>
+                            <SelectTrigger id="userCurrencyCode" className={editProfileForm.formState.errors.userCurrencyCode ? 'border-destructive' : ''}>
                               <Coins className="mr-2 h-4 w-4 text-muted-foreground" />
                               <SelectValue placeholder={isLoadingCurrencies ? t('loading') : t('selectCurrencyPlaceholder')} />
                             </SelectTrigger>
@@ -370,16 +419,16 @@ export default function ProfilePage() {
                           </Select>
                         )}
                       />
-                      {errors.userCurrencyCode && <p className="text-sm text-destructive">{errors.userCurrencyCode.message}</p>}
+                      {editProfileForm.formState.errors.userCurrencyCode && <p className="text-sm text-destructive">{editProfileForm.formState.errors.userCurrencyCode.message}</p>}
                     </div>
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
                        <Button type="button" variant="outline">{t('cancelButton')}</Button>
                     </DialogClose>
-                     <Button type="submit" disabled={isSubmitting || isLoadingCurrencies}>
-                        {(isSubmitting || isLoadingCurrencies) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {(isSubmitting || isLoadingCurrencies) ? t('saving') : t('saveChangesButton')}
+                     <Button type="submit" disabled={editProfileForm.formState.isSubmitting || isLoadingCurrencies}>
+                        {(editProfileForm.formState.isSubmitting || isLoadingCurrencies) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {(editProfileForm.formState.isSubmitting || isLoadingCurrencies) ? t('saving') : t('saveChangesButton')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -387,9 +436,73 @@ export default function ProfilePage() {
             </Dialog>
           </CardContent>
         </Card>
+
+        {/* Change Password Card */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <KeyIcon className="mr-3 h-6 w-6 text-primary" />
+              {t('changePasswordTitle')}
+            </CardTitle>
+            <CardDescription>{t('changePasswordDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={changePasswordForm.handleSubmit(handleChangePassword)} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">{t('currentPasswordLabel')}</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Controller
+                    name="currentPassword"
+                    control={changePasswordForm.control}
+                    render={({ field }) => (
+                      <Input id="currentPassword" type="password" placeholder="••••••••" {...field} className={`pl-10 ${changePasswordForm.formState.errors.currentPassword ? 'border-destructive' : ''}`} />
+                    )}
+                  />
+                </div>
+                {changePasswordForm.formState.errors.currentPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.currentPassword.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">{t('newPasswordLabel')}</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Controller
+                    name="newPassword"
+                    control={changePasswordForm.control}
+                    render={({ field }) => (
+                      <Input id="newPassword" type="password" placeholder={t('newPasswordPlaceholder')} {...field} className={`pl-10 ${changePasswordForm.formState.errors.newPassword ? 'border-destructive' : ''}`} />
+                    )}
+                  />
+                </div>
+                {changePasswordForm.formState.errors.newPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.newPassword.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmNewPassword">{t('confirmNewPasswordLabel')}</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Controller
+                    name="confirmNewPassword"
+                    control={changePasswordForm.control}
+                    render={({ field }) => (
+                      <Input id="confirmNewPassword" type="password" placeholder={t('confirmNewPasswordPlaceholder')} {...field} className={`pl-10 ${changePasswordForm.formState.errors.confirmNewPassword ? 'border-destructive' : ''}`} />
+                    )}
+                  />
+                </div>
+                {changePasswordForm.formState.errors.confirmNewPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.confirmNewPassword.message}</p>}
+              </div>
+              
+              <div className="flex justify-end">
+                <Button type="submit" disabled={changePasswordForm.formState.isSubmitting}>
+                  {changePasswordForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyIcon className="mr-2 h-4 w-4" />}
+                  {changePasswordForm.formState.isSubmitting ? t('saving') : t('changePasswordButton')}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );
 }
-
-    

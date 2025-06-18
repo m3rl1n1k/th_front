@@ -8,6 +8,7 @@ import type {
   LoginResponse,
   RegistrationPayload,
   RegistrationResponse,
+  ChangePasswordPayload, // New
   WalletDetails,
   MainCategory,
   WalletTypeApiResponse,
@@ -30,10 +31,10 @@ import type {
   TransfersListResponse,
   CreateTransferPayload,
   TransferListItem,
-  SubmitFeedbackPayload, // New
-  Feedback, // New
-  GetFeedbacksResponse, // New
-  FeedbackTypeOption // New
+  SubmitFeedbackPayload,
+  Feedback,
+  GetFeedbacksResponse,
+  FeedbackTypeOption
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -148,6 +149,9 @@ export const fetchUserProfile = (token: string): Promise<User> =>
 export const updateUserProfile = (data: Partial<User & { userCurrencyCode?: string }>, token: string): Promise<User> =>
   request(URLS.userProfile, { method: 'PUT', body: data, token });
 
+export const changePassword = (data: ChangePasswordPayload, token: string): Promise<void> =>
+  request(URLS.changePassword, { method: 'POST', body: data, token });
+
 // Dashboard
 export const getDashboardTotalBalance = (token: string): Promise<{ total_balance: number }> =>
   request(URLS.dashboardTotalBalance, { method: 'GET', token });
@@ -189,7 +193,8 @@ export const getTransactionsList = (
 
 export const getTransactionById = async (id: string | number, token: string): Promise<Transaction> => {
   const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'GET', token });
-  if (response.transaction && response.transaction.frequency !== undefined && response.transaction.frequencyId === undefined) {
+  // Map API's 'frequency' to frontend's 'frequencyId'
+  if (response.transaction && response.transaction.frequency !== undefined) {
     response.transaction.frequencyId = String(response.transaction.frequency);
   }
   return response.transaction;
@@ -197,7 +202,8 @@ export const getTransactionById = async (id: string | number, token: string): Pr
 
 export const updateTransaction = async (id: string | number, data: UpdateTransactionPayload, token: string): Promise<Transaction> => {
   const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'PUT', body: data, token });
-  if (response.transaction && response.transaction.frequency !== undefined && response.transaction.frequencyId === undefined) {
+    // Map API's 'frequency' to frontend's 'frequencyId' if present in response
+  if (response.transaction && response.transaction.frequency !== undefined) {
     response.transaction.frequencyId = String(response.transaction.frequency);
   }
   return response.transaction;
@@ -290,30 +296,15 @@ export const deleteTransfer = (id: string | number, token: string): Promise<void
 export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
   request(URLS.currencies, { method: 'GET', token });
 
-// Feedback (Mock Implementations)
+// Feedback
 export const submitFeedback = (data: SubmitFeedbackPayload, token: string): Promise<{ message: string }> => {
-  console.log('Mock submitting feedback:', data, 'with token:', token ? 'present' : 'absent');
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ message: 'Feedback submitted successfully (mock)' });
-    }, 500);
-  });
-  // Real implementation: return request(URLS.submitFeedback, { method: 'POST', body: data, token });
+  // Replace with actual API call
+  console.log('Submitting feedback (mock):', data);
+  return request(URLS.submitFeedback, { method: 'POST', body: data, token });
 };
 
 export const getFeedbacks = (token: string): Promise<GetFeedbacksResponse> => {
-  console.log('Mock fetching feedbacks with token:', token ? 'present' : 'absent');
-  const mockFeedbacks: Feedback[] = [
-    { id: 1, type: FeedbackTypeOption.BUG_REPORT, subject: 'Login button not working on mobile', message: 'When I try to log in on my iPhone, the button does nothing.', createdAt: new Date(Date.now() - 86400000).toISOString(), user: { id: 'user1', login: 'testuser1'} },
-    { id: 2, type: FeedbackTypeOption.FEATURE_REQUEST, subject: 'Dark mode for charts', message: 'It would be great if the charts also supported a dark theme.', createdAt: new Date(Date.now() - 172800000).toISOString(), user: { id: 'user2', login: 'anotheruser'} },
-    { id: 3, type: FeedbackTypeOption.GENERAL_FEEDBACK, subject: 'Great app!', message: 'Just wanted to say I love using FinanceFlow, it has helped me a lot.', createdAt: new Date().toISOString(), user: { id: 'user3', login: 'happyuser'} },
-    { id: 4, type: FeedbackTypeOption.QUESTION, subject: 'How to export data?', message: 'Is there a way to export my transaction data to CSV?', createdAt: new Date(Date.now() - 3600000).toISOString() },
-  ];
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ feedbacks: mockFeedbacks });
-    }, 700);
-  });
-  // Real implementation: return request(URLS.getFeedbacks, { method: 'GET', token });
+  // Replace with actual API call
+  console.log('Fetching feedbacks (mock)');
+  return request(URLS.getFeedbacks, { method: 'GET', token });
 };
-
