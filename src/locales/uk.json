@@ -500,7 +500,11 @@
   "budgetActualExpenses": "Фактичні витрати",
   "budgetRemainingAmount": "Залишок",
   "budgetProgress": "Прогрес ({percentage}%)",
-  "budgetShowDetailsButton": "Показати деталі",
-  "budgetOverspentWarning": "Перевитрата!"
+  "budgetShowDetailsButton": "Деталі",
+  "budgetOverspentWarning": "Перевитрата!",
+  "yearLabel": "Рік {year}",
+  "noBudgetsForYear": "Бюджетів на цей рік не знайдено.",
+  "budgetPlannedAmountShort": "План",
+  "budgetActualExpensesShort": "Витрачено",
+  "budgetRemainingAmountShort": "Залишок"
 }
-

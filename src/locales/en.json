@@ -500,7 +500,11 @@
   "budgetActualExpenses": "Actual Expenses",
   "budgetRemainingAmount": "Remaining",
   "budgetProgress": "Progress ({percentage}%)",
-  "budgetShowDetailsButton": "Show Details",
-  "budgetOverspentWarning": "Overspent!"
+  "budgetShowDetailsButton": "Details",
+  "budgetOverspentWarning": "Overspent!",
+  "yearLabel": "Year {year}",
+  "noBudgetsForYear": "No budgets found for this year.",
+  "budgetPlannedAmountShort": "Planned",
+  "budgetActualExpensesShort": "Spent",
+  "budgetRemainingAmountShort": "Left"
 }
-
