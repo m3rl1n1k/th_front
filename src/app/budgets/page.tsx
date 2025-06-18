@@ -63,7 +63,7 @@ export default function BudgetsPage() {
   const isFetchingRef = useRef(false);
 
 
-  const fetchBudgets = useCallback(async () => {
+  const fetchBudgets = useCallback(async (showLoadingIndicator = true) => {
     console.log("[BudgetPage] fetchBudgets called. isFetchingRef.current:", isFetchingRef.current, "isAuthenticated:", isAuthenticated, "token:", !!token);
     if (isFetchingRef.current) {
       console.log("[BudgetPage] fetchBudgets: Aborted, already fetching.");
@@ -73,12 +73,14 @@ export default function BudgetsPage() {
     if (!isAuthenticated || !token) {
       console.log("[BudgetPage] fetchBudgets: Aborted, not authenticated or no token.");
       setMonthlyBudgets([]);
-      setIsLoading(false);
+      setIsLoading(false); // Ensure loading is stopped
       return;
     }
     
     isFetchingRef.current = true;
-    setIsLoading(true);
+    if (showLoadingIndicator) {
+      setIsLoading(true);
+    }
     console.log("[BudgetPage] fetchBudgets: Starting fetch. setIsLoading(true), isFetchingRef.current = true.");
     try {
       const response: BudgetListApiResponse = await getBudgetList(token);
@@ -108,29 +110,25 @@ export default function BudgetsPage() {
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
       setMonthlyBudgets([]);
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Always set loading to false in finally
       isFetchingRef.current = false;
       console.log("[BudgetPage] fetchBudgets: Fetch finished. setIsLoading(false), isFetchingRef.current = false.");
     }
   }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
-    console.log("[BudgetPage] useEffect for fetchBudgets triggered. Deps: isAuthenticated:", isAuthenticated, "token:", !!token, "isLoading:", isLoading);
+    console.log("[BudgetPage] useEffect for fetchBudgets triggered. Deps: isAuthenticated:", isAuthenticated, "token:", !!token);
     if (isAuthenticated && token) {
         console.log("[BudgetPage] useEffect: Conditions met, calling fetchBudgets.");
         fetchBudgets();
-    } else if (!isAuthenticated && !token && isLoading) { 
+    } else if (!isAuthenticated && !token) {
         console.log("[BudgetPage] useEffect: Not authenticated, setting isLoading to false and clearing budgets.");
-        setIsLoading(false);
-        setMonthlyBudgets([]);
-    } else {
-        console.log("[BudgetPage] useEffect: Conditions not met for fetch, or already handled. isLoading:", isLoading);
-        if (!isAuthenticated || !token) { // Ensure loader stops if auth disappears
-            setIsLoading(false);
-            setMonthlyBudgets([]);
-        }
+        setIsLoading(false); // Ensure loading is false if not authenticated
+        setMonthlyBudgets([]); // Ensure it's an array
     }
-  }, [isAuthenticated, token, fetchBudgets, isLoading]); // isLoading is included to re-evaluate if it changes
+    // If component unmounts while fetching, isFetchingRef should be reset if necessary,
+    // but typically this isn't needed as new mount will have fresh ref.
+  }, [isAuthenticated, token, fetchBudgets]); // REMOVED isLoading from here
 
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
@@ -366,3 +364,5 @@ export default function BudgetsPage() {
     </MainLayout>
   );
 }
+
+    
