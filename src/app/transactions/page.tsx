@@ -29,7 +29,7 @@ import {
 import { useTranslation } from '@/context/i18n-context';
 import { 
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
-  ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText
+  ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText, Shapes
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -203,12 +203,17 @@ export default function TransactionsPage() {
 
   const processedTransactions = useMemo(() => {
     if (!rawTransactions) return [];
-    return rawTransactions.map(tx => ({
-      ...tx,
-      typeName: transactionTypes.find(tt => tt.id === String(tx.type))?.name || t('transactionType_UNKNOWN'),
-      categoryName: tx.subCategory?.name || null 
-    }));
-  }, [rawTransactions, transactionTypes, t]);
+    return rawTransactions.map(tx => {
+      const categoryName = tx.subCategory 
+        ? t(generateCategoryTranslationKey(tx.subCategory.name), {defaultValue: tx.subCategory.name}) 
+        : t('noCategory');
+      return {
+        ...tx,
+        typeName: transactionTypes.find(tt => tt.id === String(tx.type))?.name || t('transactionType_UNKNOWN'),
+        categoryName: categoryName
+      };
+    });
+  }, [rawTransactions, transactionTypes, t, allSubCategories]); // Added allSubCategories as dep
   
   const { groups, sortedDateKeys } = useMemo(() => {
     const newGroups: GroupedTransactions = processedTransactions.reduce((acc, tx) => {
@@ -327,7 +332,7 @@ export default function TransactionsPage() {
     if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="h-60 text-center">
+          <TableCell colSpan={6} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -340,7 +345,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={5} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noTransactionsFound')}</p>
@@ -354,7 +359,7 @@ export default function TransactionsPage() {
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
         <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
-          <TableCell colSpan={5} className="py-3 px-4 font-semibold text-foreground text-md">
+          <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md">
             {format(parseISO(dateKey), "PPP", { locale: dateFnsLocale })}
           </TableCell>
         </TableRow>
@@ -379,6 +384,9 @@ export default function TransactionsPage() {
               </TableCell>
               <TableCell className="py-3 px-4 align-top text-center">
                 {typeIcon}
+              </TableCell>
+              <TableCell className="py-3 px-4 align-top text-sm">
+                {tx.categoryName}
               </TableCell>
               <TableCell className="text-right py-3 px-4 align-top text-sm">
                 <CurrencyDisplay amountInCents={tx.amount.amount} currencyCode={tx.amount.currency.code} />
@@ -641,6 +649,7 @@ export default function TransactionsPage() {
                       <TableRow>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
+                        <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
                         <TableHead className="text-right px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('amount')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('wallet')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('actions')}</TableHead>

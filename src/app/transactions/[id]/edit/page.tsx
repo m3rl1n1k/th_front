@@ -128,7 +128,7 @@ export default function EditTransactionPage() {
             date: parseISO(data.date),
             walletId: String(data.wallet.id),
             categoryId: data.subCategory?.id ? String(data.subCategory.id) : null,
-            frequencyId: String(data.frequencyId),
+            frequencyId: data.frequencyId != null ? String(data.frequencyId) : '',
           });
         })
         .catch(error => {
