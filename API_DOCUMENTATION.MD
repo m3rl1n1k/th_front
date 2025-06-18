@@ -680,7 +680,8 @@ Retrieves a list of budgets for the authenticated user.
           "month": "2024-08", // Format: YYYY-MM
           "plannedAmount": 500000, // in cents
           "actualExpenses": 350000, // in cents, calculated by backend
-          "currencyCode": "USD"
+          "currencyCode": "USD",
+          "category_id": 101 // Optional: ID of the associated SubCategory
         }
         // ... more budget items
       ]
@@ -698,7 +699,8 @@ Retrieves a specific budget by its ID.
         "month": "2024-08",
         "plannedAmount": 500000,
         "actualExpenses": 350000,
-        "currencyCode": "USD"
+        "currencyCode": "USD",
+        "category_id": 101 // Optional: ID of the associated SubCategory
         // Potentially more details like category breakdowns if implemented
       }
     }
@@ -712,7 +714,8 @@ Creates a new budget.
     {
       "month": "2024-09", // YYYY-MM
       "plannedAmount": 600000, // in cents
-      "currencyCode": "USD" // Or derive from user's default currency
+      "currencyCode": "USD", // Or derive from user's default currency
+      "category_id": 101 // integer ID (refers to a subCategory ID), required
     }
     ```
 *   **Success Response (201 Created)**: Returns the created budget object.
@@ -723,7 +726,8 @@ Updates a specific budget.
 *   **Request Body**: (Fields to update)
     ```json
     {
-      "plannedAmount": 650000 // in cents
+      "plannedAmount": 650000, // in cents
+      "category_id": 102 // Optional: new integer ID for subCategory
     }
     ```
 *   **Success Response (200 OK)**: Returns the updated budget object.
@@ -842,6 +846,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `month` (string, "YYYY-MM")
 *   `planned_amount_cents` (int)
 *   `currency_code` (string)
+*   `category_id` (int, foreign key to SubCategory) // Added
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
     *(Note: `actualExpenses` is typically calculated on-the-fly by summing relevant transactions for the budget's month and user, not stored directly in the budget table.)*

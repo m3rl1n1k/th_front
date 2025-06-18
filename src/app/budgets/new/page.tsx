@@ -55,7 +55,7 @@ export default function NewBudgetPage() {
       plannedAmount: undefined,
       year: String(currentYear),
       month: String(new Date().getMonth() + 1), // Default to current month (1-12)
-      categoryId: '', // Changed from null to empty string to trigger validation
+      categoryId: '',
     },
   });
 
@@ -86,12 +86,11 @@ export default function NewBudgetPage() {
 
     const monthString = `${data.year}-${String(data.month).padStart(2, '0')}`;
 
-    // API does not currently support categoryId for budget creation
     const payload: CreateBudgetPayload = {
       month: monthString,
       plannedAmount: Math.round(data.plannedAmount * 100), // Convert to cents
       currencyCode: user.userCurrency.code,
-      // categoryId is not part of the payload as per current API
+      category_id: parseInt(data.categoryId, 10),
     };
 
     try {

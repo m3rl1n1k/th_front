@@ -337,6 +337,7 @@ export interface BudgetListItem {
   plannedAmount: number; // in cents
   actualExpenses: number; // in cents
   currencyCode: string;
+  category_id?: number; // Added category_id
 }
 
 export interface BudgetListResponse {
@@ -351,8 +352,10 @@ export interface CreateBudgetPayload {
   month: string; // YYYY-MM
   plannedAmount: number; // in cents
   currencyCode: string;
+  category_id: number; // Changed from optional to required based on form
 }
 
 export interface UpdateBudgetPayload {
   plannedAmount: number; // in cents
+  category_id?: number; // Optional for updates
 }
