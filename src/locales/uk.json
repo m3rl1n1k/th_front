@@ -98,6 +98,10 @@
   "jwtToken": "JWT Токен",
   "submittingTokenButton": "Надсилання...",
   "submitTokenButton": "Надіслати токен",
+  "tokenSetSuccessTitle": "Токен встановлено успішно",
+  "tokenSetSuccessDesc": "Токен встановлено, ваша сесія активна.",
+  "tokenSetFailedTitle": "Не вдалося встановити токен",
+  "tokenSetFailedDesc": "Наданий токен недійсний або не може бути перевірений.",
   "passwordLabel": "Пароль",
   "confirmPasswordLabel": "Підтвердіть пароль",
   "passwordRequiredError": "Пароль обов'язковий.",
@@ -521,6 +525,7 @@
   "noBudgetDetailsFoundDesc": "Детальних бюджетних статей для {monthDisplay} не знайдено.",
   "backToBudgetsButton": "Назад до бюджетів",
   "budgetSummaryInvalidDateError": "Невірна дата для зведення бюджету.",
+
 
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",
