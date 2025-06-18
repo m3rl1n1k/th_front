@@ -39,7 +39,7 @@ export default function BudgetsPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const [monthlyBudgets, setMonthlyBudgets] = useState<ProcessedMonthlyBudget[] | null>(null);
+  const [monthlyBudgets, setMonthlyBudgets] = useState<ProcessedMonthlyBudget[]>([]); // Initialize with empty array
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchBudgets = useCallback(async () => {
@@ -54,9 +54,11 @@ export default function BudgetsPage() {
       const processed: ProcessedMonthlyBudget[] = Object.entries(response.budgets || {}).map(([monthYear, data]) => {
         let monthDisplayName = monthYear;
         try {
-          monthDisplayName = format(parse(monthYear, 'yyyy-MM', new Date()), 'MMMM yyyy', { locale: dateFnsLocale });
+          // Ensure parsing is robust, use current date as reference for parse
+          const parsedDate = parse(monthYear, 'yyyy-MM', new Date());
+          monthDisplayName = format(parsedDate, 'MMMM yyyy', { locale: dateFnsLocale });
         } catch (e) {
-          console.warn(`Could not parse monthYear: ${monthYear}`);
+          console.warn(`Could not parse monthYear: ${monthYear}, using it directly.`);
         }
         return {
           monthYear,
@@ -82,12 +84,12 @@ export default function BudgetsPage() {
   }, [fetchBudgets]);
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
-    if (!Array.isArray(monthlyBudgets)) {
+    if (!Array.isArray(monthlyBudgets)) { // Guard against non-array monthlyBudgets
       return { groupedBudgetsByYear: {}, sortedYears: [] };
     }
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
-      // Ensure budget and budget.year are valid before accessing
+      // Defensive check for budget and budget.year
       if (!budget || typeof budget.year !== 'string') {
         console.warn('BudgetsPage: Invalid budget item or budget.year in reduce. Item:', budget);
         return acc; // Skip this item
@@ -146,7 +148,7 @@ export default function BudgetsPage() {
     );
   }
 
-  if (!Array.isArray(monthlyBudgets) || monthlyBudgets.length === 0) {
+  if (monthlyBudgets.length === 0) { // Simplified condition
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -202,7 +204,7 @@ export default function BudgetsPage() {
                       const progressPercentageSafe = budget.totalPlanned > 0 ? (budget.totalActual / budget.totalPlanned) * 100 : (budget.totalActual > 0 ? 101 : 0);
                       const progressColorClass = getProgressColor(progressPercentageSafe);
                       
-                      const monthNameOnly = format(parse(budget.monthYear, 'yyyy-MM', new Date()), 'MMMM', { locale: dateFnsLocale });
+                      const monthNameOnly = budget.monthDisplayName.split(' ')[0]; // Assuming format "Month YYYY"
 
                       return (
                         <Card key={budget.monthYear} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50">
