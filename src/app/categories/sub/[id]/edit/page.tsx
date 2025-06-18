@@ -67,11 +67,11 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
-const createEditSubCategorySchema = () => z.object({
-  mainCategoryId: z.string().min(1, { message: "parentCategoryRequiredError" }),
-  name: z.string().min(1, { message: "categoryNameRequiredError" }),
+const createEditSubCategorySchema = (t: Function) => z.object({
+  mainCategoryId: z.string().min(1, { message: t("parentCategoryRequiredError") }),
+  name: z.string().min(1, { message: t("categoryNameRequiredError") }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: t("invalidHexColorError") }).nullable().optional(),
 });
 type EditSubCategoryFormData = z.infer<ReturnType<typeof createEditSubCategorySchema>>;
 
@@ -90,7 +90,7 @@ export default function EditSubCategoryPage() {
   const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
   const [errorOccurred, setErrorOccurred] = useState(false);
 
-  const EditSubCategorySchema = useMemo(() => createEditSubCategorySchema(), []);
+  const EditSubCategorySchema = useMemo(() => createEditSubCategorySchema(t), [t]);
 
   const { control, handleSubmit, formState: { errors }, reset, register } = useForm<EditSubCategoryFormData>({
     resolver: zodResolver(EditSubCategorySchema),
@@ -325,7 +325,7 @@ export default function EditSubCategoryPage() {
                     </Select>
                   )}
                 />
-                {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message)}</p>}
+                {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message as any)}</p>}
               </div>
 
               <div className="space-y-2">

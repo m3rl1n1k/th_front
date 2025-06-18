@@ -165,7 +165,6 @@
   "lastActivityTitle": "Останні Транзакції",
   "noRecentTransactions": "Нещодавніх транзакцій не знайдено.",
   "viewAllTransactions": "Переглянути всі транзакції",
-  "dashboardDataLoadError": "Не вдалося завантажити дані панелі.",
 
   "//": "ТРАНЗАКЦІЇ",
   "newTransaction": "Нова транзакція",
@@ -415,9 +414,6 @@
   "restaurants": "Ресторани",
   "allCategories": "Всі категорії",
   "invalidHexColor": "Неправильний формат шістнадцяткового коду кольору (напр., #RRGGBB).",
-  "categoryNameRequiredError": "Назва категорії обов'язкова.",
-  "invalidHexColorError": "Неправильний шістнадцятковий код кольору (напр., #RRGGBB).",
-  "parentCategoryRequiredError": "Батьківська категорія обов'язкова.",
 
   "//": "ПЕРЕКАЗИ",
   "createTransferTitle": "Створити новий переказ",
@@ -540,10 +536,6 @@
   "errorUpdatingBudgetItem": "Помилка оновлення статті бюджету",
   "errorFetchingBudgetItem": "Помилка завантаження статті бюджету",
   "couldNotLoadBudgetItemEdit": "Не вдалося завантажити статтю бюджету для редагування. Будь ласка, спробуйте знову.",
-  "categoryAlreadyBudgetedShort": "Забюджетовано",
-  "categoryAlreadyBudgetedTitle": "Категорія вже забюджетована",
-  "categoryAlreadyBudgetedMessage": "Для цієї категорії вже існує бюджет на {month}. Будь ласка, виберіть іншу категорію або відредагуйте існуючий бюджет.",
-  "categoryAlreadyHasBudgetForMonthError": "Для цієї категорії вже існує бюджет на обраний місяць. Будь ласка, оберіть іншу категорію або відредагуйте існуючий бюджет.",
 
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",
@@ -553,7 +545,6 @@
   "saveSettingsButton": "Зберегти налаштування",
   "settingsSavedTitle": "Налаштування збережено",
   "settingsSavedDesc": "Ваші налаштування оновлено.",
-  "invalidLimitValueResetToDefault": "Недійсне значення ліміту. Скинуто до стандартного.",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Керуйте Своїми Фінансами",
@@ -592,4 +583,3 @@
   "calculator.error.divByZero": "Помилка: Ділення на 0",
   "calculator.error.invalidFormat": "Помилка: Неправильний формат"
 }
-

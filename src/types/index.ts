@@ -111,7 +111,7 @@ export interface TransactionType {
 }
 
 export interface ApiError {
-  message: string | Array<{ field: string; message: string; [key: string]: any }>;
+  message: string;
   code?: number;
   errors?: Record<string, string[]>; // For the { "field": ["message1", "message2"] } structure
   error?: string; // Alternative single error message string
@@ -429,3 +429,4 @@ export interface BudgetSummaryByMonthResponse {
   categories: Record<string, BudgetCategorySummaryItem>; // Key is subCategory ID
 }
 
+```

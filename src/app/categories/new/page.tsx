@@ -66,18 +66,18 @@ const predefinedColors = [
 // Schemas
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
-const createMainCategorySchema = () => z.object({
-  name: z.string().min(1, { message: "categoryNameRequiredError" }),
+const createMainCategorySchema = (t: Function) => z.object({
+  name: z.string().min(1, { message: t("categoryNameRequiredError") }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: t("invalidHexColorError") }).nullable().optional(),
 });
 type MainCategoryFormData = z.infer<ReturnType<typeof createMainCategorySchema>>;
 
-const createSubCategorySchema = () => z.object({
-  mainCategoryId: z.string().min(1, { message: "parentCategoryRequiredError" }),
-  name: z.string().min(1, { message: "categoryNameRequiredError" }),
+const createSubCategorySchema = (t: Function) => z.object({
+  mainCategoryId: z.string().min(1, { message: t("parentCategoryRequiredError") }),
+  name: z.string().min(1, { message: t("categoryNameRequiredError") }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: t("invalidHexColorError") }).nullable().optional(),
 });
 type SubCategoryFormData = z.infer<ReturnType<typeof createSubCategorySchema>>;
 
@@ -92,8 +92,8 @@ export default function CreateCategoryPage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [activeTab, setActiveTab] = useState("main");
 
-  const MainCategorySchema = useMemo(() => createMainCategorySchema(), []);
-  const SubCategorySchema = useMemo(() => createSubCategorySchema(), []);
+  const MainCategorySchema = useMemo(() => createMainCategorySchema(t), [t]);
+  const SubCategorySchema = useMemo(() => createSubCategorySchema(t), [t]);
 
 
   const mainCategoryForm = useForm<MainCategoryFormData>({
@@ -240,7 +240,7 @@ export default function CreateCategoryPage() {
                         </Select>
                       )}
                     />
-                    {mainCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.icon.message)}</p>}
+                    {mainCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.icon.message as any)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="main-color-swatches">{t('colorLabel')}</Label>
@@ -332,7 +332,7 @@ export default function CreateCategoryPage() {
                         </Select>
                       )}
                     />
-                    {subCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.icon.message)}</p>}
+                    {subCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.icon.message as any)}</p>}
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="sub-color-swatches">{t('colorLabel')}</Label>

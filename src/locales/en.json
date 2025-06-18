@@ -165,7 +165,6 @@
   "lastActivityTitle": "Recent Transactions",
   "noRecentTransactions": "No recent transactions found.",
   "viewAllTransactions": "View All Transactions",
-  "dashboardDataLoadError": "Could not load dashboard data.",
 
   "//": "TRANSACTIONS",
   "newTransaction": "New Transaction",
@@ -415,9 +414,6 @@
   "restaurants": "Restaurants",
   "allCategories": "All Categories",
   "invalidHexColor": "Invalid hex color format (e.g., #RRGGBB).",
-  "categoryNameRequiredError": "Name is required.",
-  "invalidHexColorError": "Invalid hex color (e.g., #RRGGBB).",
-  "parentCategoryRequiredError": "Parent category is required.",
 
   "//": "TRANSFERS",
   "createTransferTitle": "Create New Transfer",
@@ -540,11 +536,6 @@
   "errorUpdatingBudgetItem": "Error Updating Budget Item",
   "errorFetchingBudgetItem": "Error Fetching Budget Item",
   "couldNotLoadBudgetItemEdit": "Could not load the budget item for editing. Please try again.",
-  "categoryAlreadyBudgetedShort": "Budgeted",
-  "categoryAlreadyBudgetedTitle": "Category Already Budgeted",
-  "categoryAlreadyBudgetedMessage": "This category already has a budget for {month}. Please choose a different category or edit the existing budget.",
-  "categoryAlreadyHasBudgetForMonthError": "This category already has a budget for the selected month. Please choose a different category or edit the existing budget.",
-
 
   "//": "SETTINGS",
   "settingsPageTitle": "Application Settings",
@@ -554,7 +545,6 @@
   "saveSettingsButton": "Save Settings",
   "settingsSavedTitle": "Settings Saved",
   "settingsSavedDesc": "Your preferences have been updated.",
-  "invalidLimitValueResetToDefault": "Invalid limit value. Reset to default.",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Take Control of Your Finances",
@@ -593,4 +583,3 @@
   "calculator.error.divByZero": "Error: Div by 0",
   "calculator.error.invalidFormat": "Error: Invalid Format"
 }
-

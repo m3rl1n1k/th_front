@@ -62,10 +62,10 @@ const predefinedColors = [
 ];
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
-const createEditMainCategorySchema = () => z.object({
-  name: z.string().min(1, { message: "categoryNameRequiredError" }),
+const createEditMainCategorySchema = (t: Function) => z.object({
+  name: z.string().min(1, { message: t("categoryNameRequiredError") }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: t("invalidHexColorError") }).nullable().optional(),
 });
 type EditMainCategoryFormData = z.infer<ReturnType<typeof createEditMainCategorySchema>>;
 
@@ -82,7 +82,7 @@ export default function EditMainCategoryPage() {
   const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
   const [errorOccurred, setErrorOccurred] = useState(false);
 
-  const EditMainCategorySchema = useMemo(() => createEditMainCategorySchema(), []);
+  const EditMainCategorySchema = useMemo(() => createEditMainCategorySchema(t), [t]);
 
   const { control, handleSubmit, formState: { errors }, reset, register } = useForm<EditMainCategoryFormData>({
     resolver: zodResolver(EditMainCategorySchema),
@@ -280,7 +280,7 @@ export default function EditMainCategoryPage() {
                     </Select>
                   )}
                 />
-                {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message)}</p>}
+                {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message as any)}</p>}
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-1">

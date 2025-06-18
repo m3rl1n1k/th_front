@@ -317,6 +317,10 @@ export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => 
   return request(URLS.getBudgets, { method: 'GET', token });
 };
 
+// Function to get a specific budget item (deprecated path in API_DOC)
+// export const getBudgetById = (id: string | number, token: string): Promise<BudgetListItem> => {
+//   return request<{ budget: BudgetListItem }>(URLS.getBudgetById_DEPRECATED(id), { method: 'GET', token }).then(res => res.budget);
+// };
 export const getBudgetSummaryItemForEdit = async (date: string, id: string | number, token: string): Promise<BudgetDetails> => {
   const responseArray = await request<ApiBudgetDetailItem[]>(URLS.getBudgetSummaryItemForEdit(date, id), { method: 'GET', token });
   
@@ -338,17 +342,25 @@ export const getBudgetSummaryItemForEdit = async (date: string, id: string | num
   return transformedDetails;
 };
 
+
 export const createBudget = (data: CreateBudgetPayload, token: string): Promise<BudgetListItem> => {
   return request<BudgetListItem>(URLS.createBudget, { method: 'POST', body: data, token });
 };
 
+// Uses deprecated path from API_DOC. MD file has been updated to /budgets/summary/{date}/{id}
+// This function should align with the updated PUT endpoint path.
 export const updateBudget = (date: string, id: string | number, data: UpdateBudgetPayload, token: string): Promise<BudgetListItem> => {
+  // This implementation assumes 'id' is sufficient for the old PUT /budgets/{id}
+  // For the new path, this function would need 'date' and 'id'
   return request<BudgetListItem>(URLS.updateBudget(date, id), { method: 'PUT', body: data, token });
 };
 
+// Uses deprecated path from API_DOC. MD file has been updated to /budgets/summary/{date}/{id}
+// This function should align with the updated DELETE endpoint path.
 export const deleteBudget = (date: string, id: string | number, token: string): Promise<void> => {
   return request<void>(URLS.deleteBudget(date, id), { method: 'DELETE', token });
 };
+
 
 export const deleteBudgetsForMonth = (monthYear: string, token: string): Promise<void> => {
   return request<void>(URLS.deleteBudgetsForMonth(monthYear), { method: 'DELETE', token });
@@ -357,4 +369,3 @@ export const deleteBudgetsForMonth = (monthYear: string, token: string): Promise
 export const getBudgetSummaryForMonth = (monthYear: string, token: string): Promise<BudgetSummaryByMonthResponse> => {
   return request<BudgetSummaryByMonthResponse>(URLS.getBudgetSummaryForMonth(monthYear), { method: 'GET', token });
 };
-

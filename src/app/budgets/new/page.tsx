@@ -47,8 +47,7 @@ export default function NewBudgetPage() {
 
   const [mainCategoriesHierarchical, setMainCategoriesHierarchical] = useState<ApiMainCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [existingBudgetsForMonth, setExistingBudgetsForMonth] = useState<Record<string, BudgetCategorySummaryItem>>({});
-  const [isLoadingExistingBudgets, setIsLoadingExistingBudgets] = useState(false);
+  // Removed state for existingBudgetsForMonth and isLoadingExistingBudgets for revert
 
   const BudgetFormSchema = createBudgetFormSchema(t);
 
@@ -57,14 +56,12 @@ export default function NewBudgetPage() {
     defaultValues: {
       plannedAmount: undefined,
       year: String(currentYear),
-      month: String(new Date().getMonth() + 1), // Default to current month (1-12)
+      month: String(new Date().getMonth() + 1), 
       categoryId: '',
     },
   });
 
-  const watchedYear = useWatch({ control, name: 'year' });
-  const watchedMonth = useWatch({ control, name: 'month' });
-  const watchedCategoryId = useWatch({ control, name: 'categoryId' });
+  // Removed watchers for existing budget validation for revert
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -80,23 +77,7 @@ export default function NewBudgetPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, toast, t]);
 
-  useEffect(() => {
-    if (token && watchedYear && watchedMonth) {
-      const monthString = `${watchedYear}-${String(watchedMonth).padStart(2, '0')}`;
-      setIsLoadingExistingBudgets(true);
-      getBudgetSummaryForMonth(monthString, token)
-        .then(response => {
-          setExistingBudgetsForMonth(response.categories || {});
-        })
-        .catch(error => {
-          console.error("Error fetching existing budgets for month:", error);
-          setExistingBudgetsForMonth({});
-        })
-        .finally(() => setIsLoadingExistingBudgets(false));
-    } else {
-      setExistingBudgetsForMonth({});
-    }
-  }, [token, watchedYear, watchedMonth]);
+  // Removed useEffect for fetching existing budgets for revert
 
   const months = Array.from({ length: 12 }, (_, i) => ({
     value: String(i + 1),
@@ -113,7 +94,7 @@ export default function NewBudgetPage() {
 
     const payload: CreateBudgetPayload = {
       month: monthString,
-      plannedAmount: Math.round(data.plannedAmount * 100), // Convert to cents
+      plannedAmount: Math.round(data.plannedAmount * 100), 
       currencyCode: user.userCurrency.code,
       category_id: parseInt(data.categoryId, 10),
     };
@@ -123,31 +104,13 @@ export default function NewBudgetPage() {
       toast({ title: t('budgetCreatedTitle'), description: t('budgetCreatedDesc') });
       router.push('/budgets');
     } catch (error: any) {
-      let toastTitle = t('errorCreatingBudget');
-      let toastDescription = error.message || t('unexpectedError');
-
-      if (error.errors && Array.isArray(error.errors) && error.errors.length > 0) {
-        const firstError = error.errors[0];
-        // Check if the error indicates a category already has a budget for the month
-        // This condition might need adjustment based on exact backend error structure/message
-        if (firstError.field === 'category_id' && firstError.message && 
-            (firstError.message.toLowerCase().includes('contain budget to month') || 
-             firstError.message.toLowerCase().includes('already has a budget'))) {
-          toastDescription = t('categoryAlreadyHasBudgetForMonthError');
-        } else if (firstError.message) {
-          toastDescription = firstError.message; // Use specific message from backend if available
-        }
-      }
-      toast({ variant: "destructive", title: toastTitle, description: toastDescription });
+      // Simplified error handling for revert
+      toast({ variant: "destructive", title: t('errorCreatingBudget'), description: error.message || t('unexpectedError') });
     }
   };
 
-  const isSelectedCategoryBudgeted = useMemo(() => {
-    if (!watchedCategoryId || Object.keys(existingBudgetsForMonth).length === 0) return false;
-    return !!existingBudgetsForMonth[watchedCategoryId];
-  }, [watchedCategoryId, existingBudgetsForMonth]);
-
-  const isButtonDisabled = formIsSubmitting || isLoadingCategories || isLoadingExistingBudgets || isSelectedCategoryBudgeted;
+  // Removed isSelectedCategoryBudgeted memo for revert
+  const isButtonDisabled = formIsSubmitting || isLoadingCategories; // Simplified for revert
 
   return (
     <MainLayout>
@@ -193,30 +156,26 @@ export default function NewBudgetPage() {
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
-                        disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0 || isLoadingExistingBudgets}
+                        disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
                       >
                         <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
                           <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder={isLoadingCategories || isLoadingExistingBudgets ? t('loading') : t('selectCategoryPlaceholder')} />
+                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent className="max-h-72 overflow-y-auto">
                           {mainCategoriesHierarchical.map(mainCat => (
                             <SelectGroup key={mainCat.id}>
                               <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
-                              {mainCat.subCategories && mainCat.subCategories.map(subCat => {
-                                const subCatIdString = String(subCat.id);
-                                const isAlreadyBudgeted = !!existingBudgetsForMonth[subCatIdString];
-                                const categoryDisplayName = t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name });
-                                return (
+                              {mainCat.subCategories && mainCat.subCategories.map(subCat => (
                                 <SelectItem 
                                   key={subCat.id} 
-                                  value={subCatIdString}
-                                  disabled={isAlreadyBudgeted}
+                                  value={String(subCat.id)}
+                                  // Removed disabled logic for revert
                                 >
-                                  {categoryDisplayName}{isAlreadyBudgeted ? ` (${t('categoryAlreadyBudgetedShort')})` : ''}
+                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
+                                  {/* Removed (Budgeted) text for revert */}
                                 </SelectItem>
-                                );
-                              })}
+                              ))}
                             </SelectGroup>
                           ))}
                         </SelectContent>
@@ -224,15 +183,7 @@ export default function NewBudgetPage() {
                     )}
                   />
                   {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
-                   {isSelectedCategoryBudgeted && (
-                    <Alert variant="default" className="mt-2 bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-400 text-xs">
-                        <AlertTriangle className="h-4 w-4 !text-amber-600 dark:!text-amber-400" />
-                        <AlertTitle className="text-xs font-semibold">{t('categoryAlreadyBudgetedTitle')}</AlertTitle>
-                        <AlertDescription className="text-xs">
-                        {t('categoryAlreadyBudgetedMessage', { month: format(new Date(parseInt(watchedYear), parseInt(watchedMonth) - 1), 'MMMM yyyy', { locale: dateFnsLocale }) })}
-                        </AlertDescription>
-                    </Alert>
-                    )}
+                  {/* Removed Alert for budgeted category for revert */}
                 </div>
               </div>
 
@@ -284,14 +235,12 @@ export default function NewBudgetPage() {
               
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isButtonDisabled}>
-                  {isButtonDisabled && !(formIsSubmitting || isLoadingCategories || isLoadingExistingBudgets) && isSelectedCategoryBudgeted ? (
-                    <AlertTriangle className="mr-2 h-4 w-4" />
-                  ) : (isButtonDisabled && (formIsSubmitting || isLoadingCategories || isLoadingExistingBudgets)) ? (
+                  {isButtonDisabled && formIsSubmitting ? ( // Simplified loader logic
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Save className="mr-2 h-4 w-4" />
                   )}
-                  {isButtonDisabled && isSelectedCategoryBudgeted ? t('categoryAlreadyBudgetedTitle') : (isButtonDisabled ? t('saving') : t('createBudgetButton'))}
+                  {isButtonDisabled && formIsSubmitting ? t('saving') : t('createBudgetButton')}
                 </Button>
               </div>
             </form>
