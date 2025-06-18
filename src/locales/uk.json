@@ -11,6 +11,8 @@
   "viewAction": "Перегляд",
   "editAction": "Редагувати",
   "deleteAction": "Видалити",
+  "removeAction": "Видалити",
+  "detailsAction": "Деталі",
   "deleteButtonConfirm": "Видалити",
   "deleting": "Видалення...",
   "unexpectedError": "Сталася неочікувана помилка.",
@@ -506,6 +508,11 @@
   "userCurrencyNotSetError": "Валюту користувача не встановлено. Будь ласка, оновіть свій профіль.",
   "yearRequiredError": "Рік обов'язковий.",
   "monthRequiredError": "Місяць обов'язковий.",
+  "viewTransactionsForMonth": "Переглянути транзакції за {month}",
+  "removeBudgetSummaryTitle": "Видалити бюджет на {month}?",
+  "removeBudgetSummaryMessage": "Ви впевнені, що хочете видалити дані бюджету на {month}? Ця дія може бути незворотною залежно від налаштувань системи.",
+  "removeBudgetSummaryNotSupportedTitle": "Дія не підтримується",
+  "removeBudgetSummaryNotSupportedDesc": "Видалення зведеного бюджету за цілий місяць наразі не підтримується. Ви можете коригувати окремі бюджетні статті або транзакції.",
 
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",
@@ -553,3 +560,4 @@
   "calculator.error.divByZero": "Помилка: Ділення на 0",
   "calculator.error.invalidFormat": "Помилка: Неправильний формат"
 }
+

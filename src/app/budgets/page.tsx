@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format, parse } from 'date-fns';
+import { format, parse, lastDayOfMonth } from 'date-fns';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,10 +15,20 @@ import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import { getBudgetList } from '@/lib/api';
 import type { BudgetListApiResponse, MonthlyBudgetSummary } from '@/types';
-import { Target, PlusCircle, TrendingUp, TrendingDown, Loader2, BarChartHorizontalBig } from 'lucide-react';
+import { Target, PlusCircle, TrendingUp, TrendingDown, Loader2, BarChartHorizontalBig, Eye, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ProcessedMonthlyBudget {
   monthYear: string; // "YYYY-MM"
@@ -33,19 +43,29 @@ interface GroupedProcessedBudgets {
   [year: string]: ProcessedMonthlyBudget[];
 }
 
+interface ItemToDeleteDetails {
+  monthYear: string;
+  monthDisplayName: string;
+}
+
+
 export default function BudgetsPage() {
   const { token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [monthlyBudgets, setMonthlyBudgets] = useState<ProcessedMonthlyBudget[]>([]); // Initialize with empty array
+  const [monthlyBudgets, setMonthlyBudgets] = useState<ProcessedMonthlyBudget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDeleteDetails, setItemToDeleteDetails] = useState<ItemToDeleteDetails | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   const fetchBudgets = useCallback(async () => {
     if (!isAuthenticated || !token) {
       setIsLoading(false);
-      setMonthlyBudgets([]); // Ensure it's an empty array if not authenticated
+      setMonthlyBudgets([]);
       return;
     }
     setIsLoading(true);
@@ -54,7 +74,6 @@ export default function BudgetsPage() {
       const processed: ProcessedMonthlyBudget[] = Object.entries(response.budgets || {}).map(([monthYear, data]) => {
         let monthDisplayName = monthYear;
         try {
-          // Ensure parsing is robust, use current date as reference for parse
           const parsedDate = parse(monthYear, 'yyyy-MM', new Date());
           monthDisplayName = format(parsedDate, 'MMMM yyyy', { locale: dateFnsLocale });
         } catch (e) {
@@ -73,7 +92,7 @@ export default function BudgetsPage() {
       setMonthlyBudgets(processed);
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-      setMonthlyBudgets([]); // Set to empty array on error
+      setMonthlyBudgets([]); 
     } finally {
       setIsLoading(false);
     }
@@ -84,15 +103,14 @@ export default function BudgetsPage() {
   }, [fetchBudgets]);
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
-    if (!Array.isArray(monthlyBudgets)) { // Guard against non-array monthlyBudgets
+    if (!Array.isArray(monthlyBudgets)) { 
       return { groupedBudgetsByYear: {}, sortedYears: [] };
     }
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
-      // Defensive check for budget and budget.year
       if (!budget || typeof budget.year !== 'string') {
         console.warn('BudgetsPage: Invalid budget item or budget.year in reduce. Item:', budget);
-        return acc; // Skip this item
+        return acc; 
       }
       const year = budget.year;
       if (!acc[year]) {
@@ -111,6 +129,32 @@ export default function BudgetsPage() {
     if (percentage > 75) return 'bg-orange-500 dark:bg-orange-400';
     if (percentage > 50) return 'bg-yellow-500 dark:bg-yellow-400';
     return 'bg-green-500 dark:bg-green-400';
+  };
+
+  const handleViewDetails = (monthYear: string) => {
+    const startDate = format(parse(monthYear, 'yyyy-MM', new Date()), 'yyyy-MM-dd');
+    const endDate = format(lastDayOfMonth(parse(monthYear, 'yyyy-MM', new Date())), 'yyyy-MM-dd');
+    router.push(`/transactions?startDate=${startDate}&endDate=${endDate}`);
+  };
+
+  const handleRemoveClick = (budget: ProcessedMonthlyBudget) => {
+    setItemToDeleteDetails({ monthYear: budget.monthYear, monthDisplayName: budget.monthDisplayName });
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!itemToDeleteDetails) return;
+    setIsDeleting(true);
+    // For now, this will just show a toast, as deleting entire monthly summaries isn't directly supported by a simple API call.
+    // In a real scenario, this might trigger a more complex operation (e.g., deleting all budget items for that month).
+    toast({
+      title: t('removeBudgetSummaryNotSupportedTitle'),
+      description: t('removeBudgetSummaryNotSupportedDesc', { month: itemToDeleteDetails.monthDisplayName }),
+      variant: "default" 
+    });
+    setIsDeleting(false);
+    setShowDeleteDialog(false);
+    setItemToDeleteDetails(null);
   };
 
   if (isLoading) {
@@ -136,7 +180,7 @@ export default function BudgetsPage() {
                 <CardContent className="p-4 pt-0">
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {[1,2,3].map(j => (
-                        <Skeleton key={j} className="h-40 w-full rounded-md" />
+                        <Skeleton key={j} className="h-48 w-full rounded-md" /> 
                     ))}
                   </div>
                 </CardContent>
@@ -148,7 +192,7 @@ export default function BudgetsPage() {
     );
   }
 
-  if (monthlyBudgets.length === 0) { // Simplified condition
+  if (monthlyBudgets.length === 0) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -204,7 +248,7 @@ export default function BudgetsPage() {
                       const progressPercentageSafe = budget.totalPlanned > 0 ? (budget.totalActual / budget.totalPlanned) * 100 : (budget.totalActual > 0 ? 101 : 0);
                       const progressColorClass = getProgressColor(progressPercentageSafe);
                       
-                      const monthNameOnly = budget.monthDisplayName.split(' ')[0]; // Assuming format "Month YYYY"
+                      const monthNameOnly = budget.monthDisplayName.split(' ')[0];
 
                       return (
                         <Card key={budget.monthYear} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50">
@@ -240,15 +284,23 @@ export default function BudgetsPage() {
                                   <span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={budget.totalActual} currencyCode={budget.currencyCode} /></span>
                                 </div>
                             </div>
-                          </CardContent>
-                           <CardFooter className="p-4 pt-0 mt-auto">
                              <div className={cn(
-                                "w-full text-center p-2.5 rounded-md font-semibold",
+                                "w-full text-center p-2.5 rounded-md font-semibold mt-3",
                                 remainingAmount >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
                               )}>
                                 <p className="text-xs uppercase tracking-wider opacity-80 mb-0.5">{t('budgetRemainingAmountShort')}</p>
                                 <CurrencyDisplay amountInCents={remainingAmount} currencyCode={budget.currencyCode} />
                               </div>
+                          </CardContent>
+                           <CardFooter className="p-3 border-t mt-auto flex justify-end gap-2">
+                                <Button variant="outline" size="sm" onClick={() => handleViewDetails(budget.monthYear)} title={t('viewTransactionsForMonth', {month: budget.monthDisplayName })}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    {t('detailsAction')}
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleRemoveClick(budget)} title={t('removeBudgetSummaryTitle', {month: budget.monthDisplayName })}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    {t('removeAction')}
+                                </Button>
                            </CardFooter>
                         </Card>
                       );
@@ -262,6 +314,23 @@ export default function BudgetsPage() {
           ))}
         </Accordion>
       </div>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('removeBudgetSummaryTitle', { month: itemToDeleteDetails?.monthDisplayName || '' })}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('removeBudgetSummaryMessage', { month: itemToDeleteDetails?.monthDisplayName || '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setItemToDeleteDetails(null)}>{t('cancelButton')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirmed} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isDeleting ? t('deleting') : t('deleteButtonConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

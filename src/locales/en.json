@@ -11,6 +11,8 @@
   "viewAction": "View",
   "editAction": "Edit",
   "deleteAction": "Delete",
+  "removeAction": "Remove",
+  "detailsAction": "Details",
   "deleteButtonConfirm": "Delete",
   "deleting": "Deleting...",
   "unexpectedError": "An unexpected error occurred.",
@@ -506,6 +508,11 @@
   "userCurrencyNotSetError": "User currency is not set. Please update your profile.",
   "yearRequiredError": "Year is required.",
   "monthRequiredError": "Month is required.",
+  "viewTransactionsForMonth": "View transactions for {month}",
+  "removeBudgetSummaryTitle": "Remove Budget for {month}?",
+  "removeBudgetSummaryMessage": "Are you sure you want to remove budget data for {month}? This action might not be reversible depending on system setup.",
+  "removeBudgetSummaryNotSupportedTitle": "Action Not Supported",
+  "removeBudgetSummaryNotSupportedDesc": "Removing an entire month's budget summary is not currently supported. You can adjust individual budget items or transactions.",
 
   "//": "SETTINGS",
   "settingsPageTitle": "Application Settings",
@@ -553,3 +560,4 @@
   "calculator.error.divByZero": "Error: Div by 0",
   "calculator.error.invalidFormat": "Error: Invalid Format"
 }
+
