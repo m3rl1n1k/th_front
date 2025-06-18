@@ -343,8 +343,16 @@ export interface BudgetListResponse {
   budgets: BudgetListItem[];
 }
 
-// Placeholder for Budget Details if needed later
 export interface BudgetDetails extends BudgetListItem {
-  // categoryBreakdown: Array<{ categoryId: string | number; categoryName: string; planned: number; actual: number }>;
-  // transactions: Transaction[];
+  // Potentially more details like category breakdowns if implemented
+}
+
+export interface CreateBudgetPayload {
+  month: string; // YYYY-MM
+  plannedAmount: number; // in cents
+  currencyCode: string;
+}
+
+export interface UpdateBudgetPayload {
+  plannedAmount: number; // in cents
 }

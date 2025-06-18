@@ -8,7 +8,7 @@ import type {
   LoginResponse,
   RegistrationPayload,
   RegistrationResponse,
-  ChangePasswordPayload, // New
+  ChangePasswordPayload,
   WalletDetails,
   MainCategory,
   WalletTypeApiResponse,
@@ -37,7 +37,9 @@ import type {
   FeedbackTypeOption,
   BudgetListResponse,
   BudgetListItem,
-  BudgetDetails
+  BudgetDetails,
+  CreateBudgetPayload,
+  UpdateBudgetPayload
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -289,7 +291,7 @@ export const getTransferFormData = (token: string): Promise<TransferFormDataResp
 export const getTransfersList = (token: string): Promise<TransfersListResponse> =>
   request(URLS.transfersList, { method: 'GET', token });
 
-export const createTransfer = (data: CreateTransferPayload, token: string): Promise<TransferListItem> => // Assuming API returns the created transfer
+export const createTransfer = (data: CreateTransferPayload, token: string): Promise<TransferListItem> =>
   request<TransferListItem>(URLS.createTransfer, { method: 'POST', body: data, token });
 
 export const deleteTransfer = (id: string | number, token: string): Promise<void> =>
@@ -301,46 +303,31 @@ export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
 
 // Feedback
 export const submitFeedback = (data: SubmitFeedbackPayload, token: string): Promise<{ message: string }> => {
-  // Replace with actual API call
-  console.log('Submitting feedback (mock):', data);
   return request(URLS.submitFeedback, { method: 'POST', body: data, token });
 };
 
 export const getFeedbacks = (token: string): Promise<GetFeedbacksResponse> => {
-  // Replace with actual API call
-  console.log('Fetching feedbacks (mock)');
   return request(URLS.getFeedbacks, { method: 'GET', token });
 };
 
-// Budgets (Mock Implementations)
-const MOCK_BUDGETS: BudgetListItem[] = [
-  { id: '1', month: '2024-08', plannedAmount: 500000, actualExpenses: 350000, currencyCode: 'USD' },
-  { id: '2', month: '2024-08', plannedAmount: 200000, actualExpenses: 220000, currencyCode: 'USD' }, // Over budget
-  { id: '3', month: '2024-07', plannedAmount: 450000, actualExpenses: 400000, currencyCode: 'USD' },
-  { id: '4', month: '2024-09', plannedAmount: 600000, actualExpenses: 150000, currencyCode: 'PLN' },
-];
-
+// Budgets
 export const getBudgetList = (token: string): Promise<BudgetListResponse> => {
-  console.log('Fetching budgets (mock)');
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ budgets: MOCK_BUDGETS });
-    }, 500);
-  });
-  // Actual API call: return request(URLS.getBudgets, { method: 'GET', token });
+  return request(URLS.getBudgets, { method: 'GET', token });
 };
 
-export const getBudgetDetails = (id: string | number, token: string): Promise<BudgetDetails> => {
-  console.log(`Fetching budget details for ${id} (mock)`);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const budget = MOCK_BUDGETS.find(b => String(b.id) === String(id));
-      if (budget) {
-        resolve({ ...budget }); // Add more details if your BudgetDetails type has them
-      } else {
-        reject({ message: 'Budget not found', code: 404 });
-      }
-    }, 500);
-  });
-  // Actual API call: return request(URLS.getBudgetById(id), { method: 'GET', token });
+export const getBudgetDetails = async (id: string | number, token: string): Promise<BudgetDetails> => {
+  const response = await request<{ budget: BudgetDetails }>(URLS.getBudgetById(id), { method: 'GET', token });
+  return response.budget;
+};
+
+export const createBudget = (data: CreateBudgetPayload, token: string): Promise<BudgetListItem> => {
+  return request<BudgetListItem>(URLS.createBudget, { method: 'POST', body: data, token });
+};
+
+export const updateBudget = (id: string | number, data: UpdateBudgetPayload, token: string): Promise<BudgetListItem> => {
+  return request<BudgetListItem>(URLS.updateBudget(id), { method: 'PUT', body: data, token });
+};
+
+export const deleteBudget = (id: string | number, token: string): Promise<void> => {
+  return request<void>(URLS.deleteBudget(id), { method: 'DELETE', token });
 };
