@@ -29,7 +29,7 @@ const createTransferFormSchema = (t: Function) => z.object({
   incomeWalletId: z.string().min(1, { message: t('transferIncomeWalletRequired') }),
 }).refine(data => data.outcomeWalletId !== data.incomeWalletId, {
   message: t('transferWalletsMustBeDifferentError'),
-  path: ["incomeWalletId"], 
+  path: ["incomeWalletId"],
 });
 
 type TransferFormData = z.infer<ReturnType<typeof createTransferFormSchema>>;
@@ -108,7 +108,7 @@ export default function TransfersPage() {
       await createTransfer(payload, token);
       toast({ title: t('transferCreatedTitle'), description: t('transferCreatedDesc') });
       reset();
-      fetchTransfers(); 
+      fetchTransfers();
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
     } finally {
@@ -136,7 +136,7 @@ export default function TransfersPage() {
       setTransferToDelete(null);
     }
   };
-  
+
   const getWalletNameAndCurrency = useCallback((walletId: number): string => {
     const foundUserWallet = userWallets.find(w => w.id === walletId);
     if (foundUserWallet) {
@@ -225,10 +225,10 @@ export default function TransfersPage() {
                       name="incomeWalletId"
                       control={control}
                       render={({ field }) => (
-                        <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value} 
-                            disabled={!selectedOutcomeWalletId || selectedOutcomeWalletId.trim() === ''}
+                        <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={!selectedOutcomeWalletId}
                         >
                           <SelectTrigger id="incomeWalletId" className={errors.incomeWalletId ? 'border-destructive' : ''}>
                             <SelectValue placeholder={t('transferSelectIncomeWalletPlaceholder')} />
@@ -246,7 +246,7 @@ export default function TransfersPage() {
                                     ))}
                                 </SelectGroup>
                             )}
-                            
+
                             {Object.entries(capitalWalletsGrouped).map(([username, walletsInGroup], groupIndex) => {
                                 const filteredWalletsInGroup = walletsInGroup.filter(w => String(w.id) !== selectedOutcomeWalletId);
                                 if (filteredWalletsInGroup.length === 0) return null;
@@ -366,4 +366,3 @@ export default function TransfersPage() {
     </MainLayout>
   );
 }
-
