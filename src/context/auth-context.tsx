@@ -21,190 +21,130 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_STORAGE_KEY = 'financeflow_jwt_token';
 const INTENDED_DESTINATION_KEY = 'intended_destination';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Start as true until initial check is done
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const saveTokenToStorages = (tokenValue: string) => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(TOKEN_STORAGE_KEY, tokenValue);
-    }
-  };
+  // Effect for initial loading state. Since token is in-memory,
+  // we are effectively unauthenticated on initial load/refresh.
+  useEffect(() => {
+    setIsLoading(false); // Initial "check" is done, user is unauthenticated by default
+  }, []);
 
-  const removeTokenFromStorages = () => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-      sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
-    }
-  };
-
-  const clearAuthArtefacts = useCallback(() => {
+  const clearAuthData = useCallback(() => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
-    removeTokenFromStorages();
+    // No need to remove token from sessionStorage as it's not stored there anymore
   }, []);
 
-  const fetchAndSetUser = useCallback(async (currentTokenValue: string, shouldSaveToken = true) => {
+  const processSuccessfulLogin = useCallback(async (apiToken: string) => {
     try {
-      const userData = await fetchUserProfile(currentTokenValue);
+      const userData = await fetchUserProfile(apiToken);
       setUser(userData);
-      setToken(currentTokenValue);
+      setToken(apiToken);
       setIsAuthenticated(true);
-      if (shouldSaveToken) {
-        saveTokenToStorages(currentTokenValue);
-      }
+      // Token is NOT saved to sessionStorage here
       return userData;
     } catch (error) {
-      clearAuthArtefacts();
-      throw error; 
+      clearAuthData();
+      throw error;
     }
-  }, [clearAuthArtefacts]);
-
-  useEffect(() => {
-    let isActive = true;
-    const initializeAuth = async () => {
-      setIsLoading(true);
-      let initialToken: string | null = null;
-      if (typeof window !== 'undefined') {
-        initialToken = sessionStorage.getItem(TOKEN_STORAGE_KEY);
-      }
-
-      if (initialToken) {
-        try {
-          await fetchAndSetUser(initialToken, false);
-        } catch (error) {
-          const apiError = error as ApiError;
-          console.error("Initialization fetchAndSetUser error:", apiError);
-          if (apiError.rawResponse) {
-            console.error("Raw server response on init error:", apiError.rawResponse);
-          }
-          clearAuthArtefacts(); 
-        }
-      } else {
-        clearAuthArtefacts(); 
-      }
-      if (isActive) setIsLoading(false);
-    };
-
-    initializeAuth();
-    return () => { isActive = false; };
-  }, [fetchAndSetUser, clearAuthArtefacts]); 
+  }, [clearAuthData]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
       const response: LoginResponse = await apiLoginUser(credentials);
-      await fetchAndSetUser(response.token);
+      await processSuccessfulLogin(response.token);
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
 
-      let redirectTo = '/dashboard'; // Default redirect path
-      
+      let redirectTo = '/dashboard';
       if (typeof window !== 'undefined') {
         const intendedDestination = sessionStorage.getItem(INTENDED_DESTINATION_KEY);
-        
-        // CRITICAL: Remove the key from sessionStorage immediately after reading it,
-        // regardless of whether it will be used.
         if (intendedDestination) {
-            sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
+          sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
         }
-
-        // Now, validate the intendedDestination if it was found
         const nonIntendedRedirectPaths = ['/login', '/register', '/terms', '/set-token', '/'];
-        
-        if (intendedDestination && 
-            !nonIntendedRedirectPaths.includes(intendedDestination) &&
-            intendedDestination.startsWith('/') && 
-            !intendedDestination.startsWith('//')) {
-          // If it's a valid, non-problematic path, use it
+        if (intendedDestination && !nonIntendedRedirectPaths.includes(intendedDestination) && intendedDestination.startsWith('/') && !intendedDestination.startsWith('//')) {
           redirectTo = intendedDestination;
         }
-        // If intendedDestination was null, empty, or one of the nonIntendedRedirectPaths,
-        // redirectTo remains '/dashboard'.
       }
-      
       router.push(redirectTo);
-
     } catch (error) {
       const apiError = error as ApiError;
-      console.error("Login error:", apiError);
-      if (apiError.rawResponse) {
-        console.error("Raw server response on login error:", apiError.rawResponse);
-      }
       toast({
         variant: "destructive",
         title: t('loginFailedTitle'),
         description: apiError.message || t('loginFailedDesc'),
       });
-      clearAuthArtefacts();
+      clearAuthData(); // Ensure state is clean on login failure
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAndSetUser, router, toast, t, clearAuthArtefacts]);
+  }, [processSuccessfulLogin, router, toast, t, clearAuthData]);
 
   const register = useCallback(async (payload: RegistrationPayload) => {
     setIsLoading(true);
     try {
       await apiRegisterUser(payload);
     } catch (error) {
-      const apiError = error as ApiError;
-      console.error("Registration error:", apiError);
-      if (apiError.rawResponse) {
-        console.error("Raw server response on registration error:", apiError.rawResponse);
-      }
-      throw error;
+      throw error; // Let the UI handle specific error messages
     } finally {
       setIsLoading(false);
     }
   }, [setIsLoading]);
 
   const logout = useCallback(() => {
-    setIsLoading(true);
-    clearAuthArtefacts();
+    setIsLoading(true); // Briefly set loading during logout process
+    clearAuthData();
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(INTENDED_DESTINATION_KEY); // Clear any lingering intended destination
+    }
     toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
-    setIsLoading(false);
     router.push('/login');
-  }, [router, toast, t, clearAuthArtefacts]);
-
+    setIsLoading(false); // Reset loading after push
+  }, [router, toast, t, clearAuthData]);
 
   const fetchUser = useCallback(async () => {
-    const currentTokenValue = token || (typeof window !== 'undefined' ? sessionStorage.getItem(TOKEN_STORAGE_KEY) : null);
-    if (currentTokenValue) {
+    // This function re-fetches user profile using the current in-memory token.
+    // Useful if user data needs to be refreshed after an update (e.g., profile edit).
+    // If token is null (e.g., after refresh), this won't proceed to API call.
+    if (token) {
       setIsLoading(true);
       try {
-        await fetchAndSetUser(currentTokenValue, false);
+        const userData = await fetchUserProfile(token);
+        setUser(userData);
+        setIsAuthenticated(true); // Reaffirm authentication
       } catch (error) {
         const apiError = error as ApiError;
-        console.error("fetchUser error:", apiError);
-        if (apiError.rawResponse) {
-            console.error("Raw server response on fetchUser error:", apiError.rawResponse);
-        }
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
+        clearAuthData(); // If fetching user fails, clear auth state
         
         const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
-        if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
+         if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
             sessionStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
         }
-        router.replace('/login');
-
+        router.replace('/login'); // Redirect to login if user fetch fails
       } finally {
         setIsLoading(false);
       }
     } else {
-      if (!isLoading && !isAuthenticated) {
-        clearAuthArtefacts();
+      // If there's no token in memory, ensure the user is treated as unauthenticated.
+      // This path is typically hit if fetchUser is called after a page refresh where token state was lost.
+      if (!isLoading && isAuthenticated) { // Only clear if currently marked as authenticated
+        clearAuthData();
       }
     }
-  }, [token, fetchAndSetUser, toast, t, router, isLoading, isAuthenticated, clearAuthArtefacts, pathname]); 
+  }, [token, toast, t, router, clearAuthData, pathname, isLoading, isAuthenticated]);
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser }}>
