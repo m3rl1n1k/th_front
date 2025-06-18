@@ -37,8 +37,8 @@ import type {
   FeedbackTypeOption,
   BudgetListApiResponse,
   BudgetListItem,
-  BudgetDetails, // This will be the transformed type
-  ApiBudgetDetailItem, // Raw type from API
+  BudgetDetails, 
+  ApiBudgetDetailItem, 
   CreateBudgetPayload,
   UpdateBudgetPayload,
   BudgetSummaryByMonthResponse,
@@ -343,7 +343,7 @@ export const createBudget = (data: CreateBudgetPayload, token: string): Promise<
 };
 
 export const updateBudget = (date: string, id: string | number, data: UpdateBudgetPayload, token: string): Promise<BudgetListItem> => {
-  return request<BudgetListItem>(URLS.updateBudget(date, id), { method: 'POST', body: data, token });
+  return request<BudgetListItem>(URLS.updateBudget(date, id), { method: 'PUT', body: data, token });
 };
 
 export const deleteBudget = (id: string | number, token: string): Promise<void> => {
@@ -353,3 +353,4 @@ export const deleteBudget = (id: string | number, token: string): Promise<void> 
 export const getBudgetSummaryForMonth = (monthYear: string, token: string): Promise<BudgetSummaryByMonthResponse> => {
   return request<BudgetSummaryByMonthResponse>(URLS.getBudgetSummaryForMonth(monthYear), { method: 'GET', token });
 };
+
