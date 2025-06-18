@@ -499,7 +499,7 @@
   "yearRequiredError": "Рік обов'язковий.",
   "monthRequiredError": "Місяць обов'язковий.",
 
-  "//": "НАЛАШТУВАННЯ",
+  "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",
   "dashboardSettingsTitle": "Налаштування Панелі",
   "dashboardSettingsDesc": "Налаштуйте вигляд вашої панелі.",
@@ -508,7 +508,7 @@
   "settingsSavedTitle": "Налаштування збережено",
   "settingsSavedDesc": "Ваші налаштування оновлено.",
 
-  "//": "ГОЛОВНА СТОРІНКА",
+  "//": "HOMEPAGE",
   "homePageTitle": "Керуйте Своїми Фінансами",
   "homePageSubtitle": "FinanceFlow допомагає вам відстежувати витрати, керувати бюджетами та досягати фінансових цілей легко.",
   "getStartedButton": "Почати безкоштовно",
@@ -525,14 +525,14 @@
   "homePageFooterText": "Готові керувати своїми грошима розумніше?",
   "altFinancialPlanning": "Ілюстрація фінансового планування та графіків",
 
-  "//": "КАПЧА",
+  "//": "CAPTCHA",
   "captchaLabel": "Перевірка безпеки",
   "captchaPlaceholder": "Введіть суму",
   "captchaRequiredError": "Капча обов'язкова.",
   "captchaIncorrectError": "Неправильна відповідь капчі. Будь ласка, спробуйте ще раз.",
   "refreshCaptchaLabel": "Оновити капчу",
 
-  "//": "КАЛЬКУЛЯТОР",
+  "//": "CALCULATOR",
   "calculator.open": "Відкрити калькулятор",
   "calculator.title": "Калькулятор суми",
   "calculator.apply": "Застосувати",

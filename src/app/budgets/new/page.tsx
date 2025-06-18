@@ -33,7 +33,7 @@ const createBudgetFormSchema = (t: Function) => z.object({
   plannedAmount: z.coerce.number().positive({ message: t('amountPositiveError') }),
   year: z.string().min(4, { message: t('yearRequiredError') }),
   month: z.string().min(1, { message: t('monthRequiredError') }),
-  categoryId: z.string().optional().nullable(), // UI only for now, API doesn't support it
+  categoryId: z.string().min(1, { message: t('categoryRequiredError') }),
 });
 
 type BudgetFormData = z.infer<ReturnType<typeof createBudgetFormSchema>>;
@@ -55,7 +55,7 @@ export default function NewBudgetPage() {
       plannedAmount: undefined,
       year: String(currentYear),
       month: String(new Date().getMonth() + 1), // Default to current month (1-12)
-      categoryId: null,
+      categoryId: '', // Changed from null to empty string to trigger validation
     },
   });
 
@@ -86,6 +86,7 @@ export default function NewBudgetPage() {
 
     const monthString = `${data.year}-${String(data.month).padStart(2, '0')}`;
 
+    // API does not currently support categoryId for budget creation
     const payload: CreateBudgetPayload = {
       month: monthString,
       plannedAmount: Math.round(data.plannedAmount * 100), // Convert to cents
@@ -140,22 +141,21 @@ export default function NewBudgetPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="categoryId">{t('budgetFormCategoryLabel')} ({t('uiOnlyLabel')})</Label>
+                  <Label htmlFor="categoryId">{t('budgetFormCategoryLabel')}</Label>
                   <Controller
                     name="categoryId"
                     control={control}
                     render={({ field }) => (
                       <Select
-                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                        value={field.value || "none"}
+                        onValueChange={field.onChange}
+                        value={field.value}
                         disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
                       >
                         <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
                           <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryOptionalPlaceholder')} />
+                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent className="max-h-72 overflow-y-auto">
-                          <SelectItem value="none">{t('noCategoryOption')}</SelectItem>
                           {mainCategoriesHierarchical.map(mainCat => (
                             <SelectGroup key={mainCat.id}>
                               <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
@@ -233,5 +233,3 @@ export default function NewBudgetPage() {
     </MainLayout>
   );
 }
-
-        
