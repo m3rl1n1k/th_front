@@ -506,5 +506,24 @@
   "noBudgetsForYear": "No budgets found for this year.",
   "budgetPlannedAmountShort": "Planned",
   "budgetActualExpensesShort": "Spent",
-  "budgetRemainingAmountShort": "Left"
+  "budgetRemainingAmountShort": "Left",
+  "newBudgetPageTitle": "Create New Budget",
+  "enterBudgetDetailsTitle": "Enter Budget Details",
+  "fillBudgetFormBelow": "Fill out the form below to create a new budget.",
+  "budgetFormPlannedAmount": "Planned Amount",
+  "budgetFormCategoryLabel": "Category",
+  "uiOnlyLabel": "UI Only",
+  "budgetFormYear": "Year",
+  "budgetFormSelectYearPlaceholder": "Select year",
+  "budgetFormMonth": "Month",
+  "budgetFormSelectMonthPlaceholder": "Select month",
+  "createBudgetButton": "Create Budget",
+  "budgetCreatedTitle": "Budget Created",
+  "budgetCreatedDesc": "Your new budget has been successfully created.",
+  "errorCreatingBudget": "Error Creating Budget",
+  "userCurrencyNotSetError": "User currency is not set. Please update your profile.",
+  "yearRequiredError": "Year is required.",
+  "monthRequiredError": "Month is required."
 }
+
+        

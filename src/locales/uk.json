@@ -506,5 +506,24 @@
   "noBudgetsForYear": "Бюджетів на цей рік не знайдено.",
   "budgetPlannedAmountShort": "План",
   "budgetActualExpensesShort": "Витрачено",
-  "budgetRemainingAmountShort": "Залишок"
+  "budgetRemainingAmountShort": "Залишок",
+  "newBudgetPageTitle": "Створити новий бюджет",
+  "enterBudgetDetailsTitle": "Введіть деталі бюджету",
+  "fillBudgetFormBelow": "Заповніть форму нижче, щоб створити новий бюджет.",
+  "budgetFormPlannedAmount": "Запланована сума",
+  "budgetFormCategoryLabel": "Категорія",
+  "uiOnlyLabel": "Лише для UI",
+  "budgetFormYear": "Рік",
+  "budgetFormSelectYearPlaceholder": "Виберіть рік",
+  "budgetFormMonth": "Місяць",
+  "budgetFormSelectMonthPlaceholder": "Виберіть місяць",
+  "createBudgetButton": "Створити бюджет",
+  "budgetCreatedTitle": "Бюджет створено",
+  "budgetCreatedDesc": "Ваш новий бюджет успішно створено.",
+  "errorCreatingBudget": "Помилка створення бюджету",
+  "userCurrencyNotSetError": "Валюту користувача не встановлено. Будь ласка, оновіть свій профіль.",
+  "yearRequiredError": "Рік обов'язковий.",
+  "monthRequiredError": "Місяць обов'язковий."
 }
+
+        
