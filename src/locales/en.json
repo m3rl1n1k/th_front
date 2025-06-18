@@ -44,6 +44,8 @@
   "errorFetchingData": "Error Fetching Data",
   "errorTitle": "Error",
   "genericError": "Something went wrong. Please try again.",
+  "validationFailedWithReason": "Validation failed: {reason}. Please check the form.",
+  "formContainsInvalidData": "The form contains invalid data.",
 
   "//": "NAVIGATION / LAYOUT",
   "toggleNavigation": "Toggle navigation",

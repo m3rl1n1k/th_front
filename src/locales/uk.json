@@ -44,6 +44,8 @@
   "errorFetchingData": "Помилка завантаження даних",
   "errorTitle": "Помилка",
   "genericError": "Щось пішло не так. Будь ласка, спробуйте знову.",
+  "validationFailedWithReason": "Перевірка не вдалася: {reason}. Будь ласка, перевірте форму.",
+  "formContainsInvalidData": "Форма містить недійсні дані.",
 
   "//": "НАВІГАЦІЯ / МАКЕТ",
   "toggleNavigation": "Перемкнути навігацію",

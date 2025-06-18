@@ -18,7 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { getBudgetSummaryItemForEdit, updateBudget, getMainCategories } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { BudgetDetails, UpdateBudgetPayload, MainCategory as ApiMainCategory } from '@/types';
+import type { BudgetDetails, UpdateBudgetPayload, MainCategory as ApiMainCategory, ApiError } from '@/types';
 import { Save, ArrowLeft, Loader2, Shapes, CalendarDays, DollarSign, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -112,7 +112,17 @@ export default function EditBudgetItemPage() {
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit.subCategory?.name || t('category')}) });
       router.push(`/budgets/summary/${monthYear}`);
     } catch (error: any) {
-      toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: error.message });
+      const apiError = error as ApiError;
+      let toastTitle = t('errorUpdatingBudgetItem');
+      let toastDescription = apiError.message || t('unexpectedError');
+
+      if (apiError.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0 && apiError.errors[0].message) {
+        toastDescription = t('validationFailedWithReason', { reason: apiError.errors[0].message });
+      } else if (apiError.message && apiError.message.toLowerCase().includes('validation failed')) {
+        toastDescription = t('validationFailedCheckFields');
+      }
+      
+      toast({ variant: "destructive", title: toastTitle, description: toastDescription });
     } finally {
       setFormIsSubmitting(false);
     }
