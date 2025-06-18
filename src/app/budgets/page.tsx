@@ -18,6 +18,7 @@ import type { BudgetListItem } from '@/types';
 import { Target, PlusCircle, TrendingUp, TrendingDown, AlertTriangle, Activity, Eye, Info, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label'; // Added import for Label
 
 export default function BudgetsPage() {
   const { token, isAuthenticated } = useAuth();
@@ -203,3 +204,4 @@ export default function BudgetsPage() {
     </MainLayout>
   );
 }
+
