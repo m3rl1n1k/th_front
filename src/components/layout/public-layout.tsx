@@ -68,7 +68,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenu>
             )}
             {pathname === '/login' && (
-              <Button variant="default" asChild disabled={isNavigating}>
+              <Button variant="default" asChild disabled={isNavigating} className="hidden sm:inline-flex">
                 <Link href="/register">{t('registerButtonNav')}</Link>
               </Button>
             )}
@@ -82,7 +82,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 <Button variant="ghost" asChild className="w-full sm:w-auto" disabled={isNavigating}>
                   <Link href="/login">{t('loginButtonNav')}</Link>
                 </Button>
-                <Button variant="default" asChild className="w-full sm:w-auto" disabled={isNavigating}>
+                <Button variant="default" asChild className="w-full sm:w-auto hidden sm:inline-flex" disabled={isNavigating}>
                   <Link href="/register">{t('registerButtonNav')}</Link>
                 </Button>
               </div>
