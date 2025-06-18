@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,13 +12,14 @@ import {
   getDashboardMonthExpenses,
   getDashboardChartTotalExpense,
   getDashboardLastTransactions,
+  getTransactionTypes // Import getTransactionTypes
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2 } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType } from '@/types';
+import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType } from '@/types'; // Import AppTransactionType
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, Legend, Sector } from "recharts"
 import Link from 'next/link';
@@ -119,10 +121,12 @@ export default function DashboardPage() {
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
   const [lastTransactions, setLastTransactions] = useState<TransactionType[] | null>(null);
+  const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]); // State for transaction types
 
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingExpensesChart, setIsLoadingExpensesChart] = useState(true);
   const [isLoadingLastActivity, setIsLoadingLastActivity] = useState(true);
+  const [isLoadingTransactionTypes, setIsLoadingTransactionTypes] = useState(true); // Loading state for types
 
   const [activeChartIndex, setActiveChartIndex] = useState(0);
 
@@ -131,6 +135,7 @@ export default function DashboardPage() {
       setIsLoadingSummary(true);
       setIsLoadingExpensesChart(true);
       setIsLoadingLastActivity(true);
+      setIsLoadingTransactionTypes(true);
 
       let limit = DEFAULT_LAST_TRANSACTIONS_LIMIT;
       if (typeof window !== 'undefined') {
@@ -149,8 +154,9 @@ export default function DashboardPage() {
         getDashboardMonthExpenses(token),
         getDashboardChartTotalExpense(token),
         getDashboardLastTransactions(token, limit),
+        getTransactionTypes(token) // Fetch transaction types
       ])
-        .then(([balanceData, incomeData, expenseData, chartDataResponse, lastTransactionsResp]) => {
+        .then(([balanceData, incomeData, expenseData, chartDataResponse, lastTransactionsResp, typesData]) => {
           setSummaryData({
             total_balance: balanceData.total_balance,
             month_income: incomeData.month_income,
@@ -158,6 +164,8 @@ export default function DashboardPage() {
           });
           setExpensesByCategoryData(chartDataResponse);
           setLastTransactions(lastTransactionsResp.last_transactions || []);
+          const formattedTypes = Object.entries(typesData.types).map(([id, name]) => ({ id, name: name as string }));
+          setTransactionTypes(formattedTypes);
         })
         .catch(error => {
           toast({
@@ -168,17 +176,20 @@ export default function DashboardPage() {
           setSummaryData(null);
           setExpensesByCategoryData(null);
           setLastTransactions([]);
+          setTransactionTypes([]);
         })
         .finally(() => {
           setIsLoadingSummary(false);
           setIsLoadingExpensesChart(false);
           setIsLoadingLastActivity(false);
+          setIsLoadingTransactionTypes(false);
         });
 
     } else if (!isAuthenticated) {
       setIsLoadingSummary(false);
       setIsLoadingExpensesChart(false);
       setIsLoadingLastActivity(false);
+      setIsLoadingTransactionTypes(false);
     }
   }, [token, isAuthenticated, t, toast]);
 
@@ -200,8 +211,8 @@ export default function DashboardPage() {
       const displayName = keyFromApi === 'no_category' 
                           ? t('noCategory') 
                           : t(generateCategoryTranslationKey(keyFromApi), { defaultValue: keyFromApi });
-      config[displayName] = { // Use the (potentially translated) displayName as the key for config
-        label: displayName, // And as the label
+      config[displayName] = { 
+        label: displayName, 
         color: item.color || `hsl(var(--chart-${(index % 5) + 1}))`,
       };
     });
@@ -209,14 +220,18 @@ export default function DashboardPage() {
   }, [expensesByCategoryData, t]);
 
   const processedLastActivity = useMemo((): ProcessedLastTransactionItem[] | null => {
-    if (!lastTransactions) return null;
+    if (!lastTransactions || isLoadingTransactionTypes) return null;
 
     return lastTransactions.map(tx => {
+      const txTypeName = transactionTypes.find(type => type.id === String(tx.type))?.name?.toUpperCase();
       let icon;
-      if (tx.type === 1) { // Income
+
+      if (txTypeName === 'INCOME') {
         icon = <ArrowUpCircle className="h-5 w-5 text-green-500" />;
-      } else if (tx.type === 2) { // Expense
+      } else if (txTypeName === 'EXPENSE') {
         icon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
+      } else if (txTypeName === 'TRANSFER') {
+        icon = <ArrowRightLeft className="h-5 w-5 text-blue-500" />;
       } else {
         icon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
       }
@@ -232,7 +247,7 @@ export default function DashboardPage() {
         date: format(parseISO(tx.date), "PP", { locale: dateFnsLocale }),
       };
     });
-  }, [lastTransactions, t, dateFnsLocale]);
+  }, [lastTransactions, transactionTypes, t, dateFnsLocale, isLoadingTransactionTypes]);
 
 
   const calculateAverageExpense = (monthlyExpenseInCents: number, period: 'daily' | 'weekly' | 'monthly') => {
@@ -389,7 +404,6 @@ export default function DashboardPage() {
                           className="bg-card text-card-foreground shadow-lg border"
                           formatter={(value, name, itemProps) => {
                             const currency = user?.userCurrency?.code || 'USD';
-                            // itemProps.payload.categoryName should already be translated from transformedChartData
                             const categoryDisplayName = itemProps.payload.categoryName;
                             return (
                               <div className="flex flex-col gap-0.5">
@@ -403,8 +417,8 @@ export default function DashboardPage() {
                     />
                     <Pie
                       data={transformedChartData}
-                      dataKey="amount" // in cents
-                      nameKey="categoryName" // This is the translated name
+                      dataKey="amount" 
+                      nameKey="categoryName" 
                       innerRadius="60%"
                       outerRadius="80%"
                       activeIndex={activeChartIndex}
@@ -420,7 +434,7 @@ export default function DashboardPage() {
                         if (!payload) return null;
                         return (
                           <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-4 text-xs">
-                            {payload.map((entry, index) => ( // entry.value here is the categoryName from Pie's nameKey
+                            {payload.map((entry, index) => ( 
                               <div key={`item-${index}`} className="flex items-center gap-1.5">
                                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
                                 <span>{entry.value}</span> 
@@ -442,7 +456,7 @@ export default function DashboardPage() {
               <Activity className="h-6 w-6 text-primary" />
             </CardHeader>
             <CardContent className="pt-4">
-              {isLoadingLastActivity ? (
+              {isLoadingLastActivity || isLoadingTransactionTypes ? ( // Check for types loading as well
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className="flex items-center space-x-3 p-2">
@@ -501,3 +515,4 @@ export default function DashboardPage() {
     </MainLayout>
   );
 }
+
