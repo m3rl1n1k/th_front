@@ -50,7 +50,7 @@ interface ItemToDeleteDetails {
 
 
 export default function BudgetsPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -64,7 +64,7 @@ export default function BudgetsPage() {
 
 
   const fetchBudgets = useCallback(async (showLoadingIndicator = true) => {
-    if (isFetchingRef.current && showLoadingIndicator) { // Only prevent re-entry if full loading is shown
+    if (isFetchingRef.current && showLoadingIndicator) { 
       return;
     }
 
@@ -92,9 +92,9 @@ export default function BudgetsPage() {
           monthYear,
           monthDisplayName,
           year: monthYear.substring(0, 4),
-          totalPlanned: data.totalPlanned.amount,
-          totalActual: data.totalActual.amount,
-          currencyCode: data.totalPlanned.currency.code,
+          totalPlanned: data.totalPlanned?.amount ?? 0,
+          totalActual: data.totalActual?.amount ?? 0,
+          currencyCode: data.totalPlanned?.currency?.code ?? user?.userCurrency?.code ?? 'USD',
         };
       }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
       setMonthlyBudgets(processed);
@@ -105,16 +105,16 @@ export default function BudgetsPage() {
       if (showLoadingIndicator) setIsLoading(false); 
       isFetchingRef.current = false;
     }
-  }, [isAuthenticated, token, toast, t, dateFnsLocale]);
+  }, [isAuthenticated, token, toast, t, dateFnsLocale, user]); // Added user
 
   useEffect(() => {
     if (isAuthenticated && token) {
         fetchBudgets();
-    } else if (!isAuthenticated && !token) { // Condition for when user logs out or token is not present
+    } else if (!isAuthenticated && !token) { 
         setIsLoading(false); 
         setMonthlyBudgets([]); 
     }
-  }, [isAuthenticated, token, fetchBudgets]); // Removed isLoading from dependencies
+  }, [isAuthenticated, token, fetchBudgets]);
 
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
@@ -163,7 +163,7 @@ export default function BudgetsPage() {
         title: t('monthBudgetsDeletedTitle'),
         description: t('monthBudgetsDeletedDesc', { month: itemToDeleteDetails.monthDisplayName }),
       });
-      fetchBudgets(false); // Re-fetch budgets without full page loader
+      fetchBudgets(false); 
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -262,7 +262,7 @@ export default function BudgetsPage() {
               </AccordionTrigger>
               <AccordionContent className="p-4">
                 {groupedBudgetsByYear[year] && groupedBudgetsByYear[year].length > 0 ? (
-                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
                     {groupedBudgetsByYear[year].map(budget => {
                       const remainingAmount = budget.totalPlanned - budget.totalActual;
                       const progressPercentageSafe = budget.totalPlanned > 0 ? (budget.totalActual / budget.totalPlanned) * 100 : (budget.totalActual > 0 ? 101 : 0);
