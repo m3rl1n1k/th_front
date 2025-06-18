@@ -111,12 +111,12 @@ export interface TransactionType {
 }
 
 export interface ApiError {
-  message: string;
+  message: string | Array<{ field: string; message: string; [key: string]: any }>;
   code?: number;
-  errors?: Record<string, string[]>;
-  error?: string;
-  detail?: string;
-  rawResponse?: string;
+  errors?: Record<string, string[]>; // For the { "field": ["message1", "message2"] } structure
+  error?: string; // Alternative single error message string
+  detail?: string; // Symfony often uses 'detail' for verbose error messages
+  rawResponse?: string; // To store the raw response text if parsing fails or for debugging
 }
 
 
@@ -333,9 +333,9 @@ export interface GetFeedbacksResponse {
 // Budget Types
 
 // Represents the structure of a budget item as returned by the API
-// for GET /budgets/summary/{date}/{id} endpoint
+// for GET /budgets/summary/{date}/{id} endpoint (now expected as an array)
 export interface ApiBudgetDetailItem {
-  id: number;
+  id: number; // Assuming the specific item ID is available here
   subCategory: {
     id: number;
     name: string;
@@ -347,7 +347,7 @@ export interface ApiBudgetDetailItem {
     };
   };
   month: string; // e.g., "2025-06"
-  currency: { // Overall currency for this budget item
+  currency: { // Overall currency for this budget item (might be redundant if same as plannedAmount.currency)
     code: string;
   };
   actualAmount?: { // May not always be present, similar to plannedAmount structure
@@ -418,12 +418,14 @@ export interface BudgetCategorySummaryAmount {
 }
 
 export interface BudgetCategorySummaryItem {
+  id: string; // id of the subCategory
   name: string;
   plannedAmount: BudgetCategorySummaryAmount;
   actualAmount: BudgetCategorySummaryAmount;
-  budgetId: number;
+  budgetId: number; // id of the budget item itself
 }
 
 export interface BudgetSummaryByMonthResponse {
-  categories: Record<string, BudgetCategorySummaryItem>;
+  categories: Record<string, BudgetCategorySummaryItem>; // Key is subCategory ID
 }
+

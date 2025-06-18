@@ -78,7 +78,7 @@ export default function EditBudgetItemPage() {
       setMainCategoriesHierarchical(Array.isArray(categoriesData) ? categoriesData : []);
 
       reset({
-        plannedAmount: fetchedBudgetItem.plannedAmount,
+        plannedAmount: fetchedBudgetItem.plannedAmount, // This is now in units
         categoryId: String(fetchedBudgetItem.subCategory?.id || ''),
       });
     } catch (error: any) {
@@ -102,7 +102,7 @@ export default function EditBudgetItemPage() {
     }
 
     const payload: UpdateBudgetPayload = {
-      plannedAmount: Math.round(data.plannedAmount * 100),
+      plannedAmount: Math.round(data.plannedAmount * 100), // Convert back to cents for API
       category_id: parseInt(data.categoryId, 10),
     };
 
@@ -114,12 +114,28 @@ export default function EditBudgetItemPage() {
     } catch (error: any) {
       const apiError = error as ApiError;
       let toastTitle = t('errorUpdatingBudgetItem');
-      let toastDescription = apiError.message || t('unexpectedError');
+      let toastDescription = t('unexpectedError');
 
-      if (apiError.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0 && apiError.errors[0].message) {
-        toastDescription = t('validationFailedWithReason', { reason: apiError.errors[0].message });
-      } else if (apiError.message && apiError.message.toLowerCase().includes('validation failed')) {
-        toastDescription = t('validationFailedCheckFields');
+      if (apiError.message && Array.isArray(apiError.message) && apiError.message.length > 0) {
+        const firstErrorDetail = apiError.message[0];
+        if (firstErrorDetail && typeof firstErrorDetail.message === 'string') {
+          toastDescription = firstErrorDetail.message;
+        } else {
+          toastDescription = t('validationFailedCheckFields');
+        }
+      } else if (apiError.errors && typeof apiError.errors === 'object' && Object.keys(apiError.errors).length > 0) {
+        const fieldErrors = Object.values(apiError.errors).flat();
+        if (fieldErrors.length > 0) {
+          toastDescription = fieldErrors.join(' ');
+        } else {
+          toastDescription = t('validationFailedCheckFields');
+        }
+      } else if (typeof apiError.message === 'string') {
+        if (apiError.message.toLowerCase().includes('validation failed')) {
+          toastDescription = t('validationFailedCheckFields');
+        } else {
+          toastDescription = apiError.message;
+        }
       }
       
       toast({ variant: "destructive", title: toastTitle, description: toastDescription });
