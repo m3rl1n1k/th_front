@@ -198,8 +198,8 @@ export default function BudgetsPage() {
                   <Skeleton className="h-6 w-1/4 mb-1" />
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {[1,2,3].map(j => (
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+                    {[1,2,3,4,5].map(j => (
                         <Skeleton key={j} className="h-48 w-full rounded-md" />
                     ))}
                   </div>
@@ -262,7 +262,7 @@ export default function BudgetsPage() {
               </AccordionTrigger>
               <AccordionContent className="p-4">
                 {groupedBudgetsByYear[year] && groupedBudgetsByYear[year].length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
                     {groupedBudgetsByYear[year].map(budget => {
                       const remainingAmount = budget.totalPlanned - budget.totalActual;
                       const progressPercentageSafe = budget.totalPlanned > 0 ? (budget.totalActual / budget.totalPlanned) * 100 : (budget.totalActual > 0 ? 101 : 0);
