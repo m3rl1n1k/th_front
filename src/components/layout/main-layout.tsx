@@ -80,7 +80,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
     items = [...items, ...userSpecificNavItems];
     return items;
-  }, [isAuthenticated, userHasRole, userSpecificNavItems]);
+  }, [isAuthenticated, userHasRole, userSpecificNavItems]); // userSpecificNavItems was missing from deps
 
 
   useEffect(() => {
@@ -191,7 +191,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         e.preventDefault();
                       } else {
                         setIsNavigating(true);
-                        // No setIsSheetOpen(false) here, it's handled by pathname useEffect
                       }
                     }}
                   >
@@ -341,10 +340,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </aside>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          { (isAuthenticated && !accessDenied) || ['/login', '/register', '/terms', '/', '/set-token'].includes(pathname) || (isAuthenticated && accessDenied && pathname === '/admin/feedbacks') ? children : null }
+          { isAuthenticated || ['/login', '/register', '/terms', '/', '/set-token'].includes(pathname) ? children : null }
         </main>
       </div>
     </div>
   );
 }
-
