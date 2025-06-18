@@ -119,9 +119,9 @@ export default function TransfersPage() {
     try {
       await createTransfer(payload, token);
       toast({ title: t('transferCreatedTitle'), description: t('transferCreatedDesc') });
-      await fetchFormData(); // Re-fetch wallet data to update balances in dropdowns
+      await fetchFormData(); 
       reset();
-      fetchTransfers(); // Re-fetch transfers list
+      fetchTransfers(); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
     } finally {
@@ -165,7 +165,6 @@ export default function TransfersPage() {
     return t('unknownWallet');
   }, [userWallets, capitalWalletsGrouped, t]);
 
-  const hasAnyWallets = userWallets.length > 0 || Object.keys(capitalWalletsGrouped).length > 0;
   const hasSufficientWalletsForTransfer = userWallets.length >=1 && (userWallets.length >=2 || Object.keys(capitalWalletsGrouped).length > 0);
 
   return (
@@ -178,185 +177,190 @@ export default function TransfersPage() {
           </h1>
         </div>
 
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle>{t('createTransferTitle')}</CardTitle>
-            <CardDescription>{t('createTransferDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingFormData ? (
-              <div className="flex justify-center items-center h-32">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : !hasSufficientWalletsForTransfer ? (
-                <div className="text-center py-6">
-                    <AlertTriangle className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-                    <p className="text-muted-foreground">{t('transferNotEnoughWalletsError')}</p>
-                </div>
-            ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                  <div className="space-y-2 md:col-span-1">
-                    <Label htmlFor="outcomeWalletId">{t('transferOutcomeWalletLabel')}</Label>
-                    <Controller
-                      name="outcomeWalletId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value} disabled={userWallets.length === 0}>
-                          <SelectTrigger id="outcomeWalletId" className={errors.outcomeWalletId ? 'border-destructive' : ''}>
-                            <SelectValue placeholder={t('transferSelectOutcomeWalletPlaceholder')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {userWallets.map(wallet => (
-                              <SelectItem key={wallet.id} value={String(wallet.id)}>
-                                {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {errors.outcomeWalletId && <p className="text-sm text-destructive">{errors.outcomeWalletId.message}</p>}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div className="lg:col-span-1">
+            <Card className="shadow-xl">
+              <CardHeader>
+                <CardTitle>{t('createTransferTitle')}</CardTitle>
+                <CardDescription>{t('createTransferDesc')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingFormData ? (
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
+                ) : !hasSufficientWalletsForTransfer ? (
+                    <div className="text-center py-6">
+                        <AlertTriangle className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                        <p className="text-muted-foreground">{t('transferNotEnoughWalletsError')}</p>
+                    </div>
+                ) : (
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                     <div className="space-y-2">
+                        <Label htmlFor="outcomeWalletId">{t('transferOutcomeWalletLabel')}</Label>
+                        <Controller
+                          name="outcomeWalletId"
+                          control={control}
+                          render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value} disabled={userWallets.length === 0}>
+                              <SelectTrigger id="outcomeWalletId" className={errors.outcomeWalletId ? 'border-destructive' : ''}>
+                                <SelectValue placeholder={t('transferSelectOutcomeWalletPlaceholder')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {userWallets.map(wallet => (
+                                  <SelectItem key={wallet.id} value={String(wallet.id)}>
+                                    {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {errors.outcomeWalletId && <p className="text-sm text-destructive">{errors.outcomeWalletId.message}</p>}
+                      </div>
 
-                  <div className="space-y-2 md:col-span-1">
-                    <Label htmlFor="amount">{t('transferAmountLabel')}</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      {...control.register('amount')}
-                      placeholder={t('amountPlaceholder', { currency: amountInputCurrencyCode })}
-                      className={errors.amount ? 'border-destructive' : ''}
-                    />
-                    {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="amount">{t('transferAmountLabel')}</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          step="0.01"
+                          {...control.register('amount')}
+                          placeholder={t('amountPlaceholder', { currency: amountInputCurrencyCode })}
+                          className={errors.amount ? 'border-destructive' : ''}
+                        />
+                        {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+                      </div>
 
-                  <div className="space-y-2 md:col-span-1">
-                    <Label htmlFor="incomeWalletId">{t('transferIncomeWalletLabel')}</Label>
-                    <Controller
-                      name="incomeWalletId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            disabled={!selectedOutcomeWalletId}
-                        >
-                          <SelectTrigger id="incomeWalletId" className={errors.incomeWalletId ? 'border-destructive' : ''}>
-                            <SelectValue placeholder={t('transferSelectIncomeWalletPlaceholder')} />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-72">
-                            {userWallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 && (
-                                <SelectGroup>
-                                    <SelectLabel>{t('yourWalletsGroupLabel')}</SelectLabel>
-                                    {userWallets
-                                    .filter(wallet => String(wallet.id) !== selectedOutcomeWalletId)
-                                    .map(wallet => (
-                                        <SelectItem key={`user-${wallet.id}`} value={String(wallet.id)}>
-                                        {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            )}
-
-                            {Object.entries(capitalWalletsGrouped).map(([username, walletsInGroup], groupIndex) => {
-                                const filteredWalletsInGroup = walletsInGroup.filter(w => String(w.id) !== selectedOutcomeWalletId);
-                                if (filteredWalletsInGroup.length === 0) return null;
-
-                                return (
-                                <React.Fragment key={username}>
-                                    {(userWallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 || groupIndex > 0) && <SelectSeparator />}
+                      <div className="space-y-2">
+                        <Label htmlFor="incomeWalletId">{t('transferIncomeWalletLabel')}</Label>
+                        <Controller
+                          name="incomeWalletId"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={!selectedOutcomeWalletId}
+                            >
+                              <SelectTrigger id="incomeWalletId" className={errors.incomeWalletId ? 'border-destructive' : ''}>
+                                <SelectValue placeholder={t('transferSelectIncomeWalletPlaceholder')} />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-72">
+                                {userWallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 && (
                                     <SelectGroup>
-                                        <SelectLabel>{username}</SelectLabel>
-                                        {filteredWalletsInGroup
+                                        <SelectLabel>{t('yourWalletsGroupLabel')}</SelectLabel>
+                                        {userWallets
+                                        .filter(wallet => String(wallet.id) !== selectedOutcomeWalletId)
                                         .map(wallet => (
-                                            <SelectItem key={`capital-${wallet.id}`} value={String(wallet.id)}>
+                                            <SelectItem key={`user-${wallet.id}`} value={String(wallet.id)}>
                                             {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
                                             </SelectItem>
                                         ))}
                                     </SelectGroup>
-                                </React.Fragment>
-                               )
-                            })}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {errors.incomeWalletId && <p className="text-sm text-destructive">{errors.incomeWalletId.message}</p>}
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={isSubmittingForm || !hasSufficientWalletsForTransfer}>
-                    {isSubmittingForm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                    {t('transferCreateButton')}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </CardContent>
-        </Card>
+                                )}
 
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle>{t('transferHistoryTitle')}</CardTitle>
-            <CardDescription>{t('transferHistoryDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingTransfers ? (
-              <div className="flex justify-center items-center h-40">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : transfersList.length === 0 ? (
-              <div className="text-center py-10">
-                <RefreshCw className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">{t('noTransfersFound')}</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('transferFromWallet')}</TableHead>
-                      <TableHead>{t('transferToWallet')}</TableHead>
-                      <TableHead className="text-right">{t('transferAmount')}</TableHead>
-                      <TableHead>{t('transferDate')}</TableHead>
-                      <TableHead className="text-center">{t('actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transfersList.map(transfer => (
-                      <TableRow key={transfer.id}>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                <Landmark className="h-4 w-4 text-muted-foreground" />
-                                {getWalletNameAndCurrency(transfer.outcomeWallet.id)}
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                <Landmark className="h-4 w-4 text-muted-foreground" />
-                                {getWalletNameAndCurrency(transfer.incomeWallet.id)}
-                            </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <CurrencyDisplay amountInCents={transfer.amount} currencyCode={transfer.incomeWallet.currency.code} />
-                        </TableCell>
-                        <TableCell>{format(parseISO(transfer.createdAt), "PPp", { locale: dateFnsLocale })}</TableCell>
-                        <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(transfer)} disabled={isDeleting}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">{t('deleteAction')}</span>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                                {Object.entries(capitalWalletsGrouped).map(([username, walletsInGroup], groupIndex) => {
+                                    const filteredWalletsInGroup = walletsInGroup.filter(w => String(w.id) !== selectedOutcomeWalletId);
+                                    if (filteredWalletsInGroup.length === 0) return null;
+
+                                    return (
+                                    <React.Fragment key={username}>
+                                        {(userWallets.filter(w => String(w.id) !== selectedOutcomeWalletId).length > 0 || groupIndex > 0) && <SelectSeparator />}
+                                        <SelectGroup>
+                                            <SelectLabel>{username}</SelectLabel>
+                                            {filteredWalletsInGroup
+                                            .map(wallet => (
+                                                <SelectItem key={`capital-${wallet.id}`} value={String(wallet.id)}>
+                                                {wallet.name} (<CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />)
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </React.Fragment>
+                                   )
+                                })}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {errors.incomeWalletId && <p className="text-sm text-destructive">{errors.incomeWalletId.message}</p>}
+                      </div>
+                    
+                    <div className="flex justify-end pt-2">
+                      <Button type="submit" disabled={isSubmittingForm || !hasSufficientWalletsForTransfer} className="w-full">
+                        {isSubmittingForm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                        {t('transferCreateButton')}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-2">
+            <Card className="shadow-xl">
+              <CardHeader>
+                <CardTitle>{t('transferHistoryTitle')}</CardTitle>
+                <CardDescription>{t('transferHistoryDesc')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingTransfers ? (
+                  <div className="flex justify-center items-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : transfersList.length === 0 ? (
+                  <div className="text-center py-10">
+                    <RefreshCw className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">{t('noTransfersFound')}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t('transferFromWallet')}</TableHead>
+                          <TableHead>{t('transferToWallet')}</TableHead>
+                          <TableHead className="text-right">{t('transferAmount')}</TableHead>
+                          <TableHead>{t('transferDate')}</TableHead>
+                          <TableHead className="text-center">{t('actions')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transfersList.map(transfer => (
+                          <TableRow key={transfer.id}>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                                    {getWalletNameAndCurrency(transfer.outcomeWallet.id)}
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                                    {getWalletNameAndCurrency(transfer.incomeWallet.id)}
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <CurrencyDisplay amountInCents={transfer.amount} currencyCode={transfer.incomeWallet.currency.code} />
+                            </TableCell>
+                            <TableCell>{format(parseISO(transfer.createdAt), "PPp", { locale: dateFnsLocale })}</TableCell>
+                            <TableCell className="text-center">
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(transfer)} disabled={isDeleting}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <span className="sr-only">{t('deleteAction')}</span>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
