@@ -40,12 +40,12 @@ export default function EditBudgetItemPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
-  const budgetId = params?.id as string; 
-  const monthYear = params?.date as string; 
+  const budgetId = params?.id as string;
+  const monthYear = params?.date as string;
 
   const [budgetToEdit, setBudgetToEdit] = useState<BudgetDetails | null>(null);
   const [mainCategoriesHierarchical, setMainCategoriesHierarchical] = useState<ApiMainCategory[]>([]);
-  
+
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [formIsSubmitting, setFormIsSubmitting] = useState(false);
   const [errorOccurred, setErrorOccurred] = useState(false);
@@ -69,17 +69,16 @@ export default function EditBudgetItemPage() {
     setIsLoadingData(true);
     setErrorOccurred(false);
     try {
-      // getBudgetSummaryItemForEdit now returns the transformed BudgetDetails
       const [fetchedBudgetItem, categoriesData] = await Promise.all([
-        getBudgetSummaryItemForEdit(monthYear, budgetId, token), 
+        getBudgetSummaryItemForEdit(monthYear, budgetId, token),
         getMainCategories(token)
       ]);
 
       setBudgetToEdit(fetchedBudgetItem);
       setMainCategoriesHierarchical(Array.isArray(categoriesData) ? categoriesData : []);
-      
+
       reset({
-        plannedAmount: fetchedBudgetItem.plannedAmount, // Already in units
+        plannedAmount: fetchedBudgetItem.plannedAmount,
         categoryId: String(fetchedBudgetItem.subCategory?.id || ''),
       });
     } catch (error: any) {
@@ -103,7 +102,7 @@ export default function EditBudgetItemPage() {
     }
 
     const payload: UpdateBudgetPayload = {
-      plannedAmount: Math.round(data.plannedAmount * 100), // Convert back to cents for API
+      plannedAmount: Math.round(data.plannedAmount * 100),
       category_id: parseInt(data.categoryId, 10),
     };
 
@@ -111,7 +110,7 @@ export default function EditBudgetItemPage() {
     try {
       await updateBudget(budgetId, payload, token);
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit.subCategory?.name || t('category')}) });
-      router.push(`/budgets/summary/${monthYear}`); 
+      router.push(`/budgets/summary/${monthYear}`);
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: error.message });
     } finally {
@@ -120,7 +119,7 @@ export default function EditBudgetItemPage() {
   };
 
   const formattedMonthDisplay = useMemo(() => {
-    if (!monthYear) return ''; 
+    if (!monthYear) return '';
     try {
       return format(parse(monthYear, 'yyyy-MM', new Date()), 'MMMM yyyy', { locale: dateFnsLocale });
     } catch {
@@ -212,7 +211,7 @@ export default function EditBudgetItemPage() {
                   </div>
                   {errors.plannedAmount && <p className="text-sm text-destructive">{errors.plannedAmount.message}</p>}
                 </div>
-                
+
                 <div className="space-y-1">
                   <Label htmlFor="categoryId">{t('budgetFormCategoryLabel')}</Label>
                   <Controller
@@ -246,7 +245,7 @@ export default function EditBudgetItemPage() {
                   {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}
                 </div>
               </div>
-              
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isButtonDisabled}>
                   {isButtonDisabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -260,5 +259,3 @@ export default function EditBudgetItemPage() {
     </MainLayout>
   );
 }
-
-```
