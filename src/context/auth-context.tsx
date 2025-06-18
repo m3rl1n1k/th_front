@@ -17,7 +17,7 @@ interface AuthContextType {
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
-  setTokenManually: (newToken: string) => Promise<void>;
+  // setTokenManually removed
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -171,30 +171,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated]);
 
-  const setTokenManually = async (newToken: string) => {
-    setIsLoading(true);
-    try {
-      // Attempt to validate the new token by fetching user profile
-      const userData = await fetchUserProfile(newToken);
-      await processSuccessfulLogin(newToken, userData);
-      toast({ title: t('tokenSetSuccessTitle'), description: t('tokenSetSuccessDesc') });
-      // Navigation will be handled by the login success logic or useEffect
-    } catch (error) {
-      const apiError = error as ApiError;
-      toast({
-        variant: "destructive",
-        title: t('tokenSetFailedTitle'),
-        description: apiError.message || t('tokenSetFailedDesc'),
-      });
-      clearAuthData(); // This will also clear localStorage
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, setTokenManually }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -94,15 +94,9 @@
   "registrationFailedTitle": "Registration Failed",
   "registrationFailedError": "Could not create your account. Please try again.",
   "validationFailedCheckFields": "Validation failed. Please check the fields for errors.",
-  "manualTokenTitle": "Manual Token Entry",
-  "manualTokenDescriptionDev": "For development purposes, you can manually set a JWT token here.",
-  "jwtToken": "JWT Token",
-  "submittingTokenButton": "Submitting...",
-  "submitTokenButton": "Submit Token",
-  "tokenSetSuccessTitle": "Token Set Successfully",
-  "tokenSetSuccessDesc": "The token has been set and your session is active.",
-  "tokenSetFailedTitle": "Failed to Set Token",
-  "tokenSetFailedDesc": "The provided token is invalid or could not be verified.",
+  "manualTokenPageRemovedTitle": "Page Removed for Security",
+  "manualTokenPageRemovedDesc": "Manual token entry has been disabled to enhance security. Please use the standard login process.",
+  "redirectingToLoginSoon": "You will be redirected to the login page shortly...",
   "passwordLabel": "Password",
   "confirmPasswordLabel": "Confirm Password",
   "passwordRequiredError": "Password is required.",
@@ -588,5 +582,4 @@
   "calculator.error.divByZero": "Error: Div by 0",
   "calculator.error.invalidFormat": "Error: Invalid Format"
 }
-
 

@@ -94,15 +94,9 @@
   "registrationFailedTitle": "Помилка реєстрації",
   "registrationFailedError": "Не вдалося створити ваш обліковий запис. Будь ласка, спробуйте ще раз.",
   "validationFailedCheckFields": "Перевірка не пройдена. Будь ласка, перевірте поля на наявність помилок.",
-  "manualTokenTitle": "Ручне введення токена",
-  "manualTokenDescriptionDev": "Для розробки, ви можете вручну встановити JWT токен тут.",
-  "jwtToken": "JWT Токен",
-  "submittingTokenButton": "Надсилання...",
-  "submitTokenButton": "Надіслати токен",
-  "tokenSetSuccessTitle": "Токен встановлено успішно",
-  "tokenSetSuccessDesc": "Токен встановлено, ваша сесія активна.",
-  "tokenSetFailedTitle": "Не вдалося встановити токен",
-  "tokenSetFailedDesc": "Наданий токен недійсний або не може бути перевірений.",
+  "manualTokenPageRemovedTitle": "Сторінку видалено з міркувань безпеки",
+  "manualTokenPageRemovedDesc": "Ручне введення токена вимкнено для підвищення безпеки. Будь ласка, використовуйте стандартний процес входу.",
+  "redirectingToLoginSoon": "Вас буде перенаправлено на сторінку входу незабаром...",
   "passwordLabel": "Пароль",
   "confirmPasswordLabel": "Підтвердіть пароль",
   "passwordRequiredError": "Пароль обов'язковий.",
@@ -541,6 +535,7 @@
   "errorFetchingBudgetItem": "Помилка завантаження статті бюджету",
   "couldNotLoadBudgetItemEdit": "Не вдалося завантажити статтю бюджету для редагування. Будь ласка, спробуйте знову.",
 
+
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",
   "dashboardSettingsTitle": "Налаштування Панелі",
@@ -587,5 +582,4 @@
   "calculator.error.divByZero": "Помилка: Ділення на 0",
   "calculator.error.invalidFormat": "Помилка: Неправильний формат"
 }
-
 

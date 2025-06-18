@@ -75,4 +75,3 @@ export const URLS = {
   deleteBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, // To delete a specific budget item
   getBudgetSummaryForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/summary/${monthYear}`, // New: for detailed monthly summary by category
 };
-
