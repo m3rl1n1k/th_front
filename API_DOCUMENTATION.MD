@@ -676,12 +676,15 @@ Retrieves a list of budgets for the authenticated user.
     {
       "budgets": [
         {
-          "id": "1",
+          "id": 1,
           "month": "2024-08", // Format: YYYY-MM
           "plannedAmount": 500000, // in cents
           "actualExpenses": 350000, // in cents, calculated by backend
-          "currencyCode": "USD",
-          "category_id": 101 // Optional: ID of the associated SubCategory
+          "currency": "USD", // e.g. "USD", "PLN"
+          "subCategory": {
+            "id": 101,
+            "name": "Groceries"
+          }
         }
         // ... more budget items
       ]
@@ -699,8 +702,11 @@ Retrieves a specific budget by its ID.
         "month": "2024-08",
         "plannedAmount": 500000,
         "actualExpenses": 350000,
-        "currencyCode": "USD",
-        "category_id": 101 // Optional: ID of the associated SubCategory
+        "currency": "USD",
+        "subCategory": {
+          "id": 101,
+          "name": "Groceries"
+        }
         // Potentially more details like category breakdowns if implemented
       }
     }
@@ -718,7 +724,7 @@ Creates a new budget.
       "category_id": 101 // integer ID (refers to a subCategory ID), required
     }
     ```
-*   **Success Response (201 Created)**: Returns the created budget object.
+*   **Success Response (201 Created)**: Returns the created budget object (similar structure to GET /budgets/{id}).
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 #### `PUT /budgets/{id}`
@@ -845,11 +851,11 @@ Consider these when designing your database and PHP classes/objects.
 *   `user_id` (int, foreign key to User)
 *   `month` (string, "YYYY-MM")
 *   `planned_amount_cents` (int)
-*   `currency_code` (string)
-*   `category_id` (int, foreign key to SubCategory) // Added
+*   `currency_code` (string) // e.g., "USD", "PLN" - this is how currency is stored in DB and sent in request
+*   `category_id` (int, foreign key to SubCategory)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
-    *(Note: `actualExpenses` is typically calculated on-the-fly by summing relevant transactions for the budget's month and user, not stored directly in the budget table.)*
+    *(Note: `actualExpenses` is typically calculated on-the-fly by summing relevant transactions for the budget's month and user, not stored directly in the budget table. The GET /budgets response might include it.)*
 
 
 ## Further Considerations

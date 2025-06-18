@@ -188,7 +188,10 @@ export default function BudgetsPage() {
                       return (
                         <Card key={budget.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50">
                           <CardHeader className="p-3 flex flex-row justify-between items-center border-b">
-                            <CardTitle className="text-md font-semibold text-foreground">{monthDisplay}</CardTitle>
+                            <div>
+                              <CardTitle className="text-md font-semibold text-foreground">{monthDisplay}</CardTitle>
+                              {budget.subCategory && <CardDescription className="text-xs">{budget.subCategory.name}</CardDescription>}
+                            </div>
                             <Button variant="ghost" size="sm" onClick={() => router.push(`/budgets/${budget.id}`)} className="px-2 py-1 h-auto">
                               <Eye className="mr-1.5 h-3.5 w-3.5" />
                               {t('budgetShowDetailsButton')}
@@ -218,7 +221,7 @@ export default function BudgetsPage() {
                                   <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
                                   {t('budgetPlannedAmountShort')}
                                 </p>
-                                <CurrencyDisplay amountInCents={budget.plannedAmount} currencyCode={budget.currencyCode} />
+                                <CurrencyDisplay amountInCents={budget.plannedAmount} currencyCode={budget.currency} />
                               </div>
                               <div className="text-center p-1.5 rounded-md bg-muted/40 dark:bg-muted/20">
                                 <p className="text-muted-foreground flex items-center justify-center text-[0.65rem] uppercase tracking-wider font-medium">
@@ -226,7 +229,7 @@ export default function BudgetsPage() {
                                   {t('budgetActualExpensesShort')}
                                 </p>
                                 <span className="font-semibold text-red-600 dark:text-red-400">
-                                  <CurrencyDisplay amountInCents={budget.actualExpenses} currencyCode={budget.currencyCode} />
+                                  <CurrencyDisplay amountInCents={budget.actualExpenses} currencyCode={budget.currency} />
                                 </span>
                               </div>
                               <div className={cn("text-center p-1.5 rounded-md", remainingAmount < 0 ? "bg-red-500/10 text-red-700 dark:text-red-400" : "bg-green-500/10 text-green-700 dark:text-green-400")}>
@@ -234,7 +237,7 @@ export default function BudgetsPage() {
                                   <Activity className="mr-1 h-3 w-3" />
                                   {t('budgetRemainingAmountShort')}
                                 </p>
-                                <CurrencyDisplay amountInCents={remainingAmount} currencyCode={budget.currencyCode} />
+                                <CurrencyDisplay amountInCents={remainingAmount} currencyCode={budget.currency} />
                               </div>
                             </div>
                           </CardContent>

@@ -1,3 +1,4 @@
+
 # FinanceFlow API Documentation (for PHP Backend)
 
 This document outlines the API endpoints and data structures required for the FinanceFlow application. The backend should be implemented in PHP.
@@ -64,7 +65,8 @@ Logs in a user.
         "userCurrency": {
            "code": "USD"
         },
-        "memberSince": "2023-01-15T10:00:00Z"
+        "memberSince": "2023-01-15T10:00:00Z",
+        "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]
       },
       "token": "your_jwt_token_here"
     }
@@ -85,7 +87,7 @@ Registers a new user.
     ```json
     {
       "message": "User registered successfully. Please login."
-      // Optionally, can return the created user object as in GET /users/me
+      // Optionally, can return the created user object as in GET /user
     }
     ```
     Or simply a `201 Created` status with no body.
@@ -111,7 +113,7 @@ Invalidates the user's session/token if server-side session management or token 
 
 ### 2. User Profile
 
-#### `GET /users/me` (or `/user`)
+#### `GET /user`
 Retrieves the profile information for the currently authenticated user.
 
 *   **Request Body**: None (token in header)
@@ -124,12 +126,13 @@ Retrieves the profile information for the currently authenticated user.
       "memberSince": "2023-01-15T10:00:00Z",
       "userCurrency": {
         "code": "USD"
-      }
+      },
+      "roles": ["ROLE_USER"]
     }
     ```
 *   **Failure Response (401 Unauthorized)**
 
-#### `PUT /users/me` (Or `/profile`)
+#### `PUT /user`
 Updates the profile information for the currently authenticated user.
 
 *   **Request Body**:
@@ -138,11 +141,42 @@ Updates the profile information for the currently authenticated user.
       "login": "new_user_login_name", // Username
       "email": "new_email@example.com",
       "userCurrencyCode": "EUR" // User's preferred currency code
-      // Password changes should ideally be a separate endpoint with current password confirmation
+      // Password changes should be handled by POST /user/change-password
     }
     ```
-*   **Success Response (200 OK)**: Returns the updated user profile (same format as `GET /users/me`).
+*   **Success Response (200 OK)**: Returns the updated user profile.
+    ```json
+    {
+      "id": 1,
+      "login": "new_user_login_name",
+      "email": "new_email@example.com",
+      "memberSince": "2023-01-15T10:00:00Z",
+      "userCurrency": {
+        "code": "EUR"
+      },
+      "roles": ["ROLE_USER"]
+    }
+    ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `POST /user/change-password`
+Allows the authenticated user to change their password.
+*   **Request Body**:
+    ```json
+    {
+      "currentPassword": "current_secure_password",
+      "newPassword": "new_very_secure_password"
+    }
+    ```
+*   **Success Response (200 OK or 204 No Content)**:
+    ```json
+    // Option 1: Simple success message (200 OK)
+    {
+      "message": "Password changed successfully."
+    }
+    // Option 2: No content (204 No Content)
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format, e.g., if current password is incorrect or new password doesn't meet criteria.
 
 ### 3. Dashboard
 
@@ -200,7 +234,8 @@ Retrieves a list of the last N transactions.
           "wallet": { "id": 1, "name": "Main", "number": "ACCT123" },
           "subCategory": { "id": 101, "name": "Groceries"}, // null if not set
           "source": "manual", // or other source if applicable
-          "date": "2024-07-28T14:30:00Z" // ISO date string
+          "date": "2024-07-28T14:30:00Z", // ISO date string
+          "frequency": "1" // Frequency identifier
         }
         // ... more transactions up to limit
       ]
@@ -219,6 +254,7 @@ Retrieves available transaction types for forms (e.g., Income, Expense).
       "types": {
         "1": "INCOME",
         "2": "EXPENSE"
+        // "3": "TRANSFER" (If applicable)
       }
     }
     ```
@@ -273,7 +309,7 @@ Creates a new transaction.
       "user": { "id": 1 },
       "source": "manual", // or other source if applicable
       "date": "2024-07-28T14:30:00Z", // ISO date string
-      "frequencyId": "1" // Or the actual frequency identifier stored by backend
+      "frequency": "1" // Actual frequency identifier stored/returned by backend
     }
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
@@ -304,8 +340,7 @@ Retrieves a list of transactions for the authenticated user. The response should
           "user": { "id": 1 },
           "source": "store_x",
           "date": "2024-07-28T14:30:00Z", // ISO date string
-          "isRecurring": false, // This field might change if frequencyId is adopted
-          "frequencyId": "1" 
+          "frequency": "1"
         }
       ]
     }
@@ -314,7 +349,25 @@ Retrieves a list of transactions for the authenticated user. The response should
 
 #### `GET /transactions/{id}`
 Retrieves a specific transaction by its ID. The response should be `{"transaction": {...}}`.
-*   **Success Response (200 OK)**: Single transaction object (same format as items in `GET /transactions` list).
+*   **Success Response (200 OK)**: Single transaction object.
+    ```json
+    {
+      "transaction": {
+        "id": 123,
+        "amount": { "amount": 5000, "currency": { "code": "USD" } },
+        "currency": { "code": "USD" },
+        "exchangeRate": 1,
+        "type": 2,
+        "description": "Groceries",
+        "wallet": { "id": 1, "name": "Main", "number": "ACCT123" },
+        "subCategory": { "id": 101, "name": "Groceries"},
+        "user": { "id": 1 },
+        "source": "manual",
+        "date": "2024-07-28T14:30:00Z",
+        "frequency": "1"
+      }
+    }
+    ```
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `PUT /transactions/{id}`
@@ -331,7 +384,7 @@ Updates a specific transaction.
       "frequencyId": "5" // string, required
     }
     ```
-*   **Success Response (200 OK)**: Updated transaction object (same format as `GET /transactions/{id}`).
+*   **Success Response (200 OK)**: Updated transaction object (same format as `GET /transactions/{id}` response, with `frequency` field).
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
 
 #### `DELETE /transactions/{id}`
@@ -365,7 +418,7 @@ Retrieves a list of wallets for the authenticated user.
           "id": 1,
           "name": "Main Wallet",
           "amount": { "amount": 150050, "currency": { "code": "USD" } },
-          "number": "ACCT123456",
+          "number": "ACCT123456", // Note: This field is available in GET response
           "currency": { "code": "USD" },
           "type": "main", // key for wallet type, e.g. "main", "deposit"
           "user": { "id": 1 }
@@ -374,6 +427,44 @@ Retrieves a list of wallets for the authenticated user.
     }
     ```
 *   **Failure Response (401 Unauthorized)**
+
+#### `POST /wallets`
+Creates a new wallet.
+*   **Request Body**:
+    ```json
+    {
+      "name": "My New Cash Wallet",
+      "amount_cents": 50000, // Initial balance in cents
+      "currency": "USD", // Currency code (e.g., USD, EUR)
+      "type": "cash" // Wallet type key from GET /wallets/types
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created wallet object (similar to `GET /wallets` item). The `number` field (account number) is not sent by the client for creation.
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `GET /wallets/{id}`
+Retrieves a specific wallet by its ID.
+*   **Success Response (200 OK)**: Single wallet object (same format as items in `GET /wallets` list).
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `PUT /wallets/{id}`
+Updates a specific wallet.
+*   **Request Body**: Similar to `POST /wallets`, containing fields to update. `amount_cents` here represents the new total balance for the wallet. The `number` field (account number) is not sent by the client for updates.
+    ```json
+    {
+      "name": "Updated Wallet Name",
+      "amount_cents": 75000, // New balance in cents
+      "currency": "EUR",
+      "type": "deposit"
+    }
+    ```
+*   **Success Response (200 OK)**: Updated wallet object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /wallets/{id}`
+Deletes a specific wallet.
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `GET /wallets/types`
 Retrieves available wallet types mapping.
@@ -409,21 +500,34 @@ Retrieves main categories along with their subcategories.
             { "id": 101, "name": "Groceries", "icon": "ShoppingCart", "color": "#FFA500" },
             { "id": 102, "name": "Restaurants", "icon": "Plate", "color": "#FF8C00" }
           ]
-        },
-        {
-          "id": 2,
-          "name": "Income",
-          "icon": "CircleDollarSign",
-          "color": "#32CD32",
-          "subCategories": [
-            { "id": 201, "name": "Salary", "icon": "Briefcase", "color": "#2E8B57" },
-            { "id": 202, "name": "Freelance", "icon": "Laptop", "color": "#90EE90" }
-          ]
         }
+        // ... other main categories
       ]
     }
     ```
 *   **Failure Response (401 Unauthorized)**
+
+#### `GET /main/categories/{id}`
+Retrieves a specific main category by its ID.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "category": {
+        "id": 1,
+        "name": "Food & Dining",
+        "icon": "Utensils",
+        "color": "#FFD700",
+        "user": {
+          "id": 1
+        },
+        "subCategories": [
+          { "id": 101, "name": "Groceries", "icon": "ShoppingCart", "color": "#FFA500" },
+          { "id": 102, "name": "Restaurants", "icon": "Plate", "color": "#FF8C00" }
+        ]
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `POST /main/categories`
 Creates a new main category.
@@ -435,7 +539,7 @@ Creates a new main category.
       "color": "#RRGGBB" // Optional, hex color code
     }
     ```
-*   **Success Response (201 Created)**: Returns the created `MainCategory` object (without subCategories initially).
+*   **Success Response (201 Created)**: Returns the created `MainCategory` object (without subCategories initially or with an empty array).
     ```json
     {
       "id": 3,
@@ -447,13 +551,32 @@ Creates a new main category.
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
-#### `POST /main/categories/{mainCategoryId}/subcategories`
-Creates a new subcategory under a specified main category.
-*   **Path Parameter**: `mainCategoryId` (integer)
+#### `PUT /main/categories/{id}`
+Updates a specific main category.
 *   **Request Body**:
     ```json
     {
-      "name": "New Subcategory Name",
+      "name": "Updated Main Category Name", // Optional
+      "icon": "NewIconName",             // Optional
+      "color": "#112233"                 // Optional
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated `MainCategory` object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /main/categories/{id}`
+Deletes a specific main category. This will likely also delete its associated subcategories (backend logic).
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+
+#### `POST /sub/categories`
+Creates a new sub category.
+*   **Request Body**:
+    ```json
+    {
+      "name": "SubCategory Name",
+      "main_category": 1, // ID of the parent MainCategory
       "icon": "LucideIconName", // Optional
       "color": "#RRGGBB" // Optional, hex color code
     }
@@ -462,13 +585,180 @@ Creates a new subcategory under a specified main category.
     ```json
     {
       "id": 301,
-      "name": "New Subcategory Name",
+      "name": "SubCategory Name",
       "icon": "LucideIconName",
       "color": "#RRGGBB",
-      "mainCategoryId": 3
+      "main_category_id": 1 // Or similar structure confirming parent
     }
     ```
-*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for mainCategoryId)**
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `PUT /sub/categories/{id}`
+Updates a specific subcategory.
+*   **Path Parameter**: `id` (integer, ID of the subcategory to update)
+*   **Request Body**:
+    ```json
+    {
+      "name": "SubCategory Updated Name", // Optional
+      "main_category": 2,               // Optional, ID of the new/current parent MainCategory
+      "icon": "NewIconName",            // Optional
+      "color": "#AABBCC"                // Optional
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated `SubCategory` object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /sub/categories/{id}`
+Deletes a specific subcategory.
+*   **Path Parameter**: `id` (integer, ID of the subcategory to delete)
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+### 7. Feedback
+
+#### `POST /feedback`
+Allows an authenticated user to submit feedback.
+*   **Request Body**:
+    ```json
+    {
+      "type": "BUG_REPORT", // Enum: BUG_REPORT, FEATURE_REQUEST, GENERAL_FEEDBACK, QUESTION
+      "subject": "Issue with login button",
+      "message": "The login button on the main page doesn't work on mobile."
+    }
+    ```
+*   **Success Response (201 Created)**:
+    ```json
+    {
+      "message": "Feedback submitted successfully."
+      // Optionally, return the created feedback object
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format.
+
+#### `GET /admin/feedbacks`
+Retrieves all submitted feedbacks. Requires `ROLE_MODERATOR_FEEDBACK` role.
+*   **Request Body**: None (token in header)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "feedbacks": [
+        {
+          "id": 1,
+          "type": "BUG_REPORT",
+          "subject": "Login issue",
+          "message": "Cannot log in on Safari.",
+          "createdAt": "2024-08-01T10:00:00Z",
+          "user": {
+            "id": 5,
+            "login": "testuser"
+          }
+        },
+        {
+          "id": 2,
+          "type": "FEATURE_REQUEST",
+          "subject": "Dark mode for reports",
+          "message": "It would be great to have dark mode for the reporting section.",
+          "createdAt": "2024-08-01T11:30:00Z",
+          "user": null // Example of anonymous feedback if supported
+        }
+        // ... more feedback items
+      ]
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 403 Forbidden)**
+
+### 8. Budgets
+
+#### `GET /budgets`
+Retrieves a list of budgets for the authenticated user.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "budgets": [
+        {
+          "id": "1",
+          "month": "2024-08", // Format: YYYY-MM
+          "plannedAmount": 500000, // in cents
+          "actualExpenses": 350000, // in cents, calculated by backend
+          "currencyCode": "USD",
+          "category_id": 101 // Optional: ID of the associated SubCategory
+        }
+        // ... more budget items
+      ]
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+#### `GET /budgets/{id}`
+Retrieves a specific budget by its ID.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "budget": {
+        "id": "1",
+        "month": "2024-08",
+        "plannedAmount": 500000,
+        "actualExpenses": 350000,
+        "currencyCode": "USD",
+        "category_id": 101 // Optional: ID of the associated SubCategory
+        // Potentially more details like category breakdowns if implemented
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `POST /budgets`
+Creates a new budget.
+*   **Request Body**:
+    ```json
+    {
+      "month": "2024-09", // YYYY-MM
+      "plannedAmount": 600000, // in cents
+      "currencyCode": "USD", // Or derive from user's default currency
+      "category_id": 101 // integer ID (refers to a subCategory ID), required
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created budget object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `PUT /budgets/{id}`
+Updates a specific budget.
+*   **Request Body**: (Fields to update)
+    ```json
+    {
+      "plannedAmount": 650000, // in cents
+      "category_id": 102 // Optional: new integer ID for subCategory
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated budget object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /budgets/{id}`
+Deletes a specific budget.
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+
+### 9. General
+
+#### `GET /currencies`
+Retrieves a list of available currencies.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "currencies": {
+        "uae_dirham": "AED",
+        "afghan_afghani": "AFN",
+        // ... and so on for all currencies
+        "united_states_dollar": "USD",
+        "ukrainian_hryvnia": "UAH",
+        "polish_zloty": "PLN",
+        "euro": "EUR",
+        "zimbabwean_dollar": "ZWL"
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
 
 
 ## Data Models (PHP Representations - Examples)
@@ -481,6 +771,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `email` (string, unique)
 *   `password_hash` (string)
 *   `user_currency_code` (string, e.g., "USD", "EUR")
+*   `roles` (array of strings, e.g. `["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]`)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
@@ -496,7 +787,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `subcategory_id` (int, nullable, foreign key to SubCategory)
 *   `source` (string, nullable, system-internal or for imports)
 *   `transaction_date` (datetime) // The actual date of the transaction event
-*   `frequency_id` (string/int, foreign key or reference to a Frequency table/enum, linked to values from `/transactions/frequency`)
+*   `frequency` (string/int, backend representation of frequency, linked to values from `/transactions/frequency`)
 *   `created_at` (datetime) // Record creation timestamp
 *   `updated_at` (datetime) // Record update timestamp
 
@@ -508,7 +799,7 @@ Consider these when designing your database and PHP classes/objects.
 ### FrequencyType (Conceptual, based on `GET /transactions/frequency`)
 *   `id` (string, e.g., "1", "5" - as used by frontend)
 *   `name` (string, e.g., "ONE_TIME", "MONTHLY")
-*   *(Backend might store `frequency_id` that maps to these string IDs internally)*
+*   *(Backend might store `frequency` as an integer or string that maps to these string IDs internally)*
 
 
 ### Wallet
@@ -517,7 +808,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `name` (string)
 *   `current_balance_cents` (int)
 *   `currency_code` (string)
-*   `account_number` (string, nullable)
+*   `account_number` (string, nullable) // Note: This field is part of the GET response but NOT for POST/PUT from frontend.
 *   `type_key` (string, e.g., "main", "deposit" - links to a wallet_types table/enum from `GET /wallets/types`)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
@@ -540,16 +831,35 @@ Consider these when designing your database and PHP classes/objects.
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
+### Feedback
+*   `id` (int, primary key)
+*   `user_id` (int, nullable, foreign key to User - null if anonymous)
+*   `type` (string, enum: BUG_REPORT, FEATURE_REQUEST, GENERAL_FEEDBACK, QUESTION)
+*   `subject` (string, max 255 chars)
+*   `message` (text)
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+
+### Budget
+*   `id` (int, primary key)
+*   `user_id` (int, foreign key to User)
+*   `month` (string, "YYYY-MM")
+*   `planned_amount_cents` (int)
+*   `currency_code` (string)
+*   `category_id` (int, foreign key to SubCategory) // Added
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+    *(Note: `actualExpenses` is typically calculated on-the-fly by summing relevant transactions for the budget's month and user, not stored directly in the budget table.)*
+
 
 ## Further Considerations
 
 *   **Database**: Choose a suitable database (e.g., MySQL, PostgreSQL).
 *   **PHP Framework**: Using a PHP framework (e.g., Laravel, Symfony) is highly recommended to handle routing, ORM, security, etc.
-*   **PHP Server Binding for Local Network Access**: When running your PHP development server locally (e.g., using `php -S ...` or Symfony's `symfony server:start`), ensure it's bound to `0.0.0.0` or your specific local network IP, not just `127.0.0.1`. For example:
-    `php -S 0.0.0.0:8000`
-    Or for Symfony:
-    `symfony server:start --port=8000 --allow-http` (Symfony often binds to `0.0.0.0` by default if not specified, but verify).
-    This allows other devices on your local network (like your mobile phone) to connect to the backend. If it's bound only to `127.0.0.1`, it will only be accessible from your development PC.
+*   **PHP Server Binding for Local Network Access (CRUCIAL for Mobile Testing)**:
+    *   When running your PHP development server locally (e.g., using `php -S ...` or Symfony's `symfony server:start`), **it MUST be bound to `0.0.0.0` or your specific local network IP, NOT just `127.0.0.1`.** If it's bound to `127.0.0.1`, it will only accept connections from your development PC and will REFUSE connections from other devices on your network like your mobile phone, leading to "Failed to fetch" errors.
+    *   Example for built-in PHP server: `php -S 0.0.0.0:8000` (replace `8000` with your backend port).
+    *   For Symfony: `symfony server:start --port=8000 --allow-http` (Symfony often defaults to `0.0.0.0`, but verify. The `--allow-http` is also important for local network access if not using HTTPS locally).
 *   **Security**:
     *   Sanitize all user inputs.
     *   Protect against SQL injection, XSS, CSRF.
@@ -557,7 +867,7 @@ Consider these when designing your database and PHP classes/objects.
 *   **Validation**: Implement robust server-side validation for all incoming data.
 *   **CORS (Cross-Origin Resource Sharing)**:
     *   Configure Cross-Origin Resource Sharing (CORS) headers appropriately in your PHP backend to allow requests from your Next.js frontend domain.
-    *   **Development with Mobile**: When testing from a mobile device accessing your Next.js app via your computer's local IP (e.g., `http://192.168.1.100:9002`), your PHP backend's `Access-Control-Allow-Origin` header must explicitly include this origin. Your NelmioCorsBundle configuration provided (`allow_origin: [ '^http://localhost(:[0-9]+)?$', '^http://192.168.0.41(:[0-9]+)?' ]`) seems to address this if `192.168.0.41` is your computer's correct current local IP.
+    *   **Development with Mobile**: When testing from a mobile device accessing your Next.js app via your computer's local IP (e.g., `http://192.168.1.100:9002`), your PHP backend's `Access-Control-Allow-Origin` header must explicitly include this origin. Your NelmioCorsBundle configuration (`allow_origin: [ ..., '^http://192.168.0.41(:[0-9]+)?' ]`) seems to address this if `192.168.0.41` is your computer's correct current local IP and your Next.js app is accessed from a URL matching this pattern.
         ```php
         // Example PHP CORS headers (actual implementation depends on framework)
 
@@ -565,7 +875,7 @@ Consider these when designing your database and PHP classes/objects.
         // For production, be very specific.
         $allowed_origins = [
             "http://localhost:9002", // Your Next.js dev server on PC
-            "http://<YOUR_COMPUTER_LOCAL_IP_ADDRESS>:9002" // Replace with your PC's actual local IP and Next.js port
+            "http://<YOUR_COMPUTER_LOCAL_IP_ADDRESS>:<NEXTJS_PORT>" // Replace with your PC's actual local IP and Next.js port
         ];
         // Determine the incoming origin
         $http_origin = $_SERVER['HTTP_ORIGIN'] ?? null;
@@ -591,25 +901,46 @@ Consider these when designing your database and PHP classes/objects.
         ```
     *   **Important for `POST` requests with `Authorization` or `Content-Type: application/json`**: The browser will send an `OPTIONS` preflight request. Your server *must* respond to this `OPTIONS` request with a `200 OK` or `204 No Content` and the correct CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`). If the `OPTIONS` request fails, the browser will block the actual `POST` request.
 
-## Troubleshooting Mobile Connectivity
+## Troubleshooting Mobile Connectivity ("Failed to fetch" or similar errors)
 
-If you experience "fetch failed" errors or similar issues when accessing the application from a mobile device on your local network, even after configuring `NEXT_PUBLIC_API_BASE_URL` with your computer's local IP:
+If you experience "Failed to fetch" errors or similar network issues when accessing the application from a mobile device on your local network, even after configuring `NEXT_PUBLIC_API_BASE_URL` with your computer's local IP, follow these steps methodically:
 
-1.  **Verify IP Address**: Double-check that the IP address used in `NEXT_PUBLIC_API_BASE_URL` is the *current* local IP address of the machine running your PHP backend. IP addresses can change if your network uses DHCP. Ensure this IP matches what's in your backend's CORS `allow_origin` (e.g., `192.168.0.41` in your example).
-2.  **PHP Server Binding**: Re-confirm your PHP server (e.g., Symfony's built-in server, `php -S`) is bound to `0.0.0.0:<port>` or `<YOUR_COMPUTER_IP_ADDRESS>:<port>`, not just `127.0.0.1`. If it's bound to `127.0.0.1`, it won't accept external local network connections.
-3.  **CORS Configuration (Backend)**:
-    *   Ensure your backend's `Access-Control-Allow-Origin` correctly includes the origin from which your mobile device is accessing the Next.js app (e.g., `http://<YOUR_COMPUTER_IP_ADDRESS>:<NEXTJS_PORT>`).
-    *   **Crucially, verify your backend correctly handles preflight `OPTIONS` requests for `POST`, `PUT`, `DELETE` operations, returning a `200 OK` or `204 No Content` with necessary CORS headers (`Access-Control-Allow-Methods` including `POST`, `OPTIONS`; `Access-Control-Allow-Headers` including `Content-Type`, `Authorization`).** Your provided NelmioCorsBundle configuration seems to aim for this, but it's essential to confirm it's active and working as expected for the specific mobile origin.
-4.  **Mobile Browser Developer Tools**: **This is the most important step.**
+1.  **Verify IP Address & `NEXT_PUBLIC_API_BASE_URL`**:
+    *   **Confirm your PC's current local IP address.** (e.g., using `ipconfig` on Windows or `ifconfig`/`ip addr` on macOS/Linux). IP addresses can change if your network uses DHCP.
+    *   Ensure this exact IP address and your PHP backend's port are correctly set in `NEXT_PUBLIC_API_BASE_URL` in your `.env.local` file (e.g., `NEXT_PUBLIC_API_BASE_URL=http://192.168.1.100:8000/api`).
+    *   Restart your Next.js development server after changing `.env.local`.
+
+2.  **PHP Backend Server Binding (CRITICAL for "Failed to fetch")**:
+    *   **Re-confirm your PHP server (e.g., Symfony's built-in server, `php -S`) is bound to `0.0.0.0:<port>` or `<YOUR_COMPUTER_IP_ADDRESS>:<port>`, NOT just `127.0.0.1`.**
+    *   If it's bound only to `127.0.0.1`, it will only accept connections from your development PC itself and will *refuse* connections from your mobile phone, leading to a "Failed to fetch" error. The browser won't even get a chance to make a CORS preflight request.
+    *   For Symfony: `symfony server:start --port=8000 --allow-http` (or your backend port). The `--allow-http` is important.
+    *   For PHP built-in: `php -S 0.0.0.0:8000`
+
+3.  **Firewall on Development PC**:
+    *   Temporarily disable any firewalls on your development PC (Windows Firewall, macOS Firewall, third-party antivirus/firewall) to see if this resolves the issue.
+    *   If it does, re-enable the firewall and add a specific inbound rule to allow connections to your PHP backend's port (e.g., 8000) from your local network.
+
+4.  **CORS Configuration (Backend)**:
+    *   Ensure your backend's `Access-Control-Allow-Origin` in your Nelmio CORS bundle configuration (or equivalent) correctly includes the origin from which your mobile device is accessing the Next.js app (e.g., `^http://<YOUR_COMPUTER_IP_ADDRESS>:<NEXTJS_PORT>`).
+    *   **Verify your backend correctly handles preflight `OPTIONS` requests** for `POST`, `PUT`, `DELETE` operations, returning a `200 OK` or `204 No Content` with necessary CORS headers. Your provided NelmioCorsBundle configuration aims for this, but it's essential to confirm it's active and working as expected for the specific mobile origin using the Mobile Browser Developer Tools.
+
+5.  **Mobile Browser Developer Tools (ESSENTIAL for diagnosis)**:
+    *   This is the most important step to get specific error details.
     *   Connect your mobile device to your computer via USB.
     *   Use your desktop browser's developer tools to inspect the mobile browser's Network tab and Console.
-        *   **Chrome (Android)**: Go to `chrome://inspect` on your desktop Chrome.
-        *   **Safari (iOS)**: Enable Web Inspector in Safari settings on your iPhone/iPad, then find it under the Develop menu in Safari on your Mac.
-    *   Examine the failed network request (both the `OPTIONS` preflight and the actual `POST` request for login). Look for the exact HTTP status code, response headers, and any console errors (especially CORS errors). This will provide specific clues.
-5.  **Firewall**: Check if a firewall on your development machine is blocking incoming connections to your PHP backend's port from other devices on your local network.
+        *   **Chrome (Android)**: Go to `chrome://inspect` on your desktop Chrome. Find your device and the open tab, then click "inspect."
+        *   **Safari (iOS)**: Enable Web Inspector in Safari settings on your iPhone/iPad (Settings > Safari > Advanced > Web Inspector). Then, in Safari on your Mac, go to Develop > [Your iPhone Name] > [Your Tab].
+    *   **Examine the failed network request in the Network Tab**:
+        *   Look for the `login_check` (or other failing) request.
+        *   Is there an `OPTIONS` preflight request immediately before it? What is its status code? (Should be 200 or 204).
+        *   What is the status of the actual `POST` (or other) request? Is it `(failed)` (indicating a network level issue like "connection refused"), or does it show an HTTP error code (e.g., 401, 403, 500)?
+        *   Check the "Headers" tab for both the request and response to see what's being sent and received.
+    *   **Check the Console Tab**: Look for any error messages, especially CORS errors (e.g., "Access to fetch at '...' from origin '...' has been blocked by CORS policy..."). These messages are usually very specific.
+
 6.  **Clear Mobile Browser Cache**: Sometimes, outdated cached responses or service workers can cause issues. Try clearing your mobile browser's cache and data for the site.
+
 7.  **HTTPS vs HTTP Mismatch**: Ensure both frontend and backend are using the same protocol (HTTP for local IP testing is fine, but if one is HTTPS and the other HTTP, it will cause issues).
 
-This documentation provides a starting point. Adapt and expand it based on the full feature set of FinanceFlow.
+By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
 
