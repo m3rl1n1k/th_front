@@ -61,16 +61,29 @@ const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: F
   const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
-  const sx = cx + (outerRadius + 10) * cos;
-  const sy = cy + (outerRadius + 10) * sin;
-  const mx = cx + (outerRadius + 30) * cos;
-  const my = cy + (outerRadius + 30) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+
+  // Make label line start slightly outside the active sector
+  const labelLineStartRadius = outerRadius * 1.05;
+  const sx = cx + labelLineStartRadius * cos;
+  const sy = cy + labelLineStartRadius * sin;
+
+  // Make label line extend further out
+  const labelLineMidRadius = outerRadius * 1.25;
+  const mx = cx + labelLineMidRadius * cos;
+  const my = cy + labelLineMidRadius * sin;
+
+  // Horizontal extension for the text part of the label line
+  const labelLineExtension = Math.max(15, outerRadius * 0.1);
+  const ex = mx + (cos >= 0 ? 1 : -1) * labelLineExtension;
   const ey = my;
+
+  // Text offset from the end of the label line
+  const textOffset = Math.max(8, outerRadius * 0.05);
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
+      {/* Active sector itself */}
       <Sector
         cx={cx}
         cy={cy}
@@ -81,26 +94,30 @@ const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: F
         fill={fill}
         className="cursor-pointer transition-opacity hover:opacity-80"
       />
+      {/* Outer ring for active sector emphasis */}
       <Sector
         cx={cx}
         cy={cy}
         startAngle={startAngle}
         endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
+        innerRadius={outerRadius * 1.02} // Slightly outside
+        outerRadius={outerRadius * 1.06} // A bit thicker
         fill={fill}
       />
+      {/* Label line */}
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
       <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" dy={0} className="text-xs">
+      {/* Label Text */}
+      <text x={ex + (cos >= 0 ? 1 : -1) * textOffset} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" dy={0} className="text-xs">
         {payload.categoryName}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={16} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">
+      <text x={ex + (cos >= 0 ? 1 : -1) * textOffset} y={ey} dy={16} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">
          <CurrencyDisplay amountInCents={value} currencyCode={currencyCode}/> {`(${(percent * 100).toFixed(2)}%)`}
       </text>
     </g>
   );
 };
+
 
 interface ProcessedLastTransactionItem {
   id: string | number;
@@ -301,7 +318,7 @@ export default function DashboardPage() {
               {renderSkeletonCard(t('averageExpense'), <TrendingDown className="h-5 w-5 text-red-500" />, '', 3)}
             </>
           ) : !summaryData ? (
-            renderErrorState('noDataAvailable', true)
+            renderErrorState('dashboardDataLoadError', true)
           ) : (
             <>
               <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
