@@ -26,33 +26,29 @@ const INTENDED_DESTINATION_KEY = 'intended_destination';
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start as true until initial check is done
+  const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Effect for initial loading state. Since token is in-memory,
-  // we are effectively unauthenticated on initial load/refresh.
   useEffect(() => {
-    setIsLoading(false); // Initial "check" is done, user is unauthenticated by default
+    setIsLoading(false); 
   }, []);
 
   const clearAuthData = useCallback(() => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
-    // No need to remove token from sessionStorage as it's not stored there anymore
   }, []);
 
   const processSuccessfulLogin = useCallback(async (apiToken: string) => {
     try {
       const userData = await fetchUserProfile(apiToken);
       setUser(userData);
-      setToken(apiToken);
+      setToken(apiToken); // Token stored in memory
       setIsAuthenticated(true);
-      // Token is NOT saved to sessionStorage here
       return userData;
     } catch (error) {
       clearAuthData();
@@ -68,17 +64,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
 
       let redirectTo = '/dashboard';
+      
       if (typeof window !== 'undefined') {
-        const intendedDestination = sessionStorage.getItem(INTENDED_DESTINATION_KEY);
+        const intendedDestination = localStorage.getItem(INTENDED_DESTINATION_KEY);
+        
         if (intendedDestination) {
-          sessionStorage.removeItem(INTENDED_DESTINATION_KEY);
+            localStorage.removeItem(INTENDED_DESTINATION_KEY);
         }
+
         const nonIntendedRedirectPaths = ['/login', '/register', '/terms', '/set-token', '/'];
-        if (intendedDestination && !nonIntendedRedirectPaths.includes(intendedDestination) && intendedDestination.startsWith('/') && !intendedDestination.startsWith('//')) {
+        
+        if (intendedDestination && 
+            !nonIntendedRedirectPaths.includes(intendedDestination) &&
+            intendedDestination.startsWith('/') && 
+            !intendedDestination.startsWith('//')) {
           redirectTo = intendedDestination;
         }
       }
+      
       router.push(redirectTo);
+
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -86,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title: t('loginFailedTitle'),
         description: apiError.message || t('loginFailedDesc'),
       });
-      clearAuthData(); // Ensure state is clean on login failure
+      clearAuthData();
     } finally {
       setIsLoading(false);
     }
@@ -97,54 +102,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiRegisterUser(payload);
     } catch (error) {
-      throw error; // Let the UI handle specific error messages
+      throw error;
     } finally {
       setIsLoading(false);
     }
   }, [setIsLoading]);
 
   const logout = useCallback(() => {
-    setIsLoading(true); // Briefly set loading during logout process
+    setIsLoading(true);
     clearAuthData();
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem(INTENDED_DESTINATION_KEY); // Clear any lingering intended destination
+      localStorage.removeItem(INTENDED_DESTINATION_KEY); // Also clear from localStorage on logout
     }
     toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
     router.push('/login');
-    setIsLoading(false); // Reset loading after push
+    setIsLoading(false);
   }, [router, toast, t, clearAuthData]);
 
   const fetchUser = useCallback(async () => {
-    // This function re-fetches user profile using the current in-memory token.
-    // Useful if user data needs to be refreshed after an update (e.g., profile edit).
-    // If token is null (e.g., after refresh), this won't proceed to API call.
     if (token) {
       setIsLoading(true);
       try {
         const userData = await fetchUserProfile(token);
         setUser(userData);
-        setIsAuthenticated(true); // Reaffirm authentication
+        setIsAuthenticated(true);
       } catch (error) {
         const apiError = error as ApiError;
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
-        clearAuthData(); // If fetching user fails, clear auth state
+        clearAuthData();
         
         const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
          if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
-            sessionStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
+            localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
         }
-        router.replace('/login'); // Redirect to login if user fetch fails
+        router.replace('/login');
       } finally {
         setIsLoading(false);
       }
     } else {
-      // If there's no token in memory, ensure the user is treated as unauthenticated.
-      // This path is typically hit if fetchUser is called after a page refresh where token state was lost.
-      if (!isLoading && isAuthenticated) { // Only clear if currently marked as authenticated
+      if (!isLoading && isAuthenticated) {
         clearAuthData();
       }
     }
   }, [token, toast, t, router, clearAuthData, pathname, isLoading, isAuthenticated]);
+
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser }}>

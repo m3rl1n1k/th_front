@@ -36,6 +36,7 @@ const publicNavItems = [
   { href: '/register', labelKey: 'registerButtonNav', icon: UserPlus },
 ];
 
+const INTENDED_DESTINATION_KEY = 'intended_destination';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading: authIsLoading } = useAuth();
@@ -54,7 +55,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('intended_destination', pathname);
+        localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
       }
       router.replace('/login');
     } else if (
@@ -158,7 +159,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         e.preventDefault();
                       } else {
                         setIsNavigating(true);
-                        // Let router.push from handleNavLinkClick (if called via that) or Link itself handle actual navigation
                       }
                     }}
                   >
