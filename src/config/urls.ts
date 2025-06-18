@@ -49,7 +49,7 @@ export const URLS = {
   deleteMainCategory: (id: string | number) => `${API_BASE_URL}/main/categories/${id}`,
 
   // SubCategories
-  createSubCategory: `${API_BASE_URL}/sub/categories`, 
+  createSubCategory: `${API_BASE_URL}/sub/categories`,
   updateSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
   deleteSubCategory: (id: string | number) => `${API_BASE_URL}/sub/categories/${id}`,
 
@@ -61,5 +61,9 @@ export const URLS = {
 
   // General
   currencies: `${API_BASE_URL}/currencies`,
+
+  // Feedback (Mock URLs for now)
+  submitFeedback: `${API_BASE_URL}/feedback`, // Example: POST /api/feedback
+  getFeedbacks: `${API_BASE_URL}/admin/feedbacks`, // Example: GET /api/admin/feedbacks
 };
 

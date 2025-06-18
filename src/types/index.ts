@@ -7,6 +7,7 @@ export interface User {
   userCurrency?: {
     code: string;
   };
+  roles?: string[]; // Added roles
 }
 
 export interface LoginCredentials {
@@ -68,8 +69,8 @@ export interface Transaction {
   source: string | null;
   date: string;
   isRecurring?: boolean;
-  frequency?: string; // Added to match GET /transactions/{id} response
-  frequencyId?: string; // Kept for form/payload consistency
+  frequency?: string;
+  frequencyId?: string;
 
   typeName?: string;
   categoryName?: string | null;
@@ -195,14 +196,14 @@ export interface UpdateMainCategoryPayload {
 
 export interface CreateSubCategoryPayload {
   name: string;
-  main_category: number; 
+  main_category: number;
   icon?: string | null;
   color?: string | null;
 }
 
 export interface UpdateSubCategoryPayload {
   name?: string;
-  main_category?: number; 
+  main_category?: number;
   icon?: string | null;
   color?: string | null;
 }
@@ -292,4 +293,34 @@ export interface CreateTransferPayload {
   outcome_wallet_id: number;
   income_wallet_id: number;
   amount_cents: number;
+}
+
+// Feedback Types
+export enum FeedbackTypeOption {
+  BUG_REPORT = 'BUG_REPORT',
+  FEATURE_REQUEST = 'FEATURE_REQUEST',
+  GENERAL_FEEDBACK = 'GENERAL_FEEDBACK',
+  QUESTION = 'QUESTION',
+}
+
+export interface SubmitFeedbackPayload {
+  type: FeedbackTypeOption;
+  subject: string;
+  message: string;
+}
+
+export interface Feedback {
+  id: string | number;
+  type: FeedbackTypeOption;
+  subject: string;
+  message: string;
+  createdAt: string; // ISO date string
+  user?: { // Optional user info
+    id: string | number;
+    login: string;
+  };
+}
+
+export interface GetFeedbacksResponse {
+  feedbacks: Feedback[];
 }

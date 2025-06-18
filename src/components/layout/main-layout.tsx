@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -18,17 +18,28 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
-import { DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards, Shapes, Sun, Moon, UserPlus, ArrowRightLeft, AlertTriangle } from 'lucide-react';
+import {
+  DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
+  Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, ShieldAlert
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const navItems = [
+const baseNavItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
   { href: '/transactions', labelKey: 'transactions', icon: ListChecks, authRequired: true },
   { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards, authRequired: true },
   { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes, authRequired: true },
   { href: '/transfers', labelKey: 'transfersTitle', icon: ArrowRightLeft, authRequired: true },
+];
+
+const userSpecificNavItems = [
+  { href: '/feedback', labelKey: 'feedbackPageTitle', icon: MessageSquare, authRequired: true },
   { href: '/profile', labelKey: 'profile', icon: UserCircle, authRequired: true },
   { href: '/settings', labelKey: 'settings', icon: Settings, authRequired: true },
+];
+
+const adminNavItems = [
+   { href: '/admin/feedbacks', labelKey: 'adminFeedbacksPageTitle', icon: ClipboardList, authRequired: true, requiredRole: 'ROLE_MODERATOR_FEEDBACK' }
 ];
 
 const publicNavItems = [
@@ -47,9 +58,30 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false); 
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  const userHasRole = useCallback((role: string): boolean => {
+    return user?.roles?.includes(role) || false;
+  }, [user]);
+
+  const getNavItems = useCallback(() => {
+    if (!isAuthenticated) return [];
+    let items = [...baseNavItems];
+    
+    adminNavItems.forEach(item => {
+      if (item.requiredRole && userHasRole(item.requiredRole)) {
+        items.push(item);
+      } else if (!item.requiredRole) {
+         items.push(item);
+      }
+    });
+
+    items = [...items, ...userSpecificNavItems];
+    return items;
+  }, [isAuthenticated, userHasRole, userSpecificNavItems]);
+
 
   useEffect(() => {
     const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
@@ -59,11 +91,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       }
       router.replace('/login');
     } else if (
-        !authIsLoading && 
-        isAuthenticated && 
-        user && 
-        (!user.userCurrency || !user.userCurrency.code) && 
-        pathname !== '/profile' && 
+        !authIsLoading &&
+        isAuthenticated &&
+        user &&
+        (!user.userCurrency || !user.userCurrency.code) &&
+        pathname !== '/profile' &&
         !publicPaths.includes(pathname)
       ) {
         toast({
@@ -81,29 +113,29 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       setIsSheetOpen(false);
       return;
     }
-    setIsNavigating(true); 
+    setIsNavigating(true);
     router.push(href);
   };
 
   const handleLanguageChange = async (lang: string) => {
     if (language === lang) return;
-    setIsNavigating(true); 
+    setIsNavigating(true);
     try {
       await setLanguage(lang);
     } catch (error) {
       console.error("Error changing language:", error);
     } finally {
-      setIsNavigating(false); 
+      setIsNavigating(false);
     }
   };
-  
+
   useEffect(() => {
     setIsNavigating(false);
-    setIsSheetOpen(false); 
+    setIsSheetOpen(false);
   }, [pathname]);
 
 
-  if (authIsLoading) { 
+  if (authIsLoading && !mounted) {
      return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center">
@@ -117,14 +149,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !authIsLoading) {
      const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
      if (!publicPaths.includes(pathname)) {
-        return null; 
+        return null;
      }
   }
-  
-  const currentNavItems = isAuthenticated ? navItems : [];
+
+  const currentNavItems = getNavItems();
 
 
   return (
@@ -150,15 +182,16 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-card p-0">
                 <nav className="flex flex-col p-6 space-y-2">
-                  <Link 
-                    href="/" 
-                    className="mb-4" 
+                  <Link
+                    href="/"
+                    className="mb-4"
                     onClick={(e) => {
                       if (pathname === '/') {
                         setIsSheetOpen(false);
                         e.preventDefault();
                       } else {
                         setIsNavigating(true);
+                        // No setIsSheetOpen(false) here, it's handled by pathname useEffect
                       }
                     }}
                   >
@@ -184,15 +217,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </SheetContent>
             </Sheet>
             )}
-             <Link 
-              href="/" 
+             <Link
+              href="/"
               onClick={(e) => {
                  if (pathname === '/') {
                     e.preventDefault();
                  } else {
                     setIsNavigating(true);
                  }
-              }} 
+              }}
               className="flex items-center space-x-2"
             >
               <DollarSign className="h-8 w-8 text-primary" />
@@ -257,7 +290,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                       setIsNavigating(true);
-                      logout(); 
+                      logout();
                   }} disabled={isNavigating}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>{t('logout')}</span>
@@ -268,15 +301,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
              {!isAuthenticated && !authIsLoading && mounted && (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
                     {publicNavItems.map(item => (
-                       <Button 
+                       <Button
                           key={item.href}
-                          variant={item.href === '/register' ? 'default' : 'ghost'} 
+                          variant={item.href === '/register' ? 'default' : 'ghost'}
                           asChild
                           disabled={isNavigating}
                           className="w-full sm:w-auto"
                         >
                           <Link href={item.href} onClick={(e) => {if (pathname !== item.href) setIsNavigating(true); else e.preventDefault();}}>
-                            {item.icon && <item.icon className="mr-2 h-4 w-4" />} 
+                            {item.icon && <item.icon className="mr-2 h-4 w-4" />}
                             {t(item.labelKey as keyof ReturnType<typeof useTranslation>["translations"])}
                           </Link>
                        </Button>
@@ -308,9 +341,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </aside>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          {isAuthenticated || ['/login', '/register', '/terms', '/', '/set-token'].includes(pathname) ? children : null}
+          { (isAuthenticated && !accessDenied) || ['/login', '/register', '/terms', '/', '/set-token'].includes(pathname) || (isAuthenticated && accessDenied && pathname === '/admin/feedbacks') ? children : null }
         </main>
       </div>
     </div>
   );
 }
+
