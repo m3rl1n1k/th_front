@@ -107,8 +107,9 @@ export default function TransfersPage() {
     try {
       await createTransfer(payload, token);
       toast({ title: t('transferCreatedTitle'), description: t('transferCreatedDesc') });
+      await fetchFormData(); // Re-fetch wallet data to update balances in dropdowns
       reset();
-      fetchTransfers();
+      fetchTransfers(); // Re-fetch transfer list
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
     } finally {
@@ -366,3 +367,4 @@ export default function TransfersPage() {
     </MainLayout>
   );
 }
+
