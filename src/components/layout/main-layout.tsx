@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'; // Added SheetHeader, SheetTitle
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -75,8 +75,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       if (item.requiredRole && userHasRole(item.requiredRole)) {
         items.push(item);
       } else if (!item.requiredRole && item.authRequired) {
-         // This branch is intentionally left sparse for admin items without roles.
-         // For /admin/feedbacks, the requiredRole check handles it.
       }
     });
 
@@ -170,8 +168,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
       <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center">
+        <div className="container mx-auto flex h-16 items-center px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center w-1/2">
             {isAuthenticated && (
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
@@ -181,7 +179,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-card p-0">
-                <SheetHeader> {/* Removed sr-only from SheetHeader */}
+                <SheetHeader>
                   <SheetTitle className="sr-only">{t('toggleNavigation')}</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col p-6 space-y-2">
@@ -235,7 +233,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-end space-x-2 w-1/2">
             {mounted && (
               <Button
                 variant="ghost"
@@ -349,4 +347,3 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
