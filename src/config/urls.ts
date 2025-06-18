@@ -34,7 +34,7 @@ export const URLS = {
 
   // User Profile
   userProfile: `${API_BASE_URL}/user`,
-  changePassword: `${API_BASE_URL}/user/change-password`, // New endpoint
+  changePassword: `${API_BASE_URL}/user/change-password`,
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
@@ -63,15 +63,16 @@ export const URLS = {
   // General
   currencies: `${API_BASE_URL}/currencies`,
 
-  // Feedback (Mock URLs for now)
-  submitFeedback: `${API_BASE_URL}/feedback`, // Example: POST /api/feedback
-  getFeedbacks: `${API_BASE_URL}/admin/feedbacks`, // Example: GET /api/admin/feedbacks
+  // Feedback
+  submitFeedback: `${API_BASE_URL}/feedback`,
+  getFeedbacks: `${API_BASE_URL}/admin/feedbacks`,
 
-  // Budgets (Placeholder URLs)
-  getBudgets: `${API_BASE_URL}/budgets`,
-  getBudgetById: (id: string | number) => `${API_BASE_URL}/budgets/${id}`,
-  createBudget: `${API_BASE_URL}/budgets`,
-  updateBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`,
-  deleteBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`,
+  // Budgets
+  getBudgets: `${API_BASE_URL}/budgets`, // For the list of monthly summaries
+  getBudgetById: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, // For a specific budget item
+  createBudget: `${API_BASE_URL}/budgets`, // To create a specific budget item
+  updateBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, // To update a specific budget item
+  deleteBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, // To delete a specific budget item
+  getBudgetSummaryForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/summary/${monthYear}`, // New: for detailed monthly summary by category
 };
 

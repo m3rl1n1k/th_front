@@ -42,6 +42,7 @@
   "createNewButton": "Create New",
   "uiOnlyLabel": "UI Only",
   "errorFetchingData": "Error Fetching Data",
+  "errorTitle": "Error",
 
   "//": "NAVIGATION / LAYOUT",
   "toggleNavigation": "Toggle navigation",
@@ -513,6 +514,14 @@
   "removeBudgetSummaryMessage": "Are you sure you want to remove budget data for {month}? This action might not be reversible depending on system setup.",
   "removeBudgetSummaryNotSupportedTitle": "Action Not Supported",
   "removeBudgetSummaryNotSupportedDesc": "Removing an entire month's budget summary is not currently supported. You can adjust individual budget items or transactions.",
+  "budgetSummaryTitle": "Budget Summary",
+  "budgetSummaryForMonthTitle": "Budget Summary for {monthDisplay}",
+  "errorFetchingBudgetSummary": "Error Fetching Budget Summary",
+  "noBudgetDetailsFoundTitle": "No Budget Details Found",
+  "noBudgetDetailsFoundDesc": "No detailed budget items found for {monthDisplay}.",
+  "backToBudgetsButton": "Back to Budgets",
+  "budgetSummaryInvalidDateError": "Invalid date for budget summary.",
+
 
   "//": "SETTINGS",
   "settingsPageTitle": "Application Settings",

@@ -42,6 +42,7 @@
   "createNewButton": "Створити",
   "uiOnlyLabel": "Лише для UI",
   "errorFetchingData": "Помилка завантаження даних",
+  "errorTitle": "Помилка",
 
   "//": "НАВІГАЦІЯ / МАКЕТ",
   "toggleNavigation": "Перемкнути навігацію",
@@ -513,6 +514,13 @@
   "removeBudgetSummaryMessage": "Ви впевнені, що хочете видалити дані бюджету на {month}? Ця дія може бути незворотною залежно від налаштувань системи.",
   "removeBudgetSummaryNotSupportedTitle": "Дія не підтримується",
   "removeBudgetSummaryNotSupportedDesc": "Видалення зведеного бюджету за цілий місяць наразі не підтримується. Ви можете коригувати окремі бюджетні статті або транзакції.",
+  "budgetSummaryTitle": "Зведений бюджет",
+  "budgetSummaryForMonthTitle": "Зведений бюджет за {monthDisplay}",
+  "errorFetchingBudgetSummary": "Помилка завантаження зведеного бюджету",
+  "noBudgetDetailsFoundTitle": "Деталей бюджету не знайдено",
+  "noBudgetDetailsFoundDesc": "Детальних бюджетних статей для {monthDisplay} не знайдено.",
+  "backToBudgetsButton": "Назад до бюджетів",
+  "budgetSummaryInvalidDateError": "Невірна дата для зведення бюджету.",
 
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",

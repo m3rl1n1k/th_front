@@ -331,23 +331,22 @@ export interface GetFeedbacksResponse {
 }
 
 // Budget Types
-// This was for itemized budgets, may need adjustment or new types for monthly summaries
 export interface BudgetSubCategoryInfo {
   id: number;
   name: string;
 }
 
-export interface BudgetListItem {
-  id: string | number; // This ID might not be relevant for monthly summaries
+export interface BudgetListItem { // Represents an item in the list of budgets (e.g., from GET /budgets)
+  id: string | number;
   month: string; // e.g., "2024-08"
   plannedAmount: number; // in cents
   actualExpenses: number; // in cents
-  currency: string; // e.g. "PLN" - direct currency string from API
-  subCategory?: BudgetSubCategoryInfo; // Optional, as new API structure doesn't have this per item
-  categoryName?: string; // Populated on frontend for display
+  currency: string; // e.g. "PLN"
+  subCategory?: BudgetSubCategoryInfo;
+  categoryName?: string;
 }
 
-export interface MonthlyBudgetSummary {
+export interface MonthlyBudgetSummary { // Represents the summary data for a month in the main budget list
   totalPlanned: {
     amount: number; // in cents
     currency: { code: string };
@@ -358,22 +357,42 @@ export interface MonthlyBudgetSummary {
   };
 }
 
-export interface BudgetListApiResponse {
+export interface BudgetListApiResponse { // Response from GET /budgets
   budgets: Record<string, MonthlyBudgetSummary>; // "YYYY-MM": MonthlyBudgetSummary
 }
 
-export interface BudgetDetails extends BudgetListItem {
+export interface BudgetDetails extends BudgetListItem { // For GET /budgets/{id} for a specific budget item
   // Potentially more details like category breakdowns if implemented
 }
 
-export interface CreateBudgetPayload {
+export interface CreateBudgetPayload { // For POST /budgets to create a specific budget item
   month: string; // YYYY-MM
   plannedAmount: number; // in cents
   currencyCode: string;
   category_id: number;
 }
 
-export interface UpdateBudgetPayload {
+export interface UpdateBudgetPayload { // For PUT /budgets/{id} to update a specific budget item
   plannedAmount: number; // in cents
-  category_id?: number; // Optional for updates
+  category_id?: number;
 }
+
+// New types for the budget summary by category page (GET /budgets/summary/{YYYY-MM})
+export interface BudgetCategorySummaryAmount {
+  amount: number; // in cents
+  currency: {
+    code: string;
+  };
+}
+
+export interface BudgetCategorySummaryItem {
+  name: string;
+  plannedAmount: BudgetCategorySummaryAmount;
+  actualAmount: BudgetCategorySummaryAmount;
+  budgetId: number; // This seems to be the ID of the budget *item* for this category-month
+}
+
+export interface BudgetSummaryByMonthResponse {
+  categories: Record<string, BudgetCategorySummaryItem>; // Key is category ID (e.g., "1", "2")
+}
+

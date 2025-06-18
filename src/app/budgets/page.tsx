@@ -3,8 +3,8 @@
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { format, parse, lastDayOfMonth } from 'date-fns';
+import { useRouter, usePathname } from 'next/navigation';
+import { format, parse } from 'date-fns'; // Removed lastDayOfMonth as it's not used here
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,22 +64,28 @@ export default function BudgetsPage() {
 
 
   const fetchBudgets = useCallback(async (showLoadingIndicator = true) => {
+    console.log('[BudgetsPage] fetchBudgets called. isFetchingRef.current:', isFetchingRef.current, 'isAuthenticated:', isAuthenticated, 'token exists:', !!token);
     if (isFetchingRef.current) {
+      console.log('[BudgetsPage] Fetch already in progress, returning.');
       return;
     }
 
     if (!isAuthenticated || !token) {
+      console.log('[BudgetsPage] Not authenticated or no token, setting empty budgets and loader to false.');
       setMonthlyBudgets([]);
-      setIsLoading(false); 
+      setIsLoading(false);
       return;
     }
     
     isFetchingRef.current = true;
     if (showLoadingIndicator) {
+      console.log('[BudgetsPage] Setting isLoading to true.');
       setIsLoading(true);
     }
     try {
+      console.log('[BudgetsPage] Calling getBudgetList API.');
       const response: BudgetListApiResponse = await getBudgetList(token);
+      console.log('[BudgetsPage] API response received:', response);
       const processed: ProcessedMonthlyBudget[] = Object.entries(response.budgets || {}).map(([monthYear, data]) => {
         let monthDisplayName = monthYear;
         try {
@@ -97,21 +103,25 @@ export default function BudgetsPage() {
           currencyCode: data.totalPlanned.currency.code,
         };
       }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
-
+      console.log('[BudgetsPage] Processed budgets:', processed);
       setMonthlyBudgets(processed);
     } catch (error: any) {
+      console.error('[BudgetsPage] Error fetching budgets:', error);
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
       setMonthlyBudgets([]);
     } finally {
+      console.log('[BudgetsPage] Setting isLoading to false, isFetchingRef to false.');
       setIsLoading(false); 
       isFetchingRef.current = false;
     }
   }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
+    console.log('[BudgetsPage] useEffect triggered. isAuthenticated:', isAuthenticated, 'token exists:', !!token);
     if (isAuthenticated && token) {
         fetchBudgets();
     } else if (!isAuthenticated && !token) {
+        console.log('[BudgetsPage] useEffect: Not authenticated or no token. Setting isLoading to false and monthlyBudgets to [].');
         setIsLoading(false); 
         setMonthlyBudgets([]); 
     }
@@ -125,6 +135,7 @@ export default function BudgetsPage() {
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
       if (!budget || typeof budget.year !== 'string') {
+        console.warn('[BudgetsPage] Invalid budget item in reduce:', budget);
         return acc;
       }
       const year = budget.year;
@@ -147,9 +158,7 @@ export default function BudgetsPage() {
   };
 
   const handleViewDetails = (monthYear: string) => {
-    const startDate = format(parse(monthYear, 'yyyy-MM', new Date()), 'yyyy-MM-dd');
-    const endDate = format(lastDayOfMonth(parse(monthYear, 'yyyy-MM', new Date())), 'yyyy-MM-dd');
-    router.push(`/transactions?startDate=${startDate}&endDate=${endDate}`);
+    router.push(`/budgets/summary/${monthYear}`);
   };
 
   const handleRemoveClick = (budget: ProcessedMonthlyBudget) => {
@@ -205,7 +214,7 @@ export default function BudgetsPage() {
     );
   }
 
-  if (monthlyBudgets.length === 0) {
+  if (!Array.isArray(monthlyBudgets) || monthlyBudgets.length === 0) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -260,16 +269,15 @@ export default function BudgetsPage() {
                       const remainingAmount = budget.totalPlanned - budget.totalActual;
                       const progressPercentageSafe = budget.totalPlanned > 0 ? (budget.totalActual / budget.totalPlanned) * 100 : (budget.totalActual > 0 ? 101 : 0);
                       const progressColorClass = getProgressColor(progressPercentageSafe);
-
                       const monthNameOnly = budget.monthDisplayName.split(' ')[0];
 
                       return (
-                        <Card key={budget.monthYear} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50">
-                          <CardHeader className="p-3 pb-2 border-b">
-                            <CardTitle className="text-lg font-semibold text-foreground">{monthNameOnly}</CardTitle>
+                        <Card key={budget.monthYear} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50 p-3">
+                          <CardHeader className="p-0 pb-2 border-b mb-2">
+                            <CardTitle className="text-base font-semibold text-foreground">{monthNameOnly}</CardTitle>
                             <CardDescription className="text-xs">{budget.year}</CardDescription>
                           </CardHeader>
-                          <CardContent className="p-3 space-y-2 flex-grow">
+                          <CardContent className="p-0 space-y-1.5 flex-grow">
                             <div>
                               <div className="flex justify-between items-baseline mb-0.5">
                                 <span className="text-xs text-muted-foreground">{t('budgetProgress', { percentage: progressPercentageSafe.toFixed(0) })}</span>
@@ -283,35 +291,35 @@ export default function BudgetsPage() {
                                 value={progressPercentageSafe > 100 ? 100 : progressPercentageSafe}
                                 indicatorClassName={progressColorClass}
                                 aria-label={t('budgetProgress', { percentage: progressPercentageSafe.toFixed(0) })}
-                                className="h-2"
+                                className="h-1.5"
                               />
                             </div>
 
-                            <div className="space-y-1.5 text-xs">
+                            <div className="space-y-1 text-xs">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-3.5 w-3.5 text-green-500" />{t('budgetTotalPlannedShort')}</span>
+                                  <span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1 h-3 w-3 text-green-500" />{t('budgetTotalPlannedShort')}</span>
                                   <span className="font-semibold text-foreground"><CurrencyDisplay amountInCents={budget.totalPlanned} currencyCode={budget.currencyCode} /></span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-3.5 w-3.5 text-red-500" />{t('budgetTotalActualShort')}</span>
+                                  <span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1 h-3 w-3 text-red-500" />{t('budgetTotalActualShort')}</span>
                                   <span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={budget.totalActual} currencyCode={budget.currencyCode} /></span>
                                 </div>
                             </div>
                              <div className={cn(
-                                "w-full text-center p-2 rounded-md font-semibold mt-2",
+                                "w-full text-center p-1.5 rounded-md font-semibold mt-1.5 text-xs",
                                 remainingAmount >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
                               )}>
                                 <p className="text-xs uppercase tracking-wider opacity-80 mb-0.5">{t('budgetRemainingAmountShort')}</p>
                                 <CurrencyDisplay amountInCents={remainingAmount} currencyCode={budget.currencyCode} />
                               </div>
                           </CardContent>
-                           <CardFooter className="p-2 border-t mt-auto flex justify-end gap-1.5">
-                                <Button variant="outline" size="sm" onClick={() => handleViewDetails(budget.monthYear)} title={t('viewTransactionsForMonth', {month: budget.monthDisplayName })}>
-                                    <Eye className="mr-1.5 h-3.5 w-3.5" />
+                           <CardFooter className="p-0 pt-2 border-t mt-2 flex justify-end gap-1.5">
+                                <Button variant="outline" size="sm" onClick={() => handleViewDetails(budget.monthYear)} title={t('viewTransactionsForMonth', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs">
+                                    <Eye className="mr-1 h-3 w-3" />
                                     {t('detailsAction')}
                                 </Button>
-                                <Button variant="destructive" size="sm" onClick={() => handleRemoveClick(budget)} title={t('removeBudgetSummaryTitle', {month: budget.monthDisplayName })}>
-                                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                                <Button variant="destructive" size="sm" onClick={() => handleRemoveClick(budget)} title={t('removeBudgetSummaryTitle', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs">
+                                    <Trash2 className="mr-1 h-3 w-3" />
                                     {t('removeAction')}
                                 </Button>
                            </CardFooter>

@@ -35,11 +35,12 @@ import type {
   Feedback,
   GetFeedbacksResponse,
   FeedbackTypeOption,
-  BudgetListApiResponse, // Updated
-  BudgetListItem, // Kept for potential detailed views or creation
-  BudgetDetails,  // Kept for potential detailed views
+  BudgetListApiResponse,
+  BudgetListItem,
+  BudgetDetails,
   CreateBudgetPayload,
-  UpdateBudgetPayload
+  UpdateBudgetPayload,
+  BudgetSummaryByMonthResponse, // New
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -315,27 +316,23 @@ export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => 
   return request(URLS.getBudgets, { method: 'GET', token });
 };
 
-// getBudgetDetails might need to be re-evaluated based on API design.
-// If it's meant to get details for a specific budget item (not a monthly summary),
-// its current signature might be okay, but the API endpoint might differ.
-// For now, assuming it fetches details for an itemized budget:
 export const getBudgetDetails = async (id: string | number, token: string): Promise<BudgetDetails> => {
-  // This assumes the `GET /budgets/{id}` endpoint returns a structure compatible with BudgetDetails
   const response = await request<{ budget: BudgetDetails }>(URLS.getBudgetById(id), { method: 'GET', token });
   return response.budget;
 };
 
 export const createBudget = (data: CreateBudgetPayload, token: string): Promise<BudgetListItem> => {
-  // This function posts a *specific* budget, typically for a category.
-  // The response type might need to be `BudgetDetails` if the API returns the full created object.
   return request<BudgetListItem>(URLS.createBudget, { method: 'POST', body: data, token });
 };
 
 export const updateBudget = (id: string | number, data: UpdateBudgetPayload, token: string): Promise<BudgetListItem> => {
-  // Similar to create, updates a specific budget item.
   return request<BudgetListItem>(URLS.updateBudget(id), { method: 'PUT', body: data, token });
 };
 
 export const deleteBudget = (id: string | number, token: string): Promise<void> => {
   return request<void>(URLS.deleteBudget(id), { method: 'DELETE', token });
+};
+
+export const getBudgetSummaryForMonth = (monthYear: string, token: string): Promise<BudgetSummaryByMonthResponse> => {
+  return request<BudgetSummaryByMonthResponse>(URLS.getBudgetSummaryForMonth(monthYear), { method: 'GET', token });
 };
