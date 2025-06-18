@@ -73,14 +73,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     adminNavItems.forEach(item => {
       if (item.requiredRole && userHasRole(item.requiredRole)) {
         items.push(item);
-      } else if (!item.requiredRole) {
-         items.push(item);
+      } else if (!item.requiredRole && item.authRequired) {
+         // This branch is intentionally left sparse for admin items without roles.
+         // For /admin/feedbacks, the requiredRole check handles it.
       }
     });
 
     items = [...items, ...userSpecificNavItems];
     return items;
-  }, [isAuthenticated, userHasRole, userSpecificNavItems]);
+  }, [isAuthenticated, userHasRole]);
 
 
   useEffect(() => {
@@ -149,12 +150,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  // This ensures that if we are on a public path, the layout doesn't prematurely return null
-  // while auth is still loading. Once authIsLoading is false, if still not authenticated,
-  // and it's NOT a public path, then we might return null or redirect.
   const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
   if (!isAuthenticated && !authIsLoading && !publicPaths.includes(pathname)) {
-     return null; // Or a specific "not authorized" component if preferred for non-public paths
+     return null; 
   }
 
   const currentNavItems = getNavItems();
@@ -341,7 +339,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </aside>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          {/* Conditional rendering based on authentication status and public path check */}
           { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
         </main>
       </div>
@@ -349,4 +346,3 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-    
