@@ -69,40 +69,17 @@ export default function EditBudgetItemPage() {
     setIsLoadingData(true);
     setErrorOccurred(false);
     try {
-      // The API_DOCUMENTATION.MD specified PUT /budgets/{id} before.
-      // For this revert, we assume getBudgetById (or similar for the old structure) was used.
-      // And updateBudget would have used the old /budgets/{id} path.
-      // Since that specific getBudgetById is not in the original api.ts, we'll simulate fetching logic.
-      // This page was likely simpler before complex API changes.
-      // For the purpose of revert, we'll assume it fetched main categories and possibly a simple budget item.
-      // For now, let's focus on resetting the form structure and API call in onSubmit if it existed.
-
       const categoriesData = await getMainCategories(token);
       setMainCategoriesHierarchical(Array.isArray(categoriesData) ? categoriesData : []);
       
-      // Placeholder for fetching individual budget item logic that might have existed
-      // setBudgetToEdit(fetchedBudgetItem); 
-      // reset({ plannedAmount: ..., categoryId: ... });
-
-      // If this page was like the deprecated one, it might have used a different fetch logic.
-      // For simplicity in revert, we'll assume a minimal state.
-      // A real "getBudgetById" would be needed if the form was pre-filled from an old endpoint.
-      // Given the ```` error fix on this file, it implies it existed in a more complex form.
-
-      // Let's assume it fetched the budget item similarly and set values
-      // This part is speculative without the exact old `getBudgetById`
-      if (monthYear && budgetId) { // Added monthYear check
-        // This function uses the NEW API path, which is not what we want for revert state.
-        // For revert, we'd need an old API call for /budgets/{id} if this page populated like that.
-        // const fetchedBudgetItem = await getBudgetSummaryItemForEdit(monthYear, budgetId, token);
-        // setBudgetToEdit(fetchedBudgetItem);
-        // reset({
-        //   plannedAmount: fetchedBudgetItem.plannedAmount, 
-        //   categoryId: String(fetchedBudgetItem.subCategory?.id || ''),
-        // });
+      if (monthYear && budgetId) {
+        const fetchedBudgetItem = await getBudgetSummaryItemForEdit(monthYear, budgetId, token);
+        setBudgetToEdit(fetchedBudgetItem);
+        reset({
+          plannedAmount: fetchedBudgetItem.plannedAmount, 
+          categoryId: String(fetchedBudgetItem.subCategory?.id || ''),
+        });
       }
-
-
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingBudgetItem'), description: error.message });
       setErrorOccurred(true);
@@ -118,7 +95,7 @@ export default function EditBudgetItemPage() {
   }, [isAuthenticated, fetchBudgetData]);
 
   const onSubmit: SubmitHandler<BudgetEditFormData> = async (data) => {
-    if (!token || !budgetId || !monthYear) { // Added monthYear check
+    if (!token || !budgetId || !monthYear) {
       toast({ variant: "destructive", title: t('error'), description: t('genericError') });
       return;
     }
@@ -130,15 +107,28 @@ export default function EditBudgetItemPage() {
 
     setFormIsSubmitting(true);
     try {
-      // Reverting to the state before `POST /budgets/summary/{date}/{id}` or `PUT /budgets/summary/{date}/{id}`
-      // It likely used `PUT /budgets/{id}`.
-      // The `updateBudget` function in the "original" api.ts took (id, payload, token)
-      await updateBudget(budgetId, payload, token); 
+      // The path for updateBudget was previously changed in API_DOC and api.ts to /budgets/summary/{date}/{id}
+      // This call reflects that change.
+      await updateBudget(monthYear, budgetId, payload, token); 
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit?.subCategory?.name || t('category')}) });
-      router.push(`/budgets`); // Likely redirected to main budgets page
+      router.push(`/budgets/summary/${monthYear}`); // Navigate back to the summary page for that month
     } catch (error: any) {
-      // Simplified error handling for revert
-      toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: error.message || t('unexpectedError') });
+      const apiError = error as ApiError;
+      let errorMessage = apiError.message || t('unexpectedError');
+
+      // Check for specific "Validation failed" message string
+      if (typeof apiError.message === 'string' && apiError.message.toLowerCase().includes("validation failed")) {
+          errorMessage = t('validationFailedCheckFields'); 
+      } 
+      // Check for the { "field": ["message"] } structure
+      else if (Array.isArray(apiError.errors) && apiError.errors.length > 0 && apiError.errors[0].message) {
+          errorMessage = apiError.errors.map(e => e.message).join('; ');
+      } 
+      // Check for the general {"errors": {"field": ["message"]}} structure
+      else if (typeof apiError.errors === 'object' && apiError.errors !== null && !Array.isArray(apiError.errors)) {
+          errorMessage = Object.values(apiError.errors).flat().join('; ');
+      }
+      toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: errorMessage });
     } finally {
       setFormIsSubmitting(false);
     }
@@ -163,7 +153,7 @@ export default function EditBudgetItemPage() {
     );
   }
 
-  if (errorOccurred || !budgetToEdit) { // budgetToEdit might be null if not fetched correctly in this reverted state
+  if (errorOccurred || !budgetToEdit) { 
     return (
       <MainLayout>
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
@@ -193,10 +183,9 @@ export default function EditBudgetItemPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-3xl font-bold text-foreground">
-            {/* Title might need adjustment based on how `budgetToEdit` is populated in reverted state */}
             {t('editBudgetItemTitle', { categoryName: budgetToEdit?.subCategory?.name || t('category'), month: formattedMonthDisplay})}
           </h1>
-          <Button variant="outline" onClick={() => router.push(`/budgets`)}>
+          <Button variant="outline" onClick={() => router.push(`/budgets/summary/${monthYear}`)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('backButton')}
           </Button>
@@ -286,5 +275,3 @@ export default function EditBudgetItemPage() {
     </MainLayout>
   );
 }
-
-```
