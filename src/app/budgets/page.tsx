@@ -64,9 +64,14 @@ export default function BudgetsPage() {
 
 
   const fetchBudgets = useCallback(async () => {
-    if (isFetchingRef.current) return;
+    console.log("[BudgetPage] fetchBudgets called. isFetchingRef.current:", isFetchingRef.current, "isAuthenticated:", isAuthenticated, "token:", !!token);
+    if (isFetchingRef.current) {
+      console.log("[BudgetPage] fetchBudgets: Aborted, already fetching.");
+      return;
+    }
 
     if (!isAuthenticated || !token) {
+      console.log("[BudgetPage] fetchBudgets: Aborted, not authenticated or no token.");
       setMonthlyBudgets([]);
       setIsLoading(false);
       return;
@@ -74,15 +79,17 @@ export default function BudgetsPage() {
     
     isFetchingRef.current = true;
     setIsLoading(true);
+    console.log("[BudgetPage] fetchBudgets: Starting fetch. setIsLoading(true), isFetchingRef.current = true.");
     try {
       const response: BudgetListApiResponse = await getBudgetList(token);
+      console.log("[BudgetPage] fetchBudgets: API response received:", response);
       const processed: ProcessedMonthlyBudget[] = Object.entries(response.budgets || {}).map(([monthYear, data]) => {
         let monthDisplayName = monthYear;
         try {
           const parsedDate = parse(monthYear, 'yyyy-MM', new Date());
           monthDisplayName = format(parsedDate, 'MMMM yyyy', { locale: dateFnsLocale });
         } catch (e) {
-          console.warn(`Could not parse monthYear: ${monthYear}, using it directly.`);
+          console.warn(`[BudgetPage] Could not parse monthYear: ${monthYear}, using it directly.`);
         }
         return {
           monthYear,
@@ -95,34 +102,47 @@ export default function BudgetsPage() {
       }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
 
       setMonthlyBudgets(processed);
+      console.log("[BudgetPage] fetchBudgets: Processed and set monthly budgets.");
     } catch (error: any) {
+      console.error("[BudgetPage] fetchBudgets: Error fetching data:", error);
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
       setMonthlyBudgets([]);
     } finally {
       setIsLoading(false);
       isFetchingRef.current = false;
+      console.log("[BudgetPage] fetchBudgets: Fetch finished. setIsLoading(false), isFetchingRef.current = false.");
     }
   }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
+    console.log("[BudgetPage] useEffect for fetchBudgets triggered. Deps: isAuthenticated:", isAuthenticated, "token:", !!token, "isLoading:", isLoading);
     if (isAuthenticated && token) {
+        console.log("[BudgetPage] useEffect: Conditions met, calling fetchBudgets.");
         fetchBudgets();
-    } else if (!isAuthenticated && !token && !isLoading) { 
-        // If not authenticated and not already loading (e.g. initial load failed before auth check)
+    } else if (!isAuthenticated && !token && isLoading) { 
+        console.log("[BudgetPage] useEffect: Not authenticated, setting isLoading to false and clearing budgets.");
         setIsLoading(false);
         setMonthlyBudgets([]);
+    } else {
+        console.log("[BudgetPage] useEffect: Conditions not met for fetch, or already handled. isLoading:", isLoading);
+        if (!isAuthenticated || !token) { // Ensure loader stops if auth disappears
+            setIsLoading(false);
+            setMonthlyBudgets([]);
+        }
     }
-  }, [isAuthenticated, token, fetchBudgets, isLoading]);
+  }, [isAuthenticated, token, fetchBudgets, isLoading]); // isLoading is included to re-evaluate if it changes
 
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
     if (!Array.isArray(monthlyBudgets)) {
+      console.log("[BudgetPage] useMemo groupedBudgets: monthlyBudgets is not an array, returning empty.", monthlyBudgets);
       return { groupedBudgetsByYear: {}, sortedYears: [] };
     }
+    console.log("[BudgetPage] useMemo groupedBudgets: Processing monthlyBudgets array.", monthlyBudgets);
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
       if (!budget || typeof budget.year !== 'string') {
-        console.warn('BudgetsPage: Invalid budget item or budget.year in reduce. Item:', budget);
+        console.warn('[BudgetPage] useMemo groupedBudgets: Invalid budget item or budget.year in reduce. Item:', budget);
         return acc;
       }
       const year = budget.year;
@@ -134,6 +154,7 @@ export default function BudgetsPage() {
     }, {} as GroupedProcessedBudgets);
 
     const sYears = Object.keys(groups).sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+    console.log("[BudgetPage] useMemo groupedBudgets: Finished processing. Sorted years:", sYears);
     return { groupedBudgetsByYear: groups, sortedYears: sYears };
   }, [monthlyBudgets]);
 
@@ -203,7 +224,7 @@ export default function BudgetsPage() {
     );
   }
 
-  if (monthlyBudgets.length === 0) {
+  if (!Array.isArray(monthlyBudgets) || monthlyBudgets.length === 0) {
     return (
       <MainLayout>
         <div className="space-y-6">
