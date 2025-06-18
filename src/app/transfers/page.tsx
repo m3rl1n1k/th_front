@@ -64,6 +64,18 @@ export default function TransfersPage() {
 
   const selectedOutcomeWalletId = watch('outcomeWalletId');
 
+  const amountInputCurrencyCode = useMemo(() => {
+    let foundCurrency: string | undefined = undefined;
+    if (selectedOutcomeWalletId) {
+        const outcomeWallet = userWallets.find(w => String(w.id) === selectedOutcomeWalletId);
+        if (outcomeWallet) {
+            foundCurrency = outcomeWallet.currency.code;
+        }
+    }
+    return foundCurrency || user?.userCurrency?.code || 'USD';
+  }, [selectedOutcomeWalletId, userWallets, user]);
+
+
   const fetchFormData = useCallback(async () => {
     if (!isAuthenticated || !token) return;
     setIsLoadingFormData(true);
@@ -107,9 +119,9 @@ export default function TransfersPage() {
     try {
       await createTransfer(payload, token);
       toast({ title: t('transferCreatedTitle'), description: t('transferCreatedDesc') });
-      await fetchFormData(); // Re-fetch wallet data to update balances in dropdowns
+      await fetchFormData();
       reset();
-      fetchTransfers(); // Re-fetch transfer list
+      fetchTransfers();
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
     } finally {
@@ -214,7 +226,7 @@ export default function TransfersPage() {
                       type="number"
                       step="0.01"
                       {...control.register('amount')}
-                      placeholder={t('amountPlaceholder', { currency: user?.userCurrency?.code || '$' })}
+                      placeholder={t('amountPlaceholder', { currency: amountInputCurrencyCode })}
                       className={errors.amount ? 'border-destructive' : ''}
                     />
                     {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
