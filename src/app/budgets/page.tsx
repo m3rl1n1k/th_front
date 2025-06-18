@@ -14,15 +14,23 @@ import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import { getBudgetList } from '@/lib/api';
-import type { BudgetListItem } from '@/types';
-import { Target, PlusCircle, TrendingUp, TrendingDown, AlertTriangle, Activity, Eye, Loader2 } from 'lucide-react';
+import type { BudgetListApiResponse, MonthlyBudgetSummary } from '@/types';
+import { Target, PlusCircle, TrendingUp, TrendingDown, Activity, Loader2, BarChartHorizontalBig, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-interface GroupedBudgets {
-  [year: string]: BudgetListItem[];
+interface ProcessedMonthlyBudget {
+  monthYear: string; // "YYYY-MM"
+  monthDisplayName: string; // "June 2025" or "Червень 2025"
+  year: string;
+  totalPlanned: number; // in cents
+  totalActual: number; // in cents
+  currencyCode: string;
+}
+
+interface GroupedProcessedBudgets {
+  [year: string]: ProcessedMonthlyBudget[];
 }
 
 export default function BudgetsPage() {
@@ -31,7 +39,7 @@ export default function BudgetsPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const [budgets, setBudgets] = useState<BudgetListItem[] | null>(null);
+  const [monthlyBudgets, setMonthlyBudgets] = useState<ProcessedMonthlyBudget[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchBudgets = useCallback(async () => {
@@ -41,51 +49,58 @@ export default function BudgetsPage() {
     }
     setIsLoading(true);
     try {
-      const response = await getBudgetList(token);
-      setBudgets(response.budgets || []);
+      const response: BudgetListApiResponse = await getBudgetList(token);
+      const processed: ProcessedMonthlyBudget[] = Object.entries(response.budgets || {}).map(([monthYear, data]) => {
+        let monthDisplayName = monthYear;
+        try {
+          monthDisplayName = format(parse(monthYear, 'yyyy-MM', new Date()), 'MMMM yyyy', { locale: dateFnsLocale });
+        } catch (e) {
+          console.warn(`Could not parse monthYear: ${monthYear}`);
+        }
+        return {
+          monthYear,
+          monthDisplayName,
+          year: monthYear.substring(0, 4),
+          totalPlanned: data.totalPlanned.amount,
+          totalActual: data.totalActual.amount,
+          currencyCode: data.totalPlanned.currency.code, // Assuming currency is consistent
+        };
+      }).sort((a, b) => b.monthYear.localeCompare(a.monthYear)); // Sort by YYYY-MM descending
+
+      setMonthlyBudgets(processed);
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-      setBudgets([]);
+      setMonthlyBudgets([]);
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, token, toast, t]);
+  }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
     fetchBudgets();
   }, [fetchBudgets]);
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
-    if (!budgets) return { groupedBudgetsByYear: {}, sortedYears: [] };
+    if (!monthlyBudgets) return { groupedBudgetsByYear: {}, sortedYears: [] };
 
-    const groups: GroupedBudgets = budgets.reduce((acc, budget) => {
-      const year = budget.month.substring(0, 4); // "2024-08" -> "2024"
-      if (!acc[year]) {
-        acc[year] = [];
+    const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
+      if (!acc[budget.year]) {
+        acc[budget.year] = [];
       }
-      acc[year].push(budget);
+      acc[budget.year].push(budget);
       return acc;
-    }, {} as GroupedBudgets);
+    }, {} as GroupedProcessedBudgets);
 
-    // Sort budgets within each year by month (ascending)
-    for (const year in groups) {
-      groups[year].sort((a, b) => {
-        const monthA = parseInt(a.month.substring(5, 7), 10);
-        const monthB = parseInt(b.month.substring(5, 7), 10);
-        return monthA - monthB;
-      });
-    }
-
-    // Sort years in descending order
+    // Years are already sorted if monthlyBudgets are sorted by YYYY-MM descending
     const sYears = Object.keys(groups).sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
     return { groupedBudgetsByYear: groups, sortedYears: sYears };
-  }, [budgets]);
+  }, [monthlyBudgets]);
 
   const getProgressColor = (percentage: number): string => {
-    if (percentage > 100) return 'bg-red-600 dark:bg-red-500';
+    if (percentage > 100) return 'bg-red-600 dark:bg-red-500'; // Overspent
     if (percentage > 75) return 'bg-orange-500 dark:bg-orange-400';
     if (percentage > 50) return 'bg-yellow-500 dark:bg-yellow-400';
-    return 'bg-green-500 dark:bg-green-400';
+    return 'bg-green-500 dark:bg-green-400'; // Good
   };
 
   if (isLoading) {
@@ -102,7 +117,6 @@ export default function BudgetsPage() {
               {t('budgetCreateNewButton')}
             </Button>
           </div>
-          {/* Simplified skeleton for accordion list */}
           <div className="space-y-4">
             {[1, 2].map(i => (
               <Card key={i} className="shadow-md rounded-lg">
@@ -112,7 +126,7 @@ export default function BudgetsPage() {
                 <CardContent className="p-4 pt-0">
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {[1,2,3].map(j => (
-                        <Skeleton key={j} className="h-28 w-full rounded-md" />
+                        <Skeleton key={j} className="h-40 w-full rounded-md" />
                     ))}
                   </div>
                 </CardContent>
@@ -124,7 +138,7 @@ export default function BudgetsPage() {
     );
   }
 
-  if (!budgets || budgets.length === 0) {
+  if (!monthlyBudgets || monthlyBudgets.length === 0) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -140,7 +154,7 @@ export default function BudgetsPage() {
           </div>
           <Card className="text-center py-10 shadow-lg">
             <CardHeader>
-              <Target className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <BarChartHorizontalBig className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <CardTitle>{t('budgetNoBudgetsFoundTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
@@ -174,73 +188,58 @@ export default function BudgetsPage() {
               </AccordionTrigger>
               <AccordionContent className="p-4">
                 {groupedBudgetsByYear[year] && groupedBudgetsByYear[year].length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                     {groupedBudgetsByYear[year].map(budget => {
-                      const remainingAmount = budget.plannedAmount - budget.actualExpenses;
-                      const progressPercentageSafe = budget.plannedAmount > 0 ? (budget.actualExpenses / budget.plannedAmount) * 100 : (budget.actualExpenses > 0 ? 101 : 0);
+                      const remainingAmount = budget.totalPlanned - budget.totalActual;
+                      const progressPercentageSafe = budget.totalPlanned > 0 ? (budget.totalActual / budget.totalPlanned) * 100 : (budget.totalActual > 0 ? 101 : 0);
                       const progressColorClass = getProgressColor(progressPercentageSafe);
                       
-                      let monthDisplay = budget.month;
-                      try {
-                          monthDisplay = format(parse(budget.month, 'yyyy-MM', new Date()), 'MMMM', { locale: dateFnsLocale });
-                      } catch (e) { /* Keep original if parsing fails */ }
+                      const monthNameOnly = format(parse(budget.monthYear, 'yyyy-MM', new Date()), 'MMMM', { locale: dateFnsLocale });
 
                       return (
-                        <Card key={budget.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50">
-                          <CardHeader className="p-3 flex flex-row justify-between items-center border-b">
-                            <div>
-                              <CardTitle className="text-md font-semibold text-foreground">{monthDisplay}</CardTitle>
-                              {budget.subCategory && <CardDescription className="text-xs">{budget.subCategory.name}</CardDescription>}
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={() => router.push(`/budgets/${budget.id}`)} className="px-2 py-1 h-auto">
-                              <Eye className="mr-1.5 h-3.5 w-3.5" />
-                              {t('budgetShowDetailsButton')}
-                            </Button>
+                        <Card key={budget.monthYear} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50">
+                          <CardHeader className="p-4 pb-3 border-b">
+                            <CardTitle className="text-xl font-semibold text-foreground">{monthNameOnly}</CardTitle>
+                            <CardDescription className="text-xs">{budget.year}</CardDescription>
                           </CardHeader>
-                          <CardContent className="p-3 pt-2 space-y-2.5">
-                            <div className="pt-1">
-                              <Label htmlFor={`progress-${budget.id}-${year}`} className="text-xs text-muted-foreground mb-0.5 block">
-                                {t('budgetProgress', { percentage: progressPercentageSafe.toFixed(0) })}
-                              </Label>
+                          <CardContent className="p-4 space-y-3 flex-grow">
+                            <div>
+                              <div className="flex justify-between items-baseline mb-1">
+                                <span className="text-sm text-muted-foreground">{t('budgetProgress', { percentage: progressPercentageSafe.toFixed(0) })}</span>
+                                {progressPercentageSafe > 100 && (
+                                  <span className="text-xs font-semibold text-red-500">
+                                    {t('budgetOverspentWarning')}
+                                  </span>
+                                )}
+                              </div>
                               <Progress
-                                id={`progress-${budget.id}-${year}`}
                                 value={progressPercentageSafe > 100 ? 100 : progressPercentageSafe}
                                 indicatorClassName={progressColorClass}
                                 aria-label={t('budgetProgress', { percentage: progressPercentageSafe.toFixed(0) })}
-                                className="h-2.5"
+                                className="h-3"
                               />
-                              {progressPercentageSafe > 100 && (
-                                <p className="text-xs text-red-600 dark:text-red-500 mt-1 text-right">
-                                  {t('budgetOverspentWarning')}
-                                </p>
-                              )}
                             </div>
-                            <div className="grid grid-cols-3 gap-2 text-xs">
-                              <div className="text-center p-1.5 rounded-md bg-muted/40 dark:bg-muted/20">
-                                <p className="text-muted-foreground flex items-center justify-center text-[0.65rem] uppercase tracking-wider font-medium">
-                                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-                                  {t('budgetPlannedAmountShort')}
-                                </p>
-                                <CurrencyDisplay amountInCents={budget.plannedAmount} currencyCode={budget.currency} />
-                              </div>
-                              <div className="text-center p-1.5 rounded-md bg-muted/40 dark:bg-muted/20">
-                                <p className="text-muted-foreground flex items-center justify-center text-[0.65rem] uppercase tracking-wider font-medium">
-                                  <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-                                  {t('budgetActualExpensesShort')}
-                                </p>
-                                <span className="font-semibold text-red-600 dark:text-red-400">
-                                  <CurrencyDisplay amountInCents={budget.actualExpenses} currencyCode={budget.currency} />
-                                </span>
-                              </div>
-                              <div className={cn("text-center p-1.5 rounded-md", remainingAmount < 0 ? "bg-red-500/10 text-red-700 dark:text-red-400" : "bg-green-500/10 text-green-700 dark:text-green-400")}>
-                                <p className="opacity-80 flex items-center justify-center text-[0.65rem] uppercase tracking-wider font-medium">
-                                  <Activity className="mr-1 h-3 w-3" />
-                                  {t('budgetRemainingAmountShort')}
-                                </p>
-                                <CurrencyDisplay amountInCents={remainingAmount} currencyCode={budget.currency} />
-                              </div>
+                            
+                            <div className="space-y-2.5 text-sm">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-4 w-4 text-green-500" />{t('budgetTotalPlannedShort')}</span>
+                                  <span className="font-semibold text-foreground"><CurrencyDisplay amountInCents={budget.totalPlanned} currencyCode={budget.currencyCode} /></span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-4 w-4 text-red-500" />{t('budgetTotalActualShort')}</span>
+                                  <span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={budget.totalActual} currencyCode={budget.currencyCode} /></span>
+                                </div>
                             </div>
                           </CardContent>
+                           <CardFooter className="p-4 pt-0 mt-auto">
+                             <div className={cn(
+                                "w-full text-center p-2.5 rounded-md font-semibold",
+                                remainingAmount >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
+                              )}>
+                                <p className="text-xs uppercase tracking-wider opacity-80 mb-0.5">{t('budgetRemainingAmountShort')}</p>
+                                <CurrencyDisplay amountInCents={remainingAmount} currencyCode={budget.currencyCode} />
+                              </div>
+                           </CardFooter>
                         </Card>
                       );
                     })}

@@ -127,7 +127,7 @@ Retrieves the profile information for the currently authenticated user.
       "userCurrency": {
         "code": "USD"
       },
-      "roles": ["ROLE_USER"]
+      "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]
     }
     ```
 *   **Failure Response (401 Unauthorized)**
@@ -154,7 +154,7 @@ Updates the profile information for the currently authenticated user.
       "userCurrency": {
         "code": "EUR"
       },
-      "roles": ["ROLE_USER"]
+      "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]
     }
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
@@ -670,65 +670,62 @@ Retrieves all submitted feedbacks. Requires `ROLE_MODERATOR_FEEDBACK` role.
 ### 8. Budgets
 
 #### `GET /budgets`
-Retrieves a list of budgets for the authenticated user.
+Retrieves a summary of budgets grouped by month for the authenticated user.
 *   **Success Response (200 OK)**:
     ```json
     {
-      "budgets": [
-        {
-          "id": 1,
-          "month": "2024-08", // Format: YYYY-MM
-          "plannedAmount": 500000, // in cents
-          "actualExpenses": 350000, // in cents, calculated by backend
-          "currency": "USD", // e.g. "USD", "PLN"
-          "subCategory": {
-            "id": 101,
-            "name": "Groceries"
-          }
+      "budgets": {
+        "2025-06": {
+          "totalPlanned": { "amount": 1240815, "currency": { "code": "PLN" } },
+          "totalActual": { "amount": 100000, "currency": { "code": "PLN" } }
+        },
+        "2025-05": {
+          "totalPlanned": { "amount": 100000, "currency": { "code": "PLN" } },
+          "totalActual": { "amount": 0, "currency": { "code": "PLN" } }
         }
-        // ... more budget items
-      ]
+        // ... other months
+      }
     }
     ```
 *   **Failure Response (401 Unauthorized)**
 
 #### `GET /budgets/{id}`
-Retrieves a specific budget by its ID.
+Retrieves a specific budget item by its ID (e.g., a budget for a specific category within a month).
 *   **Success Response (200 OK)**:
     ```json
     {
       "budget": {
-        "id": "1",
-        "month": "2024-08",
-        "plannedAmount": 500000,
-        "actualExpenses": 350000,
-        "currency": "USD",
+        "id": "1", // ID of the specific budget item
+        "month": "2024-08", // YYYY-MM
+        "plannedAmount": 500000, // in cents
+        "actualExpenses": 350000, // in cents, calculated by backend for this item
+        "currency": "USD", // The currency code for this budget item
         "subCategory": {
           "id": 101,
           "name": "Groceries"
         }
-        // Potentially more details like category breakdowns if implemented
       }
     }
     ```
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `POST /budgets`
-Creates a new budget.
+Creates a new budget item for a specific category within a month.
 *   **Request Body**:
     ```json
     {
       "month": "2024-09", // YYYY-MM
       "plannedAmount": 600000, // in cents
-      "currencyCode": "USD", // Or derive from user's default currency
+      "currencyCode": "USD", // Currency code for this budget item
       "category_id": 101 // integer ID (refers to a subCategory ID), required
     }
     ```
-*   **Success Response (201 Created)**: Returns the created budget object (similar structure to GET /budgets/{id}).
+*   **Success Response (201 Created)**: Returns the created budget object (similar structure to `GET /budgets/{id}` response).
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 #### `PUT /budgets/{id}`
-Updates a specific budget.
+Updates a specific budget item.
+*   **Path Parameter**: `id` (ID of the specific budget item to update)
 *   **Request Body**: (Fields to update)
     ```json
     {
@@ -740,7 +737,8 @@ Updates a specific budget.
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
 
 #### `DELETE /budgets/{id}`
-Deletes a specific budget.
+Deletes a specific budget item.
+*   **Path Parameter**: `id` (ID of the specific budget item to delete)
 *   **Success Response (204 No Content)**
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
@@ -846,16 +844,21 @@ Consider these when designing your database and PHP classes/objects.
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
-### Budget
+### Budget (Individual Item)
 *   `id` (int, primary key)
 *   `user_id` (int, foreign key to User)
 *   `month` (string, "YYYY-MM")
 *   `planned_amount_cents` (int)
-*   `currency_code` (string) // e.g., "USD", "PLN" - this is how currency is stored in DB and sent in request
+*   `currency_code` (string) // e.g., "USD", "PLN"
 *   `category_id` (int, foreign key to SubCategory)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
-    *(Note: `actualExpenses` is typically calculated on-the-fly by summing relevant transactions for the budget's month and user, not stored directly in the budget table. The GET /budgets response might include it.)*
+    *(Note: `actualExpenses` for an individual budget item might be calculated on-the-fly or stored if performance dictates. The `GET /budgets/{id}` response might include it.)*
+
+### MonthlyBudgetSummary (Conceptual, for `GET /budgets` response)
+*   `month` (string, "YYYY-MM" - this is the key in the response object)
+*   `totalPlanned` (object: amount_cents, currency_code)
+*   `totalActual` (object: amount_cents, currency_code)
 
 
 ## Further Considerations
