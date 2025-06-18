@@ -68,7 +68,8 @@ export interface Transaction {
   source: string | null;
   date: string;
   isRecurring?: boolean;
-  frequencyId?: string;
+  frequency?: string; // Added to match GET /transactions/{id} response
+  frequencyId?: string; // Kept for form/payload consistency
 
   typeName?: string;
   categoryName?: string | null;

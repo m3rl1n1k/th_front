@@ -23,6 +23,7 @@ import type {
   CreateWalletPayload,
   UpdateWalletPayload as AppUpdateWalletPayload,
   CurrenciesApiResponse,
+  CurrencyInfo,
   UpdateMainCategoryPayload,
   UpdateSubCategoryPayload,
   TransferFormDataResponse,
@@ -184,11 +185,19 @@ export const getTransactionsList = (
 
 export const getTransactionById = async (id: string | number, token: string): Promise<Transaction> => {
   const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'GET', token });
+  // Map 'frequency' to 'frequencyId' if 'frequency' exists and 'frequencyId' does not
+  if (response.transaction && response.transaction.frequency !== undefined && response.transaction.frequencyId === undefined) {
+    response.transaction.frequencyId = response.transaction.frequency;
+  }
   return response.transaction;
 };
 
 export const updateTransaction = async (id: string | number, data: UpdateTransactionPayload, token: string): Promise<Transaction> => {
   const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'PUT', body: data, token });
+  // Map 'frequency' to 'frequencyId' similarly for the response if needed, though PUT usually returns the updated object with consistent fields.
+  if (response.transaction && response.transaction.frequency !== undefined && response.transaction.frequencyId === undefined) {
+    response.transaction.frequencyId = response.transaction.frequency;
+  }
   return response.transaction;
 };
 
@@ -278,4 +287,3 @@ export const deleteTransfer = (id: string | number, token: string): Promise<void
 // General
 export const getCurrencies = (token: string): Promise<CurrenciesApiResponse> =>
   request(URLS.currencies, { method: 'GET', token });
-
