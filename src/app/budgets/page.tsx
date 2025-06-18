@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format, parse, lastDayOfMonth } from 'date-fns';
@@ -14,7 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import { getBudgetList } from '@/lib/api';
-import type { BudgetListApiResponse, MonthlyBudgetSummary } from '@/types';
+import type { BudgetListApiResponse, MonthlyBudgetSummary as ApiMonthlyBudget } from '@/types';
 import { Target, PlusCircle, TrendingUp, TrendingDown, Loader2, BarChartHorizontalBig, Eye, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -60,14 +60,19 @@ export default function BudgetsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDeleteDetails, setItemToDeleteDetails] = useState<ItemToDeleteDetails | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const isFetchingRef = useRef(false);
 
 
   const fetchBudgets = useCallback(async () => {
+    if (isFetchingRef.current) return;
+
     if (!isAuthenticated || !token) {
-      setIsLoading(false);
       setMonthlyBudgets([]);
+      setIsLoading(false);
       return;
     }
+    
+    isFetchingRef.current = true;
     setIsLoading(true);
     try {
       const response: BudgetListApiResponse = await getBudgetList(token);
@@ -87,30 +92,38 @@ export default function BudgetsPage() {
           totalActual: data.totalActual.amount,
           currencyCode: data.totalPlanned.currency.code,
         };
-      }).sort((a, b) => b.monthYear.localeCompare(a.monthYear)); 
+      }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
 
       setMonthlyBudgets(processed);
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-      setMonthlyBudgets([]); 
+      setMonthlyBudgets([]);
     } finally {
       setIsLoading(false);
+      isFetchingRef.current = false;
     }
   }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
-    fetchBudgets();
-  }, [fetchBudgets]);
+    if (isAuthenticated && token) {
+        fetchBudgets();
+    } else if (!isAuthenticated && !token && !isLoading) { 
+        // If not authenticated and not already loading (e.g. initial load failed before auth check)
+        setIsLoading(false);
+        setMonthlyBudgets([]);
+    }
+  }, [isAuthenticated, token, fetchBudgets, isLoading]);
+
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
-    if (!Array.isArray(monthlyBudgets)) { 
+    if (!Array.isArray(monthlyBudgets)) {
       return { groupedBudgetsByYear: {}, sortedYears: [] };
     }
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
       if (!budget || typeof budget.year !== 'string') {
         console.warn('BudgetsPage: Invalid budget item or budget.year in reduce. Item:', budget);
-        return acc; 
+        return acc;
       }
       const year = budget.year;
       if (!acc[year]) {
@@ -145,12 +158,10 @@ export default function BudgetsPage() {
   const handleDeleteConfirmed = async () => {
     if (!itemToDeleteDetails) return;
     setIsDeleting(true);
-    // For now, this will just show a toast, as deleting entire monthly summaries isn't directly supported by a simple API call.
-    // In a real scenario, this might trigger a more complex operation (e.g., deleting all budget items for that month).
     toast({
       title: t('removeBudgetSummaryNotSupportedTitle'),
       description: t('removeBudgetSummaryNotSupportedDesc', { month: itemToDeleteDetails.monthDisplayName }),
-      variant: "default" 
+      variant: "default"
     });
     setIsDeleting(false);
     setShowDeleteDialog(false);
@@ -180,7 +191,7 @@ export default function BudgetsPage() {
                 <CardContent className="p-4 pt-0">
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {[1,2,3].map(j => (
-                        <Skeleton key={j} className="h-48 w-full rounded-md" /> 
+                        <Skeleton key={j} className="h-48 w-full rounded-md" />
                     ))}
                   </div>
                 </CardContent>
@@ -247,7 +258,7 @@ export default function BudgetsPage() {
                       const remainingAmount = budget.totalPlanned - budget.totalActual;
                       const progressPercentageSafe = budget.totalPlanned > 0 ? (budget.totalActual / budget.totalPlanned) * 100 : (budget.totalActual > 0 ? 101 : 0);
                       const progressColorClass = getProgressColor(progressPercentageSafe);
-                      
+
                       const monthNameOnly = budget.monthDisplayName.split(' ')[0];
 
                       return (
@@ -273,7 +284,7 @@ export default function BudgetsPage() {
                                 className="h-3"
                               />
                             </div>
-                            
+
                             <div className="space-y-2.5 text-sm">
                                 <div className="flex justify-between items-center">
                                   <span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-4 w-4 text-green-500" />{t('budgetTotalPlannedShort')}</span>
@@ -334,4 +345,3 @@ export default function BudgetsPage() {
     </MainLayout>
   );
 }
-    
