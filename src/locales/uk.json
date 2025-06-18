@@ -114,6 +114,9 @@
   "passwordChangeSuccessDesc": "Ваш пароль успішно оновлено.",
   "passwordChangeFailedTitle": "Не вдалося змінити пароль",
   "tokenRequired": "Токен обов'язковий.",
+  "manualTokenPageRemovedTitle": "Введення токена вручну видалено",
+  "manualTokenPageRemovedDesc": "З міркувань безпеки введення токена вручну було вимкнено. Будь ласка, використовуйте стандартний процес входу.",
+  "redirectingToLoginSoon": "Вас буде незабаром перенаправлено на сторінку входу.",
 
   "//": "ПРОФІЛЬ КОРИСТУВАЧА",
   "userProfileTitle": "Профіль користувача",
@@ -534,7 +537,7 @@
   "categoryAlreadyBudgetedShort": "Забюджетовано",
   "categoryAlreadyBudgetedTitle": "Категорія вже забюджетована",
   "categoryAlreadyBudgetedMessage": "Для цієї категорії вже існує бюджет на {month}. Будь ласка, виберіть іншу категорію або відредагуйте існуючий бюджет.",
-
+  "categoryAlreadyHasBudgetForMonthError": "Для цієї категорії вже існує бюджет на обраний місяць. Будь ласка, оберіть іншу категорію або відредагуйте існуючий бюджет.",
 
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",

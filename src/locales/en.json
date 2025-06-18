@@ -114,6 +114,9 @@
   "passwordChangeSuccessDesc": "Your password has been successfully updated.",
   "passwordChangeFailedTitle": "Password Change Failed",
   "tokenRequired": "Token is required.",
+  "manualTokenPageRemovedTitle": "Manual Token Entry Removed",
+  "manualTokenPageRemovedDesc": "For security reasons, manual token entry has been disabled. Please use the standard login process.",
+  "redirectingToLoginSoon": "You will be redirected to the login page shortly.",
 
   "//": "USER PROFILE",
   "userProfileTitle": "User Profile",
@@ -534,6 +537,7 @@
   "categoryAlreadyBudgetedShort": "Budgeted",
   "categoryAlreadyBudgetedTitle": "Category Already Budgeted",
   "categoryAlreadyBudgetedMessage": "This category already has a budget for {month}. Please choose a different category or edit the existing budget.",
+  "categoryAlreadyHasBudgetForMonthError": "This category already has a budget for the selected month. Please choose a different category or edit the existing budget.",
 
 
   "//": "SETTINGS",

@@ -123,7 +123,22 @@ export default function NewBudgetPage() {
       toast({ title: t('budgetCreatedTitle'), description: t('budgetCreatedDesc') });
       router.push('/budgets');
     } catch (error: any) {
-      toast({ variant: "destructive", title: t('errorCreatingBudget'), description: error.message });
+      let toastTitle = t('errorCreatingBudget');
+      let toastDescription = error.message || t('unexpectedError');
+
+      if (error.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+        const firstError = error.errors[0];
+        // Check if the error indicates a category already has a budget for the month
+        // This condition might need adjustment based on exact backend error structure/message
+        if (firstError.field === 'category_id' && firstError.message && 
+            (firstError.message.toLowerCase().includes('contain budget to month') || 
+             firstError.message.toLowerCase().includes('already has a budget'))) {
+          toastDescription = t('categoryAlreadyHasBudgetForMonthError');
+        } else if (firstError.message) {
+          toastDescription = firstError.message; // Use specific message from backend if available
+        }
+      }
+      toast({ variant: "destructive", title: toastTitle, description: toastDescription });
     }
   };
 
