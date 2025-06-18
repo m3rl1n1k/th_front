@@ -181,7 +181,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-card p-0">
-                <SheetHeader className="sr-only"> {/* Make header sr-only if title is also sr-only */}
+                <SheetHeader> {/* Removed sr-only from SheetHeader */}
                   <SheetTitle className="sr-only">{t('toggleNavigation')}</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col p-6 space-y-2">
