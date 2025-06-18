@@ -42,11 +42,13 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-accent/10">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <DollarSign className="h-8 w-8 text-primary" />
-            <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
-          </Link>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center"> {/* Wrapper for logo group */}
+            <Link href="/" className="flex items-center space-x-2">
+              <DollarSign className="h-8 w-8 text-primary" />
+              <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
+            </Link>
+          </div>
+          <div className="flex items-center space-x-2"> {/* Action buttons group */}
             {mounted && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
