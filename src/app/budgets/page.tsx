@@ -81,7 +81,7 @@ export default function BudgetsPage() {
   }, [fetchBudgets]);
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
-    if (!monthlyBudgets) return { groupedBudgetsByYear: {}, sortedYears: [] };
+    if (!monthlyBudgets) return { groupedBudgetsByYear: {}, sortedYears: [] }; // Guard added here
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
       if (!acc[budget.year]) {
@@ -91,16 +91,15 @@ export default function BudgetsPage() {
       return acc;
     }, {} as GroupedProcessedBudgets);
 
-    // Years are already sorted if monthlyBudgets are sorted by YYYY-MM descending
     const sYears = Object.keys(groups).sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
     return { groupedBudgetsByYear: groups, sortedYears: sYears };
   }, [monthlyBudgets]);
 
   const getProgressColor = (percentage: number): string => {
-    if (percentage > 100) return 'bg-red-600 dark:bg-red-500'; // Overspent
+    if (percentage > 100) return 'bg-red-600 dark:bg-red-500';
     if (percentage > 75) return 'bg-orange-500 dark:bg-orange-400';
     if (percentage > 50) return 'bg-yellow-500 dark:bg-yellow-400';
-    return 'bg-green-500 dark:bg-green-400'; // Good
+    return 'bg-green-500 dark:bg-green-400';
   };
 
   if (isLoading) {
@@ -255,3 +254,4 @@ export default function BudgetsPage() {
     </MainLayout>
   );
 }
+
