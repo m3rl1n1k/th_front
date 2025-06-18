@@ -1,3 +1,4 @@
+
 # FinanceFlow API Documentation (for PHP Backend)
 
 This document outlines the API endpoints and data structures required for the FinanceFlow application. The backend should be implemented in PHP.
@@ -64,7 +65,8 @@ Logs in a user.
         "userCurrency": {
            "code": "USD"
         },
-        "memberSince": "2023-01-15T10:00:00Z"
+        "memberSince": "2023-01-15T10:00:00Z",
+        "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]
       },
       "token": "your_jwt_token_here"
     }
@@ -112,7 +114,7 @@ Invalidates the user's session/token if server-side session management or token 
 ### 2. User Profile
 
 #### `GET /user`
-Retrieves the profile information for the currently authenticated user. (Frontend uses this endpoint)
+Retrieves the profile information for the currently authenticated user.
 
 *   **Request Body**: None (token in header)
 *   **Success Response (200 OK)**:
@@ -124,7 +126,8 @@ Retrieves the profile information for the currently authenticated user. (Fronten
       "memberSince": "2023-01-15T10:00:00Z",
       "userCurrency": {
         "code": "USD"
-      }
+      },
+      "roles": ["ROLE_USER"]
     }
     ```
 *   **Failure Response (401 Unauthorized)**
@@ -138,11 +141,42 @@ Updates the profile information for the currently authenticated user.
       "login": "new_user_login_name", // Username
       "email": "new_email@example.com",
       "userCurrencyCode": "EUR" // User's preferred currency code
-      // Password changes should ideally be a separate endpoint with current password confirmation
+      // Password changes should be handled by POST /user/change-password
     }
     ```
-*   **Success Response (200 OK)**: Returns the updated user profile (same format as `GET /user`).
+*   **Success Response (200 OK)**: Returns the updated user profile.
+    ```json
+    {
+      "id": 1,
+      "login": "new_user_login_name",
+      "email": "new_email@example.com",
+      "memberSince": "2023-01-15T10:00:00Z",
+      "userCurrency": {
+        "code": "EUR"
+      },
+      "roles": ["ROLE_USER"]
+    }
+    ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `POST /user/change-password`
+Allows the authenticated user to change their password.
+*   **Request Body**:
+    ```json
+    {
+      "currentPassword": "current_secure_password",
+      "newPassword": "new_very_secure_password"
+    }
+    ```
+*   **Success Response (200 OK or 204 No Content)**:
+    ```json
+    // Option 1: Simple success message (200 OK)
+    {
+      "message": "Password changed successfully."
+    }
+    // Option 2: No content (204 No Content)
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format, e.g., if current password is incorrect or new password doesn't meet criteria.
 
 ### 3. Dashboard
 
@@ -200,7 +234,8 @@ Retrieves a list of the last N transactions.
           "wallet": { "id": 1, "name": "Main", "number": "ACCT123" },
           "subCategory": { "id": 101, "name": "Groceries"}, // null if not set
           "source": "manual", // or other source if applicable
-          "date": "2024-07-28T14:30:00Z" // ISO date string
+          "date": "2024-07-28T14:30:00Z", // ISO date string
+          "frequency": "1" // Frequency identifier
         }
         // ... more transactions up to limit
       ]
@@ -219,6 +254,7 @@ Retrieves available transaction types for forms (e.g., Income, Expense).
       "types": {
         "1": "INCOME",
         "2": "EXPENSE"
+        // "3": "TRANSFER" (If applicable)
       }
     }
     ```
@@ -273,7 +309,7 @@ Creates a new transaction.
       "user": { "id": 1 },
       "source": "manual", // or other source if applicable
       "date": "2024-07-28T14:30:00Z", // ISO date string
-      "frequencyId": "1" // Or the actual frequency identifier stored by backend
+      "frequency": "1" // Actual frequency identifier stored/returned by backend
     }
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
@@ -304,8 +340,7 @@ Retrieves a list of transactions for the authenticated user. The response should
           "user": { "id": 1 },
           "source": "store_x",
           "date": "2024-07-28T14:30:00Z", // ISO date string
-          "isRecurring": false, // This field might change if frequencyId is adopted
-          "frequencyId": "1"
+          "frequency": "1"
         }
       ]
     }
@@ -314,7 +349,25 @@ Retrieves a list of transactions for the authenticated user. The response should
 
 #### `GET /transactions/{id}`
 Retrieves a specific transaction by its ID. The response should be `{"transaction": {...}}`.
-*   **Success Response (200 OK)**: Single transaction object (same format as items in `GET /transactions` list).
+*   **Success Response (200 OK)**: Single transaction object.
+    ```json
+    {
+      "transaction": {
+        "id": 123,
+        "amount": { "amount": 5000, "currency": { "code": "USD" } },
+        "currency": { "code": "USD" },
+        "exchangeRate": 1,
+        "type": 2,
+        "description": "Groceries",
+        "wallet": { "id": 1, "name": "Main", "number": "ACCT123" },
+        "subCategory": { "id": 101, "name": "Groceries"},
+        "user": { "id": 1 },
+        "source": "manual",
+        "date": "2024-07-28T14:30:00Z",
+        "frequency": "1"
+      }
+    }
+    ```
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 #### `PUT /transactions/{id}`
@@ -331,7 +384,7 @@ Updates a specific transaction.
       "frequencyId": "5" // string, required
     }
     ```
-*   **Success Response (200 OK)**: Updated transaction object (same format as `GET /transactions/{id}`).
+*   **Success Response (200 OK)**: Updated transaction object (same format as `GET /transactions/{id}` response, with `frequency` field).
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
 
 #### `DELETE /transactions/{id}`
@@ -561,7 +614,60 @@ Deletes a specific subcategory.
 *   **Success Response (204 No Content)**
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
-### 7. General
+### 7. Feedback
+
+#### `POST /feedback`
+Allows an authenticated user to submit feedback.
+*   **Request Body**:
+    ```json
+    {
+      "type": "BUG_REPORT", // Enum: BUG_REPORT, FEATURE_REQUEST, GENERAL_FEEDBACK, QUESTION
+      "subject": "Issue with login button",
+      "message": "The login button on the main page doesn't work on mobile."
+    }
+    ```
+*   **Success Response (201 Created)**:
+    ```json
+    {
+      "message": "Feedback submitted successfully."
+      // Optionally, return the created feedback object
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format.
+
+#### `GET /admin/feedbacks`
+Retrieves all submitted feedbacks. Requires `ROLE_MODERATOR_FEEDBACK` role.
+*   **Request Body**: None (token in header)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "feedbacks": [
+        {
+          "id": 1,
+          "type": "BUG_REPORT",
+          "subject": "Login issue",
+          "message": "Cannot log in on Safari.",
+          "createdAt": "2024-08-01T10:00:00Z",
+          "user": {
+            "id": 5,
+            "login": "testuser"
+          }
+        },
+        {
+          "id": 2,
+          "type": "FEATURE_REQUEST",
+          "subject": "Dark mode for reports",
+          "message": "It would be great to have dark mode for the reporting section.",
+          "createdAt": "2024-08-01T11:30:00Z",
+          "user": null // Example of anonymous feedback if supported
+        }
+        // ... more feedback items
+      ]
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 403 Forbidden)**
+
+### 8. General
 
 #### `GET /currencies`
 Retrieves a list of available currencies.
@@ -593,6 +699,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `email` (string, unique)
 *   `password_hash` (string)
 *   `user_currency_code` (string, e.g., "USD", "EUR")
+*   `roles` (array of strings, e.g. `["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]`)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
@@ -608,7 +715,7 @@ Consider these when designing your database and PHP classes/objects.
 *   `subcategory_id` (int, nullable, foreign key to SubCategory)
 *   `source` (string, nullable, system-internal or for imports)
 *   `transaction_date` (datetime) // The actual date of the transaction event
-*   `frequency_id` (string/int, foreign key or reference to a Frequency table/enum, linked to values from `/transactions/frequency`)
+*   `frequency` (string/int, backend representation of frequency, linked to values from `/transactions/frequency`)
 *   `created_at` (datetime) // Record creation timestamp
 *   `updated_at` (datetime) // Record update timestamp
 
@@ -620,7 +727,7 @@ Consider these when designing your database and PHP classes/objects.
 ### FrequencyType (Conceptual, based on `GET /transactions/frequency`)
 *   `id` (string, e.g., "1", "5" - as used by frontend)
 *   `name` (string, e.g., "ONE_TIME", "MONTHLY")
-*   *(Backend might store `frequency_id` that maps to these string IDs internally)*
+*   *(Backend might store `frequency` as an integer or string that maps to these string IDs internally)*
 
 
 ### Wallet
@@ -649,6 +756,15 @@ Consider these when designing your database and PHP classes/objects.
 *   `name` (string)
 *   `icon` (string, nullable)
 *   `color` (string, nullable, e.g. hex code)
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+
+### Feedback
+*   `id` (int, primary key)
+*   `user_id` (int, nullable, foreign key to User - null if anonymous)
+*   `type` (string, enum: BUG_REPORT, FEATURE_REQUEST, GENERAL_FEEDBACK, QUESTION)
+*   `subject` (string, max 255 chars)
+*   `message` (text)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
@@ -744,4 +860,3 @@ If you experience "Failed to fetch" errors or similar network issues when access
 
 By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
-
