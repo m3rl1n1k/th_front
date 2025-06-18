@@ -115,10 +115,10 @@ export default function BudgetSummaryPage() {
   };
 
   const confirmDeleteItem = async () => {
-    if (!itemToDelete || !token) return;
+    if (!itemToDelete || !token || !monthYear) return;
     setIsDeleting(true);
     try {
-      await deleteBudget(itemToDelete.budgetId, token);
+      await deleteBudget(monthYear, itemToDelete.budgetId, token);
       toast({ title: t('budgetItemDeletedTitle'), description: t('budgetItemDeletedDesc', { categoryName: itemToDelete.name }) });
       fetchBudgetSummary(false); 
     } catch (error: any) {

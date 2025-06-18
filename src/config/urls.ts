@@ -69,10 +69,12 @@ export const URLS = {
 
   // Budgets
   getBudgets: `${API_BASE_URL}/budgets`, // For the list of monthly summaries
-  getBudgetById_DEPRECATED: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, // For a specific budget item (general fetch) - DEPRECATED if not used
-  createBudget: `${API_BASE_URL}/budgets`, // To create a specific budget item
-  updateBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`, // To update a specific budget item
-  deleteBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, // To delete a specific budget item OR all for a month if ID is YYYY-MM
+  getBudgetById_DEPRECATED: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, 
+  createBudget: `${API_BASE_URL}/budgets`, 
+  updateBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`, 
+  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${date}/${id}`, // For a specific budget item
+  deleteBudgetsForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/${monthYear}`, // For all budgets in a month
   getBudgetSummaryForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/summary/${monthYear}`,
   getBudgetSummaryItemForEdit: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`,
 };
+

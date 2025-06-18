@@ -13,7 +13,7 @@ import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import { getBudgetList, deleteBudget } from '@/lib/api'; // Added deleteBudget
+import { getBudgetList, deleteBudgetsForMonth } from '@/lib/api'; 
 import type { BudgetListApiResponse, MonthlyBudgetSummary as ApiMonthlyBudget } from '@/types';
 import { Target, PlusCircle, TrendingUp, TrendingDown, Loader2, BarChartHorizontalBig, Eye, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -158,8 +158,7 @@ export default function BudgetsPage() {
     if (!itemToDeleteDetails || !token) return;
     setIsDeleting(true);
     try {
-      // Assuming monthYear can be used as an ID to delete all items for that month
-      await deleteBudget(itemToDeleteDetails.monthYear, token); 
+      await deleteBudgetsForMonth(itemToDeleteDetails.monthYear, token); 
       toast({
         title: t('monthBudgetsDeletedTitle'),
         description: t('monthBudgetsDeletedDesc', { month: itemToDeleteDetails.monthDisplayName }),

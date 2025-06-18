@@ -346,8 +346,12 @@ export const updateBudget = (date: string, id: string | number, data: UpdateBudg
   return request<BudgetListItem>(URLS.updateBudget(date, id), { method: 'PUT', body: data, token });
 };
 
-export const deleteBudget = (id: string | number, token: string): Promise<void> => {
-  return request<void>(URLS.deleteBudget(id), { method: 'DELETE', token });
+export const deleteBudget = (date: string, id: string | number, token: string): Promise<void> => {
+  return request<void>(URLS.deleteBudget(date, id), { method: 'DELETE', token });
+};
+
+export const deleteBudgetsForMonth = (monthYear: string, token: string): Promise<void> => {
+  return request<void>(URLS.deleteBudgetsForMonth(monthYear), { method: 'DELETE', token });
 };
 
 export const getBudgetSummaryForMonth = (monthYear: string, token: string): Promise<BudgetSummaryByMonthResponse> => {
