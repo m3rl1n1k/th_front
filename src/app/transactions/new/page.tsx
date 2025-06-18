@@ -67,7 +67,7 @@ export default function NewTransactionPage() {
 
   type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, register, reset, getValues, setValue } = useForm<NewTransactionFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting: formIsSubmitting }, register, reset, getValues, setValue } = useForm<NewTransactionFormData>({
     resolver: zodResolver(NewTransactionSchema),
     defaultValues: {
       amount: undefined,
@@ -210,6 +210,7 @@ export default function NewTransactionPage() {
   };
 
   const anyDataLoading = isLoadingTypes || isLoadingWallets || isLoadingCategories || isLoadingFrequencies;
+  const isSubmitting = formIsSubmitting || anyDataLoading;
 
   return (
     <MainLayout>
@@ -445,13 +446,9 @@ export default function NewTransactionPage() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting || anyDataLoading}>
-                  {isSubmitting || anyDataLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  {isSubmitting || anyDataLoading ? t('saving') : t('saveTransaction')}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {isSubmitting ? t('saving') : t('saveTransaction')}
                 </Button>
               </div>
             </form>

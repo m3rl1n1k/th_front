@@ -47,7 +47,7 @@ export default function NewWalletPage() {
 
   const WalletFormSchema = createWalletFormSchema(t);
 
-  const { control, handleSubmit, register, formState: { errors, isSubmitting }, setValue } = useForm<WalletFormData>({
+  const { control, handleSubmit, register, formState: { errors, isSubmitting: formIsSubmitting }, setValue } = useForm<WalletFormData>({
     resolver: zodResolver(WalletFormSchema),
     defaultValues: {
       name: '',
@@ -149,6 +149,7 @@ export default function NewWalletPage() {
   };
 
   const anyDataLoading = isLoadingTypes || isLoadingExistingWallets || isLoadingCurrencies;
+  const isSubmitting = formIsSubmitting || anyDataLoading;
 
   return (
     <MainLayout>
@@ -255,9 +256,9 @@ export default function NewWalletPage() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting || anyDataLoading}>
-                  {isSubmitting || anyDataLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isSubmitting || anyDataLoading ? t('saving') : t('saveWalletButton')}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {isSubmitting ? t('saving') : t('saveWalletButton')}
                 </Button>
               </div>
             </form>

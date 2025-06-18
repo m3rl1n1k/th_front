@@ -427,8 +427,8 @@ export default function ProfilePage() {
                        <Button type="button" variant="outline">{t('cancelButton')}</Button>
                     </DialogClose>
                      <Button type="submit" disabled={editProfileForm.formState.isSubmitting || isLoadingCurrencies}>
-                        {(editProfileForm.formState.isSubmitting || isLoadingCurrencies) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {(editProfileForm.formState.isSubmitting || isLoadingCurrencies) ? t('saving') : t('saveChangesButton')}
+                        {editProfileForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {editProfileForm.formState.isSubmitting ? t('saving') : t('saveChangesButton')}
                     </Button>
                   </DialogFooter>
                 </form>

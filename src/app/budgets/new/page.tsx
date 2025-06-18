@@ -49,7 +49,7 @@ export default function NewBudgetPage() {
 
   const BudgetFormSchema = createBudgetFormSchema(t);
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, register } = useForm<BudgetFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting: formIsSubmitting }, register } = useForm<BudgetFormData>({
     resolver: zodResolver(BudgetFormSchema),
     defaultValues: {
       plannedAmount: undefined,
@@ -102,7 +102,7 @@ export default function NewBudgetPage() {
     }
   };
 
-  const isLoading = isSubmitting || isLoadingCategories;
+  const isButtonDisabled = formIsSubmitting || isLoadingCategories;
 
   return (
     <MainLayout>
@@ -220,9 +220,9 @@ export default function NewBudgetPage() {
               </div>
               
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isLoading ? t('saving') : t('createBudgetButton')}
+                <Button type="submit" disabled={isButtonDisabled}>
+                  {isButtonDisabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {isButtonDisabled ? t('saving') : t('createBudgetButton')}
                 </Button>
               </div>
             </form>

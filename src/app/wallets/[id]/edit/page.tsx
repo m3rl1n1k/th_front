@@ -45,7 +45,7 @@ export default function EditWalletPage() {
   const [allCurrencies, setAllCurrencies] = useState<CurrencyInfo[]>([]);
   
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed for clarity
   const [errorOccurred, setErrorOccurred] = useState(false);
 
   const EditWalletFormSchema = createEditWalletFormSchema(t);
@@ -139,7 +139,7 @@ export default function EditWalletPage() {
       }
     }
 
-    setIsSubmittingForm(true);
+    setFormIsSubmitting(true);
     const payload: UpdateWalletPayload = {
       name: data.name,
       amount_cents: Math.round(data.balance * 100), // Convert units to cents
@@ -154,7 +154,7 @@ export default function EditWalletPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorUpdatingWallet'), description: error.message });
     } finally {
-      setIsSubmittingForm(false);
+      setFormIsSubmitting(false);
     }
   };
 
@@ -193,6 +193,7 @@ export default function EditWalletPage() {
   }
 
   const hasMainWalletAlready = allWallets.some(w => w.type === 'main' && String(w.id) !== String(id));
+  const isButtonDisabled = formIsSubmitting || isLoadingData;
 
   return (
     <MainLayout>
@@ -299,9 +300,9 @@ export default function EditWalletPage() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmittingForm || isLoadingData}>
-                  {isSubmittingForm || isLoadingData ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isSubmittingForm || isLoadingData ? t('saving') : t('saveWalletChangesButton')}
+                <Button type="submit" disabled={isButtonDisabled}>
+                  {isButtonDisabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {isButtonDisabled ? t('saving') : t('saveWalletChangesButton')}
                 </Button>
               </div>
             </form>

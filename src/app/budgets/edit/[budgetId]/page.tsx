@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -47,7 +47,7 @@ export default function EditBudgetPage() {
   const [mainCategoriesHierarchical, setMainCategoriesHierarchical] = useState<ApiMainCategory[]>([]);
   
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
   const [errorOccurred, setErrorOccurred] = useState(false);
 
   const BudgetFormSchema = editBudgetFormSchema(t);
@@ -107,7 +107,7 @@ export default function EditBudgetPage() {
       category_id: parseInt(data.categoryId, 10),
     };
 
-    setIsSubmitting(true);
+    setFormIsSubmitting(true);
     try {
       await updateBudget(budgetId, payload, token);
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit.subCategory?.name || t('category')}) });
@@ -115,7 +115,7 @@ export default function EditBudgetPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: error.message });
     } finally {
-      setIsSubmitting(false);
+      setFormIsSubmitting(false);
     }
   };
 
@@ -161,6 +161,7 @@ export default function EditBudgetPage() {
       </MainLayout>
     );
   }
+  const isButtonDisabled = formIsSubmitting || isLoadingData;
 
   return (
     <MainLayout>
@@ -247,9 +248,9 @@ export default function EditBudgetPage() {
               </div>
               
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting || isLoadingData}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? t('saving') : t('saveChangesButton')}
+                <Button type="submit" disabled={isButtonDisabled}>
+                  {isButtonDisabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {isButtonDisabled ? t('saving') : t('saveChangesButton')}
                 </Button>
               </div>
             </form>

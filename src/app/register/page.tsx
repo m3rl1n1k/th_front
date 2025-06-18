@@ -16,7 +16,7 @@ import { SimpleCaptcha, type SimpleCaptchaRef } from '@/components/common/simple
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Mail, User, Lock } from 'lucide-react';
+import { UserPlus, Mail, User, Lock, Loader2 } from 'lucide-react';
 import type { ApiError } from '@/types';
 
 const createRegistrationSchema = (t: Function) => z.object({
@@ -165,6 +165,7 @@ export default function RegisterPage() {
             />
 
             <Button type="submit" className="w-full" disabled={isSubmittingForm || authIsLoading}>
+              {(isSubmittingForm || authIsLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmittingForm || authIsLoading ? t('registeringButton') : t('registerButton')}
             </Button>
           </form>

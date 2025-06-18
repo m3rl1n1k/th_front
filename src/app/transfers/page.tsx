@@ -45,7 +45,7 @@ export default function TransfersPage() {
 
   const [isLoadingFormData, setIsLoadingFormData] = useState(true);
   const [isLoadingTransfers, setIsLoadingTransfers] = useState(true);
-  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -110,7 +110,7 @@ export default function TransfersPage() {
 
   const onSubmit: SubmitHandler<TransferFormData> = async (data) => {
     if (!token) return;
-    setIsSubmittingForm(true);
+    setFormIsSubmitting(true);
     const payload: CreateTransferPayload = {
       outcome_wallet_id: parseInt(data.outcomeWalletId, 10),
       income_wallet_id: parseInt(data.incomeWalletId, 10),
@@ -125,7 +125,7 @@ export default function TransfersPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
     } finally {
-      setIsSubmittingForm(false);
+      setFormIsSubmitting(false);
     }
   };
 
@@ -166,6 +166,7 @@ export default function TransfersPage() {
   }, [userWallets, capitalWalletsGrouped, t]);
 
   const hasSufficientWalletsForTransfer = userWallets.length >=1 && (userWallets.length >=2 || Object.keys(capitalWalletsGrouped).length > 0);
+  const isButtonDisabled = formIsSubmitting || !hasSufficientWalletsForTransfer;
 
   return (
     <MainLayout>
@@ -287,9 +288,9 @@ export default function TransfersPage() {
                       </div>
                     
                     <div className="flex justify-end pt-2">
-                      <Button type="submit" disabled={isSubmittingForm || !hasSufficientWalletsForTransfer} className="w-full">
-                        {isSubmittingForm ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                        {t('transferCreateButton')}
+                      <Button type="submit" disabled={isButtonDisabled} className="w-full">
+                        {formIsSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                        {formIsSubmitting ? t('saving') : t('transferCreateButton')}
                       </Button>
                     </div>
                   </form>
@@ -346,8 +347,8 @@ export default function TransfersPage() {
                             </TableCell>
                             <TableCell>{format(parseISO(transfer.createdAt), "PPp", { locale: dateFnsLocale })}</TableCell>
                             <TableCell className="text-center">
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(transfer)} disabled={isDeleting}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(transfer)} disabled={isDeleting && transferToDelete?.id === transfer.id}>
+                                {isDeleting && transferToDelete?.id === transfer.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
                                 <span className="sr-only">{t('deleteAction')}</span>
                               </Button>
                             </TableCell>
@@ -383,4 +384,3 @@ export default function TransfersPage() {
     </MainLayout>
   );
 }
-

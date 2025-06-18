@@ -39,7 +39,7 @@ export default function FeedbackPage() {
 
   const feedbackSchema = createFeedbackSchema(t);
 
-  const { control, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FeedbackFormData>({
+  const { control, handleSubmit, formState: { errors, isSubmitting: formIsSubmitting }, reset } = useForm<FeedbackFormData>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
       type: undefined,
@@ -150,9 +150,9 @@ export default function FeedbackPage() {
               </div>
 
               <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting || !isAuthenticated}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? t('feedbackSubmittingButton') : t('feedbackSubmitButton')}
+                <Button type="submit" disabled={formIsSubmitting || !isAuthenticated}>
+                  {formIsSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  {formIsSubmitting ? t('feedbackSubmittingButton') : t('feedbackSubmitButton')}
                 </Button>
               </div>
             </form>

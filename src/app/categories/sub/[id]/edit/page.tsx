@@ -86,8 +86,8 @@ export default function EditSubCategoryPage() {
   const [subCategoryToEdit, setSubCategoryToEdit] = useState<SubCategory | null>(null);
   const [allMainCategories, setAllMainCategories] = useState<MainCategory[]>([]);
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true); // Renamed from isLoading
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
   const [errorOccurred, setErrorOccurred] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, reset, register } = useForm<EditSubCategoryFormData>({
@@ -97,12 +97,12 @@ export default function EditSubCategoryPage() {
 
   const fetchInitialData = useCallback(async () => {
     if (!id || !token) {
-      setIsLoading(false);
+      setIsLoadingData(false);
       setErrorOccurred(true);
       toast({ variant: "destructive", title: t('error'), description: t('tokenOrIdMissingError') });
       return;
     }
-    setIsLoading(true);
+    setIsLoadingData(true);
     try {
       const fetchedMainCategories = await getMainCategories(token);
       setAllMainCategories(Array.isArray(fetchedMainCategories) ? fetchedMainCategories : []);
@@ -135,7 +135,7 @@ export default function EditSubCategoryPage() {
       toast({ variant: "destructive", title: t('errorFetchingCategory'), description: error.message });
       setErrorOccurred(true);
     } finally {
-      setIsLoading(false);
+      setIsLoadingData(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, token, reset, toast, t]);
@@ -148,7 +148,7 @@ export default function EditSubCategoryPage() {
 
   const onSubmit: SubmitHandler<EditSubCategoryFormData> = async (data) => {
     if (!token || !id) return;
-    setIsSubmitting(true);
+    setFormIsSubmitting(true);
     const payload: UpdateSubCategoryPayload = {
       name: data.name,
       main_category: parseInt(data.mainCategoryId, 10),
@@ -162,7 +162,7 @@ export default function EditSubCategoryPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorUpdatingSubCategory'), description: error.message });
     } finally {
-      setIsSubmitting(false);
+      setFormIsSubmitting(false);
     }
   };
 
@@ -188,7 +188,7 @@ export default function EditSubCategoryPage() {
     </div>
   );
   
-  if (isLoading) {
+  if (isLoadingData) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -233,7 +233,7 @@ export default function EditSubCategoryPage() {
   }
 
   let titleCategoryNameDisplay;
-  if (isLoading) {
+  if (isLoadingData) {
     titleCategoryNameDisplay = t('loading');
   } else if (subCategoryToEdit && subCategoryToEdit.name && subCategoryToEdit.name.trim() !== "") {
     titleCategoryNameDisplay = subCategoryToEdit.name;
@@ -243,6 +243,7 @@ export default function EditSubCategoryPage() {
     titleCategoryNameDisplay = t('subCategoryNotFound');
   }
 
+  const isButtonDisabled = formIsSubmitting || isLoadingData;
 
   return (
     <MainLayout>
@@ -338,9 +339,9 @@ export default function EditSubCategoryPage() {
               </div>
 
               <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? t('saving') : t('updateSubCategoryButton')}
+                <Button type="submit" disabled={isButtonDisabled}>
+                  {isButtonDisabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {isButtonDisabled ? t('saving') : t('updateSubCategoryButton')}
                 </Button>
               </div>
             </form>

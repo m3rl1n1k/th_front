@@ -78,8 +78,8 @@ export default function EditMainCategoryPage() {
   const id = params?.id as string;
 
   const [mainCategory, setMainCategory] = useState<MainCategory | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true); // Renamed from isLoading
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
   const [errorOccurred, setErrorOccurred] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, reset, register } = useForm<EditMainCategoryFormData>({
@@ -91,11 +91,11 @@ export default function EditMainCategoryPage() {
 
   const fetchCategoryData = useCallback(async () => {
     if (!id || !token) {
-      setIsLoading(false);
+      setIsLoadingData(false);
       setErrorOccurred(true);
       return;
     }
-    setIsLoading(true);
+    setIsLoadingData(true);
     setErrorOccurred(false); 
     setMainCategory(null); 
     try {
@@ -115,7 +115,7 @@ export default function EditMainCategoryPage() {
       toast({ variant: "destructive", title: t('errorFetchingCategory'), description: error.message });
       setErrorOccurred(true);
     } finally {
-      setIsLoading(false);
+      setIsLoadingData(false);
     }
   }, [id, token, reset, toast, t]);
 
@@ -123,7 +123,7 @@ export default function EditMainCategoryPage() {
     if (isAuthenticated && id && token) {
       fetchCategoryData();
     } else if (!authIsLoading && !isAuthenticated) {
-      setIsLoading(false); 
+      setIsLoadingData(false); 
       setErrorOccurred(true);
       toast({ variant: "destructive", title: t('error'), description: t('tokenOrIdMissingError') });
     }
@@ -132,7 +132,7 @@ export default function EditMainCategoryPage() {
 
   const onSubmit: SubmitHandler<EditMainCategoryFormData> = async (data) => {
     if (!token || !id) return;
-    setIsSubmitting(true);
+    setFormIsSubmitting(true);
     const payload: UpdateMainCategoryPayload = {
       name: data.name,
       icon: data.icon || null,
@@ -145,7 +145,7 @@ export default function EditMainCategoryPage() {
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorUpdatingMainCategory'), description: error.message });
     } finally {
-      setIsSubmitting(false);
+      setFormIsSubmitting(false);
     }
   };
 
@@ -171,7 +171,7 @@ export default function EditMainCategoryPage() {
     </div>
   );
 
-  if (isLoading || authIsLoading) {
+  if (isLoadingData || authIsLoading) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -215,7 +215,7 @@ export default function EditMainCategoryPage() {
   }
   
   let titleCategoryNameDisplay;
-  if (isLoading) {
+  if (isLoadingData) { // Use isLoadingData for title display
     titleCategoryNameDisplay = t('loading');
   } else if (mainCategory && mainCategory.name && mainCategory.name.trim() !== "") {
     titleCategoryNameDisplay = mainCategory.name;
@@ -301,9 +301,9 @@ export default function EditMainCategoryPage() {
                 {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
               </div>
               <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? t('saving') : t('updateCategoryButton')}
+                <Button type="submit" disabled={formIsSubmitting || isLoadingData}>
+                  {formIsSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {formIsSubmitting ? t('saving') : t('updateCategoryButton')}
                 </Button>
               </div>
             </form>

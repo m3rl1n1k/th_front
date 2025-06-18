@@ -60,7 +60,7 @@ export default function EditTransactionPage() {
 
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
   const [isLoadingTransaction, setIsLoadingTransaction] = useState(true);
-  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmittingForm
   
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [frequencies, setFrequencies] = useState<Frequency[]>([]);
@@ -148,7 +148,7 @@ export default function EditTransactionPage() {
       toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
       return;
     }
-    setIsSubmittingForm(true);
+    setFormIsSubmitting(true);
     try {
       const payload: UpdateTransactionPayload = {
         amount: Math.round(data.amount * 100),
@@ -172,7 +172,7 @@ export default function EditTransactionPage() {
         description: error.message || t('unexpectedError'),
       });
     } finally {
-      setIsSubmittingForm(false);
+      setFormIsSubmitting(false);
     }
   };
 
@@ -430,13 +430,9 @@ export default function EditTransactionPage() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmittingForm || anyDataLoading}>
-                  {isSubmittingForm ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  {isSubmittingForm ? t('saving') : t('updateTransactionButton')}
+                <Button type="submit" disabled={formIsSubmitting || anyDataLoading}>
+                  {formIsSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {formIsSubmitting ? t('saving') : t('updateTransactionButton')}
                 </Button>
               </div>
             </form>

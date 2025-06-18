@@ -19,7 +19,7 @@ import { createMainCategory, createSubCategory, getMainCategories } from '@/lib/
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, PlusCircle, Tag, Check } from 'lucide-react';
+import { Save, ArrowLeft, PlusCircle, Tag, Check, Loader2 } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { cn } from '@/lib/utils';
 
@@ -152,8 +152,10 @@ export default function CreateCategoryPage() {
     }
   };
   
-  const isSubmitting = mainCategoryForm.formState.isSubmitting || subCategoryForm.formState.isSubmitting;
-  const isFormsLoading = isSubmitting || isLoadingCategories;
+  const isMainFormSubmitting = mainCategoryForm.formState.isSubmitting;
+  const isSubFormSubmitting = subCategoryForm.formState.isSubmitting;
+  const isFormsLoading = isMainFormSubmitting || isSubFormSubmitting || isLoadingCategories;
+
 
   const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
     <div className="grid grid-cols-7 gap-2 p-1 border rounded-md bg-muted/20 max-w-xs">
@@ -248,7 +250,8 @@ export default function CreateCategoryPage() {
                     {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.color.message}</p>}
                   </div>
                   <Button type="submit" disabled={isFormsLoading} className="w-full">
-                    {isFormsLoading ? t('saving') : ( <> <PlusCircle className="mr-2 h-4 w-4" /> {t('createButton')} </> )}
+                    {isMainFormSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                    {isMainFormSubmitting ? t('saving') : t('createButton')}
                   </Button>
                 </form>
               </CardContent>
@@ -339,7 +342,8 @@ export default function CreateCategoryPage() {
                     {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.color.message}</p>}
                   </div>
                   <Button type="submit" disabled={isFormsLoading} className="w-full">
-                     {isFormsLoading ? t('saving') : ( <> <Tag className="mr-2 h-4 w-4" /> {t('createButton')} </>)}
+                     {isSubFormSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Tag className="mr-2 h-4 w-4" />}
+                     {isSubFormSubmitting ? t('saving') : t('createButton')}
                   </Button>
                 </form>
               </CardContent>
