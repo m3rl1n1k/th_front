@@ -428,5 +428,3 @@ export interface BudgetCategorySummaryItem {
 export interface BudgetSummaryByMonthResponse {
   categories: Record<string, BudgetCategorySummaryItem>; // Key is subCategory ID
 }
-
-```
