@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
-import { getBudgetDetails, updateBudget, getMainCategories } from '@/lib/api';
+import { getBudgetSummaryItemForEdit, updateBudget, getMainCategories } from '@/lib/api'; // Changed API call
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { BudgetDetails, UpdateBudgetPayload, MainCategory as ApiMainCategory } from '@/types';
@@ -40,8 +40,8 @@ export default function EditBudgetItemPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
-  const budgetId = params?.id as string; // Corresponds to [id] in the route
-  const monthYear = params?.date as string; // Corresponds to [date] in the route
+  const budgetId = params?.id as string; 
+  const monthYear = params?.date as string; 
 
   const [budgetToEdit, setBudgetToEdit] = useState<BudgetDetails | null>(null);
   const [mainCategoriesHierarchical, setMainCategoriesHierarchical] = useState<ApiMainCategory[]>([]);
@@ -61,7 +61,7 @@ export default function EditBudgetItemPage() {
   });
 
   const fetchBudgetData = useCallback(async () => {
-    if (!budgetId || !token) {
+    if (!budgetId || !monthYear || !token) { // Ensure monthYear is also present for the new API call
       setIsLoadingData(false);
       setErrorOccurred(true);
       return;
@@ -70,7 +70,7 @@ export default function EditBudgetItemPage() {
     setErrorOccurred(false);
     try {
       const [fetchedBudgetItem, categoriesData] = await Promise.all([
-        getBudgetDetails(budgetId, token),
+        getBudgetSummaryItemForEdit(monthYear, budgetId, token), // Use new API call
         getMainCategories(token)
       ]);
 
@@ -87,7 +87,7 @@ export default function EditBudgetItemPage() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [budgetId, token, reset, toast, t]);
+  }, [budgetId, monthYear, token, reset, toast, t]); // Added monthYear to dependencies
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -110,7 +110,7 @@ export default function EditBudgetItemPage() {
     try {
       await updateBudget(budgetId, payload, token);
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit.subCategory?.name || t('category')}) });
-      router.push(`/budgets/summary/${monthYear}`); // Use monthYear from params for redirection
+      router.push(`/budgets/summary/${monthYear}`); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: error.message });
     } finally {
@@ -119,7 +119,7 @@ export default function EditBudgetItemPage() {
   };
 
   const formattedMonthDisplay = useMemo(() => {
-    if (!monthYear) return ''; // Use monthYear from params
+    if (!monthYear) return ''; 
     try {
       return format(parse(monthYear, 'yyyy-MM', new Date()), 'MMMM yyyy', { locale: dateFnsLocale });
     } catch {
@@ -179,7 +179,7 @@ export default function EditBudgetItemPage() {
           <CardHeader>
             <CardTitle>{t('updateBudgetDetailsTitle')}</CardTitle>
             <CardDescription>
-                {t('updateBudgetDetailsDesc', { month: formattedMonthDisplay, currency: budgetToEdit.currencyCode })}
+                {t('updateBudgetDetailsDesc', { month: formattedMonthDisplay, currency: budgetToEdit.currency || budgetToEdit.currencyCode })} {/* Adjusted currency access */}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -191,7 +191,7 @@ export default function EditBudgetItemPage() {
                 </div>
                  <div className="space-y-1">
                   <Label htmlFor="currencyDisplay">{t('currencyLabel')}</Label>
-                  <Input id="currencyDisplay" value={budgetToEdit.currencyCode} disabled  className="bg-muted/50"/>
+                  <Input id="currencyDisplay" value={budgetToEdit.currency || budgetToEdit.currencyCode} disabled  className="bg-muted/50"/> {/* Adjusted currency access */}
                 </div>
               </div>
 
@@ -205,7 +205,7 @@ export default function EditBudgetItemPage() {
                       type="number"
                       step="0.01"
                       {...control.register('plannedAmount')}
-                      placeholder={t('amountPlaceholder', { currency: budgetToEdit.currencyCode || '$' })}
+                      placeholder={t('amountPlaceholder', { currency: budgetToEdit.currency || budgetToEdit.currencyCode || '$' })} /* Adjusted currency access */
                       className={`pl-10 ${errors.plannedAmount ? 'border-destructive' : ''}`}
                     />
                   </div>

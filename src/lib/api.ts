@@ -40,7 +40,7 @@ import type {
   BudgetDetails,
   CreateBudgetPayload,
   UpdateBudgetPayload,
-  BudgetSummaryByMonthResponse, // New
+  BudgetSummaryByMonthResponse,
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -316,10 +316,19 @@ export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => 
   return request(URLS.getBudgets, { method: 'GET', token });
 };
 
+// This function fetches a specific budget item using its global ID.
 export const getBudgetDetails = async (id: string | number, token: string): Promise<BudgetDetails> => {
   const response = await request<{ budget: BudgetDetails }>(URLS.getBudgetById(id), { method: 'GET', token });
   return response.budget;
 };
+
+// New function to fetch a budget item for editing using the summary path
+export const getBudgetSummaryItemForEdit = async (date: string, id: string | number, token: string): Promise<BudgetDetails> => {
+  // Assuming the response structure is {"budget": BudgetDetails}, same as getBudgetById
+  const response = await request<{ budget: BudgetDetails }>(URLS.getBudgetSummaryItemForEdit(date, id), { method: 'GET', token });
+  return response.budget;
+};
+
 
 export const createBudget = (data: CreateBudgetPayload, token: string): Promise<BudgetListItem> => {
   return request<BudgetListItem>(URLS.createBudget, { method: 'POST', body: data, token });
