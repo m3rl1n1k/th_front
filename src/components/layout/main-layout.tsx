@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'; // Added SheetHeader, SheetTitle
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -181,6 +181,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-card p-0">
+                <SheetHeader className="sr-only"> {/* Make header sr-only if title is also sr-only */}
+                  <SheetTitle className="sr-only">{t('toggleNavigation')}</SheetTitle>
+                </SheetHeader>
                 <nav className="flex flex-col p-6 space-y-2">
                   <Link
                     href="/"
