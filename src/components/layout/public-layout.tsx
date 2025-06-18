@@ -1,19 +1,42 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTranslation } from '@/context/i18n-context';
-import { usePathname } from 'next/navigation'; // Added
+import { usePathname } from 'next/navigation';
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = React.useState(false);
-  const { t } = useTranslation();
-  const pathname = usePathname(); // Added
+  const [mounted, setMounted] = useState(false);
+  const { t, language, setLanguage } = useTranslation();
+  const pathname = usePathname();
+  const [isNavigating, setIsNavigating] = useState(false); // For language change loading state
 
-  React.useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []);
+
+  const handleLanguageChange = async (lang: string) => {
+    if (language === lang) return;
+    setIsNavigating(true);
+    try {
+      await setLanguage(lang);
+    } catch (error) {
+      console.error("Error changing language:", error);
+      // Optionally, show a toast message here if language change fails
+    } finally {
+      setIsNavigating(false);
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-accent/10">
@@ -23,23 +46,43 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             <DollarSign className="h-8 w-8 text-primary" />
             <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
           </Link>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            {mounted && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled={isNavigating}>
+                      <Languages className="h-5 w-5" />
+                      <span className="sr-only">{t('changeLanguage')}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>{t('selectLanguage')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleLanguageChange('en')} disabled={language === 'en' || isNavigating}>
+                      English
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleLanguageChange('uk')} disabled={language === 'uk' || isNavigating}>
+                      Українська
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            )}
             {pathname === '/login' && (
-              <Button variant="default" asChild>
+              <Button variant="default" asChild disabled={isNavigating}>
                 <Link href="/register">{t('registerButtonNav')}</Link>
               </Button>
             )}
             {pathname === '/register' && (
-              <Button variant="default" asChild>
+              <Button variant="default" asChild disabled={isNavigating}>
                 <Link href="/login">{t('loginButtonNav')}</Link>
               </Button>
             )}
             {pathname !== '/login' && pathname !== '/register' && (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
-                <Button variant="ghost" asChild className="w-full sm:w-auto">
+                <Button variant="ghost" asChild className="w-full sm:w-auto" disabled={isNavigating}>
                   <Link href="/login">{t('loginButtonNav')}</Link>
                 </Button>
-                <Button variant="default" asChild className="w-full sm:w-auto">
+                <Button variant="default" asChild className="w-full sm:w-auto" disabled={isNavigating}>
                   <Link href="/register">{t('registerButtonNav')}</Link>
                 </Button>
               </div>
