@@ -17,7 +17,6 @@ interface AuthContextType {
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
-  // setTokenManually removed
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +27,7 @@ const AUTH_TOKEN_KEY = 'financeflow_auth_token';
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start true until initial check is done
+  const [isLoading, setIsLoading] = useState(true); 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -56,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return userData;
     } catch (error) {
       clearAuthData();
-      throw error; // Re-throw to be caught by calling function
+      throw error; 
     }
   }, [clearAuthData]);
   
@@ -66,44 +65,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
         if (storedToken) {
           try {
-            // No need to setIsLoading(true) here as it's already true initially
             const userData = await fetchUserProfile(storedToken);
             setUser(userData);
             setToken(storedToken);
             setIsAuthenticated(true);
           } catch (error) {
-            // Token invalid or expired
-            clearAuthData(); // This will remove the bad token from localStorage
+            clearAuthData();
           } finally {
             setIsLoading(false);
           }
         } else {
-          setIsLoading(false); // No token, not loading
+          setIsLoading(false); 
         }
       } else {
-        setIsLoading(false); // SSR or non-browser, not loading
+        setIsLoading(false); 
       }
     };
     attemptAutoLogin();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array: run once on mount
+  }, []); 
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
       const response: LoginResponse = await apiLoginUser(credentials);
-      await processSuccessfulLogin(response.token, response.user); // Pass fetched user if available
+      await processSuccessfulLogin(response.token, response.user);
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
 
-      let redirectTo = '/dashboard';
+      let redirectTo = '/dashboard'; 
+
       if (typeof window !== 'undefined') {
         const intendedDestination = localStorage.getItem(INTENDED_DESTINATION_KEY);
-        if (intendedDestination) {
-          localStorage.removeItem(INTENDED_DESTINATION_KEY);
-        }
-        const nonIntendedRedirectPaths = ['/login', '/register', '/terms', '/set-token', '/'];
-        if (intendedDestination && !nonIntendedRedirectPaths.includes(intendedDestination) && intendedDestination.startsWith('/') && !intendedDestination.startsWith('//')) {
-          redirectTo = intendedDestination;
+
+        if (intendedDestination && intendedDestination.trim() !== "") { 
+          localStorage.removeItem(INTENDED_DESTINATION_KEY); 
+
+          const nonIntendedRedirectPaths = ['/login', '/register', '/terms', '/']; 
+          const isValidForRedirect =
+            !nonIntendedRedirectPaths.includes(intendedDestination) &&
+            intendedDestination.startsWith('/') &&
+            !intendedDestination.startsWith('//');
+
+          if (isValidForRedirect) {
+            redirectTo = intendedDestination;
+          }
         }
       }
       router.push(redirectTo);
@@ -125,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiRegisterUser(payload);
     } catch (error) {
-      throw error; // Re-throw for the form to handle
+      throw error; 
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
     router.push('/login');
-    setIsLoading(false); // Ensure loading state is reset
+    setIsLoading(false); 
   }, [router, toast, t, clearAuthData]);
 
   const fetchUser = useCallback(async () => {
@@ -149,13 +154,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const userData = await fetchUserProfile(currentToken);
         setUser(userData);
-        setToken(currentToken); // Ensure token state is also in sync
+        setToken(currentToken); 
         setIsAuthenticated(true);
       } catch (error) {
         const apiError = error as ApiError;
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
         clearAuthData();
-        const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
+        const publicPaths = ['/login', '/register', '/terms', '/'];
         if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
           localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
         }
@@ -164,12 +169,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     } else {
-      if (isAuthenticated) { // If context thought it was authenticated but no token, clear data
+      if (isAuthenticated) { 
         clearAuthData();
       }
-       setIsLoading(false); // If no token, not loading
+       setIsLoading(false); 
     }
   }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated]);
+
+  useEffect(() => {
+    const publicPaths = ['/login', '/register', '/terms', '/'];
+    if (!isLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
+      }
+      router.replace('/login');
+    } else if (
+        !isLoading &&
+        isAuthenticated &&
+        user &&
+        (!user.userCurrency || !user.userCurrency.code) &&
+        pathname !== '/profile' &&
+        !publicPaths.includes(pathname)
+      ) {
+        toast({
+          title: t('setYourCurrencyTitle'),
+          description: t('setYourCurrencyDesc'),
+          variant: 'default',
+          duration: 7000,
+        });
+        router.replace('/profile');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAuthenticated, user, router, pathname, t, toast]);
+
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser }}>
@@ -185,3 +217,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
