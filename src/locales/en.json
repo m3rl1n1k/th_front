@@ -515,10 +515,11 @@
   "yearRequiredError": "Year is required.",
   "monthRequiredError": "Month is required.",
   "viewTransactionsForMonth": "View transactions for {month}",
-  "removeBudgetSummaryTitle": "Remove Budget for {month}?",
-  "removeBudgetSummaryMessage": "Are you sure you want to remove budget data for {month}? This action might not be reversible depending on system setup.",
-  "removeBudgetSummaryNotSupportedTitle": "Action Not Supported",
-  "removeBudgetSummaryNotSupportedDesc": "Removing an entire month's budget summary is not currently supported. You can adjust individual budget items or transactions.",
+  "deleteAllMonthBudgetsConfirmTitle": "Delete Budgets for {month}?",
+  "deleteAllMonthBudgetsConfirmMessage": "Are you sure you want to delete all budget items for {month}? This action cannot be undone.",
+  "monthBudgetsDeletedTitle": "Month's Budgets Deleted",
+  "monthBudgetsDeletedDesc": "All budget items for {month} have been deleted.",
+  "errorDeletingMonthBudgets": "Error Deleting Month's Budgets",
   "budgetSummaryTitle": "Budget Summary",
   "budgetSummaryForMonthTitle": "Budget Summary for {monthDisplay}",
   "errorFetchingBudgetSummary": "Error Fetching Budget Summary",
@@ -587,4 +588,5 @@
   "calculator.error.divByZero": "Error: Div by 0",
   "calculator.error.invalidFormat": "Error: Invalid Format"
 }
+
 

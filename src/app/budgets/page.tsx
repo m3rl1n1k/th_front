@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { format, parse } from 'date-fns'; // Removed lastDayOfMonth as it's not used here
+import { format, parse } from 'date-fns';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { CurrencyDisplay } from '@/components/common/currency-display';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import { getBudgetList } from '@/lib/api';
+import { getBudgetList, deleteBudget } from '@/lib/api'; // Added deleteBudget
 import type { BudgetListApiResponse, MonthlyBudgetSummary as ApiMonthlyBudget } from '@/types';
 import { Target, PlusCircle, TrendingUp, TrendingDown, Loader2, BarChartHorizontalBig, Eye, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -64,28 +64,22 @@ export default function BudgetsPage() {
 
 
   const fetchBudgets = useCallback(async (showLoadingIndicator = true) => {
-    console.log('[BudgetsPage] fetchBudgets called. isFetchingRef.current:', isFetchingRef.current, 'isAuthenticated:', isAuthenticated, 'token exists:', !!token);
-    if (isFetchingRef.current) {
-      console.log('[BudgetsPage] Fetch already in progress, returning.');
+    if (isFetchingRef.current && showLoadingIndicator) { // Only prevent re-entry if full loading is shown
       return;
     }
 
     if (!isAuthenticated || !token) {
-      console.log('[BudgetsPage] Not authenticated or no token, setting empty budgets and loader to false.');
       setMonthlyBudgets([]);
-      setIsLoading(false);
+      if (showLoadingIndicator) setIsLoading(false);
       return;
     }
     
     isFetchingRef.current = true;
     if (showLoadingIndicator) {
-      console.log('[BudgetsPage] Setting isLoading to true.');
       setIsLoading(true);
     }
     try {
-      console.log('[BudgetsPage] Calling getBudgetList API.');
       const response: BudgetListApiResponse = await getBudgetList(token);
-      console.log('[BudgetsPage] API response received:', response);
       const processed: ProcessedMonthlyBudget[] = Object.entries(response.budgets || {}).map(([monthYear, data]) => {
         let monthDisplayName = monthYear;
         try {
@@ -103,29 +97,24 @@ export default function BudgetsPage() {
           currencyCode: data.totalPlanned.currency.code,
         };
       }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
-      console.log('[BudgetsPage] Processed budgets:', processed);
       setMonthlyBudgets(processed);
     } catch (error: any) {
-      console.error('[BudgetsPage] Error fetching budgets:', error);
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
       setMonthlyBudgets([]);
     } finally {
-      console.log('[BudgetsPage] Setting isLoading to false, isFetchingRef to false.');
-      setIsLoading(false); 
+      if (showLoadingIndicator) setIsLoading(false); 
       isFetchingRef.current = false;
     }
   }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
-    console.log('[BudgetsPage] useEffect triggered. isAuthenticated:', isAuthenticated, 'token exists:', !!token);
     if (isAuthenticated && token) {
         fetchBudgets();
-    } else if (!isAuthenticated && !token) {
-        console.log('[BudgetsPage] useEffect: Not authenticated or no token. Setting isLoading to false and monthlyBudgets to [].');
+    } else if (!isAuthenticated && !token) { // Condition for when user logs out or token is not present
         setIsLoading(false); 
         setMonthlyBudgets([]); 
     }
-  }, [isAuthenticated, token, fetchBudgets]);
+  }, [isAuthenticated, token, fetchBudgets]); // Removed isLoading from dependencies
 
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
@@ -135,7 +124,6 @@ export default function BudgetsPage() {
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
       if (!budget || typeof budget.year !== 'string') {
-        console.warn('[BudgetsPage] Invalid budget item in reduce:', budget);
         return acc;
       }
       const year = budget.year;
@@ -167,16 +155,27 @@ export default function BudgetsPage() {
   };
 
   const handleDeleteConfirmed = async () => {
-    if (!itemToDeleteDetails) return;
+    if (!itemToDeleteDetails || !token) return;
     setIsDeleting(true);
-    toast({
-      title: t('removeBudgetSummaryNotSupportedTitle'),
-      description: t('removeBudgetSummaryNotSupportedDesc', { month: itemToDeleteDetails.monthDisplayName }),
-      variant: "default"
-    });
-    setIsDeleting(false);
-    setShowDeleteDialog(false);
-    setItemToDeleteDetails(null);
+    try {
+      // Assuming monthYear can be used as an ID to delete all items for that month
+      await deleteBudget(itemToDeleteDetails.monthYear, token); 
+      toast({
+        title: t('monthBudgetsDeletedTitle'),
+        description: t('monthBudgetsDeletedDesc', { month: itemToDeleteDetails.monthDisplayName }),
+      });
+      fetchBudgets(false); // Re-fetch budgets without full page loader
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: t('errorDeletingMonthBudgets'),
+        description: error.message || t('unexpectedError'),
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setItemToDeleteDetails(null);
+    }
   };
 
   if (isLoading) {
@@ -214,7 +213,7 @@ export default function BudgetsPage() {
     );
   }
 
-  if (!Array.isArray(monthlyBudgets) || monthlyBudgets.length === 0) {
+  if (monthlyBudgets.length === 0) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -318,7 +317,7 @@ export default function BudgetsPage() {
                                     <Eye className="mr-1 h-3 w-3" />
                                     {t('detailsAction')}
                                 </Button>
-                                <Button variant="destructive" size="sm" onClick={() => handleRemoveClick(budget)} title={t('removeBudgetSummaryTitle', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs">
+                                <Button variant="destructive" size="sm" onClick={() => handleRemoveClick(budget)} title={t('deleteAllMonthBudgetsConfirmTitle', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs">
                                     <Trash2 className="mr-1 h-3 w-3" />
                                     {t('removeAction')}
                                 </Button>
@@ -338,9 +337,9 @@ export default function BudgetsPage() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('removeBudgetSummaryTitle', { month: itemToDeleteDetails?.monthDisplayName || '' })}</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteAllMonthBudgetsConfirmTitle', { month: itemToDeleteDetails?.monthDisplayName || '' })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('removeBudgetSummaryMessage', { month: itemToDeleteDetails?.monthDisplayName || '' })}
+              {t('deleteAllMonthBudgetsConfirmMessage', { month: itemToDeleteDetails?.monthDisplayName || '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -515,10 +515,11 @@
   "yearRequiredError": "Рік обов'язковий.",
   "monthRequiredError": "Місяць обов'язковий.",
   "viewTransactionsForMonth": "Переглянути транзакції за {month}",
-  "removeBudgetSummaryTitle": "Видалити бюджет на {month}?",
-  "removeBudgetSummaryMessage": "Ви впевнені, що хочете видалити дані бюджету на {month}? Ця дія може бути незворотною залежно від налаштувань системи.",
-  "removeBudgetSummaryNotSupportedTitle": "Дія не підтримується",
-  "removeBudgetSummaryNotSupportedDesc": "Видалення зведеного бюджету за цілий місяць наразі не підтримується. Ви можете коригувати окремі бюджетні статті або транзакції.",
+  "deleteAllMonthBudgetsConfirmTitle": "Видалити бюджети за {month}?",
+  "deleteAllMonthBudgetsConfirmMessage": "Ви впевнені, що хочете видалити всі бюджетні статті для {month}? Ця дія не може бути скасована.",
+  "monthBudgetsDeletedTitle": "Бюджети місяця видалено",
+  "monthBudgetsDeletedDesc": "Всі бюджетні статті для {month} було видалено.",
+  "errorDeletingMonthBudgets": "Помилка видалення бюджетів місяця",
   "budgetSummaryTitle": "Зведений бюджет",
   "budgetSummaryForMonthTitle": "Зведений бюджет за {monthDisplay}",
   "errorFetchingBudgetSummary": "Помилка завантаження зведеного бюджету",
@@ -539,7 +540,6 @@
   "errorUpdatingBudgetItem": "Помилка оновлення статті бюджету",
   "errorFetchingBudgetItem": "Помилка завантаження статті бюджету",
   "couldNotLoadBudgetItemEdit": "Не вдалося завантажити статтю бюджету для редагування. Будь ласка, спробуйте знову.",
-
 
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",
@@ -587,4 +587,5 @@
   "calculator.error.divByZero": "Помилка: Ділення на 0",
   "calculator.error.invalidFormat": "Помилка: Неправильний формат"
 }
+
 
