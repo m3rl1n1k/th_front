@@ -94,9 +94,6 @@
   "registrationFailedTitle": "Помилка реєстрації",
   "registrationFailedError": "Не вдалося створити ваш обліковий запис. Будь ласка, спробуйте ще раз.",
   "validationFailedCheckFields": "Перевірка не пройдена. Будь ласка, перевірте поля на наявність помилок.",
-  "manualTokenPageRemovedTitle": "Сторінку видалено з міркувань безпеки",
-  "manualTokenPageRemovedDesc": "Ручне введення токена вимкнено для підвищення безпеки. Будь ласка, використовуйте стандартний процес входу.",
-  "redirectingToLoginSoon": "Вас буде перенаправлено на сторінку входу незабаром...",
   "passwordLabel": "Пароль",
   "confirmPasswordLabel": "Підтвердіть пароль",
   "passwordRequiredError": "Пароль обов'язковий.",
@@ -534,6 +531,9 @@
   "errorUpdatingBudgetItem": "Помилка оновлення статті бюджету",
   "errorFetchingBudgetItem": "Помилка завантаження статті бюджету",
   "couldNotLoadBudgetItemEdit": "Не вдалося завантажити статтю бюджету для редагування. Будь ласка, спробуйте знову.",
+  "categoryAlreadyBudgetedShort": "Забюджетовано",
+  "categoryAlreadyBudgetedTitle": "Категорія вже забюджетована",
+  "categoryAlreadyBudgetedMessage": "Для цієї категорії вже існує бюджет на {month}. Будь ласка, виберіть іншу категорію або відредагуйте існуючий бюджет.",
 
 
   "//": "SETTINGS",
