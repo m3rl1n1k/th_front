@@ -37,8 +37,7 @@ import {
 
 
 interface ProcessedCategoryBudgetDetail extends ApiBudgetCategorySummaryItem {
-  id: string; // This will be the key from the API response (category ID)
-  // name, plannedAmount, actualAmount, currencyCode, budgetId are already in ApiBudgetCategorySummaryItem
+  id: string; 
 }
 
 
@@ -72,8 +71,8 @@ export default function BudgetSummaryPage() {
     try {
       const response: BudgetSummaryByMonthResponse = await getBudgetSummaryForMonth(monthYear, token);
       const processedDetails: ProcessedCategoryBudgetDetail[] = Object.entries(response.categories || {}).map(([id, data]) => ({
-        id, // category ID string from API response key
-        ...data, // spread the rest of the data (name, plannedAmount, actualAmount, budgetId)
+        id, 
+        ...data, 
       }));
       setCategoryBudgets(processedDetails);
     } catch (err: any) {
@@ -101,12 +100,13 @@ export default function BudgetSummaryPage() {
       const parsedDate = parse(monthYear, 'yyyy-MM', new Date());
       return format(parsedDate, 'MMMM yyyy', { locale: dateFnsLocale });
     } catch {
-      return monthYear; // Fallback to raw string if parsing fails
+      return monthYear; 
     }
   }, [monthYear, dateFnsLocale, t]);
 
   const handleEditItem = (budgetId: number) => {
-    router.push(`/budgets/edit/${budgetId}`);
+    // Navigate to the new edit route: /budgets/summary/{monthYear}/{budgetId}
+    router.push(`/budgets/summary/${monthYear}/${budgetId}`);
   };
 
   const handleRemoveItem = (item: ProcessedCategoryBudgetDetail) => {
@@ -120,7 +120,7 @@ export default function BudgetSummaryPage() {
     try {
       await deleteBudget(itemToDelete.budgetId, token);
       toast({ title: t('budgetItemDeletedTitle'), description: t('budgetItemDeletedDesc', { categoryName: itemToDelete.name }) });
-      fetchBudgetSummary(false); // Re-fetch data without full page loader
+      fetchBudgetSummary(false); 
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingBudgetItem'), description: error.message });
     } finally {
