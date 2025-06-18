@@ -18,7 +18,7 @@ import type { BudgetListItem } from '@/types';
 import { Target, PlusCircle, TrendingUp, TrendingDown, AlertTriangle, Activity, Eye, Info, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label'; // Added import for Label
+import { Label } from '@/components/ui/label';
 
 export default function BudgetsPage() {
   const { token, isAuthenticated } = useAuth();
@@ -166,7 +166,9 @@ export default function BudgetsPage() {
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-4 w-4 text-red-500" />{t('budgetActualExpenses')}</span>
-                      <CurrencyDisplay amountInCents={budget.actualExpenses} currencyCode={budget.currencyCode} />
+                      <span className="font-semibold text-red-600 dark:text-red-500">
+                        <CurrencyDisplay amountInCents={budget.actualExpenses} currencyCode={budget.currencyCode} />
+                      </span>
                     </div>
                     <div className={cn("flex justify-between items-center text-sm font-medium", remainingAmount < 0 ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500")}>
                       <span className="flex items-center"><Activity className="mr-1.5 h-4 w-4" />{t('budgetRemainingAmount')}</span>
