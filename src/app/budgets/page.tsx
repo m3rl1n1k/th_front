@@ -81,7 +81,9 @@ export default function BudgetsPage() {
   }, [fetchBudgets]);
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
-    if (!monthlyBudgets) return { groupedBudgetsByYear: {}, sortedYears: [] }; // Guard added here
+    if (!Array.isArray(monthlyBudgets)) { // Explicitly check if it's an array
+      return { groupedBudgetsByYear: {}, sortedYears: [] };
+    }
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
       if (!acc[budget.year]) {
