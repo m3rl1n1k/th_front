@@ -20,7 +20,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
 import {
   DollarSign, LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
-  Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, ShieldAlert
+  Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, ShieldAlert, Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,6 +29,7 @@ const baseNavItems = [
   { href: '/transactions', labelKey: 'transactions', icon: ListChecks, authRequired: true },
   { href: '/wallets', labelKey: 'walletsTitle', icon: WalletCards, authRequired: true },
   { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes, authRequired: true },
+  { href: '/budgets', labelKey: 'budgetsTitle', icon: Target, authRequired: true },
   { href: '/transfers', labelKey: 'transfersTitle', icon: ArrowRightLeft, authRequired: true },
 ];
 

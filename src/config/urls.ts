@@ -66,4 +66,12 @@ export const URLS = {
   // Feedback (Mock URLs for now)
   submitFeedback: `${API_BASE_URL}/feedback`, // Example: POST /api/feedback
   getFeedbacks: `${API_BASE_URL}/admin/feedbacks`, // Example: GET /api/admin/feedbacks
+
+  // Budgets (Placeholder URLs)
+  getBudgets: `${API_BASE_URL}/budgets`,
+  getBudgetById: (id: string | number) => `${API_BASE_URL}/budgets/${id}`,
+  createBudget: `${API_BASE_URL}/budgets`,
+  updateBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`,
+  deleteBudget: (id: string | number) => `${API_BASE_URL}/budgets/${id}`,
 };
+

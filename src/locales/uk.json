@@ -490,5 +490,17 @@
   "newPasswordsDoNotMatchError": "Нові паролі не співпадають.",
   "passwordChangeSuccessTitle": "Пароль змінено",
   "passwordChangeSuccessDesc": "Ваш пароль успішно оновлено.",
-  "passwordChangeFailedTitle": "Не вдалося змінити пароль"
+  "passwordChangeFailedTitle": "Не вдалося змінити пароль",
+  "budgetsTitle": "Бюджети",
+  "budgetCreateNewButton": "Створити новий бюджет",
+  "budgetNoBudgetsFoundTitle": "Бюджетів не знайдено",
+  "budgetNoBudgetsFoundDescription": "Почніть планувати свої фінанси, створивши свій перший бюджет.",
+  "budgetMonthlyOverview": "Місячний огляд",
+  "budgetPlannedAmount": "Заплановано",
+  "budgetActualExpenses": "Фактичні витрати",
+  "budgetRemainingAmount": "Залишок",
+  "budgetProgress": "Прогрес ({percentage}%)",
+  "budgetShowDetailsButton": "Показати деталі",
+  "budgetOverspentWarning": "Перевитрата!"
 }
+

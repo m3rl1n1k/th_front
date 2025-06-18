@@ -329,3 +329,22 @@ export interface Feedback {
 export interface GetFeedbacksResponse {
   feedbacks: Feedback[];
 }
+
+// Budget Types
+export interface BudgetListItem {
+  id: string | number;
+  month: string; // e.g., "2024-08"
+  plannedAmount: number; // in cents
+  actualExpenses: number; // in cents
+  currencyCode: string;
+}
+
+export interface BudgetListResponse {
+  budgets: BudgetListItem[];
+}
+
+// Placeholder for Budget Details if needed later
+export interface BudgetDetails extends BudgetListItem {
+  // categoryBreakdown: Array<{ categoryId: string | number; categoryName: string; planned: number; actual: number }>;
+  // transactions: Transaction[];
+}

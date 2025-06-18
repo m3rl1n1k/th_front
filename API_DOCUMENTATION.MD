@@ -667,7 +667,75 @@ Retrieves all submitted feedbacks. Requires `ROLE_MODERATOR_FEEDBACK` role.
     ```
 *   **Failure Response (401 Unauthorized, 403 Forbidden)**
 
-### 8. General
+### 8. Budgets
+
+#### `GET /budgets`
+Retrieves a list of budgets for the authenticated user.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "budgets": [
+        {
+          "id": "1",
+          "month": "2024-08", // Format: YYYY-MM
+          "plannedAmount": 500000, // in cents
+          "actualExpenses": 350000, // in cents, calculated by backend
+          "currencyCode": "USD"
+        }
+        // ... more budget items
+      ]
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+#### `GET /budgets/{id}`
+Retrieves a specific budget by its ID.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "budget": {
+        "id": "1",
+        "month": "2024-08",
+        "plannedAmount": 500000,
+        "actualExpenses": 350000,
+        "currencyCode": "USD"
+        // Potentially more details like category breakdowns if implemented
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `POST /budgets`
+Creates a new budget.
+*   **Request Body**:
+    ```json
+    {
+      "month": "2024-09", // YYYY-MM
+      "plannedAmount": 600000, // in cents
+      "currencyCode": "USD" // Or derive from user's default currency
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created budget object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `PUT /budgets/{id}`
+Updates a specific budget.
+*   **Request Body**: (Fields to update)
+    ```json
+    {
+      "plannedAmount": 650000 // in cents
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated budget object.
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /budgets/{id}`
+Deletes a specific budget.
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+
+### 9. General
 
 #### `GET /currencies`
 Retrieves a list of available currencies.
@@ -768,6 +836,16 @@ Consider these when designing your database and PHP classes/objects.
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
 
+### Budget
+*   `id` (int, primary key)
+*   `user_id` (int, foreign key to User)
+*   `month` (string, "YYYY-MM")
+*   `planned_amount_cents` (int)
+*   `currency_code` (string)
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+    *(Note: `actualExpenses` is typically calculated on-the-fly by summing relevant transactions for the budget's month and user, not stored directly in the budget table.)*
+
 
 ## Further Considerations
 
@@ -860,3 +938,4 @@ If you experience "Failed to fetch" errors or similar network issues when access
 
 By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
 Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
+

@@ -490,5 +490,17 @@
   "newPasswordsDoNotMatchError": "New passwords do not match.",
   "passwordChangeSuccessTitle": "Password Changed",
   "passwordChangeSuccessDesc": "Your password has been successfully updated.",
-  "passwordChangeFailedTitle": "Password Change Failed"
+  "passwordChangeFailedTitle": "Password Change Failed",
+  "budgetsTitle": "Budgets",
+  "budgetCreateNewButton": "Create New Budget",
+  "budgetNoBudgetsFoundTitle": "No Budgets Found",
+  "budgetNoBudgetsFoundDescription": "Start planning your finances by creating your first budget.",
+  "budgetMonthlyOverview": "Monthly Overview",
+  "budgetPlannedAmount": "Planned",
+  "budgetActualExpenses": "Actual Expenses",
+  "budgetRemainingAmount": "Remaining",
+  "budgetProgress": "Progress ({percentage}%)",
+  "budgetShowDetailsButton": "Show Details",
+  "budgetOverspentWarning": "Overspent!"
 }
+
