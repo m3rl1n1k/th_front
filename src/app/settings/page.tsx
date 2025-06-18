@@ -62,7 +62,7 @@ export default function SettingsPage() {
       toast({
         variant: "destructive",
         title: t('error'),
-        description: "Invalid limit value. Reset to default.",
+        description: t('invalidLimitValueResetToDefault'),
       });
     }
   };

@@ -165,6 +165,7 @@
   "lastActivityTitle": "Останні Транзакції",
   "noRecentTransactions": "Нещодавніх транзакцій не знайдено.",
   "viewAllTransactions": "Переглянути всі транзакції",
+  "dashboardDataLoadError": "Не вдалося завантажити дані панелі.",
 
   "//": "ТРАНЗАКЦІЇ",
   "newTransaction": "Нова транзакція",
@@ -414,6 +415,9 @@
   "restaurants": "Ресторани",
   "allCategories": "Всі категорії",
   "invalidHexColor": "Неправильний формат шістнадцяткового коду кольору (напр., #RRGGBB).",
+  "categoryNameRequiredError": "Назва категорії обов'язкова.",
+  "invalidHexColorError": "Неправильний шістнадцятковий код кольору (напр., #RRGGBB).",
+  "parentCategoryRequiredError": "Батьківська категорія обов'язкова.",
 
   "//": "ПЕРЕКАЗИ",
   "createTransferTitle": "Створити новий переказ",
@@ -549,6 +553,7 @@
   "saveSettingsButton": "Зберегти налаштування",
   "settingsSavedTitle": "Налаштування збережено",
   "settingsSavedDesc": "Ваші налаштування оновлено.",
+  "invalidLimitValueResetToDefault": "Недійсне значення ліміту. Скинуто до стандартного.",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Керуйте Своїми Фінансами",

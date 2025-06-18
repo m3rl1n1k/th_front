@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -66,20 +66,20 @@ const predefinedColors = [
 // Schemas
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
-const MainCategorySchema = z.object({
-  name: z.string().min(1, { message: "Name is required." }),
+const createMainCategorySchema = () => z.object({
+  name: z.string().min(1, { message: "categoryNameRequiredError" }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
 });
-type MainCategoryFormData = z.infer<typeof MainCategorySchema>;
+type MainCategoryFormData = z.infer<ReturnType<typeof createMainCategorySchema>>;
 
-const SubCategorySchema = z.object({
-  mainCategoryId: z.string().min(1, { message: "Parent category is required." }),
-  name: z.string().min(1, { message: "Name is required." }),
+const createSubCategorySchema = () => z.object({
+  mainCategoryId: z.string().min(1, { message: "parentCategoryRequiredError" }),
+  name: z.string().min(1, { message: "categoryNameRequiredError" }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
 });
-type SubCategoryFormData = z.infer<typeof SubCategorySchema>;
+type SubCategoryFormData = z.infer<ReturnType<typeof createSubCategorySchema>>;
 
 
 export default function CreateCategoryPage() {
@@ -91,6 +91,10 @@ export default function CreateCategoryPage() {
   const [existingMainCategories, setExistingMainCategories] = useState<MainCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [activeTab, setActiveTab] = useState("main");
+
+  const MainCategorySchema = useMemo(() => createMainCategorySchema(), []);
+  const SubCategorySchema = useMemo(() => createSubCategorySchema(), []);
+
 
   const mainCategoryForm = useForm<MainCategoryFormData>({
     resolver: zodResolver(MainCategorySchema),
@@ -207,7 +211,7 @@ export default function CreateCategoryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="main-name">{t('categoryNameLabel')}</Label>
                     <Input id="main-name" {...mainCategoryForm.register('name')} placeholder={t('categoryNamePlaceholder')} />
-                    {mainCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.name.message}</p>}
+                    {mainCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.name.message)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="main-icon-select">{t('iconLabel')}</Label>
@@ -236,7 +240,7 @@ export default function CreateCategoryPage() {
                         </Select>
                       )}
                     />
-                    {mainCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.icon.message}</p>}
+                    {mainCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.icon.message)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="main-color-swatches">{t('colorLabel')}</Label>
@@ -247,7 +251,7 @@ export default function CreateCategoryPage() {
                           <ColorSwatches value={field.value} onChange={field.onChange} />
                         )}
                     />
-                    {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{mainCategoryForm.formState.errors.color.message}</p>}
+                    {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.color.message)}</p>}
                   </div>
                   <Button type="submit" disabled={isFormsLoading} className="w-full">
                     {isMainFormSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
@@ -294,12 +298,12 @@ export default function CreateCategoryPage() {
                         </Select>
                       )}
                     />
-                    {subCategoryForm.formState.errors.mainCategoryId && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.mainCategoryId.message}</p>}
+                    {subCategoryForm.formState.errors.mainCategoryId && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.mainCategoryId.message)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sub-name">{t('categoryNameLabel')}</Label>
                     <Input id="sub-name" {...subCategoryForm.register('name')} placeholder={t('categoryNamePlaceholder')} />
-                    {subCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.name.message}</p>}
+                    {subCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.name.message)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sub-icon-select">{t('iconLabel')}</Label>
@@ -328,7 +332,7 @@ export default function CreateCategoryPage() {
                         </Select>
                       )}
                     />
-                    {subCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.icon.message}</p>}
+                    {subCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.icon.message)}</p>}
                   </div>
                    <div className="space-y-2">
                     <Label htmlFor="sub-color-swatches">{t('colorLabel')}</Label>
@@ -339,7 +343,7 @@ export default function CreateCategoryPage() {
                           <ColorSwatches value={field.value} onChange={field.onChange} />
                         )}
                     />
-                    {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{subCategoryForm.formState.errors.color.message}</p>}
+                    {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.color.message)}</p>}
                   </div>
                   <Button type="submit" disabled={isFormsLoading} className="w-full">
                      {isSubFormSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Tag className="mr-2 h-4 w-4" />}

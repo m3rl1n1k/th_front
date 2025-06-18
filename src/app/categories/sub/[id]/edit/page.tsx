@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -67,13 +67,13 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
-const EditSubCategorySchema = z.object({
-  mainCategoryId: z.string().min(1, { message: "Parent category is required." }),
-  name: z.string().min(1, { message: "Name is required." }),
+const createEditSubCategorySchema = () => z.object({
+  mainCategoryId: z.string().min(1, { message: "parentCategoryRequiredError" }),
+  name: z.string().min(1, { message: "categoryNameRequiredError" }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
 });
-type EditSubCategoryFormData = z.infer<typeof EditSubCategorySchema>;
+type EditSubCategoryFormData = z.infer<ReturnType<typeof createEditSubCategorySchema>>;
 
 export default function EditSubCategoryPage() {
   const { token, isAuthenticated } = useAuth();
@@ -89,6 +89,8 @@ export default function EditSubCategoryPage() {
   const [isLoadingData, setIsLoadingData] = useState(true); // Renamed from isLoading
   const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
   const [errorOccurred, setErrorOccurred] = useState(false);
+
+  const EditSubCategorySchema = useMemo(() => createEditSubCategorySchema(), []);
 
   const { control, handleSubmit, formState: { errors }, reset, register } = useForm<EditSubCategoryFormData>({
     resolver: zodResolver(EditSubCategorySchema),
@@ -287,13 +289,13 @@ export default function EditSubCategoryPage() {
                     </Select>
                   )}
                 />
-                {errors.mainCategoryId && <p className="text-sm text-destructive">{errors.mainCategoryId.message}</p>}
+                {errors.mainCategoryId && <p className="text-sm text-destructive">{t(errors.mainCategoryId.message)}</p>}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="name">{t('categoryNameLabel')}</Label>
                 <Input id="name" {...register('name')} placeholder={t('categoryNamePlaceholder')} className={errors.name ? 'border-destructive' : ''} />
-                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                {errors.name && <p className="text-sm text-destructive">{t(errors.name.message)}</p>}
               </div>
 
               <div className="space-y-2">
@@ -323,7 +325,7 @@ export default function EditSubCategoryPage() {
                     </Select>
                   )}
                 />
-                {errors.icon && <p className="text-sm text-destructive">{errors.icon.message}</p>}
+                {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message)}</p>}
               </div>
 
               <div className="space-y-2">
@@ -335,7 +337,7 @@ export default function EditSubCategoryPage() {
                       <ColorSwatches value={field.value} onChange={field.onChange} />
                     )}
                 />
-                {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
+                {errors.color && <p className="text-sm text-destructive">{t(errors.color.message)}</p>}
               </div>
 
               <div className="flex justify-end">

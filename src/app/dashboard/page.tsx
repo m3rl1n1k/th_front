@@ -171,7 +171,7 @@ export default function DashboardPage() {
           toast({
             variant: "destructive",
             title: t('errorFetchingData'),
-            description: error.message || "Could not load dashboard data.",
+            description: error.message || t('dashboardDataLoadError'),
           });
           setSummaryData(null);
           setExpensesByCategoryData(null);

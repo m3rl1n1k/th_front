@@ -165,6 +165,7 @@
   "lastActivityTitle": "Recent Transactions",
   "noRecentTransactions": "No recent transactions found.",
   "viewAllTransactions": "View All Transactions",
+  "dashboardDataLoadError": "Could not load dashboard data.",
 
   "//": "TRANSACTIONS",
   "newTransaction": "New Transaction",
@@ -414,6 +415,9 @@
   "restaurants": "Restaurants",
   "allCategories": "All Categories",
   "invalidHexColor": "Invalid hex color format (e.g., #RRGGBB).",
+  "categoryNameRequiredError": "Name is required.",
+  "invalidHexColorError": "Invalid hex color (e.g., #RRGGBB).",
+  "parentCategoryRequiredError": "Parent category is required.",
 
   "//": "TRANSFERS",
   "createTransferTitle": "Create New Transfer",
@@ -550,6 +554,7 @@
   "saveSettingsButton": "Save Settings",
   "settingsSavedTitle": "Settings Saved",
   "settingsSavedDesc": "Your preferences have been updated.",
+  "invalidLimitValueResetToDefault": "Invalid limit value. Reset to default.",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Take Control of Your Finances",

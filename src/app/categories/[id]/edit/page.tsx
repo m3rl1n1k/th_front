@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useForm, Controller, SubmitHandler, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,12 +62,12 @@ const predefinedColors = [
 ];
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
-const EditMainCategorySchema = z.object({
-  name: z.string().min(1, { message: "Name is required." }),
+const createEditMainCategorySchema = () => z.object({
+  name: z.string().min(1, { message: "categoryNameRequiredError" }),
   icon: z.string().nullable().optional(),
-  color: z.string().regex(hexColorRegex, { message: "Invalid hex color (e.g., #RRGGBB)." }).nullable().optional(),
+  color: z.string().regex(hexColorRegex, { message: "invalidHexColorError" }).nullable().optional(),
 });
-type EditMainCategoryFormData = z.infer<typeof EditMainCategorySchema>;
+type EditMainCategoryFormData = z.infer<ReturnType<typeof createEditMainCategorySchema>>;
 
 export default function EditMainCategoryPage() {
   const { token, isAuthenticated, isLoading: authIsLoading } = useAuth();
@@ -81,6 +81,8 @@ export default function EditMainCategoryPage() {
   const [isLoadingData, setIsLoadingData] = useState(true); // Renamed from isLoading
   const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
   const [errorOccurred, setErrorOccurred] = useState(false);
+
+  const EditMainCategorySchema = useMemo(() => createEditMainCategorySchema(), []);
 
   const { control, handleSubmit, formState: { errors }, reset, register } = useForm<EditMainCategoryFormData>({
     resolver: zodResolver(EditMainCategorySchema),
@@ -249,7 +251,7 @@ export default function EditMainCategoryPage() {
               <div className="space-y-2">
                 <Label htmlFor="name">{t('categoryNameLabel')}</Label>
                 <Input id="name" {...register('name')} placeholder={t('categoryNamePlaceholder')} className={errors.name ? 'border-destructive' : ''} />
-                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                {errors.name && <p className="text-sm text-destructive">{t(errors.name.message)}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="icon-select">{t('iconLabel')}</Label>
@@ -278,7 +280,7 @@ export default function EditMainCategoryPage() {
                     </Select>
                   )}
                 />
-                {errors.icon && <p className="text-sm text-destructive">{errors.icon.message}</p>}
+                {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message)}</p>}
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-1">
@@ -298,7 +300,7 @@ export default function EditMainCategoryPage() {
                       <ColorSwatches value={field.value} onChange={field.onChange} />
                     )}
                 />
-                {errors.color && <p className="text-sm text-destructive">{errors.color.message}</p>}
+                {errors.color && <p className="text-sm text-destructive">{t(errors.color.message)}</p>}
               </div>
               <div className="flex justify-end">
                 <Button type="submit" disabled={formIsSubmitting || isLoadingData}>
