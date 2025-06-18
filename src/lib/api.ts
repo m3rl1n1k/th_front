@@ -37,7 +37,8 @@ import type {
   FeedbackTypeOption,
   BudgetListApiResponse,
   BudgetListItem,
-  BudgetDetails,
+  BudgetDetails, // This will be the transformed type
+  ApiBudgetDetailItem, // Raw type from API
   CreateBudgetPayload,
   UpdateBudgetPayload,
   BudgetSummaryByMonthResponse,
@@ -316,17 +317,34 @@ export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => 
   return request(URLS.getBudgets, { method: 'GET', token });
 };
 
-// This function fetches a specific budget item using its global ID.
-export const getBudgetDetails = async (id: string | number, token: string): Promise<BudgetDetails> => {
+// This function fetches a specific budget item using its global ID (old method)
+export const getBudgetDetailsById_DEPRECATED = async (id: string | number, token: string): Promise<BudgetDetails> => {
   const response = await request<{ budget: BudgetDetails }>(URLS.getBudgetById(id), { method: 'GET', token });
   return response.budget;
 };
 
-// New function to fetch a budget item for editing using the summary path
+// New function to fetch a budget item for editing using the summary path and transform it
 export const getBudgetSummaryItemForEdit = async (date: string, id: string | number, token: string): Promise<BudgetDetails> => {
-  // Assuming the response structure is {"budget": BudgetDetails}, same as getBudgetById
-  const response = await request<{ budget: BudgetDetails }>(URLS.getBudgetSummaryItemForEdit(date, id), { method: 'GET', token });
-  return response.budget;
+  const responseArray = await request<ApiBudgetDetailItem[]>(URLS.getBudgetSummaryItemForEdit(date, id), { method: 'GET', token });
+  
+  if (!responseArray || responseArray.length === 0) {
+    throw new Error('Budget item not found or empty response.');
+  }
+  const apiItem = responseArray[0];
+
+  // Transform ApiBudgetDetailItem to BudgetDetails (for the form)
+  const transformedDetails: BudgetDetails = {
+    id: apiItem.id,
+    month: apiItem.month,
+    plannedAmount: apiItem.plannedAmount.amount / 100, // Convert cents to units
+    currencyCode: apiItem.currency.code || apiItem.plannedAmount.currency.code, // Prefer top-level currency
+    subCategory: {
+      id: apiItem.subCategory.id,
+      name: apiItem.subCategory.name,
+    },
+    // actualExpenses is not in the new API response structure for this endpoint
+  };
+  return transformedDetails;
 };
 
 

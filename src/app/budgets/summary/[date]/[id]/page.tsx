@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
-import { getBudgetSummaryItemForEdit, updateBudget, getMainCategories } from '@/lib/api'; // Changed API call
+import { getBudgetSummaryItemForEdit, updateBudget, getMainCategories } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { BudgetDetails, UpdateBudgetPayload, MainCategory as ApiMainCategory } from '@/types';
@@ -61,7 +61,7 @@ export default function EditBudgetItemPage() {
   });
 
   const fetchBudgetData = useCallback(async () => {
-    if (!budgetId || !monthYear || !token) { // Ensure monthYear is also present for the new API call
+    if (!budgetId || !monthYear || !token) {
       setIsLoadingData(false);
       setErrorOccurred(true);
       return;
@@ -69,8 +69,9 @@ export default function EditBudgetItemPage() {
     setIsLoadingData(true);
     setErrorOccurred(false);
     try {
+      // getBudgetSummaryItemForEdit now returns the transformed BudgetDetails
       const [fetchedBudgetItem, categoriesData] = await Promise.all([
-        getBudgetSummaryItemForEdit(monthYear, budgetId, token), // Use new API call
+        getBudgetSummaryItemForEdit(monthYear, budgetId, token), 
         getMainCategories(token)
       ]);
 
@@ -78,7 +79,7 @@ export default function EditBudgetItemPage() {
       setMainCategoriesHierarchical(Array.isArray(categoriesData) ? categoriesData : []);
       
       reset({
-        plannedAmount: fetchedBudgetItem.plannedAmount / 100, 
+        plannedAmount: fetchedBudgetItem.plannedAmount, // Already in units
         categoryId: String(fetchedBudgetItem.subCategory?.id || ''),
       });
     } catch (error: any) {
@@ -87,7 +88,7 @@ export default function EditBudgetItemPage() {
     } finally {
       setIsLoadingData(false);
     }
-  }, [budgetId, monthYear, token, reset, toast, t]); // Added monthYear to dependencies
+  }, [budgetId, monthYear, token, reset, toast, t]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -102,7 +103,7 @@ export default function EditBudgetItemPage() {
     }
 
     const payload: UpdateBudgetPayload = {
-      plannedAmount: Math.round(data.plannedAmount * 100),
+      plannedAmount: Math.round(data.plannedAmount * 100), // Convert back to cents for API
       category_id: parseInt(data.categoryId, 10),
     };
 
@@ -179,7 +180,7 @@ export default function EditBudgetItemPage() {
           <CardHeader>
             <CardTitle>{t('updateBudgetDetailsTitle')}</CardTitle>
             <CardDescription>
-                {t('updateBudgetDetailsDesc', { month: formattedMonthDisplay, currency: budgetToEdit.currency || budgetToEdit.currencyCode })} {/* Adjusted currency access */}
+                {t('updateBudgetDetailsDesc', { month: formattedMonthDisplay, currency: budgetToEdit.currencyCode })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -191,7 +192,7 @@ export default function EditBudgetItemPage() {
                 </div>
                  <div className="space-y-1">
                   <Label htmlFor="currencyDisplay">{t('currencyLabel')}</Label>
-                  <Input id="currencyDisplay" value={budgetToEdit.currency || budgetToEdit.currencyCode} disabled  className="bg-muted/50"/> {/* Adjusted currency access */}
+                  <Input id="currencyDisplay" value={budgetToEdit.currencyCode} disabled  className="bg-muted/50"/>
                 </div>
               </div>
 
@@ -205,7 +206,7 @@ export default function EditBudgetItemPage() {
                       type="number"
                       step="0.01"
                       {...control.register('plannedAmount')}
-                      placeholder={t('amountPlaceholder', { currency: budgetToEdit.currency || budgetToEdit.currencyCode || '$' })} /* Adjusted currency access */
+                      placeholder={t('amountPlaceholder', { currency: budgetToEdit.currencyCode || '$' })}
                       className={`pl-10 ${errors.plannedAmount ? 'border-destructive' : ''}`}
                     />
                   </div>
@@ -259,3 +260,5 @@ export default function EditBudgetItemPage() {
     </MainLayout>
   );
 }
+
+```
