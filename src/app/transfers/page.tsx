@@ -119,9 +119,9 @@ export default function TransfersPage() {
     try {
       await createTransfer(payload, token);
       toast({ title: t('transferCreatedTitle'), description: t('transferCreatedDesc') });
-      await fetchFormData();
+      await fetchFormData(); // Re-fetch wallet data to update balances in dropdowns
       reset();
-      fetchTransfers();
+      fetchTransfers(); // Re-fetch transfers list
     } catch (error: any) {
       toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
     } finally {
@@ -340,7 +340,7 @@ export default function TransfersPage() {
                             </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <CurrencyDisplay amountInCents={transfer.amount} currencyCode={transfer.outcomeWallet.currency.code} />
+                          <CurrencyDisplay amountInCents={transfer.amount} currencyCode={transfer.incomeWallet.currency.code} />
                         </TableCell>
                         <TableCell>{format(parseISO(transfer.createdAt), "PPp", { locale: dateFnsLocale })}</TableCell>
                         <TableCell className="text-center">
