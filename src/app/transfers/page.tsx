@@ -228,7 +228,7 @@ export default function TransfersPage() {
                         <Select 
                             onValueChange={field.onChange} 
                             value={field.value} 
-                            disabled={!hasAnyWallets || !selectedOutcomeWalletId}
+                            disabled={!selectedOutcomeWalletId || selectedOutcomeWalletId.trim() === ''}
                         >
                           <SelectTrigger id="incomeWalletId" className={errors.incomeWalletId ? 'border-destructive' : ''}>
                             <SelectValue placeholder={t('transferSelectIncomeWalletPlaceholder')} />
@@ -366,3 +366,4 @@ export default function TransfersPage() {
     </MainLayout>
   );
 }
+
