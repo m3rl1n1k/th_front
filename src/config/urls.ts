@@ -71,11 +71,10 @@ export const URLS = {
   getBudgets: `${API_BASE_URL}/budgets`, // For the list of monthly summaries
   getBudgetById_DEPRECATED: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, 
   createBudget: `${API_BASE_URL}/budgets`, 
-  // For update, API_DOC.MD says PUT /budgets/{id}. The /summary/{date}/{id} was a temporary change.
-  updateBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${id}`, 
-  // For delete, API_DOC.MD says DELETE /budgets/{id}. The /summary/{date}/{id} was a temporary change.
-  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${id}`, 
+  updateBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`, 
+  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${date}/${id}`, 
   deleteBudgetsForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/${monthYear}`, // For all budgets in a month
   getBudgetSummaryForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/summary/${monthYear}`,
   getBudgetSummaryItemForEdit: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`,
 };
+
