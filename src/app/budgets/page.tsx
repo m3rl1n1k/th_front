@@ -15,7 +15,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import { getBudgetList } from '@/lib/api';
 import type { BudgetListApiResponse, MonthlyBudgetSummary } from '@/types';
-import { Target, PlusCircle, TrendingUp, TrendingDown, Activity, Loader2, BarChartHorizontalBig, AlertTriangle } from 'lucide-react';
+import { Target, PlusCircle, TrendingUp, TrendingDown, Loader2, BarChartHorizontalBig } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -45,6 +45,7 @@ export default function BudgetsPage() {
   const fetchBudgets = useCallback(async () => {
     if (!isAuthenticated || !token) {
       setIsLoading(false);
+      setMonthlyBudgets([]); // Ensure it's an empty array if not authenticated
       return;
     }
     setIsLoading(true);
@@ -63,14 +64,14 @@ export default function BudgetsPage() {
           year: monthYear.substring(0, 4),
           totalPlanned: data.totalPlanned.amount,
           totalActual: data.totalActual.amount,
-          currencyCode: data.totalPlanned.currency.code, // Assuming currency is consistent
+          currencyCode: data.totalPlanned.currency.code,
         };
-      }).sort((a, b) => b.monthYear.localeCompare(a.monthYear)); // Sort by YYYY-MM descending
+      }).sort((a, b) => b.monthYear.localeCompare(a.monthYear)); 
 
       setMonthlyBudgets(processed);
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-      setMonthlyBudgets([]);
+      setMonthlyBudgets([]); // Set to empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -81,15 +82,21 @@ export default function BudgetsPage() {
   }, [fetchBudgets]);
 
   const { groupedBudgetsByYear, sortedYears } = useMemo(() => {
-    if (!Array.isArray(monthlyBudgets)) { // Explicitly check if it's an array
+    if (!Array.isArray(monthlyBudgets)) {
       return { groupedBudgetsByYear: {}, sortedYears: [] };
     }
 
     const groups: GroupedProcessedBudgets = monthlyBudgets.reduce((acc, budget) => {
-      if (!acc[budget.year]) {
-        acc[budget.year] = [];
+      // Ensure budget and budget.year are valid before accessing
+      if (!budget || typeof budget.year !== 'string') {
+        console.warn('BudgetsPage: Invalid budget item or budget.year in reduce. Item:', budget);
+        return acc; // Skip this item
       }
-      acc[budget.year].push(budget);
+      const year = budget.year;
+      if (!acc[year]) {
+        acc[year] = [];
+      }
+      acc[year].push(budget);
       return acc;
     }, {} as GroupedProcessedBudgets);
 
@@ -139,7 +146,7 @@ export default function BudgetsPage() {
     );
   }
 
-  if (!monthlyBudgets || monthlyBudgets.length === 0) {
+  if (!Array.isArray(monthlyBudgets) || monthlyBudgets.length === 0) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -256,4 +263,4 @@ export default function BudgetsPage() {
     </MainLayout>
   );
 }
-
+    
