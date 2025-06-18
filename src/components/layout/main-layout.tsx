@@ -80,7 +80,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
     items = [...items, ...userSpecificNavItems];
     return items;
-  }, [isAuthenticated, userHasRole, userSpecificNavItems]); // userSpecificNavItems was missing from deps
+  }, [isAuthenticated, userHasRole, userSpecificNavItems]);
 
 
   useEffect(() => {
@@ -149,11 +149,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  if (!isAuthenticated && !authIsLoading) {
-     const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
-     if (!publicPaths.includes(pathname)) {
-        return null;
-     }
+  // This ensures that if we are on a public path, the layout doesn't prematurely return null
+  // while auth is still loading. Once authIsLoading is false, if still not authenticated,
+  // and it's NOT a public path, then we might return null or redirect.
+  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
+  if (!isAuthenticated && !authIsLoading && !publicPaths.includes(pathname)) {
+     return null; // Or a specific "not authorized" component if preferred for non-public paths
   }
 
   const currentNavItems = getNavItems();
@@ -340,9 +341,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </aside>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          { isAuthenticated || ['/login', '/register', '/terms', '/', '/set-token'].includes(pathname) ? children : null }
+          {/* Conditional rendering based on authentication status and public path check */}
+          { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
         </main>
       </div>
     </div>
   );
 }
+
+    
