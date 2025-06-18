@@ -92,9 +92,9 @@ export default function BudgetsPage() {
           monthYear,
           monthDisplayName,
           year: monthYear.substring(0, 4),
-          totalPlanned: data.totalPlanned?.amount ?? 0,
-          totalActual: data.totalActual?.amount ?? 0,
-          currencyCode: data.totalPlanned?.currency?.code ?? user?.userCurrency?.code ?? 'USD',
+          totalPlanned: data.totalPlanned.amount,
+          totalActual: data.totalActual.amount,
+          currencyCode: data.totalPlanned.currency.code,
         };
       }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
       setMonthlyBudgets(processed);
@@ -105,7 +105,7 @@ export default function BudgetsPage() {
       if (showLoadingIndicator) setIsLoading(false); 
       isFetchingRef.current = false;
     }
-  }, [isAuthenticated, token, toast, t, dateFnsLocale, user]); // Added user
+  }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
