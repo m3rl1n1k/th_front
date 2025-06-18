@@ -43,6 +43,7 @@
   "uiOnlyLabel": "UI Only",
   "errorFetchingData": "Error Fetching Data",
   "errorTitle": "Error",
+  "genericError": "Something went wrong. Please try again.",
 
   "//": "NAVIGATION / LAYOUT",
   "toggleNavigation": "Toggle navigation",
@@ -525,6 +526,19 @@
   "noBudgetDetailsFoundDesc": "No detailed budget items found for {monthDisplay}.",
   "backToBudgetsButton": "Back to Budgets",
   "budgetSummaryInvalidDateError": "Invalid date for budget summary.",
+  "deleteBudgetItemConfirmTitle": "Delete Budget Item for {categoryName}?",
+  "deleteBudgetItemConfirmMessage": "Are you sure you want to delete the budget item for '{categoryName}' for the month of {month}? This action cannot be undone.",
+  "budgetItemDeletedTitle": "Budget Item Deleted",
+  "budgetItemDeletedDesc": "The budget item for '{categoryName}' has been successfully deleted.",
+  "errorDeletingBudgetItem": "Error Deleting Budget Item",
+  "editBudgetItemTitle": "Edit Budget for {categoryName} - {month}",
+  "updateBudgetDetailsTitle": "Update Budget Item Details",
+  "updateBudgetDetailsDesc": "Modify the details for your budget item for {month} ({currency}).",
+  "budgetItemUpdatedTitle": "Budget Item Updated",
+  "budgetItemUpdatedDesc": "The budget item for '{categoryName}' has been successfully updated.",
+  "errorUpdatingBudgetItem": "Error Updating Budget Item",
+  "errorFetchingBudgetItem": "Error Fetching Budget Item",
+  "couldNotLoadBudgetItemEdit": "Could not load the budget item for editing. Please try again.",
 
 
   "//": "SETTINGS",

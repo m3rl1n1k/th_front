@@ -43,6 +43,7 @@
   "uiOnlyLabel": "Лише для UI",
   "errorFetchingData": "Помилка завантаження даних",
   "errorTitle": "Помилка",
+  "genericError": "Щось пішло не так. Будь ласка, спробуйте знову.",
 
   "//": "НАВІГАЦІЯ / МАКЕТ",
   "toggleNavigation": "Перемкнути навігацію",
@@ -525,6 +526,19 @@
   "noBudgetDetailsFoundDesc": "Детальних бюджетних статей для {monthDisplay} не знайдено.",
   "backToBudgetsButton": "Назад до бюджетів",
   "budgetSummaryInvalidDateError": "Невірна дата для зведення бюджету.",
+  "deleteBudgetItemConfirmTitle": "Видалити статтю бюджету для {categoryName}?",
+  "deleteBudgetItemConfirmMessage": "Ви впевнені, що хочете видалити статтю бюджету для '{categoryName}' за {month}? Цю дію неможливо буде скасувати.",
+  "budgetItemDeletedTitle": "Статтю бюджету видалено",
+  "budgetItemDeletedDesc": "Статтю бюджету для '{categoryName}' успішно видалено.",
+  "errorDeletingBudgetItem": "Помилка видалення статті бюджету",
+  "editBudgetItemTitle": "Редагувати бюджет для {categoryName} - {month}",
+  "updateBudgetDetailsTitle": "Оновити деталі статті бюджету",
+  "updateBudgetDetailsDesc": "Змініть деталі для вашої статті бюджету на {month} ({currency}).",
+  "budgetItemUpdatedTitle": "Статтю бюджету оновлено",
+  "budgetItemUpdatedDesc": "Статтю бюджету для '{categoryName}' успішно оновлено.",
+  "errorUpdatingBudgetItem": "Помилка оновлення статті бюджету",
+  "errorFetchingBudgetItem": "Помилка завантаження статті бюджету",
+  "couldNotLoadBudgetItemEdit": "Не вдалося завантажити статтю бюджету для редагування. Будь ласка, спробуйте знову.",
 
 
   "//": "SETTINGS",
