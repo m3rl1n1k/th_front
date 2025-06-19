@@ -636,6 +636,10 @@
   "invitationToCapitalLabel": "Запрошення до:",
   "invitationProcessedLabel": "Це запрошення було оброблено.",
   "leftCapitalSuccessTitle": "Успішно покинули капітал",
-  "leaveCapitalFailedTitle": "Не вдалося покинути капітал"
+  "leaveCapitalFailedTitle": "Не вдалося покинути капітал",
+  "yourPersonalWalletsTitle": "Ваші особисті гаманці",
+  "yourPersonalWalletsDesc": "Ось огляд ваших особистих гаманців.",
+  "noPersonalWalletsFound": "Ви ще не створили жодного особистого гаманця.",
+  "errorFetchingPersonalWallets": "Не вдалося завантажити ваші особисті гаманці."
 }
 

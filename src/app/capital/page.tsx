@@ -19,6 +19,8 @@ import {
   acceptInvitation,
   rejectInvitation,
   removeUserFromCapital,
+  getWalletsList, // For personal wallets
+  getWalletTypes,  // For personal wallet types
 } from '@/lib/api';
 import type {
   CapitalData,
@@ -28,9 +30,12 @@ import type {
   CreateInvitationPayload,
   ApiError,
   GetInvitationsApiResponse,
+  WalletDetails, // For personal wallets
+  WalletTypeMap,   // For personal wallet types
 } from '@/types';
 import {
-  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut
+  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut,
+  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIcon, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon // For personal wallet icons
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -40,6 +45,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { format, parseISO } from 'date-fns';
+import { CurrencyDisplay } from '@/components/common/currency-display';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const createCapitalSchema = (t: Function) => z.object({
   name: z.string().min(3, { message: t('capitalNameMinLengthError') }).max(50, { message: t('capitalNameMaxLengthError') }),
@@ -60,6 +67,12 @@ export default function CapitalPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [capitalExists, setCapitalExists] = useState(false);
 
+  // State for personal wallets (shown when no shared capital exists)
+  const [personalWallets, setPersonalWallets] = useState<WalletDetails[]>([]);
+  const [personalWalletTypes, setPersonalWalletTypes] = useState<WalletTypeMap>({});
+  const [isLoadingPersonalWallets, setIsLoadingPersonalWallets] = useState(true);
+  const [isLoadingPersonalWalletTypes, setIsLoadingPersonalWalletTypes] = useState(true);
+
   const [isLoadingPage, setIsLoadingPage] = useState(true); // For overall page elements related to capital details
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,52 +85,20 @@ export default function CapitalPage() {
     if (!isAuthenticated || !token) {
       setIsLoadingPage(false);
       setIsLoadingInvitations(false);
+      setIsLoadingPersonalWallets(false);
+      setIsLoadingPersonalWalletTypes(false);
       setCapitalExists(false);
       setCapitalData(null);
       setInvitations([]);
+      setPersonalWallets([]);
       return;
     }
 
-    setIsLoadingPage(true);
-    setIsLoadingInvitations(true);
     setError(null);
-
     let currentCapitalId: number | null = null;
-    if (user && user.capital && typeof user.capital.id === 'number') {
-      currentCapitalId = user.capital.id;
-    }
 
-    if (currentCapitalId) {
-      try {
-        const response: CapitalDetailsApiResponse = await getCapitalDetails(currentCapitalId, token);
-        setCapitalData(response.capital);
-        setCapitalExists(true);
-      } catch (err: any) {
-        const apiError = err as ApiError;
-        if (apiError.code === 404 || (apiError.message && typeof apiError.message === 'string' && (apiError.message.toLowerCase().includes('capital not found') || apiError.message.toLowerCase().includes('shared capital pool not found')))) {
-          console.warn(`[CapitalPage] User's capital ID ${currentCapitalId} not found on server.`);
-          toast({ variant: 'default', title: t('capitalNotFoundOnServerError') });
-          setCapitalData(null);
-          setCapitalExists(false);
-          if (user?.capital) { // If user object still thinks capital exists, try to refresh user
-            await fetchUser();
-          }
-        } else {
-          setError(apiError.message || t('errorFetchingData'));
-          toast({ variant: 'destructive', title: t('errorFetchingData'), description: typeof apiError.message === 'string' ? apiError.message : t('unexpectedError') });
-          setCapitalData(null);
-          setCapitalExists(false);
-        }
-      } finally {
-        setIsLoadingPage(false);
-      }
-    } else {
-      setCapitalData(null);
-      setCapitalExists(false);
-      setIsLoadingPage(false);
-    }
-
-    // Always attempt to fetch invitations
+    // Fetch invitations regardless
+    setIsLoadingInvitations(true);
     try {
       const invitationsResponse: GetInvitationsApiResponse = await getInvitations(token);
       setInvitations(invitationsResponse.invitation || []);
@@ -133,6 +114,60 @@ export default function CapitalPage() {
     } finally {
       setIsLoadingInvitations(false);
     }
+
+    if (user && user.capital && typeof user.capital.id === 'number') {
+      currentCapitalId = user.capital.id;
+      setIsLoadingPage(true);
+      setPersonalWallets([]); // Clear personal wallets if shared capital exists
+      setIsLoadingPersonalWallets(false);
+      setIsLoadingPersonalWalletTypes(false);
+      try {
+        const response: CapitalDetailsApiResponse = await getCapitalDetails(currentCapitalId, token);
+        setCapitalData(response.capital);
+        setCapitalExists(true);
+      } catch (err: any) {
+        const apiError = err as ApiError;
+        if (apiError.code === 404 || (apiError.message && typeof apiError.message === 'string' && (apiError.message.toLowerCase().includes('capital not found') || apiError.message.toLowerCase().includes('shared capital pool not found')))) {
+          console.warn(`[CapitalPage] User's capital ID ${currentCapitalId} not found on server. Allowing creation.`);
+          setCapitalData(null);
+          setCapitalExists(false);
+          if (user?.capital) { // If user object still thinks capital exists, try to refresh user
+            await fetchUser(); // This might trigger a re-render and re-evaluation
+          }
+          // Fetch personal wallets if capital not found (will be caught by the 'else' block next if capitalExists remains false)
+        } else {
+          setError(apiError.message || t('errorFetchingData'));
+          toast({ variant: 'destructive', title: t('errorFetchingData'), description: typeof apiError.message === 'string' ? apiError.message : t('unexpectedError') });
+          setCapitalData(null);
+          setCapitalExists(false);
+        }
+      } finally {
+        setIsLoadingPage(false);
+      }
+    } else { // No shared capital associated with the user, or it became null after fetchUser
+      setCapitalData(null);
+      setCapitalExists(false);
+      setIsLoadingPage(false);
+
+      // Fetch personal wallets and their types
+      setIsLoadingPersonalWallets(true);
+      setIsLoadingPersonalWalletTypes(true);
+      try {
+        const [walletsData, typesData] = await Promise.all([
+          getWalletsList(token),
+          getWalletTypes(token)
+        ]);
+        setPersonalWallets(walletsData.wallets || []);
+        setPersonalWalletTypes(typesData.types || {});
+      } catch (personalWalletError: any) {
+        toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('errorFetchingPersonalWallets') });
+        setPersonalWallets([]);
+        setPersonalWalletTypes({});
+      } finally {
+        setIsLoadingPersonalWallets(false);
+        setIsLoadingPersonalWalletTypes(false);
+      }
+    }
   }, [isAuthenticated, token, user, t, toast, fetchUser]);
 
   useEffect(() => {
@@ -141,6 +176,35 @@ export default function CapitalPage() {
     }
   }, [authIsLoading, user, fetchData]);
 
+
+  const processedPersonalWallets = useMemo(() => {
+    if (isLoadingPersonalWallets || isLoadingPersonalWalletTypes || personalWallets.length === 0) return [];
+    return personalWallets.map(wallet => {
+      const typeKey = wallet.type;
+      const mappedDisplayValue = personalWalletTypes[typeKey];
+      const typeIdentifierForTranslation = mappedDisplayValue || typeKey.toUpperCase();
+      const userFriendlyDefault = mappedDisplayValue || typeKey;
+      const translationKey = `walletType_${typeIdentifierForTranslation}`;
+      return {
+        ...wallet,
+        typeName: t(translationKey as any, { defaultValue: userFriendlyDefault })
+      };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [personalWallets, personalWalletTypes, isLoadingPersonalWallets, isLoadingPersonalWalletTypes, t]);
+
+  const getPersonalWalletVisualIcon = (wallet: WalletDetails) => {
+    const typeKey = wallet.type;
+    const iconClass = "h-5 w-5 text-muted-foreground";
+    switch (typeKey) {
+      case 'main': return <Landmark className={iconClass} />;
+      case 'deposit': return <PiggyBank className={iconClass} />;
+      case 'cash': return <WalletIconLucide className={iconClass} />;
+      case 'credit': return <CreditCardIcon className={iconClass} />;
+      case 'archive': return <ArchiveIcon className={iconClass} />;
+      case 'block': return <ShieldCheckIcon className={iconClass} />;
+      default: return <HelpCircleIcon className={iconClass} />;
+    }
+  };
 
   const handleCreateCapital: SubmitHandler<CreateCapitalFormData> = async (data) => {
     if (!token) return;
@@ -167,9 +231,9 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('capitalDeletedSuccessTitle') });
-      await fetchUser();
+      await fetchUser(); // This will set user.capital to null
       // fetchData will be re-triggered by useEffect watching `user`
-    } catch (err: any) {
+    } catch (err: any)
       toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, deleteCapital: false }));
@@ -226,9 +290,9 @@ export default function CapitalPage() {
 
     setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: true }));
     try {
-      await removeUserFromCapital(userIdToRemove, token);
+      await removeUserFromCapital(userIdToRemove, token); // Backend determines capital from authenticated user context
       toast({ title: t('userRemovedSuccessTitle') });
-      fetchData();
+      fetchData(); // Refresh capital details and member list
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -251,11 +315,10 @@ export default function CapitalPage() {
     }
   };
 
-
   const ownerOfCapital = capitalData?.owner;
 
   const renderContent = () => {
-    if (isLoadingPage || authIsLoading) {
+    if (isLoadingPage || authIsLoading || isLoadingInvitations) {
       return (
         <div className="flex justify-center items-center h-full py-10">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -263,7 +326,7 @@ export default function CapitalPage() {
       );
     }
     
-    if (error) {
+    if (error && !capitalExists) { // Show general error if capital fetch failed and no capital existed
       return (
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
           <CardHeader className="bg-destructive/10">
@@ -279,33 +342,68 @@ export default function CapitalPage() {
     return (
       <div className="space-y-8">
         {!capitalExists ? (
-          <Card className="max-w-lg mx-auto shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center text-2xl">
-                <Briefcase className="mr-3 h-7 w-7 text-primary" /> {t('createCapitalTitle')}
-              </CardTitle>
-              <CardDescription>{t('createCapitalPromptShort')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={capitalForm.handleSubmit(handleCreateCapital)} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="capitalNameForm">{t('capitalNameLabel')}</Label>
-                  <Input
-                    id="capitalNameForm"
-                    {...capitalForm.register('name')}
-                    placeholder={t('capitalNamePlaceholder', {defaultValue: "e.g., Family Savings"})}
-                    className={capitalForm.formState.errors.name ? 'border-destructive' : ''}
-                  />
-                  {capitalForm.formState.errors.name && <p className="text-sm text-destructive">{capitalForm.formState.errors.name.message}</p>}
-                </div>
-                <Button type="submit" className="w-full" disabled={actionLoading.createCapital}>
-                  {actionLoading.createCapital && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  {t('createCapitalButton')}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <>
+            <Card className="max-w-lg mx-auto shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center text-2xl">
+                  <Briefcase className="mr-3 h-7 w-7 text-primary" /> {t('createCapitalTitle')}
+                </CardTitle>
+                <CardDescription>{t('createCapitalPromptShort')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={capitalForm.handleSubmit(handleCreateCapital)} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="capitalNameForm">{t('capitalNameLabel')}</Label>
+                    <Input
+                      id="capitalNameForm"
+                      {...capitalForm.register('name')}
+                      placeholder={t('capitalNamePlaceholder', {defaultValue: "e.g., Family Savings"})}
+                      className={capitalForm.formState.errors.name ? 'border-destructive' : ''}
+                    />
+                    {capitalForm.formState.errors.name && <p className="text-sm text-destructive">{capitalForm.formState.errors.name.message}</p>}
+                  </div>
+                  <Button type="submit" className="w-full" disabled={actionLoading.createCapital}>
+                    {actionLoading.createCapital && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    {t('createCapitalButton')}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-xl">
+              <CardHeader>
+                <CardTitle>{t('yourPersonalWalletsTitle')}</CardTitle>
+                <CardDescription>{t('yourPersonalWalletsDesc')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingPersonalWallets || isLoadingPersonalWalletTypes ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {[1, 2, 3].map(i => (
+                      <Card key={i} className="p-3 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-6 w-1/2" /></Card>
+                    ))}
+                  </div>
+                ) : processedPersonalWallets.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {processedPersonalWallets.map(wallet => (
+                      <Card key={wallet.id} className="p-3 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="text-sm font-semibold truncate" title={wallet.name}>{wallet.name}</h4>
+                          {getPersonalWalletVisualIcon(wallet)}
+                        </div>
+                        <p className="text-lg font-bold text-primary">
+                          <CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />
+                        </p>
+                        <p className="text-xs text-muted-foreground">{wallet.typeName}</p>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">{t('noPersonalWalletsFound')}</p>
+                )}
+              </CardContent>
+            </Card>
+          </>
         ) : capitalData ? (
           <>
             <h1 className="font-headline text-4xl font-bold text-foreground flex items-center">
@@ -321,29 +419,31 @@ export default function CapitalPage() {
               <CardContent className="space-y-6">
                 <p className="text-sm text-muted-foreground">{t('capitalFinancialDetailsNotAvailable')}</p>
               </CardContent>
-              <CardFooter>
-                  <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={actionLoading.deleteCapital || (user?.id !== ownerOfCapital?.id)}>
-                      {actionLoading.deleteCapital && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {t('closeCapitalButton')}
-                      </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                      <AlertDialogHeader>
-                      <AlertDialogTitle>{t('confirmCloseCapitalTitle')}</AlertDialogTitle>
-                      <AlertDialogDescription>{t('confirmCloseCapitalMessage', { name: capitalData.name })}</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                      <AlertDialogCancel>{t('cancelButton')}</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteCapital} className="bg-destructive hover:bg-destructive/90">{t('deleteButtonConfirm')}</AlertDialogAction>
-                      </AlertDialogFooter>
-                  </AlertDialogContent>
-                  </AlertDialog>
-              </CardFooter>
+               {user?.id === ownerOfCapital?.id && (
+                  <CardFooter>
+                      <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="destructive" disabled={actionLoading.deleteCapital}>
+                          {actionLoading.deleteCapital && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {t('closeCapitalButton')}
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                          <AlertDialogTitle>{t('confirmCloseCapitalTitle')}</AlertDialogTitle>
+                          <AlertDialogDescription>{t('confirmCloseCapitalMessage', { name: capitalData.name })}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                          <AlertDialogCancel>{t('cancelButton')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteCapital} className="bg-destructive hover:bg-destructive/90">{t('deleteButtonConfirm')}</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                      </AlertDialog>
+                  </CardFooter>
+                )}
             </Card>
 
-            {capitalData.users.length > 0 && (
+            {capitalData.users && capitalData.users.length > 0 && (
               <Card className="shadow-xl">
                 <CardHeader>
                   <CardTitle>{t('sharedWithTitle')}</CardTitle>
@@ -371,6 +471,7 @@ export default function CapitalPage() {
           </>
         ) : null }
 
+        {/* Invitations Card - Rendered in both scenarios */}
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center text-xl">
@@ -415,11 +516,11 @@ export default function CapitalPage() {
                       <p className="font-medium">
                         {t('invitationToCapitalLabel')} <span className="text-primary">{inv.capital.name}</span>
                       </p>
-                      {!isResponded && (
-                        <p className="text-xs text-muted-foreground">
-                          {t('invitedUserEmailLabel')}: {inv.invitedUser.email}
-                        </p>
-                      )}
+                       {!isResponded && (
+                          <p className="text-xs text-muted-foreground">
+                            {t('invitedUserEmailLabel')}: {inv.invitedUser.email}
+                          </p>
+                        )}
                        {inv.inviter && (
                           <p className="text-xs text-muted-foreground">
                             {t('invitedByLabel')} {inv.inviter.email}
