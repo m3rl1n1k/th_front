@@ -600,11 +600,6 @@
   "capitalNameMaxLengthError": "Назва капіталу не може перевищувати 50 символів.",
   "capitalSummaryTitle": "Огляд Капіталу",
   "ownerLabel": "Власник",
-  "yourContributionLabel": "Ваш Внесок",
-  "sharedContributionLabel": "Спільний Внесок",
-  "totalCapitalLabel": "Загальний Капітал",
-  "yourContributingWalletsTitle": "Ваші Гаманці (Внесок)",
-  "noContributingWallets": "Наразі жоден з ваших гаманців не робить внесок.",
   "closeCapitalButton": "Закрити Капітал",
   "confirmCloseCapitalTitle": "Підтвердити Закриття Капіталу",
   "confirmCloseCapitalMessage": "Ви впевнені, що хочете закрити капітал '{name}'? Всі спільні користувачі будуть видалені, і цю дію неможливо буде скасувати.",
@@ -623,7 +618,6 @@
   "pendingInvitationsTitle": "Очікуючі Запрошення",
   "invitationToLabel": "Запрошення для:",
   "invitedByLabel": "Запросив(ла):",
-  "forCapitalLabel": "Для капіталу:",
   "invitedOnLabel": "Запрошено:",
   "acceptInvitationButton": "Прийняти",
   "rejectInvitationButton": "Відхилити",
@@ -633,9 +627,8 @@
   "noPendingInvitations": "Очікуючих запрошень немає.",
   "noInvitationsFound": "Запрошень не знайдено.",
   "capitalDetailsMissingError": "Деталі капіталу відсутні. Неможливо продовжити.",
-  "yourPersonalWalletsTitle": "Ваші особисті гаманці",
-  "yourPersonalWalletsDesc": "Огляд усіх ваших особистих фінансових рахунків.",
-  "noPersonalWalletsFound": "Ви ще не додали жодного особистого гаманця. Створіть його на сторінці Гаманці.",
-  "capitalFinancialDetailsNotAvailable": "Детальна фінансова інформація для цього капіталу наразі недоступна."
+  "capitalFinancialDetailsNotAvailable": "Детальна фінансова інформація для цього капіталу наразі недоступна.",
+  "errorFetchingInvitations": "Помилка завантаження запрошень.",
+  "createCapitalToInvite": "Створіть або виберіть спільний капітал, щоб надсилати запрошення."
 }
 

@@ -585,7 +585,7 @@
   "calculator.displayLabel": "Calculator Display",
   "calculator.error.divByZero": "Error: Div by 0",
   "calculator.error.invalidFormat": "Error: Invalid Format",
-
+  
   "//": "CAPITAL PAGE",
   "capitalPageTitle": "Capital Management",
   "createCapitalTitle": "Create Your Capital Pool",
@@ -600,11 +600,6 @@
   "capitalNameMaxLengthError": "Capital name cannot exceed 50 characters.",
   "capitalSummaryTitle": "Capital Overview",
   "ownerLabel": "Owner",
-  "yourContributionLabel": "Your Contribution",
-  "sharedContributionLabel": "Shared Contribution",
-  "totalCapitalLabel": "Total Capital",
-  "yourContributingWalletsTitle": "Your Contributing Wallets",
-  "noContributingWallets": "No wallets are currently contributing to your share.",
   "closeCapitalButton": "Close Capital Pool",
   "confirmCloseCapitalTitle": "Confirm Close Capital",
   "confirmCloseCapitalMessage": "Are you sure you want to close the capital pool '{name}'? This action will remove all shared users and cannot be undone.",
@@ -623,7 +618,6 @@
   "pendingInvitationsTitle": "Pending Invitations",
   "invitationToLabel": "Invitation to:",
   "invitedByLabel": "Invited by:",
-  "forCapitalLabel": "For capital:",
   "invitedOnLabel": "Invited on:",
   "acceptInvitationButton": "Accept",
   "rejectInvitationButton": "Reject",
@@ -633,9 +627,8 @@
   "noPendingInvitations": "No pending invitations.",
   "noInvitationsFound": "No invitations found.",
   "capitalDetailsMissingError": "Capital details are missing. Cannot proceed.",
-  "yourPersonalWalletsTitle": "Your Personal Wallets",
-  "yourPersonalWalletsDesc": "An overview of all your personal financial accounts.",
-  "noPersonalWalletsFound": "You haven't added any personal wallets yet. Create one on the Wallets page.",
-  "capitalFinancialDetailsNotAvailable": "Detailed financial breakdown for this capital pool is not currently available."
+  "capitalFinancialDetailsNotAvailable": "Detailed financial breakdown for this capital pool is not currently available.",
+  "errorFetchingInvitations": "Error fetching invitations.",
+  "createCapitalToInvite": "Create or select a capital pool to send invitations."
 }
 
