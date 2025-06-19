@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,8 +22,8 @@ import {
   acceptInvitation,
   rejectInvitation,
   removeUserFromCapital,
-  getWalletsList, // Added for personal wallets
-  getWalletTypes // Added for personal wallet types
+  getWalletsList,
+  getWalletTypes
 } from '@/lib/api';
 import type {
   CapitalDetailsApiResponse,
@@ -31,8 +31,8 @@ import type {
   Invitation,
   CreateInvitationPayload,
   ApiError,
-  WalletDetails, // Added
-  WalletTypeMap // Added
+  WalletDetails,
+  WalletTypeMap
 } from '@/types';
 import {
   Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, UserPlus, Mail, Users, CheckCircle, XCircle, Send, UserX,
@@ -56,7 +56,7 @@ const createInvitationSchema = (t: Function) => z.object({
 });
 type CreateInvitationFormData = z.infer<ReturnType<typeof createInvitationSchema>>;
 
-const MOCK_CAPITAL_ID = 1; 
+const MOCK_CAPITAL_ID = 1;
 
 export default function CapitalPage() {
   const { user, token, isAuthenticated } = useAuth();
@@ -95,7 +95,7 @@ export default function CapitalPage() {
       const capitalData = await getCapitalDetails(MOCK_CAPITAL_ID, token);
       setCapitalDetails(capitalData);
       setCapitalExists(true); 
-      setIsLoadingPersonalWallets(false);
+      setIsLoadingPersonalWallets(false); // Not fetching personal wallets if capital exists
       setIsLoadingPersonalWalletTypes(false);
 
       try {
@@ -127,7 +127,6 @@ export default function CapitalPage() {
           console.error("[CapitalPage] Failed to fetch personal wallets or types:", dataError.message);
           setPersonalWallets([]);
           setPersonalWalletTypes({});
-          // Optionally, set a specific error for personal wallets if needed
         } finally {
           setIsLoadingPersonalWallets(false);
           setIsLoadingPersonalWalletTypes(false);
@@ -163,7 +162,7 @@ export default function CapitalPage() {
 
   const getPersonalWalletVisualIcon = (wallet: WalletDetails) => {
     const typeKey = wallet.type;
-    const iconClass = "h-5 w-5"; // Smaller for table view
+    const iconClass = "h-5 w-5"; 
     
     switch (typeKey) {
       case 'main': return <Landmark className={`${iconClass} text-blue-500`} />;
@@ -192,7 +191,10 @@ export default function CapitalPage() {
   };
   
   const handleDeleteCapital = async () => {
-    if (!token || !capitalDetails) return;
+    if (!token || !capitalDetails || typeof capitalDetails.id !== 'number') {
+        toast({ variant: 'destructive', title: t('error'), description: t('capitalDetailsMissingError') });
+        return;
+    }
     setActionLoading(prev => ({ ...prev, deleteCapital: true }));
     try {
       await deleteCapital(capitalDetails.id, token);
@@ -544,3 +546,4 @@ export default function CapitalPage() {
   );
 }
 
+    
