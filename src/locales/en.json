@@ -589,7 +589,6 @@
   "//": "CAPITAL PAGE",
   "capitalPageTitle": "Capital Management",
   "createCapitalTitle": "Create Your Capital Pool",
-  "createCapitalPrompt": "You don't have a capital pool yet. Create one to start sharing finances.",
   "createCapitalPromptShort": "Create a new shared capital pool to manage finances together.",
   "capitalNameLabel": "Capital Pool Name",
   "capitalNamePlaceholder": "e.g., Family Savings",
@@ -631,6 +630,9 @@
   "invitationActionFailedTitle": "Invitation Action Failed",
   "noPendingInvitations": "No pending invitations.",
   "noInvitationsFound": "No invitations found.",
-  "capitalDetailsMissingError": "Capital details are missing. Cannot proceed."
+  "capitalDetailsMissingError": "Capital details are missing. Cannot proceed.",
+  "yourPersonalWalletsTitle": "Your Personal Wallets",
+  "yourPersonalWalletsDesc": "An overview of all your personal financial accounts.",
+  "noPersonalWalletsFound": "You haven't added any personal wallets yet. Create one on the Wallets page."
 }
 

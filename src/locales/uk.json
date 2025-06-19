@@ -589,7 +589,6 @@
   "//": "CAPITAL PAGE",
   "capitalPageTitle": "Управління Капіталом",
   "createCapitalTitle": "Створити Ваш Капітал",
-  "createCapitalPrompt": "У вас ще немає спільного капіталу. Створіть його, щоб почати ділитися фінансами.",
   "createCapitalPromptShort": "Створіть новий спільний капітал для спільного управління фінансами.",
   "capitalNameLabel": "Назва Капіталу",
   "capitalNamePlaceholder": "напр., Сімейні Заощадження",
@@ -631,6 +630,9 @@
   "invitationActionFailedTitle": "Дія з Запрошенням Не вдалася",
   "noPendingInvitations": "Очікуючих запрошень немає.",
   "noInvitationsFound": "Запрошень не знайдено.",
-  "capitalDetailsMissingError": "Деталі капіталу відсутні. Неможливо продовжити."
+  "capitalDetailsMissingError": "Деталі капіталу відсутні. Неможливо продовжити.",
+  "yourPersonalWalletsTitle": "Ваші особисті гаманці",
+  "yourPersonalWalletsDesc": "Огляд усіх ваших особистих фінансових рахунків.",
+  "noPersonalWalletsFound": "Ви ще не додали жодного особистого гаманця. Створіть його на сторінці Гаманці."
 }
 

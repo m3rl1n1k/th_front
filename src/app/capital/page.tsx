@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -21,23 +22,28 @@ import {
   acceptInvitation,
   rejectInvitation,
   removeUserFromCapital,
+  getWalletsList, // Added for personal wallets
+  getWalletTypes // Added for personal wallet types
 } from '@/lib/api';
 import type {
   CapitalDetailsApiResponse,
   CreateCapitalPayload,
   Invitation,
   CreateInvitationPayload,
-  ApiError
+  ApiError,
+  WalletDetails, // Added
+  WalletTypeMap // Added
 } from '@/types';
 import {
-  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, UserPlus, Mail, Users, CheckCircle, XCircle, Send, UserX
+  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, UserPlus, Mail, Users, CheckCircle, XCircle, Send, UserX,
+  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard, Archive, ShieldCheck, HelpCircle as HelpCircleLucide
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 
 const createCapitalSchema = (t: Function) => z.object({
@@ -59,10 +65,14 @@ export default function CapitalPage() {
 
   const [capitalDetails, setCapitalDetails] = useState<CapitalDetailsApiResponse | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [personalWallets, setPersonalWallets] = useState<WalletDetails[]>([]);
+  const [personalWalletTypes, setPersonalWalletTypes] = useState<WalletTypeMap>({});
   
   const [capitalExists, setCapitalExists] = useState(false); 
 
   const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [isLoadingPersonalWallets, setIsLoadingPersonalWallets] = useState(false);
+  const [isLoadingPersonalWalletTypes, setIsLoadingPersonalWalletTypes] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
@@ -78,11 +88,15 @@ export default function CapitalPage() {
     setError(null);
     setCapitalExists(false); 
     setInvitations([]); 
+    setPersonalWallets([]);
+    setPersonalWalletTypes({});
 
     try {
       const capitalData = await getCapitalDetails(MOCK_CAPITAL_ID, token);
       setCapitalDetails(capitalData);
       setCapitalExists(true); 
+      setIsLoadingPersonalWallets(false);
+      setIsLoadingPersonalWalletTypes(false);
 
       try {
         const invitationsData = await getInvitations(token);
@@ -97,8 +111,28 @@ export default function CapitalPage() {
       if (apiError.code === 404 && apiError.message?.toLowerCase().includes('capital not found')) {
         setCapitalExists(false);
         setCapitalDetails(null);
-        setInvitations([]); 
-        // No longer fetching user wallets if capital not found
+        setInvitations([]);
+        
+        // Capital not found, so fetch all personal wallets and their types
+        setIsLoadingPersonalWallets(true);
+        setIsLoadingPersonalWalletTypes(true);
+        try {
+          const [walletsData, typesData] = await Promise.all([
+            getWalletsList(token),
+            getWalletTypes(token)
+          ]);
+          setPersonalWallets(walletsData.wallets || []);
+          setPersonalWalletTypes(typesData.types || {});
+        } catch (dataError: any) {
+          console.error("[CapitalPage] Failed to fetch personal wallets or types:", dataError.message);
+          setPersonalWallets([]);
+          setPersonalWalletTypes({});
+          // Optionally, set a specific error for personal wallets if needed
+        } finally {
+          setIsLoadingPersonalWallets(false);
+          setIsLoadingPersonalWalletTypes(false);
+        }
+
       } else {
         setError(apiError.message || t('errorFetchingData'));
         toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message });
@@ -111,6 +145,36 @@ export default function CapitalPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const processedPersonalWallets = useMemo(() => {
+    if (isLoadingPersonalWalletTypes || personalWallets.length === 0) return [];
+    return personalWallets.map(wallet => {
+      const typeKey = wallet.type;
+      const mappedDisplayValue = personalWalletTypes[typeKey];
+      const typeIdentifierForTranslation = mappedDisplayValue || typeKey.toUpperCase();
+      const userFriendlyDefault = mappedDisplayValue || typeKey;
+      const translationKey = `walletType_${typeIdentifierForTranslation}`;
+      return {
+        ...wallet,
+        typeName: t(translationKey as any, { defaultValue: userFriendlyDefault })
+      };
+    }).sort((a,b) => a.name.localeCompare(b.name));
+  }, [personalWallets, personalWalletTypes, t, isLoadingPersonalWalletTypes]);
+
+  const getPersonalWalletVisualIcon = (wallet: WalletDetails) => {
+    const typeKey = wallet.type;
+    const iconClass = "h-5 w-5"; // Smaller for table view
+    
+    switch (typeKey) {
+      case 'main': return <Landmark className={`${iconClass} text-blue-500`} />;
+      case 'deposit': return <PiggyBank className={`${iconClass} text-green-500`} />;
+      case 'cash': return <WalletIconLucide className={`${iconClass} text-yellow-600`} />;
+      case 'credit': return <CreditCard className={`${iconClass} text-purple-500`} />;
+      case 'archive': return <Archive className={`${iconClass} text-gray-500`} />;
+      case 'block': return <ShieldCheck className={`${iconClass} text-red-500`} />;
+      default: return <HelpCircleLucide className={`${iconClass} text-muted-foreground`} />;
+    }
+  };
 
   const handleCreateCapital: SubmitHandler<CreateCapitalFormData> = async (data) => {
     if (!token) return;
@@ -238,7 +302,7 @@ export default function CapitalPage() {
               <CardTitle className="flex items-center text-2xl">
                 <Briefcase className="mr-3 h-7 w-7 text-primary" /> {t('createCapitalTitle')}
               </CardTitle>
-              <CardDescription>{t('createCapitalPrompt')}</CardDescription>
+              <CardDescription>{t('createCapitalPromptShort')}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={capitalForm.handleSubmit(handleCreateCapital)} className="space-y-6">
@@ -258,6 +322,47 @@ export default function CapitalPage() {
                   {t('createCapitalButton')}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-xl">
+            <CardHeader>
+                <CardTitle>{t('yourPersonalWalletsTitle')}</CardTitle>
+                <CardDescription>{t('yourPersonalWalletsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoadingPersonalWallets || isLoadingPersonalWalletTypes ? (
+                     <div className="flex justify-center items-center h-32">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : processedPersonalWallets.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">{t('noPersonalWalletsFound')}</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12"></TableHead>
+                                    <TableHead>{t('nameLabel')}</TableHead>
+                                    <TableHead>{t('walletTypeLabel')}</TableHead>
+                                    <TableHead className="text-right">{t('balanceLabel')}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {processedPersonalWallets.map(wallet => (
+                                    <TableRow key={wallet.id}>
+                                        <TableCell>{getPersonalWalletVisualIcon(wallet)}</TableCell>
+                                        <TableCell className="font-medium">{wallet.name}</TableCell>
+                                        <TableCell>{wallet.typeName}</TableCell>
+                                        <TableCell className="text-right">
+                                            <CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
             </CardContent>
           </Card>
         </div>
