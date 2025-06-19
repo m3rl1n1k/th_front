@@ -30,18 +30,18 @@ import type {
   GetInvitationsApiResponse,
 } from '@/types';
 import {
-  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut, Eye, Coins
+  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut, Eye, Coins, ListChecks, History
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { format, parseISO } from 'date-fns';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const createCapitalSchema = (t: Function) => z.object({
   name: z.string().min(3, { message: t('sharingGroupNameMinLengthError') }).max(50, { message: t('sharingGroupNameMaxLengthError') }),
@@ -59,11 +59,12 @@ export default function CapitalPage() {
   const { toast } = useToast();
 
   const [capitalData, setCapitalData] = useState<CapitalData | null>(null);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [receivedInvitations, setReceivedInvitations] = useState<Invitation[]>([]);
+  const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
   const [capitalExists, setCapitalExists] = useState(false);
 
   const [isLoadingPageData, setIsLoadingPageData] = useState(true);
-  const [capitalLoadingError, setCapitalLoadingError] = useState<string | null>(null); // Specific error for capital loading
+  const [capitalLoadingError, setCapitalLoadingError] = useState<string | null>(null);
   const [invitationsLoadingError, setInvitationsLoadingError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
@@ -75,7 +76,8 @@ export default function CapitalPage() {
       setIsLoadingPageData(false);
       setCapitalExists(false);
       setCapitalData(null);
-      setInvitations([]);
+      setReceivedInvitations([]);
+      setSentInvitations([]);
       return;
     }
 
@@ -86,7 +88,6 @@ export default function CapitalPage() {
     let fetchedCapitalData: CapitalData | null = null;
     let fetchedCapitalExists = false;
 
-    // Fetch Capital Details if user.capital.id exists
     if (user && user.capital && typeof user.capital.id === 'number') {
       try {
         const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
@@ -95,7 +96,6 @@ export default function CapitalPage() {
       } catch (err: any) {
         const apiError = err as ApiError;
         if (apiError.code === 404) {
-          // Capital linked to user not found (e.g., deleted by owner)
           toast({ variant: 'destructive', title: t('sharingGroupNotFoundErrorTitle'), description: t('sharingGroupNotFoundErrorDesc') });
         } else {
           setCapitalLoadingError(t('capitalLoadingError'));
@@ -105,23 +105,22 @@ export default function CapitalPage() {
         fetchedCapitalExists = false;
       }
     } else {
-      fetchedCapitalExists = false; // No capital linked to the user
+      fetchedCapitalExists = false;
     }
     setCapitalData(fetchedCapitalData);
     setCapitalExists(fetchedCapitalExists);
 
-
-    // Always fetch user's invitations
     try {
       const invitationsResponse = await getInvitations(token);
-      setInvitations(invitationsResponse.invitation || []);
+      setReceivedInvitations(invitationsResponse.invitation || []);
+      setSentInvitations(invitationsResponse.invitation_list || []);
     } catch (err: any) {
       const apiError = err as ApiError;
       setInvitationsLoadingError(t('errorFetchingInvitations'));
       toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message || t('unexpectedError')});
-      setInvitations([]);
+      setReceivedInvitations([]);
+      setSentInvitations([]);
     }
-
 
     setIsLoadingPageData(false);
   }, [isAuthenticated, token, user, t, toast]);
@@ -141,7 +140,7 @@ export default function CapitalPage() {
       await createCapital({ name: data.name }, token);
       toast({ title: t('sharingGroupCreatedSuccessTitle'), description: t('sharingGroupCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser();
+      await fetchUser(); // This will update user context, triggering fetchData
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupCreateFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -158,7 +157,7 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('sharingGroupDeletedSuccessTitle') });
-      await fetchUser();
+      await fetchUser(); // Update user context, will trigger fetchData
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -176,7 +175,7 @@ export default function CapitalPage() {
       await createInvitation(capitalData.id, { invited: data.invitedEmail, capital_id: capitalData.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
-      fetchData();
+      fetchData(); // Refresh invitations list
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -191,12 +190,12 @@ export default function CapitalPage() {
       if (actionType === 'accept') {
         await acceptInvitation(invitationId, token);
         toast({ title: t('invitationAcceptedSuccessTitle') });
-        await fetchUser();
+        await fetchUser(); // Update user context, triggers fetchData
       } else {
         await rejectInvitation(invitationId, token);
         toast({ title: t('invitationRejectedSuccessTitle') });
+        fetchData(); // Just refresh invitations list
       }
-      fetchData();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -218,7 +217,7 @@ export default function CapitalPage() {
     try {
       await removeUserFromCapital(userIdToRemove, token);
       toast({ title: t('userRemovedSuccessTitle') });
-      fetchData();
+      fetchData(); // Refresh capital details and member list
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -232,15 +231,15 @@ export default function CapitalPage() {
     try {
       await removeUserFromCapital(user.id, token);
       toast({ title: t('leftSharingGroupSuccessTitle') });
-      await fetchUser();
+      await fetchUser(); // Update user context, triggers fetchData
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('leaveSharingGroupFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: false }));
     }
   };
-
-  const ownerOfCapital = capitalData?.owner;
+  
+  const ownerOfCurrentCapital = capitalData?.owner;
 
   const renderContent = () => {
     if (isLoadingPageData || authIsLoading) {
@@ -248,19 +247,6 @@ export default function CapitalPage() {
         <div className="flex justify-center items-center h-full py-10">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-      );
-    }
-
-    if (capitalLoadingError && !capitalExists) { // Specific error for capital loading if it's critical
-      return (
-        <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
-          <CardHeader className="bg-destructive/10">
-            <CardTitle className="flex items-center text-destructive">
-              <AlertTriangle className="mr-2 h-6 w-6" /> {t('errorTitle')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6"><p>{capitalLoadingError}</p></CardContent>
-        </Card>
       );
     }
 
@@ -304,7 +290,7 @@ export default function CapitalPage() {
             <Card className="shadow-xl">
               <CardHeader>
                 <CardTitle>{t('sharingGroupOverviewTitle')}</CardTitle>
-                {ownerOfCapital && <CardDescription>{t('ownerLabel')}: {ownerOfCapital.login} ({ownerOfCapital.email})</CardDescription>}
+                {ownerOfCurrentCapital && <CardDescription>{t('ownerLabel')}: {ownerOfCurrentCapital.login} ({ownerOfCurrentCapital.email})</CardDescription>}
               </CardHeader>
               <CardContent className="space-y-6">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -322,7 +308,7 @@ export default function CapitalPage() {
                     </div>
                 </div>
               </CardContent>
-               {user?.id === ownerOfCapital?.id && (
+               {user?.id === ownerOfCurrentCapital?.id && (
                   <CardFooter>
                       <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -357,15 +343,15 @@ export default function CapitalPage() {
                       <li key={participant.id} className="flex justify-between items-center p-2 bg-muted/30 rounded-md">
                         <div>
                           <span className="font-medium">{participant.login}</span> ({participant.email})
-                          {ownerOfCapital && participant.id === ownerOfCapital.id && <span className="ml-2 text-xs font-semibold text-primary">({t('ownerLabel')})</span>}
+                          {ownerOfCurrentCapital && participant.id === ownerOfCurrentCapital.id && <span className="ml-2 text-xs font-semibold text-primary">({t('ownerLabel')})</span>}
                         </div>
-                        {user?.id === ownerOfCapital?.id && participant.id !== ownerOfCapital?.id && (
+                        {user?.id === ownerOfCurrentCapital?.id && participant.id !== ownerOfCurrentCapital?.id && (
                             <Button variant="ghost" size="icon" onClick={() => handleRemoveUser(participant.id)} disabled={actionLoading[`removeUser_${participant.id}`]}>
                             {actionLoading[`removeUser_${participant.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4 text-destructive" />}
                             <span className="sr-only">{t('removeUserButton')}</span>
                             </Button>
                         )}
-                         {user?.id !== ownerOfCapital?.id && user?.id === participant.id && (
+                         {user?.id !== ownerOfCurrentCapital?.id && user?.id === participant.id && (
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -383,6 +369,15 @@ export default function CapitalPage() {
               </Card>
             )}
           </>
+        ) : capitalLoadingError ? ( // Handle error if capital was expected but failed to load
+            <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
+                <CardHeader className="bg-destructive/10">
+                    <CardTitle className="flex items-center text-destructive">
+                    <AlertTriangle className="mr-2 h-6 w-6" /> {t('errorTitle')}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6"><p>{capitalLoadingError}</p></CardContent>
+            </Card>
         ) : null }
 
         {isAuthenticated && (
@@ -394,7 +389,7 @@ export default function CapitalPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                {capitalExists && capitalData && user?.id === ownerOfCapital?.id ? (
+                {capitalExists && capitalData && user?.id === ownerOfCurrentCapital?.id ? (
                 <form onSubmit={invitationForm.handleSubmit(handleCreateInvitation)} className="space-y-4 mb-6">
                     <div>
                     <Label htmlFor="invitedEmail" className="font-medium">{t('inviteUserToShareLabel')}</Label>
@@ -408,29 +403,71 @@ export default function CapitalPage() {
                     {invitationForm.formState.errors.invitedEmail && <p className="text-sm text-destructive mt-1">{invitationForm.formState.errors.invitedEmail.message}</p>}
                     </div>
                 </form>
-                ) : capitalExists && capitalData && user?.id !== ownerOfCapital?.id ? (
+                ) : capitalExists && capitalData && user?.id !== ownerOfCurrentCapital?.id ? (
                     <p className="text-sm text-muted-foreground mb-6">{t('ownerCanInvite')}</p>
                 ) : !capitalExists && (
                 <p className="text-sm text-muted-foreground mb-6">{t('createSharingGroupToInvite')}</p>
                 )}
+                
+                {/* Invitations Sent By Owner */}
+                {capitalExists && capitalData && user?.id === ownerOfCurrentCapital?.id && sentInvitations.length > 0 && (
+                  <div className="mb-6 pt-4 border-t">
+                    <h3 className="text-lg font-semibold mb-3 flex items-center">
+                      <ListChecks className="mr-2 h-5 w-5 text-primary" />
+                      {t('sentInvitationsTitle')}
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t('invitedUserLabel')}</TableHead>
+                            <TableHead>{t('invitationStatusLabel')}</TableHead>
+                            <TableHead>{t('sentOnLabel')}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sentInvitations.map(inv => (
+                            <TableRow key={`sent-${inv.id}`}>
+                              <TableCell>{inv.invitedUser.email}</TableCell>
+                              <TableCell>
+                                {inv.status === 'pending' ? t('statusPending') : 
+                                 inv.status === 'accepted' ? t('statusAccepted') :
+                                 inv.status === 'rejected' ? t('statusRejected') : inv.status}
+                              </TableCell>
+                              <TableCell>{format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+                {capitalExists && capitalData && user?.id === ownerOfCurrentCapital?.id && sentInvitations.length === 0 && !invitationsLoadingError && (
+                     <p className="text-sm text-muted-foreground mb-6 pt-4 border-t">{t('noSentInvitationsFound')}</p>
+                )}
 
-                <h3 className="text-lg font-semibold mb-3 pt-4 border-t">{t('pendingInvitationsTitle')}</h3>
-                 {invitationsLoadingError && (
+
+                {/* Invitations Received by User */}
+                <h3 className="text-lg font-semibold mb-3 pt-4 border-t flex items-center">
+                  <History className="mr-2 h-5 w-5 text-primary" />
+                  {t('receivedInvitationsTitle')}
+                </h3>
+                 {invitationsLoadingError && !capitalLoadingError && ( // Show only if not critical capital error
                     <Alert variant="destructive" className="mb-4">
                         <AlertTriangle className="h-4 w-4" />
                         <CardTitle>{t('errorTitle')}</CardTitle>
                         <CardDescription>{invitationsLoadingError}</CardDescription>
                     </Alert>
                 )}
-                { invitations.length > 0 ? (
+                { receivedInvitations.length > 0 ? (
                 <ul className="space-y-3">
-                    {invitations.map(inv => {
+                    {receivedInvitations.map(inv => {
                     const isCurrentUserInvited = user?.id === inv.invitedUser.id;
                     const isResponded = !!inv.respondedAt;
                     const isCurrentUserMemberOfThisCapitalViaThisInvite = isResponded && isCurrentUserInvited && user?.capital?.id === inv.capital.id;
 
                     return (
-                    <li key={inv.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
+                    <li key={`received-${inv.id}`} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
                         <div className="mb-2 sm:mb-0">
                         <p className="font-medium">
                            {t('invitationForCapitalLabel', { capitalName: inv.capital.name })}

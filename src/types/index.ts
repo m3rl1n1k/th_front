@@ -451,8 +451,8 @@ export interface CapitalData {
   owner: CapitalOwner;
   users: CapitalUser[];
   total_capital_amount: number; // in cents
-  user_capital_total: number;   // in cents (current user's contribution)
-  sum_wallets_deposit: number;  // in cents
+  user_capital_total: number;   // in cents (current user's own total personal capital)
+  // sum_wallets_deposit: number;  // in cents // Removed as per user clarification of "visibility sharing"
 }
 
 export interface CapitalDetailsApiResponse {
@@ -462,7 +462,7 @@ export interface CapitalDetailsApiResponse {
 
 export interface Invitation {
   id: number;
-  capital: { // New field
+  capital: {
     id: number;
     name: string;
   };
@@ -475,11 +475,13 @@ export interface Invitation {
     email: string;
   };
   createdAt: string; // ISO date string
-  respondedAt?: string | null; // New field
+  respondedAt?: string | null;
+  status?: string; // e.g., "pending", "accepted", "rejected" - from invitation_list
 }
 
 export interface GetInvitationsApiResponse {
-  invitation: Invitation[];
+  invitation: Invitation[]; // Invitations *to* the current user
+  invitation_list?: Invitation[]; // Invitations *sent by* the current user
 }
 
 
