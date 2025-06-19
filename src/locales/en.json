@@ -640,7 +640,11 @@
   "yourPersonalWalletsTitle": "Your Personal Wallets",
   "yourPersonalWalletsDesc": "Here's an overview of your personal wallets.",
   "noPersonalWalletsFound": "You haven't created any personal wallets yet.",
-  "errorFetchingPersonalWallets": "Could not load your personal wallets."
+  "errorFetchingPersonalWallets": "Could not load your personal wallets.",
+  "errorFetchingPersonalWalletsOrInvites": "Could not load personal data or invitations.",
+  "ownerCanInvite": "Only the owner can send invitations to this capital pool.",
+  "totalCapitalAmountLabel": "Total Shared Capital",
+  "yourContributionLabel": "Your Contribution",
+  "sumWalletsDepositLabel": "Total Deposits in Capital"
 }
-
 

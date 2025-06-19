@@ -9,7 +9,7 @@ export interface User {
     code: string;
   };
   roles?: string[];
-  capital?: { // Added capital field
+  capital?: {
     id: number;
   } | null;
 }
@@ -450,6 +450,9 @@ export interface CapitalData {
   name: string;
   owner: CapitalOwner;
   users: CapitalUser[];
+  total_capital_amount: number; // in cents
+  user_capital_total: number;   // in cents (current user's contribution)
+  sum_wallets_deposit: number;  // in cents
 }
 
 export interface CapitalDetailsApiResponse {

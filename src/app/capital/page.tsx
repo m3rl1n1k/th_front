@@ -35,7 +35,7 @@ import type {
 } from '@/types';
 import {
   Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut,
-  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIcon, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon
+  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIcon, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon, Coins
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -94,28 +94,34 @@ export default function CapitalPage() {
     }
 
     setError(null);
+    setIsLoadingPage(true);
     setIsLoadingInvitations(true);
+    setIsLoadingPersonalWallets(true);
+    setIsLoadingPersonalWalletTypes(true);
+
     try {
-      const invitationsResponse: GetInvitationsApiResponse = await getInvitations(token);
+      // Fetch personal wallets and their types always
+      const [walletsData, typesData, invitationsResponse] = await Promise.all([
+        getWalletsList(token),
+        getWalletTypes(token),
+        getInvitations(token)
+      ]);
+      setPersonalWallets(walletsData.wallets || []);
+      setPersonalWalletTypes(typesData.types || {});
       setInvitations(invitationsResponse.invitation || []);
-    } catch (invitationError: any) {
-      const apiInvError = invitationError as ApiError;
-      if (apiInvError.code === 404 || (apiInvError.message && typeof apiInvError.message === 'string' && apiInvError.message.toLowerCase().includes("not found"))) {
-          setInvitations([]);
-      } else {
-          console.error("[CapitalPage] Failed to fetch invitations (non-404):", apiInvError.message);
-          toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('errorFetchingInvitations')});
-          setInvitations([]);
-      }
+
+    } catch (personalDataError: any) {
+      toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('errorFetchingPersonalWalletsOrInvites') });
+      setPersonalWallets([]);
+      setPersonalWalletTypes({});
+      setInvitations([]);
     } finally {
+      setIsLoadingPersonalWallets(false);
+      setIsLoadingPersonalWalletTypes(false);
       setIsLoadingInvitations(false);
     }
 
     if (user && user.capital && typeof user.capital.id === 'number') {
-      setIsLoadingPage(true);
-      setPersonalWallets([]); 
-      setIsLoadingPersonalWallets(false);
-      setIsLoadingPersonalWalletTypes(false);
       try {
         const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
         setCapitalData(response.capital);
@@ -132,32 +138,12 @@ export default function CapitalPage() {
           setCapitalData(null);
           setCapitalExists(false);
         }
-      } finally {
-        setIsLoadingPage(false);
       }
-    } else { 
+    } else {
       setCapitalData(null);
       setCapitalExists(false);
-      setIsLoadingPage(false);
-
-      setIsLoadingPersonalWallets(true);
-      setIsLoadingPersonalWalletTypes(true);
-      try {
-        const [walletsData, typesData] = await Promise.all([
-          getWalletsList(token),
-          getWalletTypes(token)
-        ]);
-        setPersonalWallets(walletsData.wallets || []);
-        setPersonalWalletTypes(typesData.types || {});
-      } catch (personalWalletError: any) {
-        toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('errorFetchingPersonalWallets') });
-        setPersonalWallets([]);
-        setPersonalWalletTypes({});
-      } finally {
-        setIsLoadingPersonalWallets(false);
-        setIsLoadingPersonalWalletTypes(false);
-      }
     }
+    setIsLoadingPage(false);
   }, [isAuthenticated, token, user, t, toast]);
 
   useEffect(() => {
@@ -203,7 +189,7 @@ export default function CapitalPage() {
       await createCapital({ name: data.name }, token);
       toast({ title: t('capitalCreatedSuccessTitle'), description: t('capitalCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser(); 
+      await fetchUser();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('capitalCreateFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -220,8 +206,8 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('capitalDeletedSuccessTitle') });
-      await fetchUser(); 
-    } catch (err: any) { // Corrected: Added opening brace for catch block
+      await fetchUser();
+    } catch (err: any) {
       toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, deleteCapital: false }));
@@ -238,7 +224,7 @@ export default function CapitalPage() {
       await createInvitation(capitalData.id, { invited: data.invitedEmail, capital_id: capitalData.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
-      fetchData(); 
+      fetchData();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -253,12 +239,12 @@ export default function CapitalPage() {
       if (actionType === 'accept') {
         await acceptInvitation(invitationId, token);
         toast({ title: t('invitationAcceptedSuccessTitle') });
-        await fetchUser(); 
+        await fetchUser();
       } else {
         await rejectInvitation(invitationId, token);
         toast({ title: t('invitationRejectedSuccessTitle') });
       }
-      fetchData(); 
+      fetchData();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -280,7 +266,7 @@ export default function CapitalPage() {
     try {
       await removeUserFromCapital(userIdToRemove, token);
       toast({ title: t('userRemovedSuccessTitle') });
-      fetchData(); 
+      fetchData();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -292,9 +278,9 @@ export default function CapitalPage() {
     if (!token || !user) return;
     setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: true }));
     try {
-      await removeUserFromCapital(user.id, token); 
+      await removeUserFromCapital(user.id, token);
       toast({ title: t('leftCapitalSuccessTitle') });
-      await fetchUser(); 
+      await fetchUser();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('leaveCapitalFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -305,7 +291,7 @@ export default function CapitalPage() {
   const ownerOfCapital = capitalData?.owner;
 
   const renderContent = () => {
-    if (isLoadingPage || authIsLoading || isLoadingInvitations) {
+    if (isLoadingPage || authIsLoading || (isLoadingInvitations && invitations.length === 0) || (isLoadingPersonalWallets && personalWallets.length === 0) ) {
       return (
         <div className="flex justify-center items-center h-full py-10">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -328,69 +314,68 @@ export default function CapitalPage() {
 
     return (
       <div className="space-y-8">
-        {!capitalExists ? (
-          <>
-            <Card className="max-w-lg mx-auto shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center text-2xl">
-                  <Briefcase className="mr-3 h-7 w-7 text-primary" /> {t('createCapitalTitle')}
-                </CardTitle>
-                <CardDescription>{t('createCapitalPromptShort')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={capitalForm.handleSubmit(handleCreateCapital)} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="capitalNameForm">{t('capitalNameLabel')}</Label>
-                    <Input
-                      id="capitalNameForm"
-                      {...capitalForm.register('name')}
-                      placeholder={t('capitalNamePlaceholder', {defaultValue: "e.g., Family Savings"})}
-                      className={capitalForm.formState.errors.name ? 'border-destructive' : ''}
-                    />
-                    {capitalForm.formState.errors.name && <p className="text-sm text-destructive">{capitalForm.formState.errors.name.message}</p>}
-                  </div>
-                  <Button type="submit" className="w-full" disabled={actionLoading.createCapital}>
-                    {actionLoading.createCapital && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    {t('createCapitalButton')}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+        {/* Personal Wallets Section - Always Visible if authenticated */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle>{t('yourPersonalWalletsTitle')}</CardTitle>
+            <CardDescription>{t('yourPersonalWalletsDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingPersonalWallets || isLoadingPersonalWalletTypes ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => (
+                  <Card key={i} className="p-3 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-6 w-1/2" /></Card>
+                ))}
+              </div>
+            ) : processedPersonalWallets.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {processedPersonalWallets.map(wallet => (
+                  <Card key={wallet.id} className="p-3 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-sm font-semibold truncate" title={wallet.name}>{wallet.name}</h4>
+                      {getPersonalWalletVisualIcon(wallet)}
+                    </div>
+                    <p className="text-lg font-bold text-primary">
+                      <CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />
+                    </p>
+                    <p className="text-xs text-muted-foreground">{wallet.typeName}</p>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">{t('noPersonalWalletsFound')}</p>
+            )}
+          </CardContent>
+        </Card>
 
-            <Card className="shadow-xl">
-              <CardHeader>
-                <CardTitle>{t('yourPersonalWalletsTitle')}</CardTitle>
-                <CardDescription>{t('yourPersonalWalletsDesc')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoadingPersonalWallets || isLoadingPersonalWalletTypes ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {[1, 2, 3].map(i => (
-                      <Card key={i} className="p-3 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-6 w-1/2" /></Card>
-                    ))}
-                  </div>
-                ) : processedPersonalWallets.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {processedPersonalWallets.map(wallet => (
-                      <Card key={wallet.id} className="p-3 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-sm font-semibold truncate" title={wallet.name}>{wallet.name}</h4>
-                          {getPersonalWalletVisualIcon(wallet)}
-                        </div>
-                        <p className="text-lg font-bold text-primary">
-                          <CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />
-                        </p>
-                        <p className="text-xs text-muted-foreground">{wallet.typeName}</p>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">{t('noPersonalWalletsFound')}</p>
-                )}
-              </CardContent>
-            </Card>
-          </>
+        {!capitalExists ? (
+          <Card className="max-w-lg mx-auto shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center text-2xl">
+                <Briefcase className="mr-3 h-7 w-7 text-primary" /> {t('createCapitalTitle')}
+              </CardTitle>
+              <CardDescription>{t('createCapitalPromptShort')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={capitalForm.handleSubmit(handleCreateCapital)} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="capitalNameForm">{t('capitalNameLabel')}</Label>
+                  <Input
+                    id="capitalNameForm"
+                    {...capitalForm.register('name')}
+                    placeholder={t('capitalNamePlaceholder', {defaultValue: "e.g., Family Savings"})}
+                    className={capitalForm.formState.errors.name ? 'border-destructive' : ''}
+                  />
+                  {capitalForm.formState.errors.name && <p className="text-sm text-destructive">{capitalForm.formState.errors.name.message}</p>}
+                </div>
+                <Button type="submit" className="w-full" disabled={actionLoading.createCapital}>
+                  {actionLoading.createCapital && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <PlusCircle className="mr-2 h-5 w-5" />
+                  {t('createCapitalButton')}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         ) : capitalData ? (
           <>
             <h1 className="font-headline text-4xl font-bold text-foreground flex items-center">
@@ -404,7 +389,20 @@ export default function CapitalPage() {
                 {ownerOfCapital && <CardDescription>{t('ownerLabel')}: {ownerOfCapital.login} ({ownerOfCapital.email})</CardDescription>}
               </CardHeader>
               <CardContent className="space-y-6">
-                <p className="text-sm text-muted-foreground">{t('capitalFinancialDetailsNotAvailable')}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-muted/30 rounded-md">
+                    <Label className="text-xs text-muted-foreground">{t('totalCapitalAmountLabel')}</Label>
+                    <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={capitalData.total_capital_amount} currencyCode={user?.userCurrency?.code} /></p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-md">
+                    <Label className="text-xs text-muted-foreground">{t('yourContributionLabel')}</Label>
+                    <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={capitalData.user_capital_total} currencyCode={user?.userCurrency?.code} /></p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-md">
+                    <Label className="text-xs text-muted-foreground">{t('sumWalletsDepositLabel')}</Label>
+                    <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={capitalData.sum_wallets_deposit} currencyCode={user?.userCurrency?.code} /></p>
+                  </div>
+                </div>
               </CardContent>
                {user?.id === ownerOfCapital?.id && (
                   <CardFooter>
@@ -480,6 +478,8 @@ export default function CapitalPage() {
                   {invitationForm.formState.errors.invitedEmail && <p className="text-sm text-destructive mt-1">{invitationForm.formState.errors.invitedEmail.message}</p>}
                 </div>
               </form>
+            ) : capitalExists && capitalData && user?.id !== ownerOfCapital?.id ? (
+                 <p className="text-sm text-muted-foreground mb-6">{t('ownerCanInvite')}</p>
             ) : !capitalExists && (
               <p className="text-sm text-muted-foreground mb-6">{t('createCapitalToInvite')}</p>
             )}

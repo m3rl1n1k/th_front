@@ -640,7 +640,11 @@
   "yourPersonalWalletsTitle": "Ваші особисті гаманці",
   "yourPersonalWalletsDesc": "Ось огляд ваших особистих гаманців.",
   "noPersonalWalletsFound": "Ви ще не створили жодного особистого гаманця.",
-  "errorFetchingPersonalWallets": "Не вдалося завантажити ваші особисті гаманці."
+  "errorFetchingPersonalWallets": "Не вдалося завантажити ваші особисті гаманці.",
+  "errorFetchingPersonalWalletsOrInvites": "Не вдалося завантажити особисті дані або запрошення.",
+  "ownerCanInvite": "Лише власник може надсилати запрошення до цього капіталу.",
+  "totalCapitalAmountLabel": "Загальна Сума Капіталу",
+  "yourContributionLabel": "Ваш Внесок",
+  "sumWalletsDepositLabel": "Сума Депозитів у Капіталі"
 }
-
 
