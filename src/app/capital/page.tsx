@@ -30,8 +30,7 @@ import type {
   GetInvitationsApiResponse,
 } from '@/types';
 import {
-  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut,
-  Eye, Coins
+  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut, Eye, Coins
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -64,7 +63,8 @@ export default function CapitalPage() {
   const [capitalExists, setCapitalExists] = useState(false);
 
   const [isLoadingPageData, setIsLoadingPageData] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [capitalLoadingError, setCapitalLoadingError] = useState<string | null>(null); // Specific error for capital loading
+  const [invitationsLoadingError, setInvitationsLoadingError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
   const capitalForm = useForm<CreateCapitalFormData>({ resolver: zodResolver(createCapitalSchema(t)) });
@@ -79,43 +79,52 @@ export default function CapitalPage() {
       return;
     }
 
-    setError(null);
     setIsLoadingPageData(true);
+    setCapitalLoadingError(null);
+    setInvitationsLoadingError(null);
 
+    let fetchedCapitalData: CapitalData | null = null;
+    let fetchedCapitalExists = false;
+
+    // Fetch Capital Details if user.capital.id exists
+    if (user && user.capital && typeof user.capital.id === 'number') {
+      try {
+        const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
+        fetchedCapitalData = response.capital;
+        fetchedCapitalExists = true;
+      } catch (err: any) {
+        const apiError = err as ApiError;
+        if (apiError.code === 404) {
+          // Capital linked to user not found (e.g., deleted by owner)
+          toast({ variant: 'destructive', title: t('sharingGroupNotFoundErrorTitle'), description: t('sharingGroupNotFoundErrorDesc') });
+        } else {
+          setCapitalLoadingError(t('capitalLoadingError'));
+          toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message || t('unexpectedError') });
+        }
+        fetchedCapitalData = null;
+        fetchedCapitalExists = false;
+      }
+    } else {
+      fetchedCapitalExists = false; // No capital linked to the user
+    }
+    setCapitalData(fetchedCapitalData);
+    setCapitalExists(fetchedCapitalExists);
+
+
+    // Always fetch user's invitations
     try {
-      // Always fetch user's invitations
       const invitationsResponse = await getInvitations(token);
       setInvitations(invitationsResponse.invitation || []);
-
-      if (user && user.capital && typeof user.capital.id === 'number') {
-        const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
-        setCapitalData(response.capital);
-        setCapitalExists(true);
-      } else {
-        setCapitalData(null);
-        setCapitalExists(false);
-      }
     } catch (err: any) {
       const apiError = err as ApiError;
-      if (apiError.code === 404 && user?.capital?.id) {
-        // User is linked to a capital that doesn't exist (e.g., deleted)
-        setCapitalData(null);
-        setCapitalExists(false);
-        // Optionally, clear user.capital in AuthContext if backend doesn't do it
-        // await fetchUser(); // To get updated user state from backend
-        toast({ variant: 'destructive', title: t('sharingGroupNotFoundErrorTitle'), description: t('sharingGroupNotFoundErrorDesc') });
-      } else if (apiError.message) {
-        setError(apiError.message);
-        toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message });
-      } else {
-        setError(t('unexpectedError'));
-        toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('unexpectedError') });
-      }
-      if (invitations.length === 0 && !err.url?.includes('/invitations')) setInvitations([]);
-    } finally {
-      setIsLoadingPageData(false);
+      setInvitationsLoadingError(t('errorFetchingInvitations'));
+      toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message || t('unexpectedError')});
+      setInvitations([]);
     }
-  }, [isAuthenticated, token, user, t, toast, fetchUser, invitations.length]); // Added fetchUser and invitations.length for stability
+
+
+    setIsLoadingPageData(false);
+  }, [isAuthenticated, token, user, t, toast]);
 
 
   useEffect(() => {
@@ -132,7 +141,7 @@ export default function CapitalPage() {
       await createCapital({ name: data.name }, token);
       toast({ title: t('sharingGroupCreatedSuccessTitle'), description: t('sharingGroupCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser(); // This should update user.capital and trigger fetchData via useEffect
+      await fetchUser();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupCreateFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -149,7 +158,7 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('sharingGroupDeletedSuccessTitle') });
-      await fetchUser(); // This should update user.capital (to null) and trigger fetchData
+      await fetchUser();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -167,7 +176,7 @@ export default function CapitalPage() {
       await createInvitation(capitalData.id, { invited: data.invitedEmail, capital_id: capitalData.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
-      fetchData(); // Refresh invitations list directly
+      fetchData();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -182,12 +191,12 @@ export default function CapitalPage() {
       if (actionType === 'accept') {
         await acceptInvitation(invitationId, token);
         toast({ title: t('invitationAcceptedSuccessTitle') });
-        await fetchUser(); // This will trigger a re-fetch of user data (including capital)
+        await fetchUser();
       } else {
         await rejectInvitation(invitationId, token);
         toast({ title: t('invitationRejectedSuccessTitle') });
       }
-      fetchData(); // Refresh invitations list and potentially capital data if user accepted
+      fetchData();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -209,7 +218,7 @@ export default function CapitalPage() {
     try {
       await removeUserFromCapital(userIdToRemove, token);
       toast({ title: t('userRemovedSuccessTitle') });
-      fetchData(); // Refresh capital details (user list)
+      fetchData();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -221,9 +230,9 @@ export default function CapitalPage() {
     if (!token || !user) return;
     setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: true }));
     try {
-      await removeUserFromCapital(user.id, token); // Backend knows which capital to leave based on user id
+      await removeUserFromCapital(user.id, token);
       toast({ title: t('leftSharingGroupSuccessTitle') });
-      await fetchUser(); // This will update user.capital and trigger fetchData
+      await fetchUser();
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('leaveSharingGroupFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -242,7 +251,7 @@ export default function CapitalPage() {
       );
     }
 
-    if (error && !isAuthenticated) { // Only show general error if not authenticated and something went wrong
+    if (capitalLoadingError && !capitalExists) { // Specific error for capital loading if it's critical
       return (
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
           <CardHeader className="bg-destructive/10">
@@ -250,7 +259,7 @@ export default function CapitalPage() {
               <AlertTriangle className="mr-2 h-6 w-6" /> {t('errorTitle')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6"><p>{error}</p></CardContent>
+          <CardContent className="pt-6"><p>{capitalLoadingError}</p></CardContent>
         </Card>
       );
     }
@@ -306,7 +315,7 @@ export default function CapitalPage() {
                         </p>
                     </div>
                     <div className="p-4 bg-muted/30 rounded-md">
-                        <Label className="text-xs text-muted-foreground">{t('yourVisiblePersonalCapitalLabel')}</Label>
+                        <Label className="text-xs text-muted-foreground">{t('yourVisibleCapitalInThisGroupLabel')}</Label>
                         <p className="text-xl font-semibold">
                             <CurrencyDisplay amountInCents={capitalData.user_capital_total} currencyCode={user?.userCurrency?.code} />
                         </p>
@@ -356,6 +365,17 @@ export default function CapitalPage() {
                             <span className="sr-only">{t('removeUserButton')}</span>
                             </Button>
                         )}
+                         {user?.id !== ownerOfCapital?.id && user?.id === participant.id && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleLeaveCapital(capitalData.id)}
+                                disabled={actionLoading[`leaveCapital_${capitalData.id}`]}
+                            >
+                                {actionLoading[`leaveCapital_${capitalData.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <LogOut className="mr-1 h-3 w-3" />}
+                                {t('leaveSharingGroupButton')}
+                            </Button>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -365,7 +385,6 @@ export default function CapitalPage() {
           </>
         ) : null }
 
-        {/* Invitations Section - Always Visible if authenticated */}
         {isAuthenticated && (
             <Card className="shadow-xl">
             <CardHeader>
@@ -396,19 +415,25 @@ export default function CapitalPage() {
                 )}
 
                 <h3 className="text-lg font-semibold mb-3 pt-4 border-t">{t('pendingInvitationsTitle')}</h3>
+                 {invitationsLoadingError && (
+                    <Alert variant="destructive" className="mb-4">
+                        <AlertTriangle className="h-4 w-4" />
+                        <CardTitle>{t('errorTitle')}</CardTitle>
+                        <CardDescription>{invitationsLoadingError}</CardDescription>
+                    </Alert>
+                )}
                 { invitations.length > 0 ? (
                 <ul className="space-y-3">
                     {invitations.map(inv => {
                     const isCurrentUserInvited = user?.id === inv.invitedUser.id;
                     const isResponded = !!inv.respondedAt;
-                    // Check if current user is a member of THIS specific capital from THIS invitation
                     const isCurrentUserMemberOfThisCapitalViaThisInvite = isResponded && isCurrentUserInvited && user?.capital?.id === inv.capital.id;
 
                     return (
                     <li key={inv.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
                         <div className="mb-2 sm:mb-0">
                         <p className="font-medium">
-                            {t('invitationToSharingGroupLabel')} <span className="text-primary">{inv.capital.name}</span>
+                           {t('invitationForCapitalLabel', { capitalName: inv.capital.name })}
                         </p>
                         {inv.inviter && (
                             <p className="text-xs text-muted-foreground">
@@ -462,7 +487,7 @@ export default function CapitalPage() {
                     )})}
                 </ul>
                 ) : (
-                <p className="text-sm text-muted-foreground">{t('noInvitationsFound')}</p>
+                  !invitationsLoadingError && <p className="text-sm text-muted-foreground">{t('noInvitationsFound')}</p>
                 )}
             </CardContent>
             </Card>
@@ -478,3 +503,4 @@ export default function CapitalPage() {
     </MainLayout>
   );
 }
+

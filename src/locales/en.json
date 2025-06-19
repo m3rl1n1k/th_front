@@ -627,7 +627,7 @@
   "noInvitationsFound": "No share invitations found.",
   "sharingGroupDetailsMissingError": "Sharing group details are missing. Cannot proceed.",
   "errorFetchingInvitations": "Error fetching share invitations.",
-  "createSharingGroupToInvite": "Create or select a sharing group to send invitations.",
+  "createSharingGroupToInvite": "Create or join a sharing group to send invitations.",
   "sharingGroupNotFoundErrorTitle": "Sharing Group Not Found",
   "sharingGroupNotFoundErrorDesc": "The sharing group associated with your profile was not found. It may have been deleted.",
   "leaveSharingGroupButton": "Leave Sharing Group",
@@ -639,6 +639,10 @@
   "errorFetchingPersonalWalletsOrInvites": "Could not load personal data or invitations.",
   "ownerCanInvite": "Only the owner can send invitations to this sharing group.",
   "totalVisibleCapitalInGroupLabel": "Total Capital Visible in Group",
-  "yourVisiblePersonalCapitalLabel": "Your Visible Personal Capital",
-  "yourVisibleCapitalTitle": "Your Shared Visibility"
+  "yourVisibleCapitalInThisGroupLabel": "Your Visible Capital in this Group",
+  "yourVisibleCapitalTitle": "Your Shared Visibility",
+  "invitationForCapitalLabel": "For Sharing Group: {capitalName}",
+  "capitalLoadingError": "Could not load sharing group details. Invitations may still be visible.",
+  "errorFetchingUserCapital": "Error fetching user's capital information."
 }
+

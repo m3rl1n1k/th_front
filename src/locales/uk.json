@@ -627,7 +627,7 @@
   "noInvitationsFound": "Запрошень на спільний перегляд не знайдено.",
   "sharingGroupDetailsMissingError": "Деталі групи спільного перегляду відсутні. Неможливо продовжити.",
   "errorFetchingInvitations": "Помилка завантаження запрошень на спільний перегляд.",
-  "createSharingGroupToInvite": "Створіть або виберіть групу спільного перегляду, щоб надсилати запрошення.",
+  "createSharingGroupToInvite": "Створіть або приєднайтеся до групи спільного перегляду, щоб надсилати запрошення.",
   "sharingGroupNotFoundErrorTitle": "Групу Спільного Перегляду Не Знайдено",
   "sharingGroupNotFoundErrorDesc": "Групу спільного перегляду, пов'язану з вашим профілем, не знайдено. Можливо, її було видалено.",
   "leaveSharingGroupButton": "Покинути Групу Спільного Перегляду",
@@ -639,6 +639,10 @@
   "errorFetchingPersonalWalletsOrInvites": "Не вдалося завантажити особисті дані або запрошення.",
   "ownerCanInvite": "Лише власник може надсилати запрошення до цієї групи спільного перегляду.",
   "totalVisibleCapitalInGroupLabel": "Загальний Видимий Капітал у Групі",
-  "yourVisiblePersonalCapitalLabel": "Ваш Видимий Особистий Капітал",
-  "yourVisibleCapitalTitle": "Ваш Спільний Перегляд"
+  "yourVisibleCapitalInThisGroupLabel": "Ваш видимий капітал у цій групі",
+  "yourVisibleCapitalTitle": "Ваш Спільний Перегляд",
+  "invitationForCapitalLabel": "Для групи видимості: {capitalName}",
+  "capitalLoadingError": "Не вдалося завантажити деталі групи видимості. Запрошення можуть бути видимі.",
+  "errorFetchingUserCapital": "Помилка завантаження інформації про капітал користувача."
 }
+
