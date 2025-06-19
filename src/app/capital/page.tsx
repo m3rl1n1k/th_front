@@ -30,7 +30,7 @@ import type {
   GetInvitationsApiResponse,
 } from '@/types';
 import {
-  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX,
+  Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -60,7 +60,8 @@ export default function CapitalPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [capitalExists, setCapitalExists] = useState(false);
 
-  const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [isLoadingPage, setIsLoadingPage] = useState(true); // For overall page elements related to capital details
+  const [isLoadingInvitations, setIsLoadingInvitations] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
@@ -70,37 +71,51 @@ export default function CapitalPage() {
   const fetchData = useCallback(async () => {
     if (!isAuthenticated || !token) {
       setIsLoadingPage(false);
+      setIsLoadingInvitations(false);
+      setCapitalExists(false);
+      setCapitalData(null);
+      setInvitations([]);
       return;
     }
 
     setIsLoadingPage(true);
+    setIsLoadingInvitations(true);
     setError(null);
-    let currentCapitalExists = false;
-    let currentCapitalData = null;
 
+    let currentCapitalId: number | null = null;
     if (user && user.capital && typeof user.capital.id === 'number') {
+      currentCapitalId = user.capital.id;
+    }
+
+    if (currentCapitalId) {
       try {
-        const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
-        currentCapitalData = response.capital;
-        currentCapitalExists = true;
+        const response: CapitalDetailsApiResponse = await getCapitalDetails(currentCapitalId, token);
+        setCapitalData(response.capital);
+        setCapitalExists(true);
       } catch (err: any) {
         const apiError = err as ApiError;
-        if (apiError.code === 404 && (apiError.message && typeof apiError.message === 'string' && (apiError.message.toLowerCase().includes('capital not found') || apiError.message.toLowerCase().includes('shared capital pool not found')))) {
-          // User has a capital ID, but it's not found on server (edge case)
-          console.warn(`[CapitalPage] User's capital ID ${user.capital.id} not found on server.`);
-          toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('capitalNotFoundOnServerError') });
-          currentCapitalExists = false; // Treat as if no capital exists for UI
+        if (apiError.code === 404 || (apiError.message && typeof apiError.message === 'string' && (apiError.message.toLowerCase().includes('capital not found') || apiError.message.toLowerCase().includes('shared capital pool not found')))) {
+          console.warn(`[CapitalPage] User's capital ID ${currentCapitalId} not found on server.`);
+          toast({ variant: 'default', title: t('capitalNotFoundOnServerError') });
+          setCapitalData(null);
+          setCapitalExists(false);
+          if (user?.capital) { // If user object still thinks capital exists, try to refresh user
+            await fetchUser();
+          }
         } else {
           setError(apiError.message || t('errorFetchingData'));
           toast({ variant: 'destructive', title: t('errorFetchingData'), description: typeof apiError.message === 'string' ? apiError.message : t('unexpectedError') });
+          setCapitalData(null);
+          setCapitalExists(false);
         }
+      } finally {
+        setIsLoadingPage(false);
       }
     } else {
-      currentCapitalExists = false;
+      setCapitalData(null);
+      setCapitalExists(false);
+      setIsLoadingPage(false);
     }
-    
-    setCapitalData(currentCapitalData);
-    setCapitalExists(currentCapitalExists);
 
     // Always attempt to fetch invitations
     try {
@@ -110,22 +125,21 @@ export default function CapitalPage() {
       const apiInvError = invitationError as ApiError;
       if (apiInvError.code === 404 || (apiInvError.message && typeof apiInvError.message === 'string' && apiInvError.message.toLowerCase().includes("not found"))) {
           setInvitations([]);
-          console.warn("[CapitalPage] No invitations found or API indicated not found for invitations:", apiInvError.message);
       } else {
           console.error("[CapitalPage] Failed to fetch invitations (non-404):", apiInvError.message);
           toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('errorFetchingInvitations')});
           setInvitations([]);
       }
+    } finally {
+      setIsLoadingInvitations(false);
     }
-
-    setIsLoadingPage(false);
-  }, [isAuthenticated, token, user, t, toast]);
+  }, [isAuthenticated, token, user, t, toast, fetchUser]);
 
   useEffect(() => {
-    if (!authIsLoading) { // Wait for auth state to settle
+    if (!authIsLoading) {
         fetchData();
     }
-  }, [authIsLoading, fetchData]);
+  }, [authIsLoading, user, fetchData]);
 
 
   const handleCreateCapital: SubmitHandler<CreateCapitalFormData> = async (data) => {
@@ -135,7 +149,7 @@ export default function CapitalPage() {
       await createCapital({ name: data.name }, token);
       toast({ title: t('capitalCreatedSuccessTitle'), description: t('capitalCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser(); // Refresh user data, which should include new capital ID
+      await fetchUser(); // This will refresh user data, including the new capital ID
       // fetchData will be re-triggered by useEffect watching `user`
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('capitalCreateFailedTitle'), description: (err as ApiError).message });
@@ -153,11 +167,8 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('capitalDeletedSuccessTitle') });
-      setCapitalData(null);
-      setInvitations([]);
-      setCapitalExists(false);
-      await fetchUser(); // Refresh user data, capital ID should be null
-      // fetchData will be re-triggered
+      await fetchUser();
+      // fetchData will be re-triggered by useEffect watching `user`
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -175,7 +186,7 @@ export default function CapitalPage() {
       await createInvitation(capitalData.id, { invited: data.invitedEmail, capital_id: capitalData.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
-      fetchData(); // Refetch to update invitations list
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -190,12 +201,12 @@ export default function CapitalPage() {
       if (action === 'accept') {
         await acceptInvitation(invitationId, token);
         toast({ title: t('invitationAcceptedSuccessTitle') });
-        await fetchUser(); // If accepting adds user to capital, refresh user
+        await fetchUser(); 
       } else {
         await rejectInvitation(invitationId, token);
         toast({ title: t('invitationRejectedSuccessTitle') });
       }
-      fetchData(); // Refetch to update capital details and invitations
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -224,23 +235,48 @@ export default function CapitalPage() {
       setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: false }));
     }
   };
+  
+  const handleLeaveCapital = async (capitalIdToLeave: number) => {
+    if (!token || !user) return;
+    setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: true }));
+    try {
+      await removeUserFromCapital(user.id, token); 
+      toast({ title: t('leftCapitalSuccessTitle') });
+      await fetchUser(); 
+      // fetchData will be re-triggered by user state change
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: t('leaveCapitalFailedTitle'), description: (err as ApiError).message });
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: false }));
+    }
+  };
 
 
-  if (isLoadingPage || authIsLoading) {
-    return (
-      <MainLayout>
+  const ownerOfCapital = capitalData?.owner;
+
+  const renderContent = () => {
+    if (isLoadingPage || authIsLoading) {
+      return (
         <div className="flex justify-center items-center h-full py-10">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-      </MainLayout>
-    );
-  }
+      );
+    }
+    
+    if (error) {
+      return (
+        <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
+          <CardHeader className="bg-destructive/10">
+            <CardTitle className="flex items-center text-destructive">
+              <AlertTriangle className="mr-2 h-6 w-6" /> {t('errorTitle')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6"><p>{error}</p></CardContent>
+        </Card>
+      );
+    }
 
-  const usersInCapital = capitalData?.users || [];
-  const ownerOfCapital = capitalData?.owner;
-
-  return (
-    <MainLayout>
+    return (
       <div className="space-y-8">
         {!capitalExists ? (
           <Card className="max-w-lg mx-auto shadow-xl">
@@ -307,14 +343,14 @@ export default function CapitalPage() {
               </CardFooter>
             </Card>
 
-            {usersInCapital.length > 0 && (
+            {capitalData.users.length > 0 && (
               <Card className="shadow-xl">
                 <CardHeader>
                   <CardTitle>{t('sharedWithTitle')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {usersInCapital.map(participant => (
+                    {capitalData.users.map(participant => (
                       <li key={participant.id} className="flex justify-between items-center p-2 bg-muted/30 rounded-md">
                         <div>
                           <span className="font-medium">{participant.login}</span> ({participant.email})
@@ -333,15 +369,6 @@ export default function CapitalPage() {
               </Card>
             )}
           </>
-        ) : error ? (
-            <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
-            <CardHeader className="bg-destructive/10">
-                <CardTitle className="flex items-center text-destructive">
-                <AlertTriangle className="mr-2 h-6 w-6" /> {t('errorTitle')}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6"><p>{error}</p></CardContent>
-            </Card>
         ) : null }
 
         <Card className="shadow-xl">
@@ -371,29 +398,73 @@ export default function CapitalPage() {
             )}
 
             <h3 className="text-lg font-semibold mb-3 pt-4 border-t">{t('pendingInvitationsTitle')}</h3>
-            {invitations.length > 0 ? (
+            {isLoadingInvitations ? (
+                <div className="flex justify-center items-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+            ) : invitations.length > 0 ? (
               <ul className="space-y-3">
-                {invitations.map(inv => (
+                {invitations.map(inv => {
+                  const isCurrentUserInvited = user?.id === inv.invitedUser.id;
+                  const isResponded = !!inv.respondedAt;
+                  const isCurrentUserMemberOfThisCapitalViaThisInvite = isResponded && isCurrentUserInvited && user?.capital?.id === inv.capital.id;
+
+                  return (
                   <li key={inv.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
                     <div className="mb-2 sm:mb-0">
-                      <p className="font-medium">{t('invitationToLabel')} {inv.invitedUser.email}</p>
-                      {inv.inviter && <p className="text-xs text-muted-foreground">{t('invitedByLabel')} {inv.inviter.email}</p>}
-                      <p className="text-xs text-muted-foreground">{t('invitedOnLabel')} {format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}</p>
+                      <p className="font-medium">
+                        {t('invitationToCapitalLabel')} <span className="text-primary">{inv.capital.name}</span>
+                      </p>
+                      {!isResponded && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('invitedUserEmailLabel')}: {inv.invitedUser.email}
+                        </p>
+                      )}
+                       {inv.inviter && (
+                          <p className="text-xs text-muted-foreground">
+                            {t('invitedByLabel')} {inv.inviter.email}
+                          </p>
+                        )}
+                      <p className="text-xs text-muted-foreground">
+                        {t('invitedOnLabel')} {format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}
+                      </p>
+                      {isResponded && inv.respondedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('invitationRespondedOnLabel')} {format(parseISO(inv.respondedAt), "PPp", { locale: dateFnsLocale })}
+                        </p>
+                      )}
                     </div>
-                    {user?.email === inv.invitedUser.email && (
-                      <div className="flex gap-2 self-end sm:self-center">
-                        <Button size="sm" variant="outline" onClick={() => handleInvitationAction(inv.id, 'accept')} disabled={actionLoading[`invitation_${inv.id}`]}>
-                          {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CheckCircle className="mr-1 h-3 w-3" />}
-                          {t('acceptInvitationButton')}
+
+                    <div className="flex gap-2 self-end sm:self-center">
+                      {isCurrentUserInvited && !isResponded && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => handleInvitationAction(inv.id, 'accept')} disabled={actionLoading[`invitation_${inv.id}`]}>
+                            {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CheckCircle className="mr-1 h-3 w-3" />}
+                            {t('acceptInvitationButton')}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleInvitationAction(inv.id, 'reject')} disabled={actionLoading[`invitation_${inv.id}`]}>
+                            {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <XCircle className="mr-1 h-3 w-3" />}
+                            {t('rejectInvitationButton')}
+                          </Button>
+                        </>
+                      )}
+                      {isCurrentUserMemberOfThisCapitalViaThisInvite && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleLeaveCapital(inv.capital.id)}
+                          disabled={actionLoading[`leaveCapital_${inv.capital.id}`]}
+                        >
+                          {actionLoading[`leaveCapital_${inv.capital.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <LogOut className="mr-1 h-3 w-3" />}
+                          {t('leaveCapitalButton')}
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleInvitationAction(inv.id, 'reject')} disabled={actionLoading[`invitation_${inv.id}`]}>
-                          {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <XCircle className="mr-1 h-3 w-3" />}
-                          {t('rejectInvitationButton')}
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                       {isCurrentUserInvited && isResponded && !isCurrentUserMemberOfThisCapitalViaThisInvite && (
+                         <p className="text-sm text-muted-foreground italic">{t('invitationProcessedLabel')}</p>
+                      )}
+                    </div>
                   </li>
-                ))}
+                )})}
               </ul>
             ) : (
               <p className="text-sm text-muted-foreground">{t('noInvitationsFound')}</p>
@@ -401,6 +472,14 @@ export default function CapitalPage() {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+
+  return (
+    <MainLayout>
+      {renderContent()}
     </MainLayout>
   );
 }
+

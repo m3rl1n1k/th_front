@@ -459,15 +459,20 @@ export interface CapitalDetailsApiResponse {
 
 export interface Invitation {
   id: number;
+  capital: { // New field
+    id: number;
+    name: string;
+  };
   invitedUser: {
     id: number;
     email: string;
   };
-  inviter: { // Added inviter field
+  inviter: {
     id: number;
     email: string;
   };
   createdAt: string; // ISO date string
+  respondedAt?: string | null; // New field
 }
 
 export interface GetInvitationsApiResponse {

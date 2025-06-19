@@ -630,6 +630,12 @@
   "capitalFinancialDetailsNotAvailable": "Детальна фінансова інформація для цього капіталу наразі недоступна.",
   "errorFetchingInvitations": "Помилка завантаження запрошень.",
   "createCapitalToInvite": "Створіть або виберіть спільний капітал, щоб надсилати запрошення.",
-  "capitalNotFoundOnServerError": "Ваш пов'язаний капітал не знайдено. Ви можете створити новий."
+  "capitalNotFoundOnServerError": "Ваш пов'язаний капітал не знайдено. Ви можете створити новий.",
+  "leaveCapitalButton": "Покинути Капітал",
+  "invitationRespondedOnLabel": "Відповідь надано:",
+  "invitationToCapitalLabel": "Запрошення до:",
+  "invitationProcessedLabel": "Це запрошення було оброблено.",
+  "leftCapitalSuccessTitle": "Успішно покинули капітал",
+  "leaveCapitalFailedTitle": "Не вдалося покинути капітал"
 }
 

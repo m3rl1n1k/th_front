@@ -630,6 +630,12 @@
   "capitalFinancialDetailsNotAvailable": "Detailed financial breakdown for this capital pool is not currently available.",
   "errorFetchingInvitations": "Error fetching invitations.",
   "createCapitalToInvite": "Create or select a capital pool to send invitations.",
-  "capitalNotFoundOnServerError": "Your associated capital pool was not found. You can create a new one."
+  "capitalNotFoundOnServerError": "Your associated capital pool was not found. You can create a new one.",
+  "leaveCapitalButton": "Leave Capital",
+  "invitationRespondedOnLabel": "Responded on:",
+  "invitationToCapitalLabel": "Invitation for:",
+  "invitationProcessedLabel": "This invitation has been processed.",
+  "leftCapitalSuccessTitle": "Left Capital Successfully",
+  "leaveCapitalFailedTitle": "Failed to Leave Capital"
 }
 
