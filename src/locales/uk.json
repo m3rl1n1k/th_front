@@ -587,6 +587,7 @@
   "calculator.error.invalidFormat": "Помилка: Неправильний формат",
 
   "//": "CAPITAL PAGE (VISIBILITY SHARING CONTEXT)",
+  "capitalMenuLabel": "Капітал",
   "capitalPageTitle": "Спільний Перегляд Капіталу",
   "createSharingGroupTitle": "Створити Нову Групу Спільного Перегляду",
   "createSharingGroupPrompt": "Створіть групу, щоб ділитися видимістю вашого загального особистого капіталу з іншими.",
@@ -632,7 +633,7 @@
   "sharingGroupNotFoundErrorDesc": "Групу спільного перегляду, пов'язану з вашим профілем, не знайдено. Можливо, її було видалено.",
   "leaveSharingGroupButton": "Покинути Групу Спільного Перегляду",
   "invitationRespondedOnLabel": "Відповідь надано",
-  "invitationToSharingGroupLabel": "Запрошення до групи спільного перегляду:",
+  "invitationToCapitalLabel": "Запрошення для:",
   "invitationProcessedLabel": "Це запрошення на спільний перегляд було оброблено.",
   "leftSharingGroupSuccessTitle": "Успішно Покинули Групу Спільного Перегляду",
   "leaveSharingGroupFailedTitle": "Не вдалося Покинути Групу Спільного Перегляду",
@@ -645,4 +646,3 @@
   "capitalLoadingError": "Не вдалося завантажити деталі групи видимості. Запрошення можуть бути видимі.",
   "errorFetchingUserCapital": "Помилка завантаження інформації про капітал користувача."
 }
-

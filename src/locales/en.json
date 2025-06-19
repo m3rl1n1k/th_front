@@ -114,7 +114,7 @@
   "newPasswordsDoNotMatchError": "New passwords do not match.",
   "passwordChangeSuccessTitle": "Password Changed",
   "passwordChangeSuccessDesc": "Your password has been successfully updated.",
-  "passwordChangeFailedTitle": "Password Change Failed",
+  "passwordChangeFailedTitle": "Failed to Change Password",
   "tokenRequired": "Token is required.",
   "manualTokenPageRemovedTitle": "Manual Token Entry Removed",
   "manualTokenPageRemovedDesc": "For security reasons, manual token entry has been disabled. Please use the standard login process.",
@@ -587,6 +587,7 @@
   "calculator.error.invalidFormat": "Error: Invalid Format",
 
   "//": "CAPITAL PAGE (VISIBILITY SHARING CONTEXT)",
+  "capitalMenuLabel": "Capital",
   "capitalPageTitle": "Capital Visibility Sharing",
   "createSharingGroupTitle": "Create New Sharing Group",
   "createSharingGroupPrompt": "Create a group to share visibility of your total personal capital with others.",
@@ -632,7 +633,7 @@
   "sharingGroupNotFoundErrorDesc": "The sharing group associated with your profile was not found. It may have been deleted.",
   "leaveSharingGroupButton": "Leave Sharing Group",
   "invitationRespondedOnLabel": "Responded on",
-  "invitationToSharingGroupLabel": "Invitation to share in group:",
+  "invitationToCapitalLabel": "Invitation for:",
   "invitationProcessedLabel": "This share invitation has been processed.",
   "leftSharingGroupSuccessTitle": "Successfully Left Sharing Group",
   "leaveSharingGroupFailedTitle": "Failed to Leave Sharing Group",
@@ -645,4 +646,3 @@
   "capitalLoadingError": "Could not load sharing group details. Invitations may still be visible.",
   "errorFetchingUserCapital": "Error fetching user's capital information."
 }
-
