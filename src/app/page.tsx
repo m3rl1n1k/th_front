@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, TrendingUp, ShieldCheck, Users } from 'lucide-react';
+import { LayoutDashboard, Target, Users, Shapes } from 'lucide-react';
 import { useTranslation } from '@/context/i18n-context';
 import Image from 'next/image';
 
@@ -14,10 +14,10 @@ export default function HomePage() {
   const { t } = useTranslation();
 
   const features = [
-    { icon: <TrendingUp className="h-8 w-8 text-primary" />, titleKey: "featureTrackTitle", descriptionKey: "featureTrackDesc" },
-    { icon: <ShieldCheck className="h-8 w-8 text-primary" />, titleKey: "featureSecureTitle", descriptionKey: "featureSecureDesc" },
-    { icon: <Users className="h-8 w-8 text-primary" />, titleKey: "featureCollaborateTitle", descriptionKey: "featureCollaborateDesc" },
-    { icon: <CheckCircle className="h-8 w-8 text-primary" />, titleKey: "featureSimpleTitle", descriptionKey: "featureSimpleDesc" },
+    { icon: <LayoutDashboard className="h-8 w-8 text-primary" />, titleKey: "featureComprehensiveOverviewTitle", descriptionKey: "featureComprehensiveOverviewDesc" },
+    { icon: <Target className="h-8 w-8 text-primary" />, titleKey: "featureSmartBudgetingTitle", descriptionKey: "featureSmartBudgetingDesc" },
+    { icon: <Users className="h-8 w-8 text-primary" />, titleKey: "featureCollaborativeFinancesTitle", descriptionKey: "featureCollaborativeFinancesDesc" },
+    { icon: <Shapes className="h-8 w-8 text-primary" />, titleKey: "featureOrganizeYourWayTitle", descriptionKey: "featureOrganizeYourWayDesc" },
   ];
 
   return (
@@ -73,3 +73,4 @@ export default function HomePage() {
     </PublicLayout>
   );
 }
+
