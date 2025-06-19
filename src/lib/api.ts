@@ -50,7 +50,7 @@ import type {
   CreateInvitationPayload,
   AcceptInvitationPayload,
   RejectInvitationPayload,
-  GetInvitationsApiResponse, // Import the new response type
+  GetInvitationsApiResponse, 
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
