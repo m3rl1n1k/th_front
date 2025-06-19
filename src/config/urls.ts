@@ -81,7 +81,7 @@ export const URLS = {
   createCapital: `${API_BASE_URL}/capitals`,
   getCapitalDetails: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
   deleteCapital: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
-  removeUserFromCapital: (capitalId: string | number, userId: string | number) => `${API_BASE_URL}/capital/${capitalId}/user/${userId}/remove`, // Assuming capitalId is needed
+  removeUserFromCapital: (userId: string | number) => `${API_BASE_URL}/capital/user/${userId}/remove`, // Changed: capitalId removed from path
   
   getInvitations: `${API_BASE_URL}/invitations`,
   createInvitation: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}/invite`,

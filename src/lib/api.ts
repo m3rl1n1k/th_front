@@ -378,8 +378,11 @@ export const getCapitalDetails = (capitalId: string | number, token: string): Pr
 export const deleteCapital = (capitalId: string | number, token: string): Promise<void> =>
   request(URLS.deleteCapital(capitalId), { method: 'DELETE', token });
 
-export const removeUserFromCapital = (capitalId: string | number, userId: string | number, token: string): Promise<void> =>
-  request(URLS.removeUserFromCapital(capitalId, userId), { method: 'DELETE', token });
+export const removeUserFromCapital = (capitalId: string | number, userId: string | number, token: string): Promise<void> => {
+  // capitalId is passed from the page component but not used in the URLS.removeUserFromCapital(userId) call
+  // This aligns with the API documentation that suggests capitalId is not in the path for this endpoint.
+  return request(URLS.removeUserFromCapital(userId), { method: 'DELETE', token });
+}
 
 export const getInvitations = (token: string): Promise<{ invitations: Invitation[] }> =>
   request(URLS.getInvitations, { method: 'GET', token });
@@ -392,3 +395,4 @@ export const acceptInvitation = (invitationId: string | number, token: string): 
 
 export const rejectInvitation = (invitationId: string | number, token: string): Promise<{message: string}> => // Assuming simple message response
   request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: invitationId }, token });
+
