@@ -614,6 +614,7 @@
   "removeUserButton": "Remove User",
   "userRemovedSuccessTitle": "User Removed",
   "userRemoveFailedTitle": "Failed to Remove User",
+  "cannotRemoveOwnerError": "The owner cannot be removed from the capital pool.",
   "manageInvitationsTitle": "Manage Invitations",
   "inviteUserEmailLabel": "Invite User by Email",
   "sendInviteButton": "Send Invite",
@@ -633,6 +634,8 @@
   "capitalDetailsMissingError": "Capital details are missing. Cannot proceed.",
   "yourPersonalWalletsTitle": "Your Personal Wallets",
   "yourPersonalWalletsDesc": "An overview of all your personal financial accounts.",
-  "noPersonalWalletsFound": "You haven't added any personal wallets yet. Create one on the Wallets page."
+  "noPersonalWalletsFound": "You haven't added any personal wallets yet. Create one on the Wallets page.",
+  "capitalFinancialDetailsNotAvailable": "Detailed financial breakdown for this capital pool is not currently available."
 }
 
+```

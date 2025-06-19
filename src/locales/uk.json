@@ -614,6 +614,7 @@
   "removeUserButton": "Видалити Користувача",
   "userRemovedSuccessTitle": "Користувача Видалено",
   "userRemoveFailedTitle": "Не вдалося Видалити Користувача",
+  "cannotRemoveOwnerError": "Власника неможливо видалити з капіталу.",
   "manageInvitationsTitle": "Управління Запрошеннями",
   "inviteUserEmailLabel": "Запросити Користувача (Email)",
   "sendInviteButton": "Надіслати Запрошення",
@@ -633,6 +634,8 @@
   "capitalDetailsMissingError": "Деталі капіталу відсутні. Неможливо продовжити.",
   "yourPersonalWalletsTitle": "Ваші особисті гаманці",
   "yourPersonalWalletsDesc": "Огляд усіх ваших особистих фінансових рахунків.",
-  "noPersonalWalletsFound": "Ви ще не додали жодного особистого гаманця. Створіть його на сторінці Гаманці."
+  "noPersonalWalletsFound": "Ви ще не додали жодного особистого гаманця. Створіть його на сторінці Гаманці.",
+  "capitalFinancialDetailsNotAvailable": "Детальна фінансова інформація для цього капіталу наразі недоступна."
 }
 
+```

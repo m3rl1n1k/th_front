@@ -180,20 +180,6 @@ Allows the authenticated user to change their password.
 
 ### 3. Dashboard
 
-#### `GET /dashboard/summary`
-Retrieves summary financial data for the dashboard. *(Deprecated in favor of individual calls)*
-
-*   **Request Body**: None (token in header)
-*   **Success Response (200 OK)**:
-    ```json
-    {
-      "total_balance": 64234,
-      "month_income": 457357,
-      "month_expense": 363637
-    }
-    ```
-*   **Failure Response (401 Unauthorized)**
-
 #### `GET /dashboard/total-balance`
 *   **Success Response (200 OK)**: `{"total_balance": 64234}`
 
@@ -689,23 +675,23 @@ Retrieves a summary of budgets grouped by month for the authenticated user.
     ```
 *   **Failure Response (401 Unauthorized)**
 
-#### `GET /budgets/{id}`
-Retrieves a specific budget item by its ID (e.g., a budget for a specific category within a month).
+#### `GET /budgets/summary/{date}/{id}`
+Retrieves a specific budget item by its ID for a given month and year (YYYY-MM).
 *   **Success Response (200 OK)**:
     ```json
-    {
-      "budget": {
-        "id": "1", // ID of the specific budget item
-        "month": "2024-08", // YYYY-MM
-        "plannedAmount": 500000, // in cents
-        "actualExpenses": 350000, // in cents, calculated by backend for this item
-        "currency": "USD", // The currency code for this budget item
-        "subCategory": {
-          "id": 101,
-          "name": "Groceries"
-        }
-      }
-    }
+    [{
+      "id": 123, // Budget item ID
+      "subCategory": {
+        "id": 101,
+        "name": "Groceries"
+      },
+      "plannedAmount": {
+        "amount": 50000, // in cents
+        "currency": { "code": "USD" }
+      },
+      "month": "2024-08",
+      "currency": { "code": "USD" }
+    }]
     ```
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
@@ -720,12 +706,12 @@ Creates a new budget item for a specific category within a month.
       "category_id": 101 // integer ID (refers to a subCategory ID), required
     }
     ```
-*   **Success Response (201 Created)**: Returns the created budget object (similar structure to `GET /budgets/{id}` response).
+*   **Success Response (201 Created)**: Returns the created budget object (similar structure to `GET /budgets/summary/{date}/{id}` response item).
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
-#### `PUT /budgets/{id}`
+#### `PUT /budgets/summary/{date}/{id}`
 Updates a specific budget item.
-*   **Path Parameter**: `id` (ID of the specific budget item to update)
+*   **Path Parameter**: `date` (YYYY-MM), `id` (ID of the specific budget item to update)
 *   **Request Body**: (Fields to update)
     ```json
     {
@@ -736,14 +722,194 @@ Updates a specific budget item.
 *   **Success Response (200 OK)**: Returns the updated budget object.
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found)**
 
-#### `DELETE /budgets/{id}`
+#### `DELETE /budgets/{date}/{id}`
 Deletes a specific budget item.
-*   **Path Parameter**: `id` (ID of the specific budget item to delete)
+*   **Path Parameter**: `date` (YYYY-MM), `id` (ID of the specific budget item to delete)
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /budgets/{monthYear}`
+Deletes all budget items for a specific month.
+*   **Path Parameter**: `monthYear` (YYYY-MM)
 *   **Success Response (204 No Content)**
 *   **Failure Response (401 Unauthorized, 404 Not Found)**
 
 
-### 9. General
+#### `GET /budgets/summary/{monthYear}`
+Retrieves budget summary by categories for a specific month.
+*   **Path Parameter**: `monthYear` (string, YYYY-MM)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+        "categories": {
+            "101": { // SubCategory ID as key
+                "id": "101",
+                "name": "Groceries",
+                "plannedAmount": {"amount": 50000, "currency": {"code": "USD"}},
+                "actualAmount": {"amount": 35000, "currency": {"code": "USD"}},
+                "budgetId": 123 // ID of the budget item itself
+            }
+            // ... other categories for the month
+        }
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+### 9. Capital & Invitations
+
+#### `POST /capitals`
+Creates a new shared capital pool.
+*   **Request Body**:
+    ```json
+    {
+      "name": "Family Savings"
+    }
+    ```
+*   **Success Response (201 Created)**:
+    ```json
+    {
+      "capital": {
+        "id": 1,
+        "name": "Family Savings",
+        "owner": {
+          "id": 1,
+          "email": "owner@example.com",
+          "login": "OwnerUser"
+        },
+        "users": [ // Initially, only the owner
+          {
+            "id": 1,
+            "email": "owner@example.com",
+            "login": "OwnerUser"
+          }
+        ]
+      }
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+#### `GET /capital/{capitalId}`
+Retrieves details of a specific shared capital pool.
+*   **Path Parameter**: `capitalId` (integer)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "capital": {
+        "id": 1,
+        "name": "Family Savings",
+        "owner": {
+          "id": 1,
+          "email": "owner@example.com",
+          "login": "OwnerUser"
+        },
+        "users": [
+          {
+            "id": 1,
+            "email": "owner@example.com",
+            "login": "OwnerUser"
+          },
+          {
+            "id": 2,
+            "email": "shared@example.com",
+            "login": "SharedUser"
+          }
+        ]
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized, 404 Not Found)**
+
+#### `DELETE /capital/{capitalId}`
+Deletes a specific shared capital pool. Only the owner can delete it.
+*   **Path Parameter**: `capitalId` (integer)
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 403 Forbidden, 404 Not Found)**
+
+#### `DELETE /capital/user/{userId}/remove`
+Removes a user from a shared capital pool. (The owner can remove others; a user can remove themselves).
+*   **Path Parameter**: `userId` (integer)
+*   **Note**: The backend determines which capital pool the authenticated user (making the request) is acting upon, or which capital the `userId` belongs to if an owner is removing someone.
+*   **Success Response (204 No Content)**
+*   **Failure Response (401 Unauthorized, 403 Forbidden, 404 Not Found)**
+
+#### `GET /invitations`
+Retrieves a list of invitations related to the authenticated user (sent by them or sent to them).
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "invitations": [
+        {
+          "id": 1,
+          "invited_email": "friend@example.com",
+          "capital_id": 1,
+          "capital_name": "Family Savings",
+          "status": "pending",
+          "inviter_email": "owner@example.com",
+          "created_at": "2024-08-15T10:00:00Z"
+        }
+      ]
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+#### `POST /capital/{capitalId}/invite`
+Invites a user to a shared capital pool.
+*   **Path Parameter**: `capitalId` (integer)
+*   **Request Body**:
+    ```json
+    {
+      "invited": "friend@example.com", // Email of the user to invite
+      "capital_id": 1 // Should match path parameter, for backend validation
+    }
+    ```
+*   **Success Response (201 Created)**: Returns the created invitation object.
+    ```json
+    {
+      "id": 2,
+      "invited_email": "friend@example.com",
+      "capital_id": 1,
+      "status": "pending",
+      "inviter_email": "current_user_email@example.com",
+      "created_at": "2024-08-16T10:00:00Z"
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for capital)**
+
+#### `POST /invitation/{invitationId}/accept`
+Accepts an invitation to join a shared capital pool.
+*   **Path Parameter**: `invitationId` (integer)
+*   **Request Body**:
+    ```json
+    {
+      "capital_invitation": 1 // ID of the invitation
+    }
+    ```
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "message": "Invitation accepted successfully."
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for invitation)**
+
+#### `POST /invitation/{invitationId}/reject`
+Rejects an invitation to join a shared capital pool.
+*   **Path Parameter**: `invitationId` (integer)
+*   **Request Body**:
+    ```json
+    {
+      "capital_invitation": 1 // ID of the invitation
+    }
+    ```
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "message": "Invitation rejected successfully."
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for invitation)**
+
+### 10. General
 
 #### `GET /currencies`
 Retrieves a list of available currencies.
@@ -795,24 +961,13 @@ Consider these when designing your database and PHP classes/objects.
 *   `created_at` (datetime) // Record creation timestamp
 *   `updated_at` (datetime) // Record update timestamp
 
-### TransactionType (Conceptual, might be an ENUM or simple mapping in code, corresponds to `GET /transactions/types`)
-*   `id` (string, e.g., "1", "2" - as used by frontend)
-*   `name` (string, e.g., "INCOME", "EXPENSE")
-*   *(Backend might store `type_id` as an integer that maps to these string IDs internally)*
-
-### FrequencyType (Conceptual, based on `GET /transactions/frequency`)
-*   `id` (string, e.g., "1", "5" - as used by frontend)
-*   `name` (string, e.g., "ONE_TIME", "MONTHLY")
-*   *(Backend might store `frequency` as an integer or string that maps to these string IDs internally)*
-
-
 ### Wallet
 *   `id` (int, primary key)
 *   `user_id` (int, foreign key to User)
 *   `name` (string)
 *   `current_balance_cents` (int)
 *   `currency_code` (string)
-*   `account_number` (string, nullable) // Note: This field is part of the GET response but NOT for POST/PUT from frontend.
+*   `account_number` (string, nullable)
 *   `type_key` (string, e.g., "main", "deposit" - links to a wallet_types table/enum from `GET /wallets/types`)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
@@ -853,12 +1008,29 @@ Consider these when designing your database and PHP classes/objects.
 *   `category_id` (int, foreign key to SubCategory)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
-    *(Note: `actualExpenses` for an individual budget item might be calculated on-the-fly or stored if performance dictates. The `GET /budgets/{id}` response might include it.)*
 
-### MonthlyBudgetSummary (Conceptual, for `GET /budgets` response)
-*   `month` (string, "YYYY-MM" - this is the key in the response object)
-*   `totalPlanned` (object: amount_cents, currency_code)
-*   `totalActual` (object: amount_cents, currency_code)
+### SharedCapital
+*   `id` (int, primary key)
+*   `name` (string)
+*   `owner_user_id` (int, foreign key to User)
+*   `created_at` (datetime)
+*   `updated_at` (datetime)
+
+### CapitalUserLink (Pivot table for many-to-many relationship between SharedCapital and User)
+*   `capital_id` (int, foreign key to SharedCapital)
+*   `user_id` (int, foreign key to User)
+*   `role` (string, e.g., 'owner', 'participant' - though owner is also on SharedCapital)
+    *(Note: Individual financial contributions to the shared pool would need another table or logic, not detailed by current API response for `GET /capital/{id}`)*
+
+### CapitalInvitation
+*   `id` (int, primary key)
+*   `capital_id` (int, foreign key to SharedCapital)
+*   `inviter_user_id` (int, foreign key to User)
+*   `invited_email` (string)
+*   `status` (string, e.g., 'pending', 'accepted', 'rejected')
+*   `token` (string, unique, for invitation link - optional if handled by ID)
+*   `created_at` (datetime)
+*   `expires_at` (datetime, optional)
 
 
 ## Further Considerations
@@ -866,90 +1038,10 @@ Consider these when designing your database and PHP classes/objects.
 *   **Database**: Choose a suitable database (e.g., MySQL, PostgreSQL).
 *   **PHP Framework**: Using a PHP framework (e.g., Laravel, Symfony) is highly recommended to handle routing, ORM, security, etc.
 *   **PHP Server Binding for Local Network Access (CRUCIAL for Mobile Testing)**:
-    *   When running your PHP development server locally (e.g., using `php -S ...` or Symfony's `symfony server:start`), **it MUST be bound to `0.0.0.0` or your specific local network IP, NOT just `127.0.0.1`.** If it's bound to `127.0.0.1`, it will only accept connections from your development PC and will REFUSE connections from other devices on your network like your mobile phone, leading to "Failed to fetch" errors.
-    *   Example for built-in PHP server: `php -S 0.0.0.0:8000` (replace `8000` with your backend port).
-    *   For Symfony: `symfony server:start --port=8000 --allow-http` (Symfony often defaults to `0.0.0.0`, but verify. The `--allow-http` is also important for local network access if not using HTTPS locally).
-*   **Security**:
-    *   Sanitize all user inputs.
-    *   Protect against SQL injection, XSS, CSRF.
-    *   Use HTTPS for all communications in production.
-*   **Validation**: Implement robust server-side validation for all incoming data.
-*   **CORS (Cross-Origin Resource Sharing)**:
-    *   Configure Cross-Origin Resource Sharing (CORS) headers appropriately in your PHP backend to allow requests from your Next.js frontend domain.
-    *   **Development with Mobile**: When testing from a mobile device accessing your Next.js app via your computer's local IP (e.g., `http://192.168.1.100:9002`), your PHP backend's `Access-Control-Allow-Origin` header must explicitly include this origin. Your NelmioCorsBundle configuration (`allow_origin: [ ..., '^http://192.168.0.41(:[0-9]+)?' ]`) seems to address this if `192.168.0.41` is your computer's correct current local IP and your Next.js app is accessed from a URL matching this pattern.
-        ```php
-        // Example PHP CORS headers (actual implementation depends on framework)
+    *   When running your PHP development server locally (e.g., using `php -S ...` or Symfony's `symfony server:start`), **it MUST be bound to `0.0.0.0` or your specific local network IP, NOT just `127.0.0.1`.**
+*   **Security**: Sanitize all user inputs, protect against SQL injection, XSS, CSRF. Use HTTPS in production.
+*   **Validation**: Implement robust server-side validation.
+*   **CORS**: Configure Cross-Origin Resource Sharing headers.
+*   **Troubleshooting Mobile Connectivity**: Refer to detailed steps in the original `API_DOCUMENTATION.md` if "Failed to fetch" errors occur during mobile testing.
 
-        // For development, you might allow multiple origins or use a wildcard carefully.
-        // For production, be very specific.
-        $allowed_origins = [
-            "http://localhost:9002", // Your Next.js dev server on PC
-            "http://<YOUR_COMPUTER_LOCAL_IP_ADDRESS>:<NEXTJS_PORT>" // Replace with your PC's actual local IP and Next.js port
-        ];
-        // Determine the incoming origin
-        $http_origin = $_SERVER['HTTP_ORIGIN'] ?? null;
-
-        if ($http_origin && in_array($http_origin, $allowed_origins)) {
-            header("Access-Control-Allow-Origin: " . $http_origin);
-        } else {
-            // Optionally, deny requests from other origins or have a default restrictive policy.
-            // For wider local testing, you could use: header("Access-Control-Allow-Origin: *");
-            // BUT DO NOT USE WILDCARD IN PRODUCTION without understanding security implications.
-            header("Access-Control-Allow-Origin: http://localhost:9002"); // Fallback or default
-        }
-
-        header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-        header("Access-Control-Allow-Credentials: true"); // If you need to send cookies/auth headers cross-origin
-
-        // Handle OPTIONS preflight requests (crucial for POST with JSON/Authorization)
-        if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-            http_response_code(204); // Or 200 OK
-            exit();
-        }
-        ```
-    *   **Important for `POST` requests with `Authorization` or `Content-Type: application/json`**: The browser will send an `OPTIONS` preflight request. Your server *must* respond to this `OPTIONS` request with a `200 OK` or `204 No Content` and the correct CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`). If the `OPTIONS` request fails, the browser will block the actual `POST` request.
-
-## Troubleshooting Mobile Connectivity ("Failed to fetch" or similar errors)
-
-If you experience "Failed to fetch" errors or similar network issues when accessing the application from a mobile device on your local network, even after configuring `NEXT_PUBLIC_API_BASE_URL` with your computer's local IP, follow these steps methodically:
-
-1.  **Verify IP Address & `NEXT_PUBLIC_API_BASE_URL`**:
-    *   **Confirm your PC's current local IP address.** (e.g., using `ipconfig` on Windows or `ifconfig`/`ip addr` on macOS/Linux). IP addresses can change if your network uses DHCP.
-    *   Ensure this exact IP address and your PHP backend's port are correctly set in `NEXT_PUBLIC_API_BASE_URL` in your `.env.local` file (e.g., `NEXT_PUBLIC_API_BASE_URL=http://192.168.1.100:8000/api`).
-    *   Restart your Next.js development server after changing `.env.local`.
-
-2.  **PHP Backend Server Binding (CRITICAL for "Failed to fetch")**:
-    *   **Re-confirm your PHP server (e.g., Symfony's built-in server, `php -S`) is bound to `0.0.0.0:<port>` or `<YOUR_COMPUTER_IP_ADDRESS>:<port>`, NOT just `127.0.0.1`.**
-    *   If it's bound only to `127.0.0.1`, it will only accept connections from your development PC itself and will *refuse* connections from your mobile phone, leading to a "Failed to fetch" error. The browser won't even get a chance to make a CORS preflight request.
-    *   For Symfony: `symfony server:start --port=8000 --allow-http` (or your backend port). The `--allow-http` is important.
-    *   For PHP built-in: `php -S 0.0.0.0:8000`
-
-3.  **Firewall on Development PC**:
-    *   Temporarily disable any firewalls on your development PC (Windows Firewall, macOS Firewall, third-party antivirus/firewall) to see if this resolves the issue.
-    *   If it does, re-enable the firewall and add a specific inbound rule to allow connections to your PHP backend's port (e.g., 8000) from your local network.
-
-4.  **CORS Configuration (Backend)**:
-    *   Ensure your backend's `Access-Control-Allow-Origin` in your Nelmio CORS bundle configuration (or equivalent) correctly includes the origin from which your mobile device is accessing the Next.js app (e.g., `^http://<YOUR_COMPUTER_IP_ADDRESS>:<NEXTJS_PORT>`).
-    *   **Verify your backend correctly handles preflight `OPTIONS` requests** for `POST`, `PUT`, `DELETE` operations, returning a `200 OK` or `204 No Content` with necessary CORS headers. Your provided NelmioCorsBundle configuration aims for this, but it's essential to confirm it's active and working as expected for the specific mobile origin using the Mobile Browser Developer Tools.
-
-5.  **Mobile Browser Developer Tools (ESSENTIAL for diagnosis)**:
-    *   This is the most important step to get specific error details.
-    *   Connect your mobile device to your computer via USB.
-    *   Use your desktop browser's developer tools to inspect the mobile browser's Network tab and Console.
-        *   **Chrome (Android)**: Go to `chrome://inspect` on your desktop Chrome. Find your device and the open tab, then click "inspect."
-        *   **Safari (iOS)**: Enable Web Inspector in Safari settings on your iPhone/iPad (Settings > Safari > Advanced > Web Inspector). Then, in Safari on your Mac, go to Develop > [Your iPhone Name] > [Your Tab].
-    *   **Examine the failed network request in the Network Tab**:
-        *   Look for the `login_check` (or other failing) request.
-        *   Is there an `OPTIONS` preflight request immediately before it? What is its status code? (Should be 200 or 204).
-        *   What is the status of the actual `POST` (or other) request? Is it `(failed)` (indicating a network level issue like "connection refused"), or does it show an HTTP error code (e.g., 401, 403, 500)?
-        *   Check the "Headers" tab for both the request and response to see what's being sent and received.
-    *   **Check the Console Tab**: Look for any error messages, especially CORS errors (e.g., "Access to fetch at '...' from origin '...' has been blocked by CORS policy..."). These messages are usually very specific.
-
-6.  **Clear Mobile Browser Cache**: Sometimes, outdated cached responses or service workers can cause issues. Try clearing your mobile browser's cache and data for the site.
-
-7.  **HTTPS vs HTTP Mismatch**: Ensure both frontend and backend are using the same protocol (HTTP for local IP testing is fine, but if one is HTTPS and the other HTTP, it will cause issues).
-
-By systematically checking these points and using the mobile browser's developer tools, you should be able to identify the root cause of the "Failed to fetch" error.
-Check your mobile browser's developer tools (Network and Console tabs) for specific error messages if you encounter issues.
-
+```

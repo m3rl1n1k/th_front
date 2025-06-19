@@ -5,7 +5,6 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,7 +25,8 @@ import {
   getWalletTypes
 } from '@/lib/api';
 import type {
-  CapitalDetailsApiResponse,
+  CapitalData, // Updated
+  CapitalDetailsApiResponse, // Updated
   CreateCapitalPayload,
   Invitation,
   CreateInvitationPayload,
@@ -56,14 +56,14 @@ const createInvitationSchema = (t: Function) => z.object({
 });
 type CreateInvitationFormData = z.infer<ReturnType<typeof createInvitationSchema>>;
 
-const MOCK_CAPITAL_ID = 1;
+const MOCK_CAPITAL_ID = 1; // Assuming this is a constant for now
 
 export default function CapitalPage() {
   const { user, token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  const [capitalDetails, setCapitalDetails] = useState<CapitalDetailsApiResponse | null>(null);
+  const [capitalData, setCapitalData] = useState<CapitalData | null>(null); // Stores the nested 'capital' object
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [personalWallets, setPersonalWallets] = useState<WalletDetails[]>([]);
   const [personalWalletTypes, setPersonalWalletTypes] = useState<WalletTypeMap>({});
@@ -92,10 +92,10 @@ export default function CapitalPage() {
     setPersonalWalletTypes({});
 
     try {
-      const capitalData = await getCapitalDetails(MOCK_CAPITAL_ID, token);
-      setCapitalDetails(capitalData);
+      const response: CapitalDetailsApiResponse = await getCapitalDetails(MOCK_CAPITAL_ID, token);
+      setCapitalData(response.capital); // Set the nested 'capital' object
       setCapitalExists(true); 
-      setIsLoadingPersonalWallets(false); // Not fetching personal wallets if capital exists
+      setIsLoadingPersonalWallets(false); 
       setIsLoadingPersonalWalletTypes(false);
 
       try {
@@ -108,12 +108,11 @@ export default function CapitalPage() {
 
     } catch (err: any) {
       const apiError = err as ApiError;
-      if (apiError.code === 404 && apiError.message?.toLowerCase().includes('capital not found')) {
+      if (apiError.code === 404 && (apiError.message?.toLowerCase().includes('capital not found') || apiError.message?.toLowerCase().includes('shared capital pool not found'))) {
         setCapitalExists(false);
-        setCapitalDetails(null);
+        setCapitalData(null);
         setInvitations([]);
         
-        // Capital not found, so fetch all personal wallets and their types
         setIsLoadingPersonalWallets(true);
         setIsLoadingPersonalWalletTypes(true);
         try {
@@ -179,50 +178,50 @@ export default function CapitalPage() {
     if (!token) return;
     setActionLoading(prev => ({ ...prev, createCapital: true }));
     try {
-      const newCapital = await createCapital({ name: data.name }, token);
-      toast({ title: t('capitalCreatedSuccessTitle'), description: t('capitalCreatedSuccessDesc', { name: newCapital.name }) });
+      const response: CapitalDetailsApiResponse = await createCapital({ name: data.name }, token);
+      toast({ title: t('capitalCreatedSuccessTitle'), description: t('capitalCreatedSuccessDesc', { name: response.capital.name }) });
       capitalForm.reset();
       fetchData(); 
     } catch (err: any) {
-      toast({ variant: 'destructive', title: t('capitalCreateFailedTitle'), description: err.message });
+      toast({ variant: 'destructive', title: t('capitalCreateFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, createCapital: false }));
     }
   };
   
   const handleDeleteCapital = async () => {
-    if (!token || !capitalDetails || typeof capitalDetails.id !== 'number') {
+    if (!token || !capitalData || typeof capitalData.id !== 'number') {
         toast({ variant: 'destructive', title: t('error'), description: t('capitalDetailsMissingError') });
         return;
     }
     setActionLoading(prev => ({ ...prev, deleteCapital: true }));
     try {
-      await deleteCapital(capitalDetails.id, token);
+      await deleteCapital(capitalData.id, token);
       toast({ title: t('capitalDeletedSuccessTitle') });
-      setCapitalDetails(null);
+      setCapitalData(null);
       setInvitations([]);
       setCapitalExists(false); 
       fetchData(); 
     } catch (err: any) {
-      toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: err.message });
+      toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, deleteCapital: false }));
     }
   };
   
   const handleCreateInvitation: SubmitHandler<CreateInvitationFormData> = async (data) => {
-    if (!token || !capitalDetails || typeof capitalDetails.id !== 'number') {
+    if (!token || !capitalData || typeof capitalData.id !== 'number') {
       toast({ variant: 'destructive', title: t('error'), description: t('capitalDetailsMissingError')});
       return;
     }
     setActionLoading(prev => ({ ...prev, createInvitation: true }));
     try {
-      await createInvitation(capitalDetails.id, { invited: data.invitedEmail, capital_id: capitalDetails.id }, token);
+      await createInvitation(capitalData.id, { invited: data.invitedEmail, capital_id: capitalData.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
       fetchData(); 
     } catch (err: any) {
-      toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: err.message });
+      toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, createInvitation: false }));
     }
@@ -241,34 +240,34 @@ export default function CapitalPage() {
       }
       fetchData(); 
     } catch (err: any) {
-      toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: err.message });
+      toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, [`invitation_${invitationId}`]: false }));
     }
   };
 
   const handleRemoveUser = async (userIdToRemove: number) => {
-    if (!token || !capitalDetails || typeof capitalDetails.id !== 'number') {
+    if (!token || !capitalData || typeof capitalData.id !== 'number') { // Check capitalData itself
        toast({ variant: 'destructive', title: t('error'), description: t('capitalDetailsMissingError')});
       return;
     }
+    // Prevent removing the owner
+    if (capitalData.owner && userIdToRemove === capitalData.owner.id) {
+      toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: t('cannotRemoveOwnerError')});
+      return;
+    }
+
     setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: true }));
     try {
-      await removeUserFromCapital(capitalDetails.id, userIdToRemove, token);
+      await removeUserFromCapital(userIdToRemove, token); // capitalId not needed in path for this endpoint
       toast({ title: t('userRemovedSuccessTitle') });
       fetchData(); 
     } catch (err: any) {
-      toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: err.message });
+      toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: false }));
     }
   };
-
-  const ownerSharePercentage = useMemo(() => {
-    if (!capitalDetails || !capitalExists || capitalDetails.total_amount_cents === 0) return 0;
-    return (capitalDetails.owner_total_contribution_cents / capitalDetails.total_amount_cents) * 100;
-  }, [capitalDetails, capitalExists]);
-
 
   if (isLoadingPage) {
     return (
@@ -280,7 +279,7 @@ export default function CapitalPage() {
     );
   }
 
-  if (error) {
+  if (error && !capitalExists) { // Show error only if capital wasn't found and there was a general fetch error
     return (
       <MainLayout>
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
@@ -372,68 +371,28 @@ export default function CapitalPage() {
     );
   }
   
-  const sharedUsers = (capitalDetails?.participants || []).filter(p => !p.is_owner);
-  const primarySharedUser = sharedUsers.length > 0 ? sharedUsers[0] : null;
-  const ownerWalletContributions = capitalDetails?.owner_wallet_contributions || [];
-
+  // If capitalData exists
+  const usersInCapital = capitalData?.users || [];
+  const ownerOfCapital = capitalData?.owner;
 
   return (
     <MainLayout>
       <div className="space-y-8">
         <h1 className="font-headline text-4xl font-bold text-foreground flex items-center">
           <Briefcase className="mr-3 h-8 w-8 text-primary" />
-          {capitalDetails?.name || t('capitalPageTitle')}
+          {capitalData?.name || t('capitalPageTitle')}
         </h1>
 
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>{t('capitalSummaryTitle')}</CardTitle>
+             {ownerOfCapital && <CardDescription>{t('ownerLabel')}: {ownerOfCapital.login} ({ownerOfCapital.email})</CardDescription>}
           </CardHeader>
           <CardContent className="space-y-6">
-            {capitalDetails && (
-              <>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                    <span>{capitalDetails.owner_email} ({t('ownerLabel')})</span>
-                    {primarySharedUser && <span>{primarySharedUser.email}</span>}
-                  </div>
-                  <Progress value={ownerSharePercentage} className="h-3" indicatorClassName={ownerSharePercentage > 50 ? "bg-primary" : "bg-orange-400"} />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>{ownerSharePercentage.toFixed(2)}%</span>
-                    {primarySharedUser && <span>{(100 - ownerSharePercentage).toFixed(2)}%</span>}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <p className="text-muted-foreground">{t('yourContributionLabel')}:</p>
-                    <p className="font-semibold text-lg"><CurrencyDisplay amountInCents={capitalDetails.owner_total_contribution_cents} currencyCode={capitalDetails.currency_code} /></p>
-                  </div>
-                  <div className="bg-muted/50 p-3 rounded-md">
-                    <p className="text-muted-foreground">{t('totalCapitalLabel')}:</p>
-                    <p className="font-semibold text-lg"><CurrencyDisplay amountInCents={capitalDetails.total_amount_cents} currencyCode={capitalDetails.currency_code} /></p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-md font-semibold mb-2">{t('yourContributingWalletsTitle')}</h3>
-                  {ownerWalletContributions.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {ownerWalletContributions.map(wallet => (
-                        <Card key={wallet.wallet_id} className="p-3 bg-card shadow-sm">
-                          <p className="text-xs text-muted-foreground">{wallet.wallet_name}</p>
-                          <p className="font-semibold text-sm"><CurrencyDisplay amountInCents={wallet.amount_cents} currencyCode={wallet.currency_code} /></p>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{t('noContributingWallets')}</p>
-                  )}
-                </div>
-              </>
-            )}
+            {/* Financial details removed as they are not in the new API response */}
+            <p className="text-sm text-muted-foreground">{t('capitalFinancialDetailsNotAvailable')}</p>
           </CardContent>
-          {capitalDetails && (
+          {capitalData && (
             <CardFooter>
                 <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -445,7 +404,7 @@ export default function CapitalPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                     <AlertDialogTitle>{t('confirmCloseCapitalTitle')}</AlertDialogTitle>
-                    <AlertDialogDescription>{t('confirmCloseCapitalMessage', { name: capitalDetails.name })}</AlertDialogDescription>
+                    <AlertDialogDescription>{t('confirmCloseCapitalMessage', { name: capitalData.name })}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                     <AlertDialogCancel>{t('cancelButton')}</AlertDialogCancel>
@@ -457,25 +416,26 @@ export default function CapitalPage() {
           )}
         </Card>
 
-        {capitalDetails && sharedUsers.length > 0 && (
+        {capitalData && usersInCapital.length > 0 && (
           <Card className="shadow-xl">
             <CardHeader>
               <CardTitle>{t('sharedWithTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {sharedUsers.map(participant => (
+                {usersInCapital.map(participant => (
                   <li key={participant.id} className="flex justify-between items-center p-2 bg-muted/30 rounded-md">
                     <div>
-                      <span className="font-medium">{participant.email}</span>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        (<CurrencyDisplay amountInCents={participant.contribution_amount_cents} currencyCode={participant.currency_code} />)
-                      </span>
+                      <span className="font-medium">{participant.login}</span> ({participant.email})
+                      {ownerOfCapital && participant.id === ownerOfCapital.id && <span className="ml-2 text-xs font-semibold text-primary">({t('ownerLabel')})</span>}
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveUser(participant.id)} disabled={actionLoading[`removeUser_${participant.id}`]}>
-                      {actionLoading[`removeUser_${participant.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4 text-destructive" />}
-                       <span className="sr-only">{t('removeUserButton')}</span>
-                    </Button>
+                    {/* Allow removing only if not the owner and current user is owner */}
+                    {user?.id === ownerOfCapital?.id && participant.id !== ownerOfCapital?.id && (
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveUser(participant.id)} disabled={actionLoading[`removeUser_${participant.id}`]}>
+                        {actionLoading[`removeUser_${participant.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4 text-destructive" />}
+                        <span className="sr-only">{t('removeUserButton')}</span>
+                        </Button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -484,7 +444,7 @@ export default function CapitalPage() {
         )}
 
 
-        {capitalDetails && (
+        {capitalData && (
             <Card className="shadow-xl">
             <CardHeader>
                 <CardTitle className="flex items-center text-xl">
@@ -546,4 +506,4 @@ export default function CapitalPage() {
   );
 }
 
-    
+```

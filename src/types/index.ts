@@ -430,33 +430,29 @@ export interface CreateCapitalPayload {
   name: string;
 }
 
-export interface CapitalUser {
+interface CapitalOwner {
   id: number;
   email: string;
-  is_owner: boolean;
-  contribution_amount_cents: number;
-  currency_code: string;
+  login: string;
 }
 
-export interface CapitalWalletContribution {
-  wallet_id: number;
-  wallet_name: string;
-  amount_cents: number; // Amount from this specific wallet contributing to the owner's share
-  currency_code: string;
+interface CapitalUser {
+  id: number;
+  email: string;
+  login: string;
+}
+
+export interface CapitalData {
+  id: number;
+  name: string;
+  owner: CapitalOwner;
+  users: CapitalUser[];
 }
 
 export interface CapitalDetailsApiResponse {
-  id: number;
-  name: string;
-  owner_email: string;
-  // shared_user_email?: string; // Display primary shared user on progress bar or list all
-  total_amount_cents: number;
-  owner_total_contribution_cents: number;
-  // shared_total_contribution_cents: number; // Can be derived: total - owner
-  currency_code: string; // Main currency of the capital
-  owner_wallet_contributions: CapitalWalletContribution[]; // Breakdown of how owner's wallets contribute
-  participants: CapitalUser[]; // List of all users (owner + shared)
+  capital: CapitalData;
 }
+
 
 export interface Invitation {
   id: number;
@@ -479,3 +475,5 @@ export interface AcceptInvitationPayload {
 export interface RejectInvitationPayload {
   capital_invitation: number; // ID of the invitation
 }
+
+```

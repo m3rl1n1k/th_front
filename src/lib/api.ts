@@ -42,6 +42,7 @@ import type {
   CreateBudgetPayload,
   UpdateBudgetPayload,
   BudgetSummaryByMonthResponse,
+  CapitalData,
   CapitalDetailsApiResponse,
   CreateCapitalPayload,
   Invitation,
@@ -378,9 +379,7 @@ export const getCapitalDetails = (capitalId: string | number, token: string): Pr
 export const deleteCapital = (capitalId: string | number, token: string): Promise<void> =>
   request(URLS.deleteCapital(capitalId), { method: 'DELETE', token });
 
-export const removeUserFromCapital = (capitalId: string | number, userId: string | number, token: string): Promise<void> => {
-  // capitalId is passed from the page component but not used in the URLS.removeUserFromCapital(userId) call
-  // This aligns with the API documentation that suggests capitalId is not in the path for this endpoint.
+export const removeUserFromCapital = (userId: string | number, token: string): Promise<void> => {
   return request(URLS.removeUserFromCapital(userId), { method: 'DELETE', token });
 }
 
@@ -390,9 +389,8 @@ export const getInvitations = (token: string): Promise<{ invitations: Invitation
 export const createInvitation = (capitalId: string | number, data: CreateInvitationPayload, token: string): Promise<Invitation> =>
   request(URLS.createInvitation(capitalId), { method: 'POST', body: data, token });
 
-export const acceptInvitation = (invitationId: string | number, token: string): Promise<{message: string}> => // Assuming simple message response
-  request(URLS.acceptInvitation(invitationId), { method: 'POST', body: { capital_invitation: invitationId }, token });
+export const acceptInvitation = (invitationId: string | number, token: string): Promise<{message: string}> =>
+  request(URLS.acceptInvitation(invitationId), { method: 'POST', body: { capital_invitation: Number(invitationId) }, token });
 
-export const rejectInvitation = (invitationId: string | number, token: string): Promise<{message: string}> => // Assuming simple message response
-  request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: invitationId }, token });
-
+export const rejectInvitation = (invitationId: string | number, token: string): Promise<{message: string}> =>
+  request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: Number(invitationId) }, token });
