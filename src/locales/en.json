@@ -644,7 +644,7 @@
   "errorFetchingPersonalWalletsOrInvites": "Could not load personal data or invitations.",
   "ownerCanInvite": "Only the owner can send invitations to this capital pool.",
   "totalCapitalAmountLabel": "Total Shared Capital",
-  "yourContributionLabel": "Your Contribution",
-  "sumWalletsDepositLabel": "Total Deposits in Capital"
+  "yourContributionLabel": "Your Contribution to Shared Capital",
+  "sumWalletsDepositLabel": "Total Deposits in Shared Capital",
+  "sharedCapitalContributionTitle": "Shared Capital Contribution"
 }
-

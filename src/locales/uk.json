@@ -644,7 +644,7 @@
   "errorFetchingPersonalWalletsOrInvites": "Не вдалося завантажити особисті дані або запрошення.",
   "ownerCanInvite": "Лише власник може надсилати запрошення до цього капіталу.",
   "totalCapitalAmountLabel": "Загальна Сума Капіталу",
-  "yourContributionLabel": "Ваш Внесок",
-  "sumWalletsDepositLabel": "Сума Депозитів у Капіталі"
+  "yourContributionLabel": "Ваш Внесок до Спільного Капіталу",
+  "sumWalletsDepositLabel": "Сума Депозитів у Спільному Капіталі",
+  "sharedCapitalContributionTitle": "Внесок до Спільного Капіталу"
 }
-
