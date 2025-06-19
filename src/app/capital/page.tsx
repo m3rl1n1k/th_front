@@ -19,8 +19,8 @@ import {
   acceptInvitation,
   rejectInvitation,
   removeUserFromCapital,
-  getWalletsList, // For personal wallets
-  getWalletTypes,  // For personal wallet types
+  getWalletsList,
+  getWalletTypes,
 } from '@/lib/api';
 import type {
   CapitalData,
@@ -30,12 +30,12 @@ import type {
   CreateInvitationPayload,
   ApiError,
   GetInvitationsApiResponse,
-  WalletDetails, // For personal wallets
-  WalletTypeMap,   // For personal wallet types
+  WalletDetails,
+  WalletTypeMap,
 } from '@/types';
 import {
   Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut,
-  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIcon, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon // For personal wallet icons
+  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIcon, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -67,13 +67,12 @@ export default function CapitalPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [capitalExists, setCapitalExists] = useState(false);
 
-  // State for personal wallets (shown when no shared capital exists)
   const [personalWallets, setPersonalWallets] = useState<WalletDetails[]>([]);
   const [personalWalletTypes, setPersonalWalletTypes] = useState<WalletTypeMap>({});
   const [isLoadingPersonalWallets, setIsLoadingPersonalWallets] = useState(true);
   const [isLoadingPersonalWalletTypes, setIsLoadingPersonalWalletTypes] = useState(true);
 
-  const [isLoadingPage, setIsLoadingPage] = useState(true); // For overall page elements related to capital details
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
@@ -95,9 +94,6 @@ export default function CapitalPage() {
     }
 
     setError(null);
-    let currentCapitalId: number | null = null;
-
-    // Fetch invitations regardless
     setIsLoadingInvitations(true);
     try {
       const invitationsResponse: GetInvitationsApiResponse = await getInvitations(token);
@@ -116,25 +112,20 @@ export default function CapitalPage() {
     }
 
     if (user && user.capital && typeof user.capital.id === 'number') {
-      currentCapitalId = user.capital.id;
       setIsLoadingPage(true);
-      setPersonalWallets([]); // Clear personal wallets if shared capital exists
+      setPersonalWallets([]); 
       setIsLoadingPersonalWallets(false);
       setIsLoadingPersonalWalletTypes(false);
       try {
-        const response: CapitalDetailsApiResponse = await getCapitalDetails(currentCapitalId, token);
+        const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
         setCapitalData(response.capital);
         setCapitalExists(true);
       } catch (err: any) {
         const apiError = err as ApiError;
         if (apiError.code === 404 || (apiError.message && typeof apiError.message === 'string' && (apiError.message.toLowerCase().includes('capital not found') || apiError.message.toLowerCase().includes('shared capital pool not found')))) {
-          console.warn(`[CapitalPage] User's capital ID ${currentCapitalId} not found on server. Allowing creation.`);
+          console.warn(`[CapitalPage] User's capital ID ${user.capital.id} not found on server. Allowing creation.`);
           setCapitalData(null);
           setCapitalExists(false);
-          if (user?.capital) { // If user object still thinks capital exists, try to refresh user
-            await fetchUser(); // This might trigger a re-render and re-evaluation
-          }
-          // Fetch personal wallets if capital not found (will be caught by the 'else' block next if capitalExists remains false)
         } else {
           setError(apiError.message || t('errorFetchingData'));
           toast({ variant: 'destructive', title: t('errorFetchingData'), description: typeof apiError.message === 'string' ? apiError.message : t('unexpectedError') });
@@ -144,12 +135,11 @@ export default function CapitalPage() {
       } finally {
         setIsLoadingPage(false);
       }
-    } else { // No shared capital associated with the user, or it became null after fetchUser
+    } else { 
       setCapitalData(null);
       setCapitalExists(false);
       setIsLoadingPage(false);
 
-      // Fetch personal wallets and their types
       setIsLoadingPersonalWallets(true);
       setIsLoadingPersonalWalletTypes(true);
       try {
@@ -168,7 +158,7 @@ export default function CapitalPage() {
         setIsLoadingPersonalWalletTypes(false);
       }
     }
-  }, [isAuthenticated, token, user, t, toast, fetchUser]);
+  }, [isAuthenticated, token, user, t, toast]);
 
   useEffect(() => {
     if (!authIsLoading) {
@@ -213,8 +203,7 @@ export default function CapitalPage() {
       await createCapital({ name: data.name }, token);
       toast({ title: t('capitalCreatedSuccessTitle'), description: t('capitalCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser(); // This will refresh user data, including the new capital ID
-      // fetchData will be re-triggered by useEffect watching `user`
+      await fetchUser(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('capitalCreateFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -231,9 +220,8 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('capitalDeletedSuccessTitle') });
-      await fetchUser(); // This will set user.capital to null
-      // fetchData will be re-triggered by useEffect watching `user`
-    } catch (err: any)
+      await fetchUser(); 
+    } catch (err: any) { // Corrected: Added opening brace for catch block
       toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, deleteCapital: false }));
@@ -258,11 +246,11 @@ export default function CapitalPage() {
     }
   };
 
-  const handleInvitationAction = async (invitationId: number, action: 'accept' | 'reject') => {
+  const handleInvitationAction = async (invitationId: number, actionType: 'accept' | 'reject') => {
     if (!token) return;
     setActionLoading(prev => ({ ...prev, [`invitation_${invitationId}`]: true }));
     try {
-      if (action === 'accept') {
+      if (actionType === 'accept') {
         await acceptInvitation(invitationId, token);
         toast({ title: t('invitationAcceptedSuccessTitle') });
         await fetchUser(); 
@@ -290,9 +278,9 @@ export default function CapitalPage() {
 
     setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: true }));
     try {
-      await removeUserFromCapital(userIdToRemove, token); // Backend determines capital from authenticated user context
+      await removeUserFromCapital(userIdToRemove, token);
       toast({ title: t('userRemovedSuccessTitle') });
-      fetchData(); // Refresh capital details and member list
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -307,7 +295,6 @@ export default function CapitalPage() {
       await removeUserFromCapital(user.id, token); 
       toast({ title: t('leftCapitalSuccessTitle') });
       await fetchUser(); 
-      // fetchData will be re-triggered by user state change
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('leaveCapitalFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -326,7 +313,7 @@ export default function CapitalPage() {
       );
     }
     
-    if (error && !capitalExists) { // Show general error if capital fetch failed and no capital existed
+    if (error && !capitalExists) {
       return (
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
           <CardHeader className="bg-destructive/10">
@@ -471,7 +458,6 @@ export default function CapitalPage() {
           </>
         ) : null }
 
-        {/* Invitations Card - Rendered in both scenarios */}
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center text-xl">
