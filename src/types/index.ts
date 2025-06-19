@@ -456,24 +456,19 @@ export interface CapitalDetailsApiResponse {
 
 export interface Invitation {
   id: number;
-  invitedUser: { // Updated based on new server response
+  invitedUser: {
+    id: number;
+    email: string;
+  };
+  inviter: { // Added inviter field
     id: number;
     email: string;
   };
   createdAt: string; // ISO date string
-
-  // Fields from old API docs that might be used by CreateInvitation response or other parts
-  // These might need to be optional if not always present
-  invited_email?: string;
-  capital_id?: number;
-  capital_name?: string;
-  status?: 'pending' | 'accepted' | 'rejected';
-  inviter_email?: string;
 }
 
-// This type represents the structure of the API response for GET /invitations
 export interface GetInvitationsApiResponse {
-  invitation: Invitation[]; // Note: 'invitation' (singular) is the key from server
+  invitation: Invitation[];
 }
 
 

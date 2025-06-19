@@ -478,6 +478,7 @@ export default function CapitalPage() {
                     <li key={inv.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
                         <div className="mb-2 sm:mb-0">
                         <p className="font-medium">{t('invitationToLabel')} {inv.invitedUser.email}</p>
+                        {inv.inviter && <p className="text-xs text-muted-foreground">{t('invitedByLabel')} {inv.inviter.email}</p>}
                         <p className="text-xs text-muted-foreground">{t('invitedOnLabel')} {format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}</p>
                         </div>
                         {user?.email === inv.invitedUser.email && (
@@ -505,3 +506,4 @@ export default function CapitalPage() {
     </MainLayout>
   );
 }
+
