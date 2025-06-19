@@ -165,6 +165,7 @@
   "lastActivityTitle": "Recent Transactions",
   "noRecentTransactions": "No recent transactions found.",
   "viewAllTransactions": "View All Transactions",
+  "dashboardDataLoadError": "Could not load dashboard summary data.",
 
   "//": "TRANSACTIONS",
   "newTransaction": "New Transaction",
@@ -219,7 +220,6 @@
   "selectWalletPlaceholder": "Select wallet",
   "selectFrequencyPlaceholder": "Select frequency",
   "walletRequiredError": "Wallet is required.",
-  "categoryRequiredError": "Category is required.",
   "frequencyRequiredError": "Frequency is required.",
   "viewAllYourTransactions": "View and manage all your recorded financial transactions.",
   "viewYourRecurringTransactions": "Track and manage your repeating transaction definitions.",
@@ -590,6 +590,7 @@
   "capitalPageTitle": "Capital Management",
   "createCapitalTitle": "Create Your Capital Pool",
   "createCapitalPrompt": "You don't have a capital pool yet. Create one to start sharing finances.",
+  "createCapitalPromptShort": "Create a new shared capital pool to manage finances together.",
   "capitalNameLabel": "Capital Pool Name",
   "createCapitalButton": "Create Capital",
   "capitalCreatedSuccessTitle": "Capital Created",
@@ -628,5 +629,13 @@
   "invitationRejectedSuccessTitle": "Invitation Rejected",
   "invitationActionFailedTitle": "Invitation Action Failed",
   "noPendingInvitations": "No pending invitations.",
-  "noInvitationsFound": "No invitations found."
+  "noInvitationsFound": "No invitations found.",
+  "errorFetchingUserWallets": "Error fetching your wallets.",
+  "capitalUserWalletsTitle": "Your Personal Finances",
+  "capitalUserWalletsSummaryTitle": "Personal Wallet Summary",
+  "capitalUserTotalBalance": "Total Personal Balance",
+  "capitalBalanceByType": "Balance by Type",
+  "capitalIndividualWalletsTitle": "Your Wallets",
+  "loadingUserWallets": "Loading your wallet information..."
 }
+

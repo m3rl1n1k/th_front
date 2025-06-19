@@ -165,6 +165,7 @@
   "lastActivityTitle": "Останні Транзакції",
   "noRecentTransactions": "Нещодавніх транзакцій не знайдено.",
   "viewAllTransactions": "Переглянути всі транзакції",
+  "dashboardDataLoadError": "Не вдалося завантажити дані панелі.",
 
   "//": "ТРАНЗАКЦІЇ",
   "newTransaction": "Нова транзакція",
@@ -219,7 +220,6 @@
   "selectWalletPlaceholder": "Виберіть гаманець",
   "selectFrequencyPlaceholder": "Виберіть частоту",
   "walletRequiredError": "Гаманець обов'язковий.",
-  "categoryRequiredError": "Категорія обов'язкова.",
   "frequencyRequiredError": "Частота обов'язкова.",
   "viewAllYourTransactions": "Переглядайте та керуйте всіма вашими записаними фінансовими операціями.",
   "viewYourRecurringTransactions": "Відстежуйте та керуйте визначеннями ваших повторюваних транзакцій.",
@@ -590,6 +590,7 @@
   "capitalPageTitle": "Управління Капіталом",
   "createCapitalTitle": "Створити Ваш Капітал",
   "createCapitalPrompt": "У вас ще немає спільного капіталу. Створіть його, щоб почати ділитися фінансами.",
+  "createCapitalPromptShort": "Створіть новий спільний капітал для спільного управління фінансами.",
   "capitalNameLabel": "Назва Капіталу",
   "createCapitalButton": "Створити Капітал",
   "capitalCreatedSuccessTitle": "Капітал Створено",
@@ -628,5 +629,13 @@
   "invitationRejectedSuccessTitle": "Запрошення Відхилено",
   "invitationActionFailedTitle": "Дія з Запрошенням Не вдалася",
   "noPendingInvitations": "Очікуючих запрошень немає.",
-  "noInvitationsFound": "Запрошень не знайдено."
+  "noInvitationsFound": "Запрошень не знайдено.",
+  "errorFetchingUserWallets": "Помилка завантаження ваших гаманців.",
+  "capitalUserWalletsTitle": "Ваші Особисті Фінанси",
+  "capitalUserWalletsSummaryTitle": "Зведення по Особистих Гаманцях",
+  "capitalUserTotalBalance": "Загальний Особистий Баланс",
+  "capitalBalanceByType": "Баланс за Типом",
+  "capitalIndividualWalletsTitle": "Ваші Гаманці",
+  "loadingUserWallets": "Завантаження інформації про ваші гаманці..."
 }
+
