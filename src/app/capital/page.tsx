@@ -90,20 +90,19 @@ export default function CapitalPage() {
     setIsLoadingPage(true);
     setError(null);
     setCapitalExists(false); 
-    setInvitations([]); // Initialize/reset invitations
+    setInvitations([]); 
 
     try {
       const capitalData = await getCapitalDetails(MOCK_CAPITAL_ID, token);
       setCapitalDetails(capitalData);
       setCapitalExists(true); 
 
-      // If capital exists, fetch its invitations in a separate try-catch
       try {
         const invitationsData = await getInvitations(token);
         setInvitations(invitationsData.invitations || []);
       } catch (invitationError: any) {
-        console.warn("Failed to fetch invitations, treating as empty:", invitationError.message);
-        setInvitations([]); // Ensure invitations is an empty array for UI if fetch fails
+        console.warn("[CapitalPage] Failed to fetch invitations, treating as empty:", invitationError.message);
+        setInvitations([]); 
       }
 
     } catch (err: any) {
@@ -111,7 +110,7 @@ export default function CapitalPage() {
       if (apiError.code === 404 && apiError.message?.toLowerCase().includes('capital not found')) {
         setCapitalExists(false);
         setCapitalDetails(null);
-        setInvitations([]);
+        setInvitations([]); // Ensure invitations are cleared if capital not found
         try {
           const [walletsData, typesData] = await Promise.all([
             getWalletsList(token),
@@ -372,8 +371,10 @@ export default function CapitalPage() {
     );
   }
   
-  const sharedUsers = capitalDetails?.participants.filter(p => !p.is_owner) || [];
+  const sharedUsers = (capitalDetails?.participants || []).filter(p => !p.is_owner);
   const primarySharedUser = sharedUsers.length > 0 ? sharedUsers[0] : null;
+  const ownerWalletContributions = capitalDetails?.owner_wallet_contributions || [];
+
 
   return (
     <MainLayout>
@@ -415,9 +416,9 @@ export default function CapitalPage() {
 
                 <div>
                   <h3 className="text-md font-semibold mb-2">{t('yourContributingWalletsTitle')}</h3>
-                  {capitalDetails.owner_wallet_contributions && capitalDetails.owner_wallet_contributions.length > 0 ? (
+                  {ownerWalletContributions.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {capitalDetails.owner_wallet_contributions.map(wallet => (
+                      {ownerWalletContributions.map(wallet => (
                         <Card key={wallet.wallet_id} className="p-3 bg-card shadow-sm">
                           <p className="text-xs text-muted-foreground">{wallet.wallet_name}</p>
                           <p className="font-semibold text-sm"><CurrencyDisplay amountInCents={wallet.amount_cents} currencyCode={wallet.currency_code} /></p>
