@@ -636,6 +636,7 @@
   "capitalUserTotalBalance": "Total Personal Balance",
   "capitalBalanceByType": "Balance by Type",
   "capitalIndividualWalletsTitle": "Your Wallets",
-  "loadingUserWallets": "Loading your wallet information..."
+  "loadingUserWallets": "Loading your wallet information...",
+  "capitalDetailsMissingError": "Capital details are missing. Cannot proceed."
 }
 

@@ -636,6 +636,7 @@
   "capitalUserTotalBalance": "Загальний Особистий Баланс",
   "capitalBalanceByType": "Баланс за Типом",
   "capitalIndividualWalletsTitle": "Ваші Гаманці",
-  "loadingUserWallets": "Завантаження інформації про ваші гаманці..."
+  "loadingUserWallets": "Завантаження інформації про ваші гаманці...",
+  "capitalDetailsMissingError": "Деталі капіталу відсутні. Неможливо продовжити."
 }
 

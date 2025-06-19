@@ -110,7 +110,7 @@ export default function CapitalPage() {
       if (apiError.code === 404 && apiError.message?.toLowerCase().includes('capital not found')) {
         setCapitalExists(false);
         setCapitalDetails(null);
-        setInvitations([]); // Ensure invitations are cleared if capital not found
+        setInvitations([]); 
         try {
           const [walletsData, typesData] = await Promise.all([
             getWalletsList(token),
@@ -168,7 +168,10 @@ export default function CapitalPage() {
   };
   
   const handleCreateInvitation: SubmitHandler<CreateInvitationFormData> = async (data) => {
-    if (!token || !capitalDetails) return;
+    if (!token || !capitalDetails || typeof capitalDetails.id !== 'number') {
+      toast({ variant: 'destructive', title: t('error'), description: t('capitalDetailsMissingError')});
+      return;
+    }
     setActionLoading(prev => ({ ...prev, createInvitation: true }));
     try {
       await createInvitation(capitalDetails.id, { invited: data.invitedEmail, capital_id: capitalDetails.id }, token);
@@ -202,7 +205,10 @@ export default function CapitalPage() {
   };
 
   const handleRemoveUser = async (userIdToRemove: number) => {
-    if (!token || !capitalDetails) return;
+    if (!token || !capitalDetails || typeof capitalDetails.id !== 'number') {
+       toast({ variant: 'destructive', title: t('error'), description: t('capitalDetailsMissingError')});
+      return;
+    }
     setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: true }));
     try {
       await removeUserFromCapital(capitalDetails.id, userIdToRemove, token);
