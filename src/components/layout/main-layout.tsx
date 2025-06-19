@@ -20,7 +20,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
-  Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, ShieldAlert, Target
+  Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, ShieldAlert, Target, Briefcase // Added Briefcase for Capital
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +31,7 @@ const baseNavItems = [
   { href: '/categories', labelKey: 'categoriesTitle', icon: Shapes, authRequired: true },
   { href: '/budgets', labelKey: 'budgetsTitle', icon: Target, authRequired: true },
   { href: '/transfers', labelKey: 'transfersTitle', icon: ArrowRightLeft, authRequired: true },
+  { href: '/capital', labelKey: 'capitalPageTitle', icon: Briefcase, authRequired: true }, // New Capital Link
 ];
 
 const userSpecificNavItems = [

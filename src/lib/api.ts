@@ -42,6 +42,12 @@ import type {
   CreateBudgetPayload,
   UpdateBudgetPayload,
   BudgetSummaryByMonthResponse,
+  CapitalDetailsApiResponse,
+  CreateCapitalPayload,
+  Invitation,
+  CreateInvitationPayload,
+  AcceptInvitationPayload,
+  RejectInvitationPayload,
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -64,9 +70,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
       const jsonData = JSON.parse(rawResponseBody);
 
       if (typeof jsonData === 'object' && jsonData !== null) {
-        errorData.message = jsonData.message || jsonData.error || jsonData.detail || errorData.message;
+        if (Array.isArray(jsonData.message) && jsonData.message.length > 0 && jsonData.message[0].field && jsonData.message[0].message) {
+          // Handle {"message":[{"field":"subCategory","message":"The category..."}]}
+          errorData.message = jsonData.message.map((err: any) => `${err.field}: ${err.message}`).join('; ');
+        } else {
+           errorData.message = jsonData.message || jsonData.error || jsonData.detail || errorData.message;
+        }
         errorData.code = jsonData.code || response.status;
-        errorData.errors = jsonData.errors;
+        errorData.errors = jsonData.errors; // Handles general {"errors": {"field": ["message"]}}
       } else {
         errorData.message = rawResponseBody || errorData.message;
       }
@@ -200,7 +211,6 @@ export const getTransactionsList = (
 
 export const getTransactionById = async (id: string | number, token: string): Promise<Transaction> => {
   const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'GET', token });
-  // Map API's 'frequency' to frontend's 'frequencyId'
   if (response.transaction && response.transaction.frequency !== undefined) {
     response.transaction.frequencyId = String(response.transaction.frequency);
   }
@@ -209,7 +219,6 @@ export const getTransactionById = async (id: string | number, token: string): Pr
 
 export const updateTransaction = async (id: string | number, data: UpdateTransactionPayload, token: string): Promise<Transaction> => {
   const response = await request<{ transaction: Transaction }>(URLS.transactionById(id), { method: 'PUT', body: data, token });
-    // Map API's 'frequency' to frontend's 'frequencyId' if present in response
   if (response.transaction && response.transaction.frequency !== undefined) {
     response.transaction.frequencyId = String(response.transaction.frequency);
   }
@@ -317,10 +326,6 @@ export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => 
   return request(URLS.getBudgets, { method: 'GET', token });
 };
 
-// Function to get a specific budget item (deprecated path in API_DOC)
-// export const getBudgetById = (id: string | number, token: string): Promise<BudgetListItem> => {
-//   return request<{ budget: BudgetListItem }>(URLS.getBudgetById_DEPRECATED(id), { method: 'GET', token }).then(res => res.budget);
-// };
 export const getBudgetSummaryItemForEdit = async (date: string, id: string | number, token: string): Promise<BudgetDetails> => {
   const responseArray = await request<ApiBudgetDetailItem[]>(URLS.getBudgetSummaryItemForEdit(date, id), { method: 'GET', token });
   
@@ -347,20 +352,13 @@ export const createBudget = (data: CreateBudgetPayload, token: string): Promise<
   return request<BudgetListItem>(URLS.createBudget, { method: 'POST', body: data, token });
 };
 
-// Uses deprecated path from API_DOC. MD file has been updated to /budgets/summary/{date}/{id}
-// This function should align with the updated PUT endpoint path.
 export const updateBudget = (date: string, id: string | number, data: UpdateBudgetPayload, token: string): Promise<BudgetListItem> => {
-  // This implementation assumes 'id' is sufficient for the old PUT /budgets/{id}
-  // For the new path, this function would need 'date' and 'id'
   return request<BudgetListItem>(URLS.updateBudget(date, id), { method: 'PUT', body: data, token });
 };
 
-// Uses deprecated path from API_DOC. MD file has been updated to /budgets/summary/{date}/{id}
-// This function should align with the updated DELETE endpoint path.
 export const deleteBudget = (date: string, id: string | number, token: string): Promise<void> => {
   return request<void>(URLS.deleteBudget(date, id), { method: 'DELETE', token });
 };
-
 
 export const deleteBudgetsForMonth = (monthYear: string, token: string): Promise<void> => {
   return request<void>(URLS.deleteBudgetsForMonth(monthYear), { method: 'DELETE', token });
@@ -369,3 +367,28 @@ export const deleteBudgetsForMonth = (monthYear: string, token: string): Promise
 export const getBudgetSummaryForMonth = (monthYear: string, token: string): Promise<BudgetSummaryByMonthResponse> => {
   return request<BudgetSummaryByMonthResponse>(URLS.getBudgetSummaryForMonth(monthYear), { method: 'GET', token });
 };
+
+// Capital & Invitations
+export const createCapital = (data: CreateCapitalPayload, token: string): Promise<CapitalDetailsApiResponse> =>
+  request(URLS.createCapital, { method: 'POST', body: data, token });
+
+export const getCapitalDetails = (capitalId: string | number, token: string): Promise<CapitalDetailsApiResponse> =>
+  request(URLS.getCapitalDetails(capitalId), { method: 'GET', token });
+
+export const deleteCapital = (capitalId: string | number, token: string): Promise<void> =>
+  request(URLS.deleteCapital(capitalId), { method: 'DELETE', token });
+
+export const removeUserFromCapital = (capitalId: string | number, userId: string | number, token: string): Promise<void> =>
+  request(URLS.removeUserFromCapital(capitalId, userId), { method: 'DELETE', token });
+
+export const getInvitations = (token: string): Promise<{ invitations: Invitation[] }> =>
+  request(URLS.getInvitations, { method: 'GET', token });
+
+export const createInvitation = (capitalId: string | number, data: CreateInvitationPayload, token: string): Promise<Invitation> =>
+  request(URLS.createInvitation(capitalId), { method: 'POST', body: data, token });
+
+export const acceptInvitation = (invitationId: string | number, token: string): Promise<{message: string}> => // Assuming simple message response
+  request(URLS.acceptInvitation(invitationId), { method: 'POST', body: { capital_invitation: invitationId }, token });
+
+export const rejectInvitation = (invitationId: string | number, token: string): Promise<{message: string}> => // Assuming simple message response
+  request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: invitationId }, token });

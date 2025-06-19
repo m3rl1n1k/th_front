@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string | number;
   login: string; // This is the username
@@ -32,7 +33,7 @@ export interface RegistrationResponse {
 }
 
 export interface ChangePasswordPayload {
-  currentPassword?: string; // Optional in case backend uses session/token to verify user identity primarily
+  currentPassword?: string; 
   newPassword: string;
 }
 
@@ -111,12 +112,12 @@ export interface TransactionType {
 }
 
 export interface ApiError {
-  message: string;
+  message: string | Array<{ field: string; message: string; [key: string]: any }>;
   code?: number;
-  errors?: Record<string, string[]>; // For the { "field": ["message1", "message2"] } structure
-  error?: string; // Alternative single error message string
-  detail?: string; // Symfony often uses 'detail' for verbose error messages
-  rawResponse?: string; // To store the raw response text if parsing fails or for debugging
+  errors?: Record<string, string[]>; 
+  error?: string; 
+  detail?: string; 
+  rawResponse?: string; 
 }
 
 
@@ -331,42 +332,37 @@ export interface GetFeedbacksResponse {
 }
 
 // Budget Types
-
-// Represents the structure of a budget item as returned by the API
-// for GET /budgets/summary/{date}/{id} endpoint (now expected as an array)
 export interface ApiBudgetDetailItem {
-  id: number; // Assuming the specific item ID is available here
+  id: number; 
   subCategory: {
     id: number;
     name: string;
   };
   plannedAmount: {
-    amount: number; // in cents
+    amount: number; 
     currency: {
       code: string;
     };
   };
-  month: string; // e.g., "2025-06"
-  currency: { // Overall currency for this budget item (might be redundant if same as plannedAmount.currency)
+  month: string; 
+  currency: { 
     code: string;
   };
-  actualAmount?: { // May not always be present, similar to plannedAmount structure
-    amount: number; // in cents
+  actualAmount?: { 
+    amount: number; 
     currency: {
       code: string;
     };
   };
 }
 
-
-// Represents the transformed budget item details the EditBudgetItemPage component expects
 export interface BudgetDetails {
   id: string | number;
-  month: string; // e.g., "2024-08"
-  plannedAmount: number; // Converted to units (e.g., dollars, not cents) for form
-  actualExpenses?: number; // in cents, if available (not strictly needed for edit form)
-  currencyCode: string; // e.g. "PLN", "USD"
-  subCategory: { // Changed from category_id to subCategory object for easier display
+  month: string; 
+  plannedAmount: number; 
+  actualExpenses?: number; 
+  currencyCode: string; 
+  subCategory: { 
     id: number;
     name: string;
   };
@@ -377,7 +373,7 @@ export interface BudgetListItem {
   month: string;
   plannedAmount: number;
   actualExpenses: number;
-  currency: string; // This was `currencyCode` but API docs show it as `currency` for list
+  currency: string; 
   subCategory?: { id: number; name: string; };
   categoryName?: string;
 }
@@ -427,4 +423,59 @@ export interface BudgetCategorySummaryItem {
 
 export interface BudgetSummaryByMonthResponse {
   categories: Record<string, BudgetCategorySummaryItem>; // Key is subCategory ID
+}
+
+// Capital & Invitation Types
+export interface CreateCapitalPayload {
+  name: string;
+}
+
+export interface CapitalUser {
+  id: number;
+  email: string;
+  is_owner: boolean;
+  contribution_amount_cents: number;
+  currency_code: string;
+}
+
+export interface CapitalWalletContribution {
+  wallet_id: number;
+  wallet_name: string;
+  amount_cents: number; // Amount from this specific wallet contributing to the owner's share
+  currency_code: string;
+}
+
+export interface CapitalDetailsApiResponse {
+  id: number;
+  name: string;
+  owner_email: string;
+  // shared_user_email?: string; // Display primary shared user on progress bar or list all
+  total_amount_cents: number;
+  owner_total_contribution_cents: number;
+  // shared_total_contribution_cents: number; // Can be derived: total - owner
+  currency_code: string; // Main currency of the capital
+  owner_wallet_contributions: CapitalWalletContribution[]; // Breakdown of how owner's wallets contribute
+  participants: CapitalUser[]; // List of all users (owner + shared)
+}
+
+export interface Invitation {
+  id: number;
+  invited_email: string;
+  capital_id: number;
+  capital_name?: string; // Optional, for display
+  status: 'pending' | 'accepted' | 'rejected';
+  inviter_email?: string; // Optional, for display
+  created_at: string; // ISO date string
+}
+
+export interface CreateInvitationPayload {
+  invited: string; // email of the person being invited
+  capital_id: number;
+}
+
+export interface AcceptInvitationPayload {
+  capital_invitation: number; // ID of the invitation
+}
+export interface RejectInvitationPayload {
+  capital_invitation: number; // ID of the invitation
 }

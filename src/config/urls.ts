@@ -68,13 +68,24 @@ export const URLS = {
   getFeedbacks: `${API_BASE_URL}/admin/feedbacks`,
 
   // Budgets
-  getBudgets: `${API_BASE_URL}/budgets`, // For the list of monthly summaries
+  getBudgets: `${API_BASE_URL}/budgets`, 
   getBudgetById_DEPRECATED: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, 
   createBudget: `${API_BASE_URL}/budgets`, 
   updateBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`, 
-  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${date}/${id}`, 
-  deleteBudgetsForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/${monthYear}`, // For all budgets in a month
+  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${date}/${id}`,
+  deleteBudgetsForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/${monthYear}`, 
   getBudgetSummaryForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/summary/${monthYear}`,
   getBudgetSummaryItemForEdit: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`,
+
+  // Capital & Invitations
+  createCapital: `${API_BASE_URL}/capitals`,
+  getCapitalDetails: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
+  deleteCapital: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
+  removeUserFromCapital: (capitalId: string | number, userId: string | number) => `${API_BASE_URL}/capital/${capitalId}/user/${userId}/remove`, // Assuming capitalId is needed
+  
+  getInvitations: `${API_BASE_URL}/invitations`,
+  createInvitation: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}/invite`,
+  acceptInvitation: (invitationId: string | number) => `${API_BASE_URL}/invitation/${invitationId}/accept`,
+  rejectInvitation: (invitationId: string | number) => `${API_BASE_URL}/invitation/${invitationId}/reject`,
 };
 
