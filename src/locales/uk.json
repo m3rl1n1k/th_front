@@ -585,7 +585,7 @@
   "calculator.displayLabel": "Дисплей калькулятора",
   "calculator.error.divByZero": "Помилка: Ділення на 0",
   "calculator.error.invalidFormat": "Помилка: Неправильний формат",
-  
+
   "//": "CAPITAL PAGE",
   "capitalPageTitle": "Управління Капіталом",
   "createCapitalTitle": "Створити Ваш Капітал",
@@ -629,6 +629,7 @@
   "capitalDetailsMissingError": "Деталі капіталу відсутні. Неможливо продовжити.",
   "capitalFinancialDetailsNotAvailable": "Детальна фінансова інформація для цього капіталу наразі недоступна.",
   "errorFetchingInvitations": "Помилка завантаження запрошень.",
-  "createCapitalToInvite": "Створіть або виберіть спільний капітал, щоб надсилати запрошення."
+  "createCapitalToInvite": "Створіть або виберіть спільний капітал, щоб надсилати запрошення.",
+  "capitalNotFoundOnServerError": "Ваш пов'язаний капітал не знайдено. Ви можете створити новий."
 }
 

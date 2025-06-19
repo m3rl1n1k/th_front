@@ -585,7 +585,7 @@
   "calculator.displayLabel": "Calculator Display",
   "calculator.error.divByZero": "Error: Div by 0",
   "calculator.error.invalidFormat": "Error: Invalid Format",
-  
+
   "//": "CAPITAL PAGE",
   "capitalPageTitle": "Capital Management",
   "createCapitalTitle": "Create Your Capital Pool",
@@ -629,6 +629,7 @@
   "capitalDetailsMissingError": "Capital details are missing. Cannot proceed.",
   "capitalFinancialDetailsNotAvailable": "Detailed financial breakdown for this capital pool is not currently available.",
   "errorFetchingInvitations": "Error fetching invitations.",
-  "createCapitalToInvite": "Create or select a capital pool to send invitations."
+  "createCapitalToInvite": "Create or select a capital pool to send invitations.",
+  "capitalNotFoundOnServerError": "Your associated capital pool was not found. You can create a new one."
 }
 

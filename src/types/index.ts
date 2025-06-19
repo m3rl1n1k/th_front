@@ -9,6 +9,9 @@ export interface User {
     code: string;
   };
   roles?: string[];
+  capital?: { // Added capital field
+    id: number;
+  } | null;
 }
 
 export interface LoginCredentials {
@@ -33,7 +36,7 @@ export interface RegistrationResponse {
 }
 
 export interface ChangePasswordPayload {
-  currentPassword?: string; 
+  currentPassword?: string;
   newPassword: string;
 }
 
@@ -114,10 +117,10 @@ export interface TransactionType {
 export interface ApiError {
   message: string | Array<{ field: string; message: string; [key: string]: any }>;
   code?: number;
-  errors?: Record<string, string[]>; 
-  error?: string; 
-  detail?: string; 
-  rawResponse?: string; 
+  errors?: Record<string, string[]>;
+  error?: string;
+  detail?: string;
+  rawResponse?: string;
 }
 
 
@@ -333,23 +336,23 @@ export interface GetFeedbacksResponse {
 
 // Budget Types
 export interface ApiBudgetDetailItem {
-  id: number; 
+  id: number;
   subCategory: {
     id: number;
     name: string;
   };
   plannedAmount: {
-    amount: number; 
+    amount: number;
     currency: {
       code: string;
     };
   };
-  month: string; 
-  currency: { 
+  month: string;
+  currency: {
     code: string;
   };
-  actualAmount?: { 
-    amount: number; 
+  actualAmount?: {
+    amount: number;
     currency: {
       code: string;
     };
@@ -358,11 +361,11 @@ export interface ApiBudgetDetailItem {
 
 export interface BudgetDetails {
   id: string | number;
-  month: string; 
-  plannedAmount: number; 
-  actualExpenses?: number; 
-  currencyCode: string; 
-  subCategory: { 
+  month: string;
+  plannedAmount: number;
+  actualExpenses?: number;
+  currencyCode: string;
+  subCategory: {
     id: number;
     name: string;
   };
@@ -373,7 +376,7 @@ export interface BudgetListItem {
   month: string;
   plannedAmount: number;
   actualExpenses: number;
-  currency: string; 
+  currency: string;
   subCategory?: { id: number; name: string; };
   categoryName?: string;
 }

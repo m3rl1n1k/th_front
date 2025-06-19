@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -27,7 +28,7 @@ const AUTH_TOKEN_KEY = 'financeflow_auth_token';
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -55,10 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return userData;
     } catch (error) {
       clearAuthData();
-      throw error; 
+      throw error;
     }
   }, [clearAuthData]);
-  
+
   useEffect(() => {
     const attemptAutoLogin = async () => {
       if (typeof window !== 'undefined') {
@@ -66,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (storedToken) {
           try {
             const userData = await fetchUserProfile(storedToken);
-            setUser(userData);
+            setUser(userData); // This will now include user.capital if API returns it
             setToken(storedToken);
             setIsAuthenticated(true);
           } catch (error) {
@@ -75,15 +76,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsLoading(false);
           }
         } else {
-          setIsLoading(false); 
+          setIsLoading(false);
         }
       } else {
-        setIsLoading(false); 
+        setIsLoading(false);
       }
     };
     attemptAutoLogin();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -92,15 +93,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await processSuccessfulLogin(response.token, response.user);
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
 
-      let redirectTo = '/dashboard'; 
+      let redirectTo = '/dashboard';
 
       if (typeof window !== 'undefined') {
         const intendedDestination = localStorage.getItem(INTENDED_DESTINATION_KEY);
 
-        if (intendedDestination && intendedDestination.trim() !== "") { 
-          localStorage.removeItem(INTENDED_DESTINATION_KEY); 
+        if (intendedDestination && intendedDestination.trim() !== "") {
+          localStorage.removeItem(INTENDED_DESTINATION_KEY);
 
-          const nonIntendedRedirectPaths = ['/login', '/register', '/terms', '/']; 
+          const nonIntendedRedirectPaths = ['/login', '/register', '/terms', '/'];
           const isValidForRedirect =
             !nonIntendedRedirectPaths.includes(intendedDestination) &&
             intendedDestination.startsWith('/') &&
@@ -130,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiRegisterUser(payload);
     } catch (error) {
-      throw error; 
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
     router.push('/login');
-    setIsLoading(false); 
+    setIsLoading(false);
   }, [router, toast, t, clearAuthData]);
 
   const fetchUser = useCallback(async () => {
@@ -153,8 +154,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       try {
         const userData = await fetchUserProfile(currentToken);
-        setUser(userData);
-        setToken(currentToken); 
+        setUser(userData); // userData should now potentially include the capital field
+        setToken(currentToken);
         setIsAuthenticated(true);
       } catch (error) {
         const apiError = error as ApiError;
@@ -169,10 +170,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     } else {
-      if (isAuthenticated) { 
+      if (isAuthenticated) {
         clearAuthData();
       }
-       setIsLoading(false); 
+       setIsLoading(false);
     }
   }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated]);
 
