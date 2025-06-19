@@ -21,16 +21,16 @@ import {
   acceptInvitation,
   rejectInvitation,
   removeUserFromCapital,
-  getWalletsList, // For personal wallet summary
-  getWalletTypes, // For personal wallet summary type names
+  getWalletsList, 
+  getWalletTypes, 
 } from '@/lib/api';
 import type {
   CapitalDetailsApiResponse,
   CreateCapitalPayload,
   Invitation,
   CreateInvitationPayload,
-  WalletDetails, // For personal wallet summary
-  WalletTypeMap, // For personal wallet summary
+  WalletDetails, 
+  WalletTypeMap, 
   ApiError
 } from '@/types';
 import {
@@ -54,7 +54,6 @@ const createInvitationSchema = (t: Function) => z.object({
 });
 type CreateInvitationFormData = z.infer<ReturnType<typeof createInvitationSchema>>;
 
-// Mock Capital ID for now.
 const MOCK_CAPITAL_ID = 1; 
 
 interface UserWalletSummary {
@@ -70,11 +69,11 @@ export default function CapitalPage() {
   const { toast } = useToast();
 
   const [capitalDetails, setCapitalDetails] = useState<CapitalDetailsApiResponse | null>(null);
-  const [userWallets, setUserWallets] = useState<WalletDetails[]>([]); // For personal summary
-  const [walletTypes, setWalletTypes] = useState<WalletTypeMap>({}); // For personal summary
+  const [userWallets, setUserWallets] = useState<WalletDetails[]>([]); 
+  const [walletTypes, setWalletTypes] = useState<WalletTypeMap>({}); 
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   
-  const [capitalExists, setCapitalExists] = useState(false); // True if MOCK_CAPITAL_ID details are loaded
+  const [capitalExists, setCapitalExists] = useState(false); 
 
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,23 +89,29 @@ export default function CapitalPage() {
     }
     setIsLoadingPage(true);
     setError(null);
-    setCapitalExists(false); // Reset
+    setCapitalExists(false); 
+    setInvitations([]); // Initialize/reset invitations
 
     try {
-      // Attempt to fetch the specific capital pool (MOCK_CAPITAL_ID)
       const capitalData = await getCapitalDetails(MOCK_CAPITAL_ID, token);
       setCapitalDetails(capitalData);
-      setCapitalExists(true); // Capital found
+      setCapitalExists(true); 
 
-      // If capital exists, fetch its invitations
-      const invitationsData = await getInvitations(token);
-      setInvitations(invitationsData.invitations || []);
+      // If capital exists, fetch its invitations in a separate try-catch
+      try {
+        const invitationsData = await getInvitations(token);
+        setInvitations(invitationsData.invitations || []);
+      } catch (invitationError: any) {
+        console.warn("Failed to fetch invitations, treating as empty:", invitationError.message);
+        setInvitations([]); // Ensure invitations is an empty array for UI if fetch fails
+      }
 
     } catch (err: any) {
       const apiError = err as ApiError;
       if (apiError.code === 404 && apiError.message?.toLowerCase().includes('capital not found')) {
-        // Capital with MOCK_CAPITAL_ID not found, fetch user's own wallets for summary
         setCapitalExists(false);
+        setCapitalDetails(null);
+        setInvitations([]);
         try {
           const [walletsData, typesData] = await Promise.all([
             getWalletsList(token),
@@ -119,7 +124,6 @@ export default function CapitalPage() {
           toast({ variant: 'destructive', title: t('errorFetchingData'), description: walletErr.message });
         }
       } else {
-        // Other error fetching capital details
         setError(apiError.message || t('errorFetchingData'));
         toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message });
       }
@@ -137,11 +141,9 @@ export default function CapitalPage() {
     setActionLoading(prev => ({ ...prev, createCapital: true }));
     try {
       const newCapital = await createCapital({ name: data.name }, token);
-      // After creating, we assume it might have a different ID than MOCK_CAPITAL_ID.
-      // For now, we'll just re-fetch all data. A real app might navigate to the new capital's page.
       toast({ title: t('capitalCreatedSuccessTitle'), description: t('capitalCreatedSuccessDesc', { name: newCapital.name }) });
       capitalForm.reset();
-      fetchData(); // Re-fetch. If MOCK_CAPITAL_ID is still what we look for, this might show old state or personal.
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('capitalCreateFailedTitle'), description: err.message });
     } finally {
@@ -157,8 +159,8 @@ export default function CapitalPage() {
       toast({ title: t('capitalDeletedSuccessTitle') });
       setCapitalDetails(null);
       setInvitations([]);
-      setCapitalExists(false); // Capital is deleted
-      fetchData(); // Fetch user wallets now
+      setCapitalExists(false); 
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: err.message });
     } finally {
@@ -173,7 +175,7 @@ export default function CapitalPage() {
       await createInvitation(capitalDetails.id, { invited: data.invitedEmail, capital_id: capitalDetails.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
-      fetchData(); // Re-fetch invitations
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: err.message });
     } finally {
@@ -192,7 +194,7 @@ export default function CapitalPage() {
         await rejectInvitation(invitationId, token);
         toast({ title: t('invitationRejectedSuccessTitle') });
       }
-      fetchData(); // Re-fetch invitations and capital details
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: err.message });
     } finally {
@@ -204,10 +206,9 @@ export default function CapitalPage() {
     if (!token || !capitalDetails) return;
     setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: true }));
     try {
-      // Assuming capitalDetails.id is the ID of the capital pool itself
       await removeUserFromCapital(capitalDetails.id, userIdToRemove, token);
       toast({ title: t('userRemovedSuccessTitle') });
-      fetchData(); // Re-fetch capital details
+      fetchData(); 
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: err.message });
     } finally {
@@ -252,7 +253,7 @@ export default function CapitalPage() {
 
     return {
       totalBalanceCents,
-      currencyCode: user?.userCurrency?.code || 'USD', // Fallback
+      currencyCode: user?.userCurrency?.code || 'USD', 
       byType,
       individualWallets: userWallets,
     };
@@ -284,7 +285,6 @@ export default function CapitalPage() {
     );
   }
   
-  // Scenario: No specific capital pool (MOCK_CAPITAL_ID) found, show personal wallet summary
   if (!capitalExists) {
     return (
       <MainLayout>
@@ -372,7 +372,6 @@ export default function CapitalPage() {
     );
   }
   
-  // Scenario: Capital pool (MOCK_CAPITAL_ID) exists, show shared capital details
   const sharedUsers = capitalDetails?.participants.filter(p => !p.is_owner) || [];
   const primarySharedUser = sharedUsers.length > 0 ? sharedUsers[0] : null;
 
@@ -384,7 +383,6 @@ export default function CapitalPage() {
           {capitalDetails?.name || t('capitalPageTitle')}
         </h1>
 
-        {/* Capital Summary Card */}
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle>{t('capitalSummaryTitle')}</CardTitle>
@@ -457,7 +455,6 @@ export default function CapitalPage() {
           )}
         </Card>
 
-        {/* Shared Users Card */}
         {capitalDetails && sharedUsers.length > 0 && (
           <Card className="shadow-xl">
             <CardHeader>
@@ -485,7 +482,6 @@ export default function CapitalPage() {
         )}
 
 
-        {/* Invitations Card */}
         {capitalDetails && (
             <Card className="shadow-xl">
             <CardHeader>
@@ -544,3 +540,4 @@ export default function CapitalPage() {
     </MainLayout>
   );
 }
+
