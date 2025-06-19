@@ -19,8 +19,8 @@ import {
   acceptInvitation,
   rejectInvitation,
   removeUserFromCapital,
-  getWalletsList,
-  getWalletTypes,
+  getWalletsList, // Re-added
+  getWalletTypes, // Re-added
 } from '@/lib/api';
 import type {
   CapitalData,
@@ -30,12 +30,12 @@ import type {
   CreateInvitationPayload,
   ApiError,
   GetInvitationsApiResponse,
-  WalletDetails,
-  WalletTypeMap,
+  WalletDetails, // Re-added
+  WalletTypeMap, // Re-added
 } from '@/types';
 import {
   Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut,
-  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIcon, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon, Coins, Eye // Added Eye for visibility concept
+  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIconLucide, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon, Coins, Eye
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -67,12 +67,13 @@ export default function CapitalPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [capitalExists, setCapitalExists] = useState(false);
 
+  // Re-add states for personal wallets
   const [personalWallets, setPersonalWallets] = useState<WalletDetails[]>([]);
   const [personalWalletTypes, setPersonalWalletTypes] = useState<WalletTypeMap>({});
   const [isLoadingPersonalWallets, setIsLoadingPersonalWallets] = useState(true);
   const [isLoadingPersonalWalletTypes, setIsLoadingPersonalWalletTypes] = useState(true);
 
-  const [isLoadingPageData, setIsLoadingPageData] = useState(true); // Combined loading state
+  const [isLoadingPageData, setIsLoadingPageData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
@@ -85,25 +86,28 @@ export default function CapitalPage() {
       setCapitalExists(false);
       setCapitalData(null);
       setInvitations([]);
-      setPersonalWallets([]);
+      setPersonalWallets([]); // Ensure personal wallets are cleared if not authenticated
       return;
     }
 
     setError(null);
     setIsLoadingPageData(true);
-    
+    setIsLoadingPersonalWallets(true); // For personal wallets
+    setIsLoadingPersonalWalletTypes(true); // For personal wallet types
+
     try {
-      // Always fetch personal wallets, types, and user's invitations
-      const [walletsData, typesData, invitationsResponse] = await Promise.all([
+      // Always fetch user's invitations, personal wallets, and wallet types
+      const [invitationsResponse, walletsData, typesData] = await Promise.all([
+        getInvitations(token),
         getWalletsList(token),
-        getWalletTypes(token),
-        getInvitations(token)
+        getWalletTypes(token)
       ]);
+      setInvitations(invitationsResponse.invitation || []);
       setPersonalWallets(walletsData.wallets || []);
       setPersonalWalletTypes(typesData.types || {});
-      setInvitations(invitationsResponse.invitation || []);
+      setIsLoadingPersonalWallets(false);
+      setIsLoadingPersonalWalletTypes(false);
 
-      // Check user's capital association
       if (user && user.capital && typeof user.capital.id === 'number') {
         const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
         setCapitalData(response.capital);
@@ -114,11 +118,10 @@ export default function CapitalPage() {
       }
     } catch (err: any) {
       const apiError = err as ApiError;
-      if (apiError.code === 404 && user?.capital?.id) { // Capital linked to user not found on server
+      if (apiError.code === 404 && user?.capital?.id) {
         setCapitalData(null);
         setCapitalExists(false);
         toast({ variant: 'destructive', title: t('sharingGroupNotFoundErrorTitle'), description: t('sharingGroupNotFoundErrorDesc') });
-        // Potentially call fetchUser() here if backend is supposed to clear user.capital.id
       } else if (apiError.message) {
         setError(apiError.message);
         toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message });
@@ -126,21 +129,21 @@ export default function CapitalPage() {
         setError(t('unexpectedError'));
         toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('unexpectedError') });
       }
-       // Ensure personal data is still set even if capital fetch fails but personal data succeeded
-      if (!personalWallets.length) setPersonalWallets([]);
-      if (Object.keys(personalWalletTypes).length === 0) setPersonalWalletTypes({});
-      if (!invitations.length) setInvitations([]);
+      // Ensure personal data is still set even if capital fetch fails if those fetches succeeded
+      if (personalWallets.length === 0 && !(err.url?.includes('/wallets') || err.url?.includes('wallet/types'))) setPersonalWallets([]);
+      if (Object.keys(personalWalletTypes).length === 0 && !err.url?.includes('wallet/types')) setPersonalWalletTypes({});
+      if (invitations.length === 0 && !err.url?.includes('/invitations')) setInvitations([]);
     } finally {
       setIsLoadingPageData(false);
     }
-  }, [isAuthenticated, token, user, t, toast, personalWallets, personalWalletTypes, invitations]);
+  // FIX: Removed personalWallets, personalWalletTypes, invitations from dependency array
+  }, [isAuthenticated, token, user, t, toast]);
 
   useEffect(() => {
     if (!authIsLoading) {
         fetchData();
     }
   }, [authIsLoading, user, fetchData]);
-
 
   const processedPersonalWallets = useMemo(() => {
     if (personalWallets.length === 0 || Object.keys(personalWalletTypes).length === 0) return [];
@@ -164,12 +167,13 @@ export default function CapitalPage() {
       case 'main': return <Landmark className={iconClass} />;
       case 'deposit': return <PiggyBank className={iconClass} />;
       case 'cash': return <WalletIconLucide className={iconClass} />;
-      case 'credit': return <CreditCardIcon className={iconClass} />;
+      case 'credit': return <CreditCardIconLucide className={iconClass} />;
       case 'archive': return <ArchiveIcon className={iconClass} />;
       case 'block': return <ShieldCheckIcon className={iconClass} />;
       default: return <HelpCircleIcon className={iconClass} />;
     }
   };
+
 
   const handleCreateCapital: SubmitHandler<CreateCapitalFormData> = async (data) => {
     if (!token) return;
@@ -178,7 +182,8 @@ export default function CapitalPage() {
       await createCapital({ name: data.name }, token);
       toast({ title: t('sharingGroupCreatedSuccessTitle'), description: t('sharingGroupCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser(); 
+      await fetchUser();
+      // fetchData will be re-triggered by useEffect watching `user`
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupCreateFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -195,7 +200,8 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('sharingGroupDeletedSuccessTitle') });
-      await fetchUser(); 
+      await fetchUser();
+      // fetchData will be re-triggered by useEffect watching `user`
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -213,7 +219,7 @@ export default function CapitalPage() {
       await createInvitation(capitalData.id, { invited: data.invitedEmail, capital_id: capitalData.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
-      fetchData(); 
+      fetchData(); // Refresh invitations list
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -228,12 +234,12 @@ export default function CapitalPage() {
       if (actionType === 'accept') {
         await acceptInvitation(invitationId, token);
         toast({ title: t('invitationAcceptedSuccessTitle') });
-        await fetchUser(); 
+        await fetchUser(); // This will trigger a re-fetch of capital data
       } else {
         await rejectInvitation(invitationId, token);
         toast({ title: t('invitationRejectedSuccessTitle') });
       }
-      fetchData(); 
+      fetchData(); // Refresh invitations list
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -255,22 +261,21 @@ export default function CapitalPage() {
     try {
       await removeUserFromCapital(userIdToRemove, token);
       toast({ title: t('userRemovedSuccessTitle') });
-      fetchData(); 
+      fetchData(); // Refresh capital details (user list)
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
     } finally {
       setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: false }));
     }
   };
-  
+
   const handleLeaveCapital = async (capitalIdToLeave: number) => {
     if (!token || !user) return;
     setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: true }));
     try {
-      await removeUserFromCapital(user.id, token); 
+      await removeUserFromCapital(user.id, token);
       toast({ title: t('leftSharingGroupSuccessTitle') });
-      await fetchUser(); 
-      // fetchData(); // This will be triggered by user update
+      await fetchUser(); // This will update user.capital and trigger fetchData
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('leaveSharingGroupFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -288,8 +293,8 @@ export default function CapitalPage() {
         </div>
       );
     }
-    
-    if (error && !isAuthenticated) { 
+
+    if (error && !isAuthenticated) {
       return (
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
           <CardHeader className="bg-destructive/10">
@@ -351,6 +356,7 @@ export default function CapitalPage() {
             </CardContent>
           </Card>
         )}
+
 
         {/* Sharing Group Section OR Create Sharing Group Form */}
         {!capitalExists ? (
@@ -486,7 +492,7 @@ export default function CapitalPage() {
                 )}
 
                 <h3 className="text-lg font-semibold mb-3 pt-4 border-t">{t('pendingInvitationsTitle')}</h3>
-                { invitations.length > 0 ? ( // No separate loading state for invitations anymore, relies on isLoadingPageData
+                { invitations.length > 0 ? (
                 <ul className="space-y-3">
                     {invitations.map(inv => {
                     const isCurrentUserInvited = user?.id === inv.invitedUser.id;
@@ -567,4 +573,3 @@ export default function CapitalPage() {
     </MainLayout>
   );
 }
-
