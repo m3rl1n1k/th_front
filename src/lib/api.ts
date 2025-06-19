@@ -37,8 +37,8 @@ import type {
   FeedbackTypeOption,
   BudgetListApiResponse,
   BudgetListItem,
-  BudgetDetails, 
-  ApiBudgetDetailItem, 
+  BudgetDetails,
+  ApiBudgetDetailItem,
   CreateBudgetPayload,
   UpdateBudgetPayload,
   BudgetSummaryByMonthResponse,
@@ -329,7 +329,7 @@ export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => 
 
 export const getBudgetSummaryItemForEdit = async (date: string, id: string | number, token: string): Promise<BudgetDetails> => {
   const responseArray = await request<ApiBudgetDetailItem[]>(URLS.getBudgetSummaryItemForEdit(date, id), { method: 'GET', token });
-  
+
   if (!responseArray || responseArray.length === 0) {
     throw new Error('Budget item not found or empty response.');
   }
@@ -338,7 +338,7 @@ export const getBudgetSummaryItemForEdit = async (date: string, id: string | num
   const transformedDetails: BudgetDetails = {
     id: apiItem.id,
     month: apiItem.month,
-    plannedAmount: apiItem.plannedAmount.amount / 100, 
+    plannedAmount: apiItem.plannedAmount.amount / 100,
     currencyCode: apiItem.currency.code || apiItem.plannedAmount.currency.code,
     subCategory: {
       id: apiItem.subCategory.id,
@@ -383,8 +383,11 @@ export const removeUserFromCapital = (userId: string | number, token: string): P
   return request(URLS.removeUserFromCapital(userId), { method: 'DELETE', token });
 }
 
-export const getInvitations = (token: string): Promise<{ invitations: Invitation[] }> =>
-  request(URLS.getInvitations, { method: 'GET', token });
+export const getInvitations = async (token: string): Promise<{ invitations: Invitation[] }> => {
+  const response = await request<{ invitations: Invitation[] }>(URLS.getInvitations, { method: 'GET', token });
+  console.log('[API Response] GET /invitations:', response);
+  return response;
+}
 
 export const createInvitation = (capitalId: string | number, data: CreateInvitationPayload, token: string): Promise<Invitation> =>
   request(URLS.createInvitation(capitalId), { method: 'POST', body: data, token });
@@ -394,3 +397,4 @@ export const acceptInvitation = (invitationId: string | number, token: string): 
 
 export const rejectInvitation = (invitationId: string | number, token: string): Promise<{message: string}> =>
   request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: Number(invitationId) }, token });
+
