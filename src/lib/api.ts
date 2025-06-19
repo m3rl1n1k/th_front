@@ -1,4 +1,5 @@
 
+
 import { URLS } from '@/config/urls';
 import type {
   ApiError,
@@ -49,6 +50,7 @@ import type {
   CreateInvitationPayload,
   AcceptInvitationPayload,
   RejectInvitationPayload,
+  GetInvitationsApiResponse, // Import the new response type
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -72,13 +74,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
       if (typeof jsonData === 'object' && jsonData !== null) {
         if (Array.isArray(jsonData.message) && jsonData.message.length > 0 && jsonData.message[0].field && jsonData.message[0].message) {
-          // Handle {"message":[{"field":"subCategory","message":"The category..."}]}
           errorData.message = jsonData.message.map((err: any) => `${err.field}: ${err.message}`).join('; ');
         } else {
            errorData.message = jsonData.message || jsonData.error || jsonData.detail || errorData.message;
         }
         errorData.code = jsonData.code || response.status;
-        errorData.errors = jsonData.errors; // Handles general {"errors": {"field": ["message"]}}
+        errorData.errors = jsonData.errors; 
       } else {
         errorData.message = rawResponseBody || errorData.message;
       }
@@ -383,8 +384,8 @@ export const removeUserFromCapital = (userId: string | number, token: string): P
   return request(URLS.removeUserFromCapital(userId), { method: 'DELETE', token });
 }
 
-export const getInvitations = async (token: string): Promise<{ invitations: Invitation[] }> => {
-  const response = await request<{ invitations: Invitation[] }>(URLS.getInvitations, { method: 'GET', token });
+export const getInvitations = async (token: string): Promise<GetInvitationsApiResponse> => {
+  const response = await request<GetInvitationsApiResponse>(URLS.getInvitations, { method: 'GET', token });
   console.log('[API Response] GET /invitations:', response);
   return response;
 }
@@ -397,4 +398,3 @@ export const acceptInvitation = (invitationId: string | number, token: string): 
 
 export const rejectInvitation = (invitationId: string | number, token: string): Promise<{message: string}> =>
   request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: Number(invitationId) }, token });
-

@@ -32,7 +32,8 @@ import type {
   CreateInvitationPayload,
   ApiError,
   WalletDetails,
-  WalletTypeMap
+  WalletTypeMap,
+  GetInvitationsApiResponse,
 } from '@/types';
 import {
   Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, UserPlus, Mail, Users, CheckCircle, XCircle, Send, UserX,
@@ -45,6 +46,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
+import { format, parseISO } from 'date-fns';
 
 const createCapitalSchema = (t: Function) => z.object({
   name: z.string().min(3, { message: t('capitalNameMinLengthError') }).max(50, { message: t('capitalNameMaxLengthError') }),
@@ -60,7 +62,7 @@ const MOCK_CAPITAL_ID = 1;
 
 export default function CapitalPage() {
   const { user, token, isAuthenticated } = useAuth();
-  const { t } = useTranslation();
+  const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
 
   const [capitalData, setCapitalData] = useState<CapitalData | null>(null);
@@ -99,31 +101,26 @@ export default function CapitalPage() {
       setIsLoadingPersonalWalletTypes(false);
 
       try {
-        const invitationsData = await getInvitations(token);
-        setInvitations(invitationsData.invitations || []);
+        const invitationsResponse: GetInvitationsApiResponse = await getInvitations(token);
+        setInvitations(invitationsResponse.invitation || []);
       } catch (invitationError: any) {
         const apiInvError = invitationError as ApiError;
-        // Only treat 404 as "no invitations", other errors might still be page-level issues.
-        if (apiInvError.code === 404 || (apiInvError.message && apiInvError.message.toLowerCase().includes("not found"))) {
+        if (apiInvError.code === 404 || (apiInvError.message && typeof apiInvError.message === 'string' && apiInvError.message.toLowerCase().includes("not found"))) {
             setInvitations([]);
             console.warn("[CapitalPage] No invitations found or API indicated not found:", apiInvError.message);
         } else {
-            // For other errors fetching invitations, log it but don't block the page
             console.error("[CapitalPage] Failed to fetch invitations (non-404):", apiInvError.message);
-            setInvitations([]); // Default to empty on other errors as well, but log them more seriously.
-            // Optionally, set a specific error state for invitations if needed
-            // toast({ variant: 'warning', title: t('errorFetchingInvitations'), description: apiInvError.message });
+            setInvitations([]); 
         }
       }
 
     } catch (err: any) {
       const apiError = err as ApiError;
-      if (apiError.code === 404 && (apiError.message?.toLowerCase().includes('capital not found') || apiError.message?.toLowerCase().includes('shared capital pool not found'))) {
+      if (apiError.code === 404 && (apiError.message && typeof apiError.message === 'string' && (apiError.message.toLowerCase().includes('capital not found') || apiError.message.toLowerCase().includes('shared capital pool not found')))) {
         setCapitalExists(false);
         setCapitalData(null);
-        setInvitations([]); // Ensure invitations are cleared if capital isn't found
+        setInvitations([]); 
         
-        // Fetch personal wallets only if capital is not found
         setIsLoadingPersonalWallets(true);
         setIsLoadingPersonalWalletTypes(true);
         try {
@@ -137,7 +134,6 @@ export default function CapitalPage() {
           console.error("[CapitalPage] Failed to fetch personal wallets or types:", dataError.message);
           setPersonalWallets([]);
           setPersonalWalletTypes({});
-          // Optionally set an error state here if fetching personal wallets is critical
         } finally {
           setIsLoadingPersonalWallets(false);
           setIsLoadingPersonalWalletTypes(false);
@@ -145,7 +141,7 @@ export default function CapitalPage() {
 
       } else {
         setError(apiError.message || t('errorFetchingData'));
-        toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message });
+        toast({ variant: 'destructive', title: t('errorFetchingData'), description: typeof apiError.message === 'string' ? apiError.message : t('unexpectedError') });
       }
     } finally {
       setIsLoadingPage(false);
@@ -478,14 +474,13 @@ export default function CapitalPage() {
                 <h3 className="text-lg font-semibold mb-3 pt-4 border-t">{t('pendingInvitationsTitle')}</h3>
                 {invitations.length > 0 ? (
                 <ul className="space-y-3">
-                    {invitations.filter(inv => inv.status === 'pending').map(inv => (
+                    {invitations.map(inv => (
                     <li key={inv.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
                         <div className="mb-2 sm:mb-0">
-                        <p className="font-medium">{t('invitationToLabel')} {inv.invited_email}</p>
-                        {inv.inviter_email && <p className="text-xs text-muted-foreground">{t('invitedByLabel')} {inv.inviter_email}</p>}
-                        {inv.capital_name && <p className="text-xs text-muted-foreground">{t('forCapitalLabel')} {inv.capital_name}</p>}
+                        <p className="font-medium">{t('invitationToLabel')} {inv.invitedUser.email}</p>
+                        <p className="text-xs text-muted-foreground">{t('invitedOnLabel')} {format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}</p>
                         </div>
-                        {user?.email === inv.invited_email && (
+                        {user?.email === inv.invitedUser.email && (
                         <div className="flex gap-2 self-end sm:self-center">
                             <Button size="sm" variant="outline" onClick={() => handleInvitationAction(inv.id, 'accept')} disabled={actionLoading[`invitation_${inv.id}`]}>
                             {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CheckCircle className="mr-1 h-3 w-3" />}
@@ -499,9 +494,6 @@ export default function CapitalPage() {
                         )}
                     </li>
                     ))}
-                    {invitations.filter(inv => inv.status === 'pending').length === 0 && (
-                    <p className="text-sm text-muted-foreground">{t('noPendingInvitations')}</p>
-                    )}
                 </ul>
                 ) : (
                 <p className="text-sm text-muted-foreground">{t('noInvitationsFound')}</p>

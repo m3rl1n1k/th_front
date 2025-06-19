@@ -624,6 +624,7 @@
   "invitationToLabel": "Запрошення для:",
   "invitedByLabel": "Запросив(ла):",
   "forCapitalLabel": "Для капіталу:",
+  "invitedOnLabel": "Запрошено:",
   "acceptInvitationButton": "Прийняти",
   "rejectInvitationButton": "Відхилити",
   "invitationAcceptedSuccessTitle": "Запрошення Прийнято",
@@ -638,4 +639,3 @@
   "capitalFinancialDetailsNotAvailable": "Детальна фінансова інформація для цього капіталу наразі недоступна."
 }
 
-```

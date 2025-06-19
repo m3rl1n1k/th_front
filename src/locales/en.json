@@ -624,6 +624,7 @@
   "invitationToLabel": "Invitation to:",
   "invitedByLabel": "Invited by:",
   "forCapitalLabel": "For capital:",
+  "invitedOnLabel": "Invited on:",
   "acceptInvitationButton": "Accept",
   "rejectInvitationButton": "Reject",
   "invitationAcceptedSuccessTitle": "Invitation Accepted",
@@ -638,4 +639,3 @@
   "capitalFinancialDetailsNotAvailable": "Detailed financial breakdown for this capital pool is not currently available."
 }
 
-```
