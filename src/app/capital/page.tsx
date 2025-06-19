@@ -19,8 +19,6 @@ import {
   acceptInvitation,
   rejectInvitation,
   removeUserFromCapital,
-  getWalletsList, // Re-added
-  getWalletTypes, // Re-added
 } from '@/lib/api';
 import type {
   CapitalData,
@@ -30,12 +28,10 @@ import type {
   CreateInvitationPayload,
   ApiError,
   GetInvitationsApiResponse,
-  WalletDetails, // Re-added
-  WalletTypeMap, // Re-added
 } from '@/types';
 import {
   Briefcase, Loader2, AlertTriangle, PlusCircle, Trash2, Mail, Users, CheckCircle, XCircle, Send, UserX, LogOut,
-  Landmark, PiggyBank, WalletCards as WalletIconLucide, CreditCard as CreditCardIconLucide, Archive as ArchiveIcon, ShieldCheck as ShieldCheckIcon, HelpCircle as HelpCircleIcon, Coins, Eye
+  Eye, Coins
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -67,12 +63,6 @@ export default function CapitalPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [capitalExists, setCapitalExists] = useState(false);
 
-  // Re-add states for personal wallets
-  const [personalWallets, setPersonalWallets] = useState<WalletDetails[]>([]);
-  const [personalWalletTypes, setPersonalWalletTypes] = useState<WalletTypeMap>({});
-  const [isLoadingPersonalWallets, setIsLoadingPersonalWallets] = useState(true);
-  const [isLoadingPersonalWalletTypes, setIsLoadingPersonalWalletTypes] = useState(true);
-
   const [isLoadingPageData, setIsLoadingPageData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
@@ -86,27 +76,16 @@ export default function CapitalPage() {
       setCapitalExists(false);
       setCapitalData(null);
       setInvitations([]);
-      setPersonalWallets([]); // Ensure personal wallets are cleared if not authenticated
       return;
     }
 
     setError(null);
     setIsLoadingPageData(true);
-    setIsLoadingPersonalWallets(true); // For personal wallets
-    setIsLoadingPersonalWalletTypes(true); // For personal wallet types
 
     try {
-      // Always fetch user's invitations, personal wallets, and wallet types
-      const [invitationsResponse, walletsData, typesData] = await Promise.all([
-        getInvitations(token),
-        getWalletsList(token),
-        getWalletTypes(token)
-      ]);
+      // Always fetch user's invitations
+      const invitationsResponse = await getInvitations(token);
       setInvitations(invitationsResponse.invitation || []);
-      setPersonalWallets(walletsData.wallets || []);
-      setPersonalWalletTypes(typesData.types || {});
-      setIsLoadingPersonalWallets(false);
-      setIsLoadingPersonalWalletTypes(false);
 
       if (user && user.capital && typeof user.capital.id === 'number') {
         const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
@@ -119,8 +98,11 @@ export default function CapitalPage() {
     } catch (err: any) {
       const apiError = err as ApiError;
       if (apiError.code === 404 && user?.capital?.id) {
+        // User is linked to a capital that doesn't exist (e.g., deleted)
         setCapitalData(null);
         setCapitalExists(false);
+        // Optionally, clear user.capital in AuthContext if backend doesn't do it
+        // await fetchUser(); // To get updated user state from backend
         toast({ variant: 'destructive', title: t('sharingGroupNotFoundErrorTitle'), description: t('sharingGroupNotFoundErrorDesc') });
       } else if (apiError.message) {
         setError(apiError.message);
@@ -129,50 +111,18 @@ export default function CapitalPage() {
         setError(t('unexpectedError'));
         toast({ variant: 'destructive', title: t('errorFetchingData'), description: t('unexpectedError') });
       }
-      // Ensure personal data is still set even if capital fetch fails if those fetches succeeded
-      if (personalWallets.length === 0 && !(err.url?.includes('/wallets') || err.url?.includes('wallet/types'))) setPersonalWallets([]);
-      if (Object.keys(personalWalletTypes).length === 0 && !err.url?.includes('wallet/types')) setPersonalWalletTypes({});
       if (invitations.length === 0 && !err.url?.includes('/invitations')) setInvitations([]);
     } finally {
       setIsLoadingPageData(false);
     }
-  // FIX: Removed personalWallets, personalWalletTypes, invitations from dependency array
-  }, [isAuthenticated, token, user, t, toast]);
+  }, [isAuthenticated, token, user, t, toast, fetchUser, invitations.length]); // Added fetchUser and invitations.length for stability
+
 
   useEffect(() => {
     if (!authIsLoading) {
         fetchData();
     }
   }, [authIsLoading, user, fetchData]);
-
-  const processedPersonalWallets = useMemo(() => {
-    if (personalWallets.length === 0 || Object.keys(personalWalletTypes).length === 0) return [];
-    return personalWallets.map(wallet => {
-      const typeKey = wallet.type;
-      const mappedDisplayValue = personalWalletTypes[typeKey];
-      const typeIdentifierForTranslation = mappedDisplayValue || typeKey.toUpperCase();
-      const userFriendlyDefault = mappedDisplayValue || typeKey;
-      const translationKey = `walletType_${typeIdentifierForTranslation}`;
-      return {
-        ...wallet,
-        typeName: t(translationKey as any, { defaultValue: userFriendlyDefault })
-      };
-    }).sort((a, b) => a.name.localeCompare(b.name));
-  }, [personalWallets, personalWalletTypes, t]);
-
-  const getPersonalWalletVisualIcon = (wallet: WalletDetails) => {
-    const typeKey = wallet.type;
-    const iconClass = "h-5 w-5 text-muted-foreground";
-    switch (typeKey) {
-      case 'main': return <Landmark className={iconClass} />;
-      case 'deposit': return <PiggyBank className={iconClass} />;
-      case 'cash': return <WalletIconLucide className={iconClass} />;
-      case 'credit': return <CreditCardIconLucide className={iconClass} />;
-      case 'archive': return <ArchiveIcon className={iconClass} />;
-      case 'block': return <ShieldCheckIcon className={iconClass} />;
-      default: return <HelpCircleIcon className={iconClass} />;
-    }
-  };
 
 
   const handleCreateCapital: SubmitHandler<CreateCapitalFormData> = async (data) => {
@@ -182,8 +132,7 @@ export default function CapitalPage() {
       await createCapital({ name: data.name }, token);
       toast({ title: t('sharingGroupCreatedSuccessTitle'), description: t('sharingGroupCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser();
-      // fetchData will be re-triggered by useEffect watching `user`
+      await fetchUser(); // This should update user.capital and trigger fetchData via useEffect
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupCreateFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -200,8 +149,7 @@ export default function CapitalPage() {
     try {
       await deleteCapital(capitalData.id, token);
       toast({ title: t('sharingGroupDeletedSuccessTitle') });
-      await fetchUser();
-      // fetchData will be re-triggered by useEffect watching `user`
+      await fetchUser(); // This should update user.capital (to null) and trigger fetchData
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('sharingGroupDeleteFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -219,7 +167,7 @@ export default function CapitalPage() {
       await createInvitation(capitalData.id, { invited: data.invitedEmail, capital_id: capitalData.id }, token);
       toast({ title: t('invitationSentSuccessTitle') });
       invitationForm.reset();
-      fetchData(); // Refresh invitations list
+      fetchData(); // Refresh invitations list directly
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -234,12 +182,12 @@ export default function CapitalPage() {
       if (actionType === 'accept') {
         await acceptInvitation(invitationId, token);
         toast({ title: t('invitationAcceptedSuccessTitle') });
-        await fetchUser(); // This will trigger a re-fetch of capital data
+        await fetchUser(); // This will trigger a re-fetch of user data (including capital)
       } else {
         await rejectInvitation(invitationId, token);
         toast({ title: t('invitationRejectedSuccessTitle') });
       }
-      fetchData(); // Refresh invitations list
+      fetchData(); // Refresh invitations list and potentially capital data if user accepted
     } catch (err: any) {
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
     } finally {
@@ -273,7 +221,7 @@ export default function CapitalPage() {
     if (!token || !user) return;
     setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: true }));
     try {
-      await removeUserFromCapital(user.id, token);
+      await removeUserFromCapital(user.id, token); // Backend knows which capital to leave based on user id
       toast({ title: t('leftSharingGroupSuccessTitle') });
       await fetchUser(); // This will update user.capital and trigger fetchData
     } catch (err: any) {
@@ -294,7 +242,7 @@ export default function CapitalPage() {
       );
     }
 
-    if (error && !isAuthenticated) {
+    if (error && !isAuthenticated) { // Only show general error if not authenticated and something went wrong
       return (
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
           <CardHeader className="bg-destructive/10">
@@ -309,56 +257,6 @@ export default function CapitalPage() {
 
     return (
       <div className="space-y-8">
-        {/* Personal Wallets Section - Always Visible if authenticated */}
-        {isAuthenticated && (
-          <Card className="shadow-xl">
-            <CardHeader>
-              <CardTitle>{t('yourPersonalFinancialOverviewTitle')}</CardTitle>
-              <CardDescription>{t('yourPersonalFinancialOverviewDesc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingPersonalWallets || isLoadingPersonalWalletTypes ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {[1, 2, 3].map(i => (
-                    <Card key={i} className="p-3 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-6 w-1/2" /></Card>
-                  ))}
-                </div>
-              ) : processedPersonalWallets.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {processedPersonalWallets.map(wallet => (
-                    <Card key={wallet.id} className="p-3 shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-semibold truncate" title={wallet.name}>{wallet.name}</h4>
-                        {getPersonalWalletVisualIcon(wallet)}
-                      </div>
-                      <p className="text-lg font-bold text-primary">
-                        <CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />
-                      </p>
-                      <p className="text-xs text-muted-foreground">{wallet.typeName}</p>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">{t('noPersonalWalletsFound')}</p>
-              )}
-              {/* Display user's visible capital if part of a group */}
-              {capitalExists && capitalData && (
-                <div className="mt-6 pt-6 border-t">
-                  <h4 className="text-md font-semibold mb-3">{t('yourVisibleCapitalTitle')}</h4>
-                  <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{t('yourVisiblePersonalCapitalLabel')}</span>
-                      <span className="text-lg font-semibold">
-                        <CurrencyDisplay amountInCents={capitalData.user_capital_total} currencyCode={user?.userCurrency?.code} />
-                      </span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-
-        {/* Sharing Group Section OR Create Sharing Group Form */}
         {!capitalExists ? (
           <Card className="max-w-lg mx-auto shadow-xl">
             <CardHeader>
@@ -400,13 +298,19 @@ export default function CapitalPage() {
                 {ownerOfCapital && <CardDescription>{t('ownerLabel')}: {ownerOfCapital.login} ({ownerOfCapital.email})</CardDescription>}
               </CardHeader>
               <CardContent className="space-y-6">
-                 <div className="grid grid-cols-1 gap-4">
-                  <div className="p-4 bg-muted/30 rounded-md">
-                    <Label className="text-xs text-muted-foreground">{t('totalVisibleCapitalInGroupLabel')}</Label>
-                    <p className="text-xl font-semibold">
-                        <CurrencyDisplay amountInCents={capitalData.total_capital_amount} currencyCode={user?.userCurrency?.code} />
-                    </p>
-                  </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted/30 rounded-md">
+                        <Label className="text-xs text-muted-foreground">{t('totalVisibleCapitalInGroupLabel')}</Label>
+                        <p className="text-xl font-semibold">
+                            <CurrencyDisplay amountInCents={capitalData.total_capital_amount} currencyCode={user?.userCurrency?.code} />
+                        </p>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-md">
+                        <Label className="text-xs text-muted-foreground">{t('yourVisiblePersonalCapitalLabel')}</Label>
+                        <p className="text-xl font-semibold">
+                            <CurrencyDisplay amountInCents={capitalData.user_capital_total} currencyCode={user?.userCurrency?.code} />
+                        </p>
+                    </div>
                 </div>
               </CardContent>
                {user?.id === ownerOfCapital?.id && (
@@ -497,6 +401,7 @@ export default function CapitalPage() {
                     {invitations.map(inv => {
                     const isCurrentUserInvited = user?.id === inv.invitedUser.id;
                     const isResponded = !!inv.respondedAt;
+                    // Check if current user is a member of THIS specific capital from THIS invitation
                     const isCurrentUserMemberOfThisCapitalViaThisInvite = isResponded && isCurrentUserInvited && user?.capital?.id === inv.capital.id;
 
                     return (
@@ -505,16 +410,16 @@ export default function CapitalPage() {
                         <p className="font-medium">
                             {t('invitationToSharingGroupLabel')} <span className="text-primary">{inv.capital.name}</span>
                         </p>
-                        {!isResponded && (
-                            <p className="text-xs text-muted-foreground">
-                                {t('invitedUserEmailLabel')}: {inv.invitedUser.email}
-                            </p>
-                            )}
                         {inv.inviter && (
                             <p className="text-xs text-muted-foreground">
                                 {t('invitedByLabel')} {inv.inviter.email}
                             </p>
-                            )}
+                        )}
+                         {!isResponded && (
+                            <p className="text-xs text-muted-foreground">
+                                {t('invitedUserEmailLabel')}: {inv.invitedUser.email}
+                            </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                             {t('invitedOnLabel')} {format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}
                         </p>
