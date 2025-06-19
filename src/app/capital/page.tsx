@@ -96,13 +96,16 @@ export default function CapitalPage() {
       } catch (err: any) {
         const apiError = err as ApiError;
         if (apiError.code === 404) {
-          toast({ variant: 'destructive', title: t('sharingGroupNotFoundErrorTitle'), description: t('sharingGroupNotFoundErrorDesc') });
+          // Capital not found, this is okay, proceed to set to null/false
+          fetchedCapitalData = null;
+          fetchedCapitalExists = false;
+          await fetchUser(); // Ensure user context is updated if capital was removed
         } else {
           setCapitalLoadingError(t('capitalLoadingError'));
           toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message || t('unexpectedError') });
+          fetchedCapitalData = null;
+          fetchedCapitalExists = false;
         }
-        fetchedCapitalData = null;
-        fetchedCapitalExists = false;
       }
     } else {
       fetchedCapitalExists = false;
@@ -123,7 +126,7 @@ export default function CapitalPage() {
     }
 
     setIsLoadingPageData(false);
-  }, [isAuthenticated, token, user, t, toast]);
+  }, [isAuthenticated, token, user, t, toast, fetchUser]);
 
 
   useEffect(() => {
@@ -229,7 +232,7 @@ export default function CapitalPage() {
     if (!token || !user) return;
     setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: true }));
     try {
-      await removeUserFromCapital(user.id, token);
+      await removeUserFromCapital(user.id, token); // API expects user ID to remove
       toast({ title: t('leftSharingGroupSuccessTitle') });
       await fetchUser(); // Update user context, triggers fetchData
     } catch (err: any) {
@@ -283,7 +286,7 @@ export default function CapitalPage() {
         ) : capitalData ? (
           <>
             <h1 className="font-headline text-4xl font-bold text-foreground flex items-center">
-              <Eye className="mr-3 h-8 w-8 text-primary" />
+              <Briefcase className="mr-3 h-8 w-8 text-primary" />
               {capitalData.name}
             </h1>
 
@@ -307,6 +310,38 @@ export default function CapitalPage() {
                         </p>
                     </div>
                 </div>
+                 {capitalData.users && capitalData.users.length > 0 && (
+                    <div>
+                        <h3 className="text-lg font-medium mb-2">{t('sharingWithTitle')}</h3>
+                        <ul className="space-y-2">
+                        {capitalData.users.map(participant => (
+                            <li key={participant.id} className="flex justify-between items-center p-2 bg-muted/30 rounded-md">
+                            <div>
+                                <span className="font-medium">{participant.login}</span> ({participant.email})
+                                {ownerOfCurrentCapital && participant.id === ownerOfCurrentCapital.id && <span className="ml-2 text-xs font-semibold text-primary">({t('ownerLabel')})</span>}
+                            </div>
+                            {user?.id === ownerOfCurrentCapital?.id && participant.id !== ownerOfCurrentCapital?.id && (
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveUser(participant.id)} disabled={actionLoading[`removeUser_${participant.id}`]}>
+                                {actionLoading[`removeUser_${participant.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4 text-destructive" />}
+                                <span className="sr-only">{t('removeUserButton')}</span>
+                                </Button>
+                            )}
+                            {user?.id !== ownerOfCurrentCapital?.id && user?.id === participant.id && (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleLeaveCapital(capitalData.id)}
+                                    disabled={actionLoading[`leaveCapital_${capitalData.id}`]}
+                                >
+                                    {actionLoading[`leaveCapital_${capitalData.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <LogOut className="mr-1 h-3 w-3" />}
+                                    {t('leaveSharingGroupButton')}
+                                </Button>
+                            )}
+                            </li>
+                        ))}
+                        </ul>
+                    </div>
+                    )}
               </CardContent>
                {user?.id === ownerOfCurrentCapital?.id && (
                   <CardFooter>
@@ -331,45 +366,8 @@ export default function CapitalPage() {
                   </CardFooter>
                 )}
             </Card>
-
-            {capitalData.users && capitalData.users.length > 0 && (
-              <Card className="shadow-xl">
-                <CardHeader>
-                  <CardTitle>{t('sharingWithTitle')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {capitalData.users.map(participant => (
-                      <li key={participant.id} className="flex justify-between items-center p-2 bg-muted/30 rounded-md">
-                        <div>
-                          <span className="font-medium">{participant.login}</span> ({participant.email})
-                          {ownerOfCurrentCapital && participant.id === ownerOfCurrentCapital.id && <span className="ml-2 text-xs font-semibold text-primary">({t('ownerLabel')})</span>}
-                        </div>
-                        {user?.id === ownerOfCurrentCapital?.id && participant.id !== ownerOfCurrentCapital?.id && (
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveUser(participant.id)} disabled={actionLoading[`removeUser_${participant.id}`]}>
-                            {actionLoading[`removeUser_${participant.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4 text-destructive" />}
-                            <span className="sr-only">{t('removeUserButton')}</span>
-                            </Button>
-                        )}
-                         {user?.id !== ownerOfCurrentCapital?.id && user?.id === participant.id && (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleLeaveCapital(capitalData.id)}
-                                disabled={actionLoading[`leaveCapital_${capitalData.id}`]}
-                            >
-                                {actionLoading[`leaveCapital_${capitalData.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <LogOut className="mr-1 h-3 w-3" />}
-                                {t('leaveSharingGroupButton')}
-                            </Button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
           </>
-        ) : capitalLoadingError ? ( // Handle error if capital was expected but failed to load
+        ) : capitalLoadingError ? ( 
             <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
                 <CardHeader className="bg-destructive/10">
                     <CardTitle className="flex items-center text-destructive">
@@ -409,135 +407,133 @@ export default function CapitalPage() {
                 <p className="text-sm text-muted-foreground mb-6">{t('createSharingGroupToInvite')}</p>
                 )}
                 
-                {/* Invitations Sent By Owner */}
-                {capitalExists && capitalData && user?.id === ownerOfCurrentCapital?.id && sentInvitations.length > 0 && (
-                  <div className="mb-6 pt-4 border-t">
-                    <h3 className="text-lg font-semibold mb-3 flex items-center">
-                      <ListChecks className="mr-2 h-5 w-5 text-primary" />
-                      {t('sentInvitationsTitle')}
-                    </h3>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>{t('invitedUserLabel')}</TableHead>
-                            <TableHead>{t('invitationStatusLabel')}</TableHead>
-                            <TableHead>{t('sentOnLabel')}</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {sentInvitations.map(inv => (
-                            <TableRow key={`sent-${inv.id}`}>
-                              <TableCell>{inv.invitedUser.email}</TableCell>
-                              <TableCell>
-                                {inv.status === 'pending' ? t('statusPending') : 
-                                 inv.status === 'accepted' ? t('statusAccepted') :
-                                 inv.status === 'rejected' ? t('statusRejected') : inv.status}
-                              </TableCell>
-                              <TableCell>{format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Sent Invitations Column */}
+                  <div>
+                    {capitalExists && capitalData && user?.id === ownerOfCurrentCapital?.id && (
+                      <div className="mb-6 pt-4 border-t md:border-t-0">
+                        <h3 className="text-lg font-semibold mb-3 flex items-center">
+                          <ListChecks className="mr-2 h-5 w-5 text-primary" />
+                          {t('sentInvitationsTitle')}
+                        </h3>
+                        {sentInvitations.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>{t('invitedUserLabel')}</TableHead>
+                                  <TableHead>{t('invitationStatusLabel')}</TableHead>
+                                  <TableHead>{t('sentOnLabel')}</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {sentInvitations.map(inv => (
+                                  <TableRow key={`sent-${inv.id}`}>
+                                    <TableCell className="text-xs">{inv.invitedUser.email}</TableCell>
+                                    <TableCell className="text-xs">
+                                      {inv.status === 'pending' ? t('statusPending') : 
+                                      inv.status === 'accepted' ? t('statusAccepted') :
+                                      inv.status === 'rejected' ? t('statusRejected') : inv.status}
+                                    </TableCell>
+                                    <TableCell className="text-xs">{format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                           !invitationsLoadingError && <p className="text-sm text-muted-foreground">{t('noSentInvitationsFound')}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-                {capitalExists && capitalData && user?.id === ownerOfCurrentCapital?.id && sentInvitations.length === 0 && !invitationsLoadingError && (
-                     <p className="text-sm text-muted-foreground mb-6 pt-4 border-t">{t('noSentInvitationsFound')}</p>
-                )}
 
+                  {/* Received Invitations Column */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 pt-4 border-t md:border-t-0 flex items-center">
+                      <History className="mr-2 h-5 w-5 text-primary" />
+                      {t('receivedInvitationsTitle')}
+                    </h3>
+                    {invitationsLoadingError && (
+                        <Alert variant="destructive" className="mb-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <CardTitle>{t('errorTitle')}</CardTitle>
+                            <CardDescription>{invitationsLoadingError}</CardDescription>
+                        </Alert>
+                    )}
+                    { receivedInvitations.length > 0 ? (
+                    <ul className="space-y-3">
+                        {receivedInvitations.map(inv => {
+                        const isCurrentUserInvited = user?.id === inv.invitedUser.id;
+                        const isResponded = !!inv.respondedAt;
+                        const isCurrentUserMemberOfThisCapitalViaThisInvite = isResponded && isCurrentUserInvited && user?.capital?.id === inv.capital.id;
 
-                {/* Invitations Received by User */}
-                <h3 className="text-lg font-semibold mb-3 pt-4 border-t flex items-center">
-                  <History className="mr-2 h-5 w-5 text-primary" />
-                  {t('receivedInvitationsTitle')}
-                </h3>
-                 {invitationsLoadingError && !capitalLoadingError && ( // Show only if not critical capital error
-                    <Alert variant="destructive" className="mb-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <CardTitle>{t('errorTitle')}</CardTitle>
-                        <CardDescription>{invitationsLoadingError}</CardDescription>
-                    </Alert>
-                )}
-                { receivedInvitations.length > 0 ? (
-                <ul className="space-y-3">
-                    {receivedInvitations.map(inv => {
-                    const isCurrentUserInvited = user?.id === inv.invitedUser.id;
-                    const isResponded = !!inv.respondedAt;
-                    const isCurrentUserMemberOfThisCapitalViaThisInvite = isResponded && isCurrentUserInvited && user?.capital?.id === inv.capital.id;
-
-                    return (
-                    <li key={`received-${inv.id}`} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
-                        <div className="mb-2 sm:mb-0">
-                        <p className="font-medium">
-                           {t('invitationForCapitalLabel', { capitalName: inv.capital.name })}
-                        </p>
-                        {inv.inviter && (
-                            <p className="text-xs text-muted-foreground">
-                                {t('invitedByLabel')} {inv.inviter.email}
+                        return (
+                        <li key={`received-${inv.id}`} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-muted/30 rounded-lg shadow-sm">
+                            <div className="mb-2 sm:mb-0">
+                            <p className="font-medium text-sm">
+                              {t('invitationForCapitalLabel', { capitalName: inv.capital.name })}
                             </p>
-                        )}
-                         {!isResponded && (
+                            {inv.inviter && (
+                                <p className="text-xs text-muted-foreground">
+                                    {t('invitedByLabel')} {inv.inviter.email}
+                                </p>
+                            )}
+                            {!isResponded && (
+                                <p className="text-xs text-muted-foreground">
+                                    {t('invitedUserEmailLabel')}: {inv.invitedUser.email}
+                                </p>
+                            )}
                             <p className="text-xs text-muted-foreground">
-                                {t('invitedUserEmailLabel')}: {inv.invitedUser.email}
+                                {t('invitedOnLabel')} {format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}
                             </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                            {t('invitedOnLabel')} {format(parseISO(inv.createdAt), "PP", { locale: dateFnsLocale })}
-                        </p>
-                        {isResponded && inv.respondedAt && (
-                            <p className="text-xs text-muted-foreground">
-                            {t('invitationRespondedOnLabel')} {format(parseISO(inv.respondedAt), "PPp", { locale: dateFnsLocale })}
-                            </p>
-                        )}
-                        </div>
+                            {isResponded && inv.respondedAt && (
+                                <p className="text-xs text-muted-foreground">
+                                {t('invitationRespondedOnLabel')} {format(parseISO(inv.respondedAt), "PPp", { locale: dateFnsLocale })}
+                                </p>
+                            )}
+                            </div>
 
-                        <div className="flex gap-2 self-end sm:self-center">
-                        {isCurrentUserInvited && !isResponded && (
-                            <>
-                            <Button size="sm" variant="outline" onClick={() => handleInvitationAction(inv.id, 'accept')} disabled={actionLoading[`invitation_${inv.id}`]}>
-                                {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CheckCircle className="mr-1 h-3 w-3" />}
-                                {t('acceptInvitationButton')}
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleInvitationAction(inv.id, 'reject')} disabled={actionLoading[`invitation_${inv.id}`]}>
-                                {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <XCircle className="mr-1 h-3 w-3" />}
-                                {t('rejectInvitationButton')}
-                            </Button>
-                            </>
-                        )}
-                        {isCurrentUserMemberOfThisCapitalViaThisInvite && (
-                            <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleLeaveCapital(inv.capital.id)}
-                            disabled={actionLoading[`leaveCapital_${inv.capital.id}`]}
-                            >
-                            {actionLoading[`leaveCapital_${inv.capital.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <LogOut className="mr-1 h-3 w-3" />}
-                            {t('leaveSharingGroupButton')}
-                            </Button>
-                        )}
-                        {isCurrentUserInvited && isResponded && !isCurrentUserMemberOfThisCapitalViaThisInvite && (
-                            <p className="text-sm text-muted-foreground italic">{t('invitationProcessedLabel')}</p>
-                        )}
-                        </div>
-                    </li>
-                    )})}
-                </ul>
-                ) : (
-                  !invitationsLoadingError && <p className="text-sm text-muted-foreground">{t('noInvitationsFound')}</p>
-                )}
+                            <div className="flex gap-2 self-end sm:self-center">
+                            {isCurrentUserInvited && !isResponded && (
+                                <>
+                                <Button size="sm" variant="outline" onClick={() => handleInvitationAction(inv.id, 'accept')} disabled={actionLoading[`invitation_${inv.id}`]}>
+                                    {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <CheckCircle className="mr-1 h-3 w-3" />}
+                                    {t('acceptInvitationButton')}
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleInvitationAction(inv.id, 'reject')} disabled={actionLoading[`invitation_${inv.id}`]}>
+                                    {actionLoading[`invitation_${inv.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <XCircle className="mr-1 h-3 w-3" />}
+                                    {t('rejectInvitationButton')}
+                                </Button>
+                                </>
+                            )}
+                            {isCurrentUserMemberOfThisCapitalViaThisInvite && (
+                                <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleLeaveCapital(inv.capital.id)}
+                                disabled={actionLoading[`leaveCapital_${inv.capital.id}`]}
+                                >
+                                {actionLoading[`leaveCapital_${inv.capital.id}`] ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <LogOut className="mr-1 h-3 w-3" />}
+                                {t('leaveSharingGroupButton')}
+                                </Button>
+                            )}
+                            {isCurrentUserInvited && isResponded && !isCurrentUserMemberOfThisCapitalViaThisInvite && (
+                                <p className="text-sm text-muted-foreground italic">{t('invitationProcessedLabel')}</p>
+                            )}
+                            </div>
+                        </li>
+                        )})}
+                    </ul>
+                    ) : (
+                    !invitationsLoadingError && <p className="text-sm text-muted-foreground">{t('noInvitationsFound')}</p>
+                    )}
+                  </div>
+                </div>
             </CardContent>
             </Card>
         )}
       </div>
-    );
-  }
-
-
-  return (
-    <MainLayout>
-      {renderContent()}
     </MainLayout>
   );
 }
-
