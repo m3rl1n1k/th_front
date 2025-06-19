@@ -25,8 +25,8 @@ import {
   getWalletTypes
 } from '@/lib/api';
 import type {
-  CapitalData, // Updated
-  CapitalDetailsApiResponse, // Updated
+  CapitalData,
+  CapitalDetailsApiResponse,
   CreateCapitalPayload,
   Invitation,
   CreateInvitationPayload,
@@ -56,14 +56,14 @@ const createInvitationSchema = (t: Function) => z.object({
 });
 type CreateInvitationFormData = z.infer<ReturnType<typeof createInvitationSchema>>;
 
-const MOCK_CAPITAL_ID = 1; // Assuming this is a constant for now
+const MOCK_CAPITAL_ID = 1;
 
 export default function CapitalPage() {
   const { user, token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
 
-  const [capitalData, setCapitalData] = useState<CapitalData | null>(null); // Stores the nested 'capital' object
+  const [capitalData, setCapitalData] = useState<CapitalData | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [personalWallets, setPersonalWallets] = useState<WalletDetails[]>([]);
   const [personalWalletTypes, setPersonalWalletTypes] = useState<WalletTypeMap>({});
@@ -93,7 +93,7 @@ export default function CapitalPage() {
 
     try {
       const response: CapitalDetailsApiResponse = await getCapitalDetails(MOCK_CAPITAL_ID, token);
-      setCapitalData(response.capital); // Set the nested 'capital' object
+      setCapitalData(response.capital);
       setCapitalExists(true); 
       setIsLoadingPersonalWallets(false); 
       setIsLoadingPersonalWalletTypes(false);
@@ -102,8 +102,18 @@ export default function CapitalPage() {
         const invitationsData = await getInvitations(token);
         setInvitations(invitationsData.invitations || []);
       } catch (invitationError: any) {
-        console.warn("[CapitalPage] Failed to fetch invitations, treating as empty:", invitationError.message);
-        setInvitations([]); 
+        const apiInvError = invitationError as ApiError;
+        // Only treat 404 as "no invitations", other errors might still be page-level issues.
+        if (apiInvError.code === 404 || (apiInvError.message && apiInvError.message.toLowerCase().includes("not found"))) {
+            setInvitations([]);
+            console.warn("[CapitalPage] No invitations found or API indicated not found:", apiInvError.message);
+        } else {
+            // For other errors fetching invitations, log it but don't block the page
+            console.error("[CapitalPage] Failed to fetch invitations (non-404):", apiInvError.message);
+            setInvitations([]); // Default to empty on other errors as well, but log them more seriously.
+            // Optionally, set a specific error state for invitations if needed
+            // toast({ variant: 'warning', title: t('errorFetchingInvitations'), description: apiInvError.message });
+        }
       }
 
     } catch (err: any) {
@@ -111,8 +121,9 @@ export default function CapitalPage() {
       if (apiError.code === 404 && (apiError.message?.toLowerCase().includes('capital not found') || apiError.message?.toLowerCase().includes('shared capital pool not found'))) {
         setCapitalExists(false);
         setCapitalData(null);
-        setInvitations([]);
+        setInvitations([]); // Ensure invitations are cleared if capital isn't found
         
+        // Fetch personal wallets only if capital is not found
         setIsLoadingPersonalWallets(true);
         setIsLoadingPersonalWalletTypes(true);
         try {
@@ -126,6 +137,7 @@ export default function CapitalPage() {
           console.error("[CapitalPage] Failed to fetch personal wallets or types:", dataError.message);
           setPersonalWallets([]);
           setPersonalWalletTypes({});
+          // Optionally set an error state here if fetching personal wallets is critical
         } finally {
           setIsLoadingPersonalWallets(false);
           setIsLoadingPersonalWalletTypes(false);
@@ -247,11 +259,10 @@ export default function CapitalPage() {
   };
 
   const handleRemoveUser = async (userIdToRemove: number) => {
-    if (!token || !capitalData || typeof capitalData.id !== 'number') { // Check capitalData itself
+    if (!token || !capitalData || typeof capitalData.id !== 'number') {
        toast({ variant: 'destructive', title: t('error'), description: t('capitalDetailsMissingError')});
       return;
     }
-    // Prevent removing the owner
     if (capitalData.owner && userIdToRemove === capitalData.owner.id) {
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: t('cannotRemoveOwnerError')});
       return;
@@ -259,7 +270,7 @@ export default function CapitalPage() {
 
     setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: true }));
     try {
-      await removeUserFromCapital(userIdToRemove, token); // capitalId not needed in path for this endpoint
+      await removeUserFromCapital(userIdToRemove, token); 
       toast({ title: t('userRemovedSuccessTitle') });
       fetchData(); 
     } catch (err: any) {
@@ -279,7 +290,7 @@ export default function CapitalPage() {
     );
   }
 
-  if (error && !capitalExists) { // Show error only if capital wasn't found and there was a general fetch error
+  if (error && !capitalExists) { 
     return (
       <MainLayout>
         <Card className="max-w-2xl mx-auto shadow-lg border-destructive">
@@ -371,7 +382,6 @@ export default function CapitalPage() {
     );
   }
   
-  // If capitalData exists
   const usersInCapital = capitalData?.users || [];
   const ownerOfCapital = capitalData?.owner;
 
@@ -389,7 +399,6 @@ export default function CapitalPage() {
              {ownerOfCapital && <CardDescription>{t('ownerLabel')}: {ownerOfCapital.login} ({ownerOfCapital.email})</CardDescription>}
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Financial details removed as they are not in the new API response */}
             <p className="text-sm text-muted-foreground">{t('capitalFinancialDetailsNotAvailable')}</p>
           </CardContent>
           {capitalData && (
@@ -429,7 +438,6 @@ export default function CapitalPage() {
                       <span className="font-medium">{participant.login}</span> ({participant.email})
                       {ownerOfCapital && participant.id === ownerOfCapital.id && <span className="ml-2 text-xs font-semibold text-primary">({t('ownerLabel')})</span>}
                     </div>
-                    {/* Allow removing only if not the owner and current user is owner */}
                     {user?.id === ownerOfCapital?.id && participant.id !== ownerOfCapital?.id && (
                         <Button variant="ghost" size="icon" onClick={() => handleRemoveUser(participant.id)} disabled={actionLoading[`removeUser_${participant.id}`]}>
                         {actionLoading[`removeUser_${participant.id}`] ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserX className="h-4 w-4 text-destructive" />}
@@ -505,5 +513,3 @@ export default function CapitalPage() {
     </MainLayout>
   );
 }
-
-```
