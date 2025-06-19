@@ -52,7 +52,7 @@ const publicNavItems = [
 const INTENDED_DESTINATION_KEY = 'intended_destination';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAuthenticated, isLoading: authIsLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading: authIsLoading, pendingInvitationCount } = useAuth(); // Added pendingInvitationCount
   const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
@@ -229,7 +229,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                       disabled={isNavigating}
                     >
                       <item.icon className="mr-2 h-5 w-5" />
-                      {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
+                      <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
+                      {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
+                        <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
+                          {pendingInvitationCount}
+                        </span>
+                      )}
                     </Button>
                   ))}
                 </nav>
@@ -371,7 +376,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   disabled={isNavigating}
                 >
                   <item.icon className="mr-2 h-5 w-5" />
-                  {t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}
+                  <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
+                  {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
+                    <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
+                      {pendingInvitationCount}
+                    </span>
+                  )}
                 </Button>
               ))}
             </nav>

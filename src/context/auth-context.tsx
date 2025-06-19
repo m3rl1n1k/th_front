@@ -4,8 +4,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { fetchUserProfile, loginUser as apiLoginUser, registerUser as apiRegisterUser } from '@/lib/api';
-import type { User, ApiError, LoginCredentials, RegistrationPayload, LoginResponse } from '@/types';
+import { fetchUserProfile, loginUser as apiLoginUser, registerUser as apiRegisterUser, getInvitations } from '@/lib/api';
+import type { User, ApiError, LoginCredentials, RegistrationPayload, LoginResponse, Invitation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from './i18n-context';
 
@@ -14,6 +14,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  pendingInvitationCount: number; // Added for badge
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pendingInvitationCount, setPendingInvitationCount] = useState(0); // Added state
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -39,8 +41,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
+    setPendingInvitationCount(0); // Reset count on clear
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  }, []);
+
+  const updatePendingInvitations = useCallback(async (apiToken: string, currentUserId?: string | number) => {
+    if (!currentUserId) return;
+    try {
+      const invitationsResponse = await getInvitations(apiToken);
+      const receivedInvitations = invitationsResponse.invitation || [];
+      const count = receivedInvitations.filter(
+        inv => inv.invitedUser?.id === currentUserId && inv.status === 'pending'
+      ).length;
+      setPendingInvitationCount(count);
+    } catch (error) {
+      console.error("Failed to fetch invitations for badge:", error);
+      setPendingInvitationCount(0); // Reset on error
     }
   }, []);
 
@@ -53,12 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         localStorage.setItem(AUTH_TOKEN_KEY, apiToken);
       }
+      await updatePendingInvitations(apiToken, userData.id); // Fetch invitations after user is set
       return userData;
     } catch (error) {
       clearAuthData();
       throw error;
     }
-  }, [clearAuthData]);
+  }, [clearAuthData, updatePendingInvitations]);
 
   useEffect(() => {
     const attemptAutoLogin = async () => {
@@ -67,9 +86,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (storedToken) {
           try {
             const userData = await fetchUserProfile(storedToken);
-            setUser(userData); // This will now include user.capital if API returns it
+            setUser(userData);
             setToken(storedToken);
             setIsAuthenticated(true);
+            await updatePendingInvitations(storedToken, userData.id); // Fetch invitations
           } catch (error) {
             clearAuthData();
           } finally {
@@ -84,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     attemptAutoLogin();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Removed updatePendingInvitations from deps as it uses useCallback
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -154,9 +174,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       try {
         const userData = await fetchUserProfile(currentToken);
-        setUser(userData); // userData should now potentially include the capital field
+        setUser(userData);
         setToken(currentToken);
         setIsAuthenticated(true);
+        await updatePendingInvitations(currentToken, userData.id); // Fetch invitations
       } catch (error) {
         const apiError = error as ApiError;
         toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
@@ -175,7 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
        setIsLoading(false);
     }
-  }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated]);
+  }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations]);
 
   useEffect(() => {
     const publicPaths = ['/login', '/register', '/terms', '/'];
@@ -205,7 +226,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, pendingInvitationCount }}>
       {children}
     </AuthContext.Provider>
   );
