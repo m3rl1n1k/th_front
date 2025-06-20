@@ -8,7 +8,7 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -164,7 +164,7 @@ export default function TransactionsPage() {
       params.page = pageToFetch;
       
       getTransactionsList(token, params)
-        .then((result: GetTransactionsListResponse) => { // Ensure type annotation
+        .then((result: GetTransactionsListResponse) => { 
           const newItems = result.transactions.items || [];
           const pagination = result.transactions.pagination;
           
@@ -265,11 +265,15 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
+    setRawTransactions([]); 
+    setCurrentPage(1);    
     fetchTransactions(1);
   };
 
   const handleClearFilters = () => {
     setFilters({});
+    setRawTransactions([]);
+    setCurrentPage(1);
     fetchTransactions(1);
   };
   
@@ -627,7 +631,7 @@ export default function TransactionsPage() {
                               <SelectItem value="all">{t('allTypes')}</SelectItem>
                               {transactionTypes.map(type => (
                                 <SelectItem key={type.id} value={type.id}>
-                                  {t(`transactionType_${type.name}` as any, {defaultValue: type.name})}
+                                  {t(\`transactionType_\${type.name}\` as any, {defaultValue: type.name})}
                                 </SelectItem>
                               ))}
                             </SelectContent>
