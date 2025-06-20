@@ -684,5 +684,10 @@
   "monthlyCategorySummaryChartTitle": "Monthly expenses by category",
   "forSelectedMonth": "for selected month",
   "incomeLabel": "Income",
-  "expenseLabel": "Expense"
+  "expenseLabel": "Expense",
+  "saveToPdfButton": "Save to PDF",
+  "generatingPdfButton": "Generating PDF...",
+  "reportContentMissingError": "Report content not found for PDF generation.",
+  "pdfGenerationFailedTitle": "PDF Generation Failed",
+  "pdfGenerationFailedDesc": "Could not generate the PDF report. Please try again."
 }

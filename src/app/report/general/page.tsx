@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,16 +10,20 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon } from 'lucide-react'; // Added LineChartIcon
+import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon, Download, Loader2 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector } from "recharts"; // Added LineChart, Line
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector } from "recharts";
 import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval, subYears } from 'date-fns';
-import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types'; // Assuming these types exist
+import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { useToast } from '@/hooks/use-toast';
+
 
 // Placeholder data - replace with actual API calls
 const getPlaceholderReportStats = (year: number, month: number, currencyCode: string): ReportPageStats => {
   return {
-    startOfMonthBalance: Math.random() * 5000000, // 0 to 50,000 in currency units
+    startOfMonthBalance: Math.random() * 5000000, 
     endOfMonthBalance: Math.random() * 6000000,
     selectedMonthIncome: Math.random() * 1000000,
     selectedMonthExpense: Math.random() * 800000,
@@ -29,7 +33,7 @@ const getPlaceholderReportStats = (year: number, month: number, currencyCode: st
 const getPlaceholderYearlySummary = (year: number, currencyCode: string): MonthlyFinancialSummary[] => {
   const months = eachMonthOfInterval({ start: startOfMonth(new Date(year, 0, 1)), end: endOfMonth(new Date(year, 11, 1)) });
   return months.map(m => ({
-    month: format(m, 'MMM', {}), // Using current locale from i18n context is tricky here directly
+    month: format(m, 'MMM', {}), 
     income: Math.random() * 1500000,
     expense: Math.random() * 1200000,
   }));
@@ -50,9 +54,10 @@ export default function GeneralReportPage() {
   const { t, dateFnsLocale, language } = useTranslation();
   const { user } = useAuth();
   const currencyCode = user?.userCurrency?.code || 'USD';
+  const { toast } = useToast();
 
   const currentYear = getYear(new Date());
-  const currentMonth = getMonth(new Date()) + 1; // 1-12
+  const currentMonth = getMonth(new Date()) + 1; 
 
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
@@ -61,8 +66,10 @@ export default function GeneralReportPage() {
   const [yearlySummary, setYearlySummary] = useState<MonthlyFinancialSummary[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategoryMonthlySummary[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
-  // TODO: Replace with actual API calls using selectedYear and selectedMonth
+
   useEffect(() => {
     setReportStats(getPlaceholderReportStats(selectedYear, selectedMonth, currencyCode));
     setYearlySummary(getPlaceholderYearlySummary(selectedYear, currencyCode));
@@ -143,158 +150,232 @@ export default function GeneralReportPage() {
     );
   };
 
+  const handleSaveToPdf = async () => {
+    if (!reportContentRef.current) {
+      toast({ variant: 'destructive', title: t('error'), description: t('reportContentMissingError') });
+      return;
+    }
+    setIsGeneratingPdf(true);
+    try {
+      // Temporarily hide the save button itself from the capture
+      const saveButton = document.getElementById('save-pdf-button');
+      const originalDisplay = saveButton ? saveButton.style.display : '';
+      if (saveButton) saveButton.style.display = 'none';
+
+      const canvas = await html2canvas(reportContentRef.current, {
+        scale: 2, 
+        useCORS: true,
+        logging: false,
+        // onclone: (document) => {
+        //   // You can manipulate the cloned document here if needed
+        //   // For example, hide elements that shouldn't be in the PDF
+        // }
+      });
+
+      // Restore button visibility
+      if (saveButton) saveButton.style.display = originalDisplay;
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4',
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgWidth = imgProps.width;
+      const imgHeight = imgProps.height;
+
+      const ratio = imgWidth / imgHeight;
+      let newImgWidth = pdfWidth - 40; 
+      let newImgHeight = newImgWidth / ratio;
+
+      if (newImgHeight > pdfHeight - 40) {
+        newImgHeight = pdfHeight - 40;
+        newImgWidth = newImgHeight * ratio;
+      }
+
+      const x = (pdfWidth - newImgWidth) / 2;
+      const y = 20;
+
+      pdf.addImage(imgData, 'PNG', x, y, newImgWidth, newImgHeight);
+
+      const filename = `FinanceFlow_Report_${format(new Date(selectedYear, selectedMonth -1), 'yyyy-MM')}.pdf`;
+      pdf.save(filename);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({ variant: 'destructive', title: t('pdfGenerationFailedTitle'), description: t('pdfGenerationFailedDesc') });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        <h1 className="font-headline text-3xl font-bold text-foreground flex items-center">
-          <FileSignature className="mr-3 h-8 w-8 text-primary" />
-          {t('generalReportPageTitle')}
-        </h1>
-
-        {/* Filters */}
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle>{t('reportFiltersTitle') || "Report Filters"}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="reportYear">{t('selectYear')}</Label>
-              <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
-                <SelectTrigger id="reportYear">
-                  <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder={t('selectYear')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="reportMonth">{t('selectMonthPlaceholder')}</Label>
-              <Select value={String(selectedMonth)} onValueChange={(val) => setSelectedMonth(Number(val))}>
-                <SelectTrigger id="reportMonth">
-                   <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder={t('selectMonthPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map(month => <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Block */}
-        {reportStats && (
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <DollarSign className="mr-2 h-5 w-5 text-primary" />
-                {t('reportPageStatsTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-muted/30 rounded-md">
-                <p className="text-xs text-muted-foreground">{t('startOfMonthBalanceLabel')}</p>
-                <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.startOfMonthBalance} currencyCode={currencyCode} /></p>
-              </div>
-              <div className="p-4 bg-muted/30 rounded-md">
-                <p className="text-xs text-muted-foreground">{t('endOfMonthBalanceLabel')}</p>
-                <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.endOfMonthBalance} currencyCode={currencyCode} /></p>
-              </div>
-               <div className="p-4 bg-green-500/10 rounded-md">
-                <p className="text-xs text-green-700 dark:text-green-400">{t('incomeLabel')} ({t('forSelectedMonth')})</p>
-                <p className="text-xl font-semibold text-green-600 dark:text-green-300"><CurrencyDisplay amountInCents={reportStats.selectedMonthIncome} currencyCode={currencyCode} /></p>
-              </div>
-              <div className="p-4 bg-red-500/10 rounded-md">
-                <p className="text-xs text-red-700 dark:text-red-400">{t('expenseLabel')} ({t('forSelectedMonth')})</p>
-                <p className="text-xl font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={reportStats.selectedMonthExpense} currencyCode={currencyCode} /></p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="font-headline text-3xl font-bold text-foreground flex items-center">
+            <FileSignature className="mr-3 h-8 w-8 text-primary" />
+            {t('generalReportPageTitle')}
+          </h1>
+          <Button id="save-pdf-button" onClick={handleSaveToPdf} disabled={isGeneratingPdf}>
+            {isGeneratingPdf ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            {isGeneratingPdf ? t('generatingPdfButton') : t('saveToPdfButton')}
+          </Button>
+        </div>
         
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Yearly Income/Expense Line Chart */}
+        <div ref={reportContentRef} className="space-y-6">
+          {/* Filters */}
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                  <LineChartIcon className="mr-2 h-5 w-5 text-primary"/> {/* Changed icon */}
-                  {t('yearlyIncomeExpenseChartTitle')} - {selectedYear}
-              </CardTitle>
+              <CardTitle>{t('reportFiltersTitle') || "Report Filters"}</CardTitle>
             </CardHeader>
-            <CardContent className="h-[350px] w-full">
-              <ChartContainer config={yearlyChartConfig} className="h-full w-full">
-                <LineChart data={yearlySummary} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                  <YAxis tickFormatter={(value) => new Intl.NumberFormat(language, { notation: 'compact', compactDisplay: 'short' }).format(value / 100)} tickLine={false} axisLine={false} />
-                  <ChartTooltip
-                      cursor={true}
-                      content={<ChartTooltipContent indicator="dot" hideLabel 
-                      formatter={(value, name) => {
-                          const config = yearlyChartConfig[name as keyof typeof yearlyChartConfig];
-                          const color = config?.color;
-                          return (
-                              <div className="flex items-center gap-2">
-                                  <div 
-                                      className="h-2.5 w-2.5 rounded-full" 
-                                      style={{ backgroundColor: color }} 
-                                  />
-                                  <div>
-                                      <p className="font-medium text-foreground">{config?.label}</p>
-                                      <p className="text-muted-foreground">
-                                          <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/>
-                                      </p>
-                                  </div>
-                              </div>
-                          );
-                      }}
-                    />}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-income)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-income)" }} />
-                  <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-expense)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-expense)" }} />
-                </LineChart>
-              </ChartContainer>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="reportYear">{t('selectYear')}</Label>
+                <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
+                  <SelectTrigger id="reportYear">
+                    <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder={t('selectYear')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="reportMonth">{t('selectMonthPlaceholder')}</Label>
+                <Select value={String(selectedMonth)} onValueChange={(val) => setSelectedMonth(Number(val))}>
+                  <SelectTrigger id="reportMonth">
+                    <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder={t('selectMonthPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map(month => <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Monthly Category Summary Pie Chart */}
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                  <PieChartIcon className="mr-2 h-5 w-5 text-primary"/>
-                  {t('monthlyCategorySummaryChartTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-[350px] w-full flex justify-center items-center">
-              {categorySummary.length > 0 ? (
-                  <ChartContainer config={categoryChartConfig} className="aspect-square h-full max-h-[300px]">
-                      <PieChart>
-                      <ChartTooltip content={<ChartTooltipContent nameKey="categoryName" hideLabel />} />
-                      <Pie
-                          data={categorySummary}
-                          dataKey="amount"
-                          nameKey="categoryName"
-                          innerRadius="50%"
-                          activeIndex={activePieIndex}
-                          activeShape={renderActiveShape}
-                          onMouseEnter={onPieEnter}
-                      >
-                          {categorySummary.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color || categoryChartConfig[entry.categoryName]?.color || 'hsl(var(--primary))'} />
-                          ))}
-                      </Pie>
-                      </PieChart>
-                  </ChartContainer>
-               ) : (
-                  <p className="text-muted-foreground">{t('noDataAvailable')}</p>
-               )}
-            </CardContent>
-          </Card>
+          {/* Stats Block */}
+          {reportStats && (
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <DollarSign className="mr-2 h-5 w-5 text-primary" />
+                  {t('reportPageStatsTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-muted/30 rounded-md">
+                  <p className="text-xs text-muted-foreground">{t('startOfMonthBalanceLabel')}</p>
+                  <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.startOfMonthBalance} currencyCode={currencyCode} /></p>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-md">
+                  <p className="text-xs text-muted-foreground">{t('endOfMonthBalanceLabel')}</p>
+                  <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.endOfMonthBalance} currencyCode={currencyCode} /></p>
+                </div>
+                <div className="p-4 bg-green-500/10 rounded-md">
+                  <p className="text-xs text-green-700 dark:text-green-400">{t('incomeLabel')} ({t('forSelectedMonth')})</p>
+                  <p className="text-xl font-semibold text-green-600 dark:text-green-300"><CurrencyDisplay amountInCents={reportStats.selectedMonthIncome} currencyCode={currencyCode} /></p>
+                </div>
+                <div className="p-4 bg-red-500/10 rounded-md">
+                  <p className="text-xs text-red-700 dark:text-red-400">{t('expenseLabel')} ({t('forSelectedMonth')})</p>
+                  <p className="text-xl font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={reportStats.selectedMonthExpense} currencyCode={currencyCode} /></p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Yearly Income/Expense Line Chart */}
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                    <LineChartIcon className="mr-2 h-5 w-5 text-primary"/>
+                    {t('yearlyIncomeExpenseChartTitle')} - {selectedYear}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="h-[350px] w-full">
+                <ChartContainer config={yearlyChartConfig} className="h-full w-full">
+                  <LineChart data={yearlySummary} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                    <YAxis tickFormatter={(value) => new Intl.NumberFormat(language, { notation: 'compact', compactDisplay: 'short' }).format(value / 100)} tickLine={false} axisLine={false} />
+                    <ChartTooltip
+                        cursor={true}
+                        content={<ChartTooltipContent indicator="dot" hideLabel 
+                        formatter={(value, name) => {
+                            const config = yearlyChartConfig[name as keyof typeof yearlyChartConfig];
+                            const color = config?.color;
+                            return (
+                                <div className="flex items-center gap-2">
+                                    <div 
+                                        className="h-2.5 w-2.5 rounded-full" 
+                                        style={{ backgroundColor: color }} 
+                                    />
+                                    <div>
+                                        <p className="font-medium text-foreground">{config?.label}</p>
+                                        <p className="text-muted-foreground">
+                                            <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/>
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        }}
+                      />}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-income)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-income)" }} />
+                    <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-expense)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-expense)" }} />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Monthly Category Summary Pie Chart */}
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                    <PieChartIcon className="mr-2 h-5 w-5 text-primary"/>
+                    {t('monthlyCategorySummaryChartTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="h-[350px] w-full flex justify-center items-center">
+                {categorySummary.length > 0 ? (
+                    <ChartContainer config={categoryChartConfig} className="aspect-square h-full max-h-[300px]">
+                        <PieChart>
+                        <ChartTooltip content={<ChartTooltipContent nameKey="categoryName" hideLabel />} />
+                        <Pie
+                            data={categorySummary}
+                            dataKey="amount"
+                            nameKey="categoryName"
+                            innerRadius="50%"
+                            activeIndex={activePieIndex}
+                            activeShape={renderActiveShape}
+                            onMouseEnter={onPieEnter}
+                        >
+                            {categorySummary.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color || categoryChartConfig[entry.categoryName]?.color || 'hsl(var(--primary))'} />
+                            ))}
+                        </Pie>
+                        </PieChart>
+                    </ChartContainer>
+                ) : (
+                    <p className="text-muted-foreground">{t('noDataAvailable')}</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </MainLayout>
