@@ -13,10 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Info, Palette, ListChecks, Loader2, AlertTriangle } from 'lucide-react';
+import { Save, Info, Palette, ListChecks, Loader2, Check } from 'lucide-react'; // Added Check
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { updateUserSettings } from '@/lib/api';
 import type { UserSettings, ApiError } from '@/types';
+import { cn } from '@/lib/utils'; // Added cn
 
 const GEMINI_API_KEY_STORAGE_KEY = 'financeflow_gemini_api_key';
 const DEFAULT_RECORDS_PER_PAGE = 20;
@@ -45,6 +46,46 @@ const createSettingsSchema = (t: Function) => z.object({
 
 type SettingsFormData = z.infer<ReturnType<typeof createSettingsSchema>>;
 
+const predefinedColors = [
+  // Soft neutrals & grays
+  '#F3F4F6', '#D1D5DB', '#6B7280', '#374151',
+  // Muted Reds/Pinks
+  '#FECACA', '#F87171', '#FCA5A5',
+  // Muted Oranges/Yellows
+  '#FDE68A', '#FBBF24', '#FCD34D',
+  // Muted Greens
+  '#A7F3D0', '#34D399', '#6EE7B7',
+  // Muted Blues
+  '#BFDBFE', '#60A5FA', '#93C5FD',
+  // Muted Purples/Indigos
+  '#C4B5FD', '#A78BFA', '#DDD6FE',
+  // Other muted tones
+  '#FBCFE8', '#A5B4FC', '#7DD3FC',
+];
+
+const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
+  <div className="grid grid-cols-7 gap-2 p-1 border rounded-md bg-muted/20 max-w-xs">
+    {predefinedColors.map((color) => (
+      <button
+        type="button"
+        key={color}
+        onClick={() => onChange(color)}
+        className={cn(
+          "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
+          value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
+          (color === '#FFFFFF' || color === '#F3F4F6') && 'border-input'
+        )}
+        style={{ backgroundColor: color }}
+        title={color}
+        aria-label={`Color ${color}`}
+      >
+        {value === color && <Check className={cn("h-3.5 w-3.5", (color === '#FFFFFF' || color === '#F3F4F6') ? 'text-gray-700' : 'text-primary-foreground mix-blend-difference')} />}
+      </button>
+    ))}
+  </div>
+);
+
+
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { user, token, fetchUser, isLoading: authIsLoading } = useAuth();
@@ -64,10 +105,6 @@ export default function SettingsPage() {
       records_per_page: user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE,
     },
   });
-
-  const watchedIncomeColor = watch('chart_income_color');
-  const watchedExpenseColor = watch('chart_expense_color');
-  const watchedCapitalColor = watch('chart_capital_color');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -172,81 +209,48 @@ export default function SettingsPage() {
                   <Palette className="h-5 w-5 text-primary" />
                   {t('chartColorsTitle')}
                 </legend>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="chart_income_color">{t('chartIncomeColorLabel')}</Label>
-                    <div className="flex items-center gap-2">
-                      <Controller
-                        name="chart_income_color"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            id="chart_income_color"
-                            type="text"
-                            placeholder={DEFAULT_CHART_INCOME_COLOR}
-                            {...field}
-                            value={field.value || ''}
-                            className={errors.chart_income_color ? 'border-destructive' : ''}
-                          />
-                        )}
-                      />
-                      <div 
-                        className="w-8 h-8 rounded border border-input shrink-0" 
-                        style={{ backgroundColor: watchedIncomeColor || DEFAULT_CHART_INCOME_COLOR }}
-                        title={t('colorPreview') || 'Color Preview'}
-                      />
-                    </div>
+                    <Controller
+                      name="chart_income_color"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorSwatches 
+                          value={field.value} 
+                          onChange={field.onChange} 
+                        />
+                      )}
+                    />
                     {errors.chart_income_color && <p className="text-sm text-destructive">{errors.chart_income_color.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="chart_expense_color">{t('chartExpenseColorLabel')}</Label>
-                     <div className="flex items-center gap-2">
-                        <Controller
-                            name="chart_expense_color"
-                            control={control}
-                            render={({ field }) => (
-                            <Input
-                                id="chart_expense_color"
-                                type="text"
-                                placeholder={DEFAULT_CHART_EXPENSE_COLOR}
-                                {...field}
-                                value={field.value || ''}
-                                className={errors.chart_expense_color ? 'border-destructive' : ''}
-                            />
-                            )}
+                    <Controller
+                      name="chart_expense_color"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorSwatches 
+                          value={field.value} 
+                          onChange={field.onChange} 
                         />
-                        <div 
-                            className="w-8 h-8 rounded border border-input shrink-0" 
-                            style={{ backgroundColor: watchedExpenseColor || DEFAULT_CHART_EXPENSE_COLOR }}
-                            title={t('colorPreview') || 'Color Preview'}
-                        />
-                    </div>
+                      )}
+                    />
                     {errors.chart_expense_color && <p className="text-sm text-destructive">{errors.chart_expense_color.message}</p>}
                   </div>
                 </div>
-                <div className="space-y-2 sm:max-w-[calc(50%-0.5rem)]"> {/* Aligns with one column */}
+                <div className="space-y-2">
                     <Label htmlFor="chart_capital_color">{t('chartCapitalColorLabel')}</Label>
-                     <div className="flex items-center gap-2">
-                        <Controller
-                            name="chart_capital_color"
-                            control={control}
-                            render={({ field }) => (
-                            <Input
-                                id="chart_capital_color"
-                                type="text"
-                                placeholder={DEFAULT_CHART_CAPITAL_COLOR}
-                                {...field}
-                                value={field.value || ''}
-                                className={errors.chart_capital_color ? 'border-destructive' : ''}
-                            />
-                            )}
+                    <Controller
+                      name="chart_capital_color"
+                      control={control}
+                      render={({ field }) => (
+                        <ColorSwatches 
+                          value={field.value} 
+                          onChange={field.onChange} 
                         />
-                        <div 
-                            className="w-8 h-8 rounded border border-input shrink-0" 
-                            style={{ backgroundColor: watchedCapitalColor || DEFAULT_CHART_CAPITAL_COLOR }}
-                            title={t('colorPreview') || 'Color Preview'}
-                        />
-                    </div>
+                      )}
+                    />
                     {errors.chart_capital_color && <p className="text-sm text-destructive">{errors.chart_capital_color.message}</p>}
                   </div>
               </fieldset>

@@ -355,5 +355,3 @@ export default function GeneralReportPage() {
     </MainLayout>
   );
 }
-
-```
