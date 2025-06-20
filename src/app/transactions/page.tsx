@@ -153,7 +153,7 @@ export default function TransactionsPage() {
     if (isAuthenticated && token && activeTab === "all") {
       if (pageToFetch === 1) {
         setIsLoadingTransactions(true);
-        setRawTransactions([]); // Clear for initial load or filter change
+        setRawTransactions([]); 
       } else {
         setIsLoadingMore(true);
       }
@@ -229,7 +229,7 @@ export default function TransactionsPage() {
           fetchTransactions(currentPage + 1);
         }
       },
-      { threshold: 1.0 } // Trigger when 100% of the loader is visible
+      { threshold: 1.0 } 
     );
 
     const currentLoaderRef = loaderRef.current;
@@ -276,7 +276,7 @@ export default function TransactionsPage() {
   const getFrequencyNameById = useCallback((frequencyApiId: string) => {
     const freqObj = apiFrequencies.find(f => f.id === frequencyApiId);
     if (freqObj) {
-      const translationKey = 'frequency_' + freqObj.name;
+      const translationKey = `frequency_${freqObj.name}`;
       return t(translationKey as any, {defaultValue: freqObj.name});
     }
     return t('notApplicable');
@@ -317,9 +317,6 @@ export default function TransactionsPage() {
       await deleteTransaction(selectedTransactionForDelete.id, token);
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
       setRawTransactions(prev => prev.filter(tx => tx.id !== selectedTransactionForDelete.id));
-      // No need to explicitly fetch previous or current page after delete with infinite scroll,
-      // as the list just gets shorter. If the last item of a "page" is deleted,
-      // the intersection observer will handle fetching more if needed and available.
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
     } finally {
@@ -790,4 +787,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-

@@ -214,6 +214,8 @@
   "recurringTransactionsTab": "Recurring definitions",
   "recurringTransactionsListTitle": "Recurring transaction definitions",
   "noRecurringTransactionsFound": "No recurring transaction definitions found.",
+  "noRecurringDefinitionsFound": "No recurring transaction definitions found.",
+  "manageRecurringDefinitions": "Track and manage your repeating transaction definitions.",
   "newTransactionTitle": "New transaction",
   "enterTransactionDetails": "Enter transaction details",
   "fillFormBelow": "Fill out the form below to add a new transaction.",
@@ -228,6 +230,7 @@
   "selectFrequencyPlaceholder": "Select frequency",
   "walletRequiredError": "Wallet is required.",
   "frequencyRequiredError": "Frequency is required.",
+  "categoryRequiredError": "Category is required.",
   "viewAllYourTransactions": "View and manage all your recorded financial transactions.",
   "viewYourRecurringTransactions": "Track and manage your repeating transaction definitions.",
   "tryAdjustingFilters": "Try adjusting your filters or add new transactions.",
@@ -487,6 +490,9 @@
   "feedbackSubmittedTitle": "Feedback submitted",
   "feedbackSubmittedDesc": "Thank you! your feedback has been received.",
   "feedbackSubmitFailedTitle": "Feedback submission failed",
+  "feedbackFormTitle": "Submit your feedback",
+  "feedbackFormDesc": "We value your input! Please share your thoughts, bug reports, or feature requests.",
+
 
   "//": "BUDGETS",
   "budgetCreateNewButton": "Create new budget",

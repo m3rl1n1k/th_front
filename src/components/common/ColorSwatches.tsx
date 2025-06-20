@@ -14,14 +14,14 @@ export const predefinedColors = [
   '#D10094', // FUCHSIA_500
 
   // Oranges & Yellows
-  '#f59e0b', // ORANGE_500
-  '#fbbf24', // AMBER_400 (Original AMBER_500 was #f59e0b)
-  '#fcd34d', // YELLOW_300 (Original YELLOW_500 was #f59e0b)
+  '#f59e0b', // ORANGE_500 (also AMBER_500, YELLOW_500)
+  '#fbbf24', // AMBER_400 (also ORANGE_400, YELLOW_400)
+  '#fcd34d', // YELLOW_300 (also ORANGE_300, AMBER_300)
 
   // Greens & Limes
   '#84cc16', // LIME_500
-  '#10b981', // GREEN_500
-  '#059669', // EMERALD_600 (Original EMERALD_500 was #10b981)
+  '#10b981', // GREEN_500 (also EMERALD_500)
+  '#059669', // EMERALD_600 (also GREEN_600)
   '#14b8a6', // TEAL_500
 
   // Blues & Cyans
@@ -37,13 +37,13 @@ export const predefinedColors = [
   // Grays & Neutrals
   '#64748B', // SLATE_500
   '#6B7280', // GRAY_500
-  '#A3A3A2', // NEUTRAL_400 (Original NEUTRAL_500 was #737373)
-  '#737373', // ZINC_500
+  '#737373', // ZINC_500 (also NEUTRAL_500)
   '#A38F80', // STONE_500
 
   // Black & White
   '#000000', // BLACK
   '#FFFFFF', // WHITE
+  '#F3F4F6', // GRAY_100 (A light gray for more options)
 ];
 
 
@@ -56,9 +56,9 @@ interface ColorSwatchesProps {
 export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, disabled = false }) => {
   return (
     <div className={cn(
-      "grid gap-1 p-0.5 border rounded-md bg-muted/20 max-w-xs",
-      "grid-cols-5", // Default to 5 columns (mobile-first)
-      "sm:grid-cols-7 sm:gap-2 sm:p-1" // For 'sm' breakpoint (640px) and up, use 7 columns and larger gaps/padding
+      "grid gap-1 p-0.5 w-full", // Removed: border, rounded-md, bg-muted/20, max-w-xs. Added: w-full
+      "grid-cols-5", 
+      "sm:grid-cols-7 sm:gap-2 sm:p-1" 
     )}>
       {predefinedColors.map((color) => (
         <button
@@ -68,7 +68,7 @@ export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, d
           className={cn(
             "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-            (color === '#FFFFFF' || color.toUpperCase() === '#F3F4F6') && 'border-input', // Explicit border for very light colors
+            (color === '#FFFFFF' || color.toUpperCase() === '#F3F4F6') && 'border-input', 
             disabled && 'cursor-not-allowed opacity-50'
           )}
           style={{ backgroundColor: color }}
