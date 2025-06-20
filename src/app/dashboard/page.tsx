@@ -12,14 +12,14 @@ import {
   getDashboardMonthExpenses,
   getDashboardChartTotalExpense,
   getDashboardLastTransactions,
-  getTransactionTypes // Import getTransactionTypes
+  getTransactionTypes
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType } from '@/types'; // Import AppTransactionType
+import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, Legend, Sector } from "recharts"
 import Link from 'next/link';
@@ -32,7 +32,7 @@ interface DashboardSummaryData {
 }
 
 interface TransformedChartItem {
-  categoryName: string; // This will be the translated name or original if no translation
+  categoryName: string;
   amount: number; // in cents
   color?: string;
 }
@@ -122,12 +122,12 @@ export default function DashboardPage() {
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
   const [lastTransactions, setLastTransactions] = useState<TransactionType[] | null>(null);
-  const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]); // State for transaction types
+  const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
 
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingExpensesChart, setIsLoadingExpensesChart] = useState(true);
   const [isLoadingLastActivity, setIsLoadingLastActivity] = useState(true);
-  const [isLoadingTransactionTypes, setIsLoadingTransactionTypes] = useState(true); // Loading state for types
+  const [isLoadingTransactionTypes, setIsLoadingTransactionTypes] = useState(true);
 
   const [activeChartIndex, setActiveChartIndex] = useState(0);
 
@@ -155,7 +155,7 @@ export default function DashboardPage() {
         getDashboardMonthExpenses(token),
         getDashboardChartTotalExpense(token),
         getDashboardLastTransactions(token, limit),
-        getTransactionTypes(token) // Fetch transaction types
+        getTransactionTypes(token)
       ])
         .then(([balanceData, incomeData, expenseData, chartDataResponse, lastTransactionsResp, typesData]) => {
           setSummaryData({
@@ -200,7 +200,7 @@ export default function DashboardPage() {
       categoryName: categoryNameFromApi === 'no_category' 
                     ? t('noCategory') 
                     : t(generateCategoryTranslationKey(categoryNameFromApi), { defaultValue: categoryNameFromApi }),
-      amount: data.amount, // in cents
+      amount: data.amount,
       color: data.color
     }));
   }, [expensesByCategoryData, t]);
@@ -243,7 +243,7 @@ export default function DashboardPage() {
         id: tx.id,
         icon: icon,
         displayText: displayText,
-        amount: tx.amount.amount, // in cents
+        amount: tx.amount.amount,
         currencyCode: tx.amount.currency.code,
         date: format(parseISO(tx.date), "PP", { locale: dateFnsLocale }),
       };
@@ -253,8 +253,8 @@ export default function DashboardPage() {
 
   const calculateAverageExpense = (monthlyExpenseInCents: number, period: 'daily' | 'weekly' | 'monthly') => {
     if (period === 'monthly') return monthlyExpenseInCents;
-    if (period === 'daily') return Math.round(monthlyExpenseInCents / 30); // Simplified assumption
-    if (period === 'weekly') return Math.round(monthlyExpenseInCents / 4); // Simplified assumption
+    if (period === 'daily') return Math.round(monthlyExpenseInCents / 30);
+    if (period === 'weekly') return Math.round(monthlyExpenseInCents / 4);
     return 0;
   };
 
@@ -457,7 +457,7 @@ export default function DashboardPage() {
               <Activity className="h-6 w-6 text-primary" />
             </CardHeader>
             <CardContent className="pt-4">
-              {isLoadingLastActivity || isLoadingTransactionTypes ? ( // Check for types loading as well
+              {isLoadingLastActivity || isLoadingTransactionTypes ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className="flex items-center space-x-3 p-2">
@@ -484,17 +484,17 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                   {processedLastActivity.map((item) => (
                     <Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center space-x-3 flex-shrink min-w-0">
                                 {item.icon}
-                                <div className="flex-grow">
-                                    <p className="text-sm font-medium text-foreground truncate max-w-[150px] sm:max-w-[180px]" title={item.displayText}>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-foreground truncate" title={item.displayText}>
                                         {item.displayText}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{item.date}</p>
                                 </div>
                             </div>
-                            <div className="text-sm font-medium text-right">
+                            <div className="text-sm font-medium text-right flex-shrink-0 ml-2">
                                 <CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} />
                             </div>
                         </div>
