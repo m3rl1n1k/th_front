@@ -20,9 +20,11 @@ import { useTranslation } from '@/context/i18n-context';
 import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
-  Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, ShieldAlert, Target, Briefcase
+  Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, Target, Briefcase,
+  BarChart3, Brain, FileSignature // Added new icons
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '../ui/separator';
 
 const baseNavItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
@@ -32,6 +34,11 @@ const baseNavItems = [
   { href: '/budgets', labelKey: 'budgetsTitle', icon: Target, authRequired: true },
   { href: '/transfers', labelKey: 'transfersTitle', icon: ArrowRightLeft, authRequired: true },
   { href: '/capital', labelKey: 'capitalMenuLabel', icon: Briefcase, authRequired: true },
+];
+
+const reportNavItems = [
+  { href: '/report/ai', labelKey: 'aiReportMenu', icon: Brain, authRequired: true },
+  { href: '/report/general', labelKey: 'generalReportMenu', icon: FileSignature, authRequired: true },
 ];
 
 const userSpecificNavItems = [
@@ -52,7 +59,7 @@ const publicNavItems = [
 const INTENDED_DESTINATION_KEY = 'intended_destination';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAuthenticated, isLoading: authIsLoading, pendingInvitationCount } = useAuth(); // Added pendingInvitationCount
+  const { user, logout, isAuthenticated, isLoading: authIsLoading, pendingInvitationCount } = useAuth();
   const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
@@ -71,11 +78,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const getNavItems = useCallback(() => {
     if (!isAuthenticated) return [];
     let items = [...baseNavItems];
-    
+    items.push(...reportNavItems); // Add report items
+
     adminNavItems.forEach(item => {
       if (item.requiredRole && userHasRole(item.requiredRole)) {
         items.push(item);
-      } else if (!item.requiredRole && item.authRequired) {
       }
     });
 
@@ -152,10 +159,70 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
   if (!isAuthenticated && !authIsLoading && !publicPaths.includes(pathname)) {
-     return null; 
+     return null;
   }
 
   const currentNavItems = getNavItems();
+
+  const renderNavGroup = (items: typeof baseNavItems, groupTitleKey?: string) => (
+    <>
+      {groupTitleKey && (
+        <div className="px-3 py-2">
+          <h2 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+            {t(groupTitleKey as keyof ReturnType<typeof useTranslation>['translations'])}
+          </h2>
+        </div>
+      )}
+      {items.map((item) => (
+        <Button
+          key={item.href}
+          variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => handleNavLinkClick(item.href)}
+          aria-current={pathname.startsWith(item.href) ? 'page' : undefined}
+          disabled={isNavigating}
+        >
+          <item.icon className="mr-2 h-5 w-5" />
+          <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
+          {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
+            <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
+              {pendingInvitationCount}
+            </span>
+          )}
+        </Button>
+      ))}
+    </>
+  );
+
+  const renderMobileNavGroup = (items: typeof baseNavItems, groupTitleKey?: string) => (
+     <>
+      {groupTitleKey && (
+        <div className="px-3 pt-4 pb-1">
+          <h2 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+            {t(groupTitleKey as keyof ReturnType<typeof useTranslation>['translations'])}
+          </h2>
+        </div>
+      )}
+      {items.map((item) => (
+        <Button
+          key={item.href}
+          variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+          className="justify-start text-left"
+          onClick={() => handleNavLinkClick(item.href)}
+          aria-current={pathname.startsWith(item.href) ? 'page' : undefined}
+          disabled={isNavigating}
+        >
+          <item.icon className="mr-2 h-5 w-5" />
+          <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
+           {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
+            <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
+              {pendingInvitationCount}
+            </span>
+          )}
+        </Button>
+      ))}
+    </>
+  );
 
 
   return (
@@ -183,7 +250,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 <SheetHeader>
                   <SheetTitle className="sr-only">{t('toggleNavigation')}</SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col p-6 space-y-2">
+                <nav className="flex flex-col p-6 space-y-1">
                   <Link
                     href="/"
                     className="mb-4"
@@ -219,24 +286,18 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                         <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
                       </div>
                   </Link>
-                  {currentNavItems.map((item) => (
-                    <Button
-                      key={item.href}
-                      variant={pathname === item.href ? 'secondary' : 'ghost'}
-                      className="justify-start text-left"
-                      onClick={() => handleNavLinkClick(item.href)}
-                      aria-current={pathname === item.href ? 'page' : undefined}
-                      disabled={isNavigating}
-                    >
-                      <item.icon className="mr-2 h-5 w-5" />
-                      <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
-                      {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
-                        <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
-                          {pendingInvitationCount}
-                        </span>
-                      )}
-                    </Button>
-                  ))}
+                  {renderMobileNavGroup(baseNavItems)}
+                  {renderMobileNavGroup(reportNavItems, 'reportsGroup')}
+                  {adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)).length > 0 && (
+                    <div className="pt-2">
+                      <Separator />
+                      {renderMobileNavGroup(adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)), 'Admin')}
+                    </div>
+                  )}
+                  <div className="pt-2">
+                     <Separator />
+                     {renderMobileNavGroup(userSpecificNavItems, t('profile'))}
+                  </div>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -364,26 +425,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1">
         {isAuthenticated && (
-          <aside className="hidden md:flex md:flex-col w-64 border-r bg-card p-4 space-y-2">
+          <aside className="hidden md:flex md:flex-col w-64 border-r bg-card p-4 space-y-1">
             <nav className="flex-1 space-y-1">
-              {currentNavItems.map((item) => (
-                <Button
-                  key={item.href}
-                  variant={pathname === item.href ? 'secondary' : 'ghost'}
-                  className="w-full justify-start"
-                  onClick={() => handleNavLinkClick(item.href)}
-                  aria-current={pathname === item.href ? 'page' : undefined}
-                  disabled={isNavigating}
-                >
-                  <item.icon className="mr-2 h-5 w-5" />
-                  <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
-                  {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
-                    <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
-                      {pendingInvitationCount}
-                    </span>
-                  )}
-                </Button>
-              ))}
+              {renderNavGroup(baseNavItems)}
+              <Separator className="my-2" />
+              {renderNavGroup(reportNavItems, 'reportsGroup')}
+              {adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)).length > 0 && (
+                <>
+                  <Separator className="my-2" />
+                  {renderNavGroup(adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)), 'Admin')}
+                </>
+              )}
+              <Separator className="my-2" />
+              {renderNavGroup(userSpecificNavItems)}
             </nav>
           </aside>
         )}
