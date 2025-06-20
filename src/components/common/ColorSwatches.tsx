@@ -5,22 +5,47 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// New palette based on provided Tailwind CSS colors
 export const predefinedColors = [
-  // Soft neutrals & grays
-  '#F3F4F6', '#D1D5DB', '#6B7280', '#374151',
-  // Muted Reds/Pinks
-  '#FECACA', '#F87171', '#FCA5A5',
-  // Muted Oranges/Yellows
-  '#FDE68A', '#FBBF24', '#FCD34D',
-  // Muted Greens
-  '#A7F3D0', '#34D399', '#6EE7B7',
-  // Muted Blues
-  '#BFDBFE', '#60A5FA', '#93C5FD',
-  // Muted Purples/Indigos
-  '#C4B5FD', '#A78BFA', '#DDD6FE',
-  // Other muted tones
-  '#FBCFE8', '#A5B4FC', '#7DD3FC',
+  // Reds & Pinks
+  '#ef4444', // RED_500
+  '#F43F5E', // ROSE_500
+  '#EC4899', // PINK_500
+  '#D10094', // FUCHSIA_500
+
+  // Oranges & Yellows
+  '#f59e0b', // ORANGE_500
+  '#fbbf24', // AMBER_400 (Original AMBER_500 was #f59e0b)
+  '#fcd34d', // YELLOW_300 (Original YELLOW_500 was #f59e0b)
+
+  // Greens & Limes
+  '#84cc16', // LIME_500
+  '#10b981', // GREEN_500
+  '#059669', // EMERALD_600 (Original EMERALD_500 was #10b981)
+  '#14b8a6', // TEAL_500
+
+  // Blues & Cyans
+  '#06b6d4', // CYAN_500
+  '#0ea5e9', // SKY_500
+  '#3b82f6', // BLUE_500
+  '#4F46E5', // INDIGO_500
+
+  // Purples
+  '#7C3AED', // PURPLE_500
+  '#9333EA', // VIOLET_500
+
+  // Grays & Neutrals
+  '#64748B', // SLATE_500
+  '#6B7280', // GRAY_500
+  '#A3A3A2', // NEUTRAL_400 (Original NEUTRAL_500 was #737373)
+  '#737373', // ZINC_500
+  '#A38F80', // STONE_500
+
+  // Black & White
+  '#000000', // BLACK
+  '#FFFFFF', // WHITE
 ];
+
 
 interface ColorSwatchesProps {
   value: string | null | undefined;
@@ -31,7 +56,7 @@ interface ColorSwatchesProps {
 export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, disabled = false }) => {
   return (
     <div className={cn(
-      "grid gap-1 p-0.5 border rounded-md bg-muted/20 max-w-xs", // Base: more compact
+      "grid gap-1 p-0.5 border rounded-md bg-muted/20 max-w-xs",
       "grid-cols-5", // Default to 5 columns (mobile-first)
       "sm:grid-cols-7 sm:gap-2 sm:p-1" // For 'sm' breakpoint (640px) and up, use 7 columns and larger gaps/padding
     )}>
@@ -43,7 +68,7 @@ export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, d
           className={cn(
             "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-            (color === '#FFFFFF' || color === '#F3F4F6') && 'border-input', // Explicit border for very light colors
+            (color === '#FFFFFF' || color.toUpperCase() === '#F3F4F6') && 'border-input', // Explicit border for very light colors
             disabled && 'cursor-not-allowed opacity-50'
           )}
           style={{ backgroundColor: color }}
@@ -55,7 +80,7 @@ export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, d
             <Check
               className={cn(
                 "h-3.5 w-3.5",
-                (color === '#FFFFFF' || color === '#F3F4F6') ? 'text-gray-700' : 'text-primary-foreground mix-blend-difference'
+                (color.toUpperCase() === '#FFFFFF' || color.toUpperCase() === '#F3F4F6') ? 'text-gray-700' : 'text-primary-foreground mix-blend-difference'
               )}
             />
           )}
@@ -64,4 +89,3 @@ export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, d
     </div>
   );
 };
-
