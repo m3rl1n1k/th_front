@@ -234,7 +234,8 @@ export default function TransactionsPage() {
   const getFrequencyNameById = useCallback((frequencyApiId: string) => {
     const freqObj = apiFrequencies.find(f => f.id === frequencyApiId);
     if (freqObj) {
-      return t(\`frequency_\${freqObj.name}\` as any, {defaultValue: freqObj.name});
+      const translationKey = 'frequency_' + freqObj.name;
+      return t(translationKey as any, {defaultValue: freqObj.name});
     }
     return t('notApplicable');
   }, [apiFrequencies, t]);
@@ -291,12 +292,12 @@ export default function TransactionsPage() {
 
   const handleViewAction = (txId: string | number) => {
     setInitiatingActionForTxId(txId);
-    router.push(\`/transactions/\${txId}\`);
+    router.push(`/transactions/${txId}`);
   };
 
   const handleEditAction = (txId: string | number) => {
     setInitiatingActionForTxId(txId);
-    router.push(\`/transactions/\${txId}/edit\`);
+    router.push(`/transactions/${txId}/edit`);
   };
   
   const handleToggleDefinitionStatus = async (definition: RepeatedTransactionEntry) => {
@@ -487,7 +488,7 @@ export default function TransactionsPage() {
             <Button 
               variant="link" 
               className="p-0 h-auto text-primary hover:underline" 
-              onClick={() => router.push(\`/transactions/\${templateTransactionId}/edit\`)}
+              onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)}
             >
                {t('templateId')} #{templateTransactionId}
             </Button>
@@ -509,7 +510,7 @@ export default function TransactionsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {templateTransactionId && (
-                <DropdownMenuItem onSelect={() => router.push(\`/transactions/\${templateTransactionId}/edit\`)} className="flex items-center cursor-pointer">
+                <DropdownMenuItem onSelect={() => router.push(`/transactions/${templateTransactionId}/edit`)} className="flex items-center cursor-pointer">
                   <Edit3 className="mr-2 h-4 w-4" />
                   {t('editTemplateButton')}
                 </DropdownMenuItem>
@@ -609,7 +610,7 @@ export default function TransactionsPage() {
                               <SelectItem value="all">{t('allTypes')}</SelectItem>
                               {transactionTypes.map(type => (
                                 <SelectItem key={type.id} value={type.id}>
-                                  {t(\`transactionType_\${type.name}\` as any, {defaultValue: type.name})}
+                                  {t(`transactionType_${type.name}` as any, {defaultValue: type.name})}
                                 </SelectItem>
                               ))}
                             </SelectContent>
