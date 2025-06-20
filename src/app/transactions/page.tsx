@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, PaginationInfo } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,8 +61,6 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
-const DEFAULT_RECORDS_PER_PAGE_FALLBACK = 20;
-
 export default function TransactionsPage() {
   const { user, token, isAuthenticated } = useAuth(); 
   const { t, dateFnsLocale } = useTranslation(); 
@@ -74,13 +72,14 @@ export default function TransactionsPage() {
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
   const [apiFrequencies, setApiFrequencies] = useState<AppFrequency[]>([]); 
   
-  const [rawTransactions, setRawTransactions] = useState<Transaction[] | null>(null);
+  const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]); // Initialize as empty array
   const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null); 
   
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true); // For initial load
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // For "Load More"
   const [isLoadingRepeatedDefinitions, setIsLoadingRepeatedDefinitions] = useState(false); 
 
   const [filters, setFilters] = useState<{
@@ -101,7 +100,7 @@ export default function TransactionsPage() {
   const [selectedDefinitionForDelete, setSelectedDefinitionForDelete] = useState<RepeatedTransactionEntry | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
 
 
   useEffect(() => {
@@ -149,9 +148,14 @@ export default function TransactionsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, toast, t]);
 
-  const fetchTransactions = useCallback((showLoadingIndicator = true, pageToFetch: number) => {
+  const fetchTransactions = useCallback((pageToFetch: number) => {
     if (isAuthenticated && token && activeTab === "all") {
-      if(showLoadingIndicator) setIsLoadingTransactions(true);
+      if (pageToFetch === 1) {
+        setIsLoadingTransactions(true);
+        setRawTransactions([]); // Clear for initial load or filter change
+      } else {
+        setIsLoadingMore(true);
+      }
       const params: Record<string, string | number | undefined> = {}; 
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
@@ -162,25 +166,30 @@ export default function TransactionsPage() {
       
       getTransactionsList(token, params)
         .then(result => {
-          setRawTransactions(result.transactions || []);
-          const effectivePageSize = user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE_FALLBACK;
-          setHasNextPage((result.transactions || []).length === effectivePageSize);
+          const newItems = result.transactions.items || [];
+          const pagination = result.transactions.pagination;
+          
+          setRawTransactions(prev => pageToFetch === 1 ? newItems : [...prev, ...newItems]);
+          setCurrentPage(pagination.page);
+          setTotalPages(pagination.total_pages);
         })
         .catch((error: any) => {
           if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-          setRawTransactions([]);
-          setHasNextPage(false);
+          if (pageToFetch === 1) setRawTransactions([]); // Clear if initial load failed
+          setTotalPages(1); // Reset total pages on error
         })
         .finally(() => {
-          if(showLoadingIndicator) setIsLoadingTransactions(false);
+          if (pageToFetch === 1) setIsLoadingTransactions(false);
+          setIsLoadingMore(false);
         });
     } else if (!isAuthenticated || !token) {
       setRawTransactions([]);
-      setHasNextPage(false);
-      if(showLoadingIndicator) setIsLoadingTransactions(false);
+      setIsLoadingTransactions(false);
+      setIsLoadingMore(false);
+      setTotalPages(1);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, user, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab, toast, t]); 
+  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab, toast, t]); 
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
@@ -202,22 +211,13 @@ export default function TransactionsPage() {
   }, [isAuthenticated, token, activeTab, t, toast]);
 
   useEffect(() => {
-    // Initial fetch when tab changes or auth status changes
     if (activeTab === "all" && isAuthenticated && token) {
-      fetchTransactions(true, currentPage);
+      fetchTransactions(1); // Fetch first page initially
     } else if (activeTab === "recurring" && isAuthenticated && token) {
       fetchRepeatedDefinitions();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, activeTab, user]); 
-
-  useEffect(() => {
-    // Fetch when currentPage changes, only for 'all' tab
-    if (activeTab === "all" && isAuthenticated && token) {
-      fetchTransactions(true, currentPage);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, activeTab, isAuthenticated, token]);
+  }, [isAuthenticated, token, activeTab]); 
 
 
   useEffect(() => {
@@ -225,7 +225,6 @@ export default function TransactionsPage() {
   }, [pathname]);
 
   const processedTransactions = useMemo(() => {
-    if (!rawTransactions) return [];
     return rawTransactions.map(tx => {
       const categoryName = tx.subCategory 
         ? t(generateCategoryTranslationKey(tx.subCategory.name), {defaultValue: tx.subCategory.name}) 
@@ -267,16 +266,12 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    setCurrentPage(1);
-    setHasNextPage(true);
-    // fetchTransactions will be called by useEffect due to currentPage change
+    fetchTransactions(1);
   };
 
   const handleClearFilters = () => {
     setFilters({});
-    setCurrentPage(1);
-    setHasNextPage(true);
-     // fetchTransactions will be called by useEffect due to currentPage change
+    fetchTransactions(1);
   };
   
   const handleAddNewTransaction = () => router.push('/transactions/new');
@@ -292,7 +287,15 @@ export default function TransactionsPage() {
     try {
       await deleteTransaction(selectedTransactionForDelete.id, token);
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
-      fetchTransactions(false, currentPage); // Re-fetch current page
+      // Refresh by removing the deleted transaction locally or re-fetching page 1
+      setRawTransactions(prev => prev.filter(tx => tx.id !== selectedTransactionForDelete.id));
+      if (rawTransactions.length === 1 && currentPage > 1) { // If last item on a page > 1
+        fetchTransactions(currentPage - 1);
+      } else if (rawTransactions.length % (user?.settings?.records_per_page || 20) === 1 && rawTransactions.length > 1) {
+        // If deleting the last item that would trigger a new page load, just reload current
+        fetchTransactions(currentPage);
+      }
+      // else the list updates naturally, or if it becomes empty, "No transactions" will show.
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
     } finally {
@@ -347,14 +350,14 @@ export default function TransactionsPage() {
     }
   };
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage > 0) {
-      setCurrentPage(newPage);
+  const handleLoadMore = () => {
+    if (currentPage < totalPages) {
+      fetchTransactions(currentPage + 1);
     }
   };
 
   const renderTransactionTableContent = () => {
-    if (isLoadingTransactions || isLoadingTypes || isLoadingCategories) {
+    if (isLoadingTransactions && rawTransactions.length === 0) { // Show loader only on initial empty load
       return (
         <TableRow>
           <TableCell colSpan={6} className="h-60 text-center">
@@ -367,7 +370,7 @@ export default function TransactionsPage() {
       );
     }
 
-    if (sortedDateKeys.length === 0) {
+    if (sortedDateKeys.length === 0 && !isLoadingTransactions) {
       return (
         <TableRow>
           <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
@@ -649,7 +652,7 @@ export default function TransactionsPage() {
           </Card>
         )}
 
-        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as "all" | "recurring"); setCurrentPage(1); setHasNextPage(true); }} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as "all" | "recurring"); setCurrentPage(1); }} className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
             <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
               <History className="h-5 w-5" />
@@ -686,26 +689,16 @@ export default function TransactionsPage() {
                   </Table>
                 </div>
               </CardContent>
-              {activeTab === 'all' && rawTransactions && rawTransactions.length > 0 && (
-                <CardFooter className="flex items-center justify-center space-x-2 py-4 border-t">
+              {activeTab === 'all' && rawTransactions.length > 0 && currentPage < totalPages && (
+                <CardFooter className="flex items-center justify-center py-4 border-t">
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1 || isLoadingTransactions}
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
                     >
-                        {t('previousPageButton')}
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                        {t('pageIndicator', { currentPage: currentPage })}
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={!hasNextPage || isLoadingTransactions}
-                    >
-                        {t('nextPageButton')}
+                        {isLoadingMore && <Loader2 className="mr-2 h-4 w-4 animate-spin" /> }
+                        {t('loadMoreButton')}
                     </Button>
                 </CardFooter>
               )}

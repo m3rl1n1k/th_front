@@ -50,7 +50,8 @@ import type {
   AcceptInvitationPayload,
   RejectInvitationPayload,
   GetInvitationsApiResponse,
-  UserSettings, // Added UserSettings type
+  UserSettings,
+  GetTransactionsListResponse, // Added for new paginated response
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -206,17 +207,17 @@ export const createTransaction = (data: CreateTransactionPayload, token: string)
 
 export const getTransactionsList = (
   token: string,
-  params: Record<string, string | number | undefined> = {} // Page can be number, other filters typically string
-): Promise<{ transactions: Transaction[] }> => {
+  params: Record<string, string | number | undefined> = {}
+): Promise<GetTransactionsListResponse> => {
   const definedParams: Record<string, string> = {};
   for (const key in params) {
     if (params[key] !== undefined) {
-      definedParams[key] = String(params[key]); // Ensure all params are string for URLSearchParams
+      definedParams[key] = String(params[key]);
     }
   }
   const queryString = new URLSearchParams(definedParams).toString();
   const url = queryString ? `${URLS.transactions}?${queryString}` : URLS.transactions;
-  return request<{ transactions: Transaction[] }>(url, { method: 'GET', token });
+  return request<GetTransactionsListResponse>(url, { method: 'GET', token });
 };
 
 export const getTransactionById = async (id: string | number, token: string): Promise<Transaction> => {

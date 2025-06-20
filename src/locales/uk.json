@@ -46,9 +46,7 @@
   "genericError": "Щось пішло не так. будь ласка, спробуйте знову.",
   "validationFailedWithReason": "Перевірка не вдалася: {reason}. будь ласка, перевірте форму.",
   "formContainsInvalidData": "Форма містить недійсні дані.",
-  "previousPageButton": "Попередня",
-  "nextPageButton": "Наступна",
-  "pageIndicator": "Сторінка {currentPage}",
+  "loadMoreButton": "Завантажити ще",
 
   "//": "НАВІГАЦІЯ / МАКЕТ",
   "toggleNavigation": "Перемкнути навігацію",

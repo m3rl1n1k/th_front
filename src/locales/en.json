@@ -46,9 +46,7 @@
   "genericError": "Something went wrong. please try again.",
   "validationFailedWithReason": "Validation failed: {reason}. please check the form.",
   "formContainsInvalidData": "The form contains invalid data.",
-  "previousPageButton": "Previous",
-  "nextPageButton": "Next",
-  "pageIndicator": "Page {currentPage}",
+  "loadMoreButton": "Load More",
 
   "//": "NAVIGATION / LAYOUT",
   "toggleNavigation": "Toggle navigation",
@@ -708,4 +706,3 @@
   "expenseLabel": "Expense",
   "reportPage.noDataDesc": "There is no data to display for the selected period or this report requires further backend integration."
 }
-

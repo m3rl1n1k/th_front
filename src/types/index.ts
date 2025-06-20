@@ -529,4 +529,17 @@ export interface ReportPageStats {
   selectedMonthIncome: number; // in cents
   selectedMonthExpense: number; // in cents
 }
-```
+
+export interface PaginationInfo {
+  page: number;
+  per_page: number;
+  total_pages: number;
+  total_items: number;
+}
+
+export interface GetTransactionsListResponse {
+  transactions: {
+    items: Transaction[];
+    pagination: PaginationInfo;
+  };
+}
