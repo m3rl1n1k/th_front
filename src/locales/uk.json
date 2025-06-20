@@ -683,6 +683,7 @@
   "monthlyCategorySummaryChartTitle": "Місячні витрати за категоріями",
   "forSelectedMonth": "за обраний місяць",
   "incomeLabel": "Дохід",
-  "expenseLabel": "Витрати"
+  "expenseLabel": "Витрати",
+  "selectMonthPlaceholder": "Обрати місяць"
 }
 
