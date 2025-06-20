@@ -18,7 +18,7 @@ import { Save, Info, Palette, ListChecks, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { updateUserSettings, getUserSettings } from '@/lib/api';
 import type { UserSettings, ApiError } from '@/types';
-import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches';
+import { ColorSwatches } from '@/components/common/ColorSwatches'; // Updated import
 
 const GEMINI_API_KEY_STORAGE_KEY = 'financeflow_gemini_api_key';
 const DEFAULT_RECORDS_PER_PAGE = 20;
@@ -76,28 +76,35 @@ export default function SettingsPage() {
   const watchedCapitalColor = watch("chart_capital_color");
 
   const fetchSettingsData = useCallback(async () => {
-    if (!token || !user) {
+    if (!token) { // Rely primarily on token for fetching
         setIsLoadingPageData(false);
+        reset({ // Reset to application defaults if no token (user not logged in)
+            chart_income_color: DEFAULT_CHART_INCOME_COLOR,
+            chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
+            chart_capital_color: DEFAULT_CHART_CAPITAL_COLOR,
+            records_per_page: DEFAULT_RECORDS_PER_PAGE,
+        });
         return;
     }
     setIsLoadingPageData(true);
     try {
         const response = await getUserSettings(token);
         const fetchedSettings = response.settings;
+        
         reset({
-            chart_income_color: fetchedSettings?.chart_income_color || user.settings?.chart_income_color || DEFAULT_CHART_INCOME_COLOR,
-            chart_expense_color: fetchedSettings?.chart_expense_color || user.settings?.chart_expense_color || DEFAULT_CHART_EXPENSE_COLOR,
-            chart_capital_color: fetchedSettings?.chart_capital_color || user.settings?.chart_capital_color || DEFAULT_CHART_CAPITAL_COLOR,
-            records_per_page: fetchedSettings?.records_per_page || user.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE,
+            chart_income_color: fetchedSettings?.chart_income_color ?? user?.settings?.chart_income_color ?? DEFAULT_CHART_INCOME_COLOR,
+            chart_expense_color: fetchedSettings?.chart_expense_color ?? user?.settings?.chart_expense_color ?? DEFAULT_CHART_EXPENSE_COLOR,
+            chart_capital_color: fetchedSettings?.chart_capital_color ?? user?.settings?.chart_capital_color ?? DEFAULT_CHART_CAPITAL_COLOR,
+            records_per_page: fetchedSettings?.records_per_page ?? user?.settings?.records_per_page ?? DEFAULT_RECORDS_PER_PAGE,
         });
     } catch (error) {
         console.error("Failed to fetch user settings:", error);
         toast({ variant: "destructive", title: t('errorFetchingUserSettings'), description: (error as ApiError).message });
-        reset({
-            chart_income_color: user.settings?.chart_income_color || DEFAULT_CHART_INCOME_COLOR,
-            chart_expense_color: user.settings?.chart_expense_color || DEFAULT_CHART_EXPENSE_COLOR,
-            chart_capital_color: user.settings?.chart_capital_color || DEFAULT_CHART_CAPITAL_COLOR,
-            records_per_page: user.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE,
+        reset({ // Fallback to context user settings or app defaults on API error
+            chart_income_color: user?.settings?.chart_income_color ?? DEFAULT_CHART_INCOME_COLOR,
+            chart_expense_color: user?.settings?.chart_expense_color ?? DEFAULT_CHART_EXPENSE_COLOR,
+            chart_capital_color: user?.settings?.chart_capital_color ?? DEFAULT_CHART_CAPITAL_COLOR,
+            records_per_page: user?.settings?.records_per_page ?? DEFAULT_RECORDS_PER_PAGE,
         });
     } finally {
         setIsLoadingPageData(false);
@@ -112,12 +119,21 @@ export default function SettingsPage() {
         setGeminiApiKey(storedApiKey);
       }
     }
-    if (token && user) {
+    // Fetch settings if token exists and auth is not loading.
+    // This prioritizes fetching from server based on token.
+    if (token && !authIsLoading) {
         fetchSettingsData();
-    } else if (!authIsLoading) {
+    } else if (!authIsLoading && !token) { // Auth settled, no token (not logged in)
         setIsLoadingPageData(false);
+        // Reset to application defaults as there's no user session
+        reset({
+            chart_income_color: DEFAULT_CHART_INCOME_COLOR,
+            chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
+            chart_capital_color: DEFAULT_CHART_CAPITAL_COLOR,
+            records_per_page: DEFAULT_RECORDS_PER_PAGE,
+        });
     }
-  }, [token, user, authIsLoading, fetchSettingsData]);
+  }, [token, authIsLoading, fetchSettingsData, reset]);
 
 
   const handleSaveUserSettings: SubmitHandler<SettingsFormData> = async (data) => {
@@ -133,7 +149,7 @@ export default function SettingsPage() {
         records_per_page: data.records_per_page ? Number(data.records_per_page) : null,
       };
       await updateUserSettings(payload, token);
-      await fetchUser();
+      await fetchUser(); // Refresh user context, which includes settings
       toast({
         title: t('userSettingsSavedSuccess'),
         description: t('settingsSavedDesc'),
@@ -202,7 +218,6 @@ export default function SettingsPage() {
                   {t('chartColorsTitle')}
                 </legend>
                 
-                {/* Chart Income Color */}
                 <div className="space-y-2">
                   <Label htmlFor="chart_income_color_input">{t('chartIncomeColorLabel')}</Label>
                   <div className="flex items-center gap-2">
@@ -248,7 +263,6 @@ export default function SettingsPage() {
                   {errors.chart_income_color && <p className="text-sm text-destructive">{errors.chart_income_color.message}</p>}
                 </div>
 
-                {/* Chart Expense Color */}
                 <div className="space-y-2">
                   <Label htmlFor="chart_expense_color_input">{t('chartExpenseColorLabel')}</Label>
                   <div className="flex items-center gap-2">
@@ -294,7 +308,6 @@ export default function SettingsPage() {
                   {errors.chart_expense_color && <p className="text-sm text-destructive">{errors.chart_expense_color.message}</p>}
                 </div>
 
-                {/* Chart Capital Color */}
                 <div className="space-y-2">
                   <Label htmlFor="chart_capital_color_input">{t('chartCapitalColorLabel')}</Label>
                   <div className="flex items-center gap-2">
@@ -359,7 +372,7 @@ export default function SettingsPage() {
                             max="100"
                             placeholder={String(DEFAULT_RECORDS_PER_PAGE)}
                             {...field}
-                            value={field.value || ''}
+                            value={field.value ?? ''} // Ensure value is not null/undefined for input
                             className={errors.records_per_page ? 'border-destructive' : ''}
                         />
                         )}
