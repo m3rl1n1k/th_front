@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader} from '@/components/ui/card';
 import { LayoutDashboard, Target, Users, Shapes } from 'lucide-react';
 import { useTranslation } from '@/context/i18n-context';
 import Image from 'next/image';
