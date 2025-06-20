@@ -272,7 +272,7 @@ export default function WalletsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="font-headline text-4xl font-bold text-foreground">{t('walletsTitle')}</h1>
           <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:space-x-4 w-full sm:w-auto">
-            <div className="flex items-center space-x-1 border p-1 rounded-md bg-muted/50 dark:bg-muted/20 w-full justify-center sm:w-auto">
+            <div className="flex items-center space-x-1 p-1 rounded-md bg-muted/50 dark:bg-muted/20 w-full justify-center sm:w-auto">
               <Button
                 variant={viewMode === 'card' ? 'secondary' : 'ghost'}
                 size="icon"
@@ -348,7 +348,7 @@ export default function WalletsPage() {
           </div>
         ) : (
           <Card className="shadow-xl">
-            <CardHeader className="border-b">
+            <CardHeader>
               <CardTitle>{t('walletsListTableTitle')}</CardTitle>
               <CardDescription>{t('walletsListTableDescription')}</CardDescription>
             </CardHeader>
@@ -427,4 +427,3 @@ export default function WalletsPage() {
     </MainLayout>
   );
 }
-
