@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,15 +10,15 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon, Download, Loader2 } from 'lucide-react';
+import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon, Download, Loader2, Brain } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector } from "recharts";
-import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval, subYears } from 'date-fns';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector, TooltipProps } from "recharts";
+import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
 import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
-
+import type { GenerateReportSummaryInput } from '@/ai/flows/generate-report-summary-flow'; // Import for type usage
 
 // Placeholder data - replace with actual API calls
 const getPlaceholderReportStats = (year: number, month: number, currencyCode: string): ReportPageStats => {
@@ -50,6 +50,21 @@ const getPlaceholderCategorySummary = (year: number, month: number, currencyCode
 };
 
 
+interface ActiveShapeProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: CategoryMonthlySummary; // Ensure payload is correctly typed
+  percent: number;
+  value: number; // This is `amount` from payload, in cents
+}
+
+
 export default function GeneralReportPage() {
   const { t, dateFnsLocale, language } = useTranslation();
   const { user } = useAuth();
@@ -71,6 +86,7 @@ export default function GeneralReportPage() {
 
 
   useEffect(() => {
+    // In a real app, these would be API calls based on selectedYear/Month
     setReportStats(getPlaceholderReportStats(selectedYear, selectedMonth, currencyCode));
     setYearlySummary(getPlaceholderYearlySummary(selectedYear, currencyCode));
     setCategorySummary(getPlaceholderCategorySummary(selectedYear, selectedMonth, currencyCode));
@@ -102,7 +118,7 @@ export default function GeneralReportPage() {
     setActivePieIndex(index);
   };
   
-  const renderActiveShape = (props: any) => {
+  const renderActiveShape = (props: ActiveShapeProps) => {
     const RADIAN = Math.PI / 180;
     const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
     const sin = Math.sin(-RADIAN * midAngle);
@@ -157,7 +173,6 @@ export default function GeneralReportPage() {
     }
     setIsGeneratingPdf(true);
     try {
-      // Temporarily hide the save button itself from the capture
       const saveButton = document.getElementById('save-pdf-button');
       const originalDisplay = saveButton ? saveButton.style.display : '';
       if (saveButton) saveButton.style.display = 'none';
@@ -166,13 +181,8 @@ export default function GeneralReportPage() {
         scale: 2, 
         useCORS: true,
         logging: false,
-        // onclone: (document) => {
-        //   // You can manipulate the cloned document here if needed
-        //   // For example, hide elements that shouldn't be in the PDF
-        // }
       });
-
-      // Restore button visibility
+      
       if (saveButton) saveButton.style.display = originalDisplay;
 
       const imgData = canvas.toDataURL('image/png');
@@ -198,12 +208,66 @@ export default function GeneralReportPage() {
       }
 
       const x = (pdfWidth - newImgWidth) / 2;
-      const y = 20;
+      const y = 20; // Top margin for the main report content
 
       pdf.addImage(imgData, 'PNG', x, y, newImgWidth, newImgHeight);
 
+      // AI Summary Section
+      if (reportStats) {
+        const aiReportInput: GenerateReportSummaryInput = {
+          reportStats: {
+            startOfMonthBalance: reportStats.startOfMonthBalance,
+            endOfMonthBalance: reportStats.endOfMonthBalance,
+            selectedMonthIncome: reportStats.selectedMonthIncome,
+            selectedMonthExpense: reportStats.selectedMonthExpense,
+          },
+          yearlySummary,
+          categorySummary,
+          selectedYear,
+          selectedMonth,
+          currencyCode,
+          language,
+          monthName: format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale }),
+        };
+
+        try {
+          const response = await fetch('/api/generate-report-summary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(aiReportInput),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || t('aiSummaryGenerationFailedError'));
+          }
+
+          const { summaryText } = await response.json();
+          
+          pdf.addPage();
+          pdf.setFontSize(16);
+          pdf.text(t('aiFinancialAnalysisTitle'), pdfWidth / 2, 40, { align: 'center' });
+          
+          pdf.setFontSize(10);
+          const aiLines = pdf.splitTextToSize(summaryText, pdfWidth - 60); // 60 for wider margins
+          pdf.text(aiLines, 30, 70);
+
+        } catch (aiError: any) {
+          console.error("AI Summary Generation Error:", aiError);
+          toast({ variant: 'destructive', title: t('aiSummaryGenerationFailedTitle'), description: aiError.message });
+          
+          // Optionally add a note to the PDF that AI summary failed
+          pdf.addPage();
+          pdf.setFontSize(12);
+          pdf.text(t('aiFinancialAnalysisTitle'), pdfWidth / 2, 40, { align: 'center' });
+          pdf.setFontSize(10);
+          pdf.text(t('aiSummaryNotAvailableError'), 30, 70);
+        }
+      }
+
       const filename = `FinanceFlow_Report_${format(new Date(selectedYear, selectedMonth -1), 'yyyy-MM')}.pdf`;
       pdf.save(filename);
+
     } catch (error) {
       console.error("Error generating PDF:", error);
       toast({ variant: 'destructive', title: t('pdfGenerationFailedTitle'), description: t('pdfGenerationFailedDesc') });
@@ -231,7 +295,7 @@ export default function GeneralReportPage() {
           </Button>
         </div>
         
-        <div ref={reportContentRef} className="space-y-6">
+        <div ref={reportContentRef} className="space-y-6 bg-background p-4 rounded-lg"> {/* Added bg and padding for better capture */}
           {/* Filters */}
           <Card className="shadow-md">
             <CardHeader>
@@ -368,6 +432,20 @@ export default function GeneralReportPage() {
                             <Cell key={`cell-${index}`} fill={entry.color || categoryChartConfig[entry.categoryName]?.color || 'hsl(var(--primary))'} />
                             ))}
                         </Pie>
+                         <Legend content={({ payload }) => {
+                            if (!payload) return null;
+                            return (
+                              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-4 text-xs">
+                                {payload.map((entry, index) => ( 
+                                  <div key={`item-${index}`} className="flex items-center gap-1.5">
+                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                                    <span>{entry.value}</span> 
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }}
+                        />
                         </PieChart>
                     </ChartContainer>
                 ) : (

@@ -689,5 +689,10 @@
   "generatingPdfButton": "Generating PDF...",
   "reportContentMissingError": "Report content not found for PDF generation.",
   "pdfGenerationFailedTitle": "PDF Generation Failed",
-  "pdfGenerationFailedDesc": "Could not generate the PDF report. Please try again."
+  "pdfGenerationFailedDesc": "Could not generate the PDF report. Please try again.",
+  "aiFinancialAnalysisTitle": "AI Financial Analysis",
+  "aiSummaryGenerationFailedError": "Failed to generate AI summary for the report.",
+  "aiSummaryGenerationFailedTitle": "AI Summary Error",
+  "aiSummaryNotAvailableError": "AI-generated summary could not be included at this time."
 }
+
