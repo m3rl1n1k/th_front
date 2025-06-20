@@ -706,5 +706,7 @@
   "aiReport.generationFailedError": "Не вдалося згенерувати AI звіт. Будь ласка, спробуйте пізніше.",
   "aiReport.unexpectedError": "Сталася неочікувана помилка під час генерації звіту.",
   "aiReport.missingPrerequisites": "Відсутня валюта користувача або токен автентифікації. Будь ласка, перевірте свій профіль та статус входу.",
-  "applyReportFiltersButton": "Застосувати фільтри"
+  "applyReportFiltersButton": "Застосувати фільтри",
+  "historicalDataUnavailableTitle": "Історичні дані недоступні",
+  "historicalDataUnavailableDesc": "Дані звіту можна згенерувати лише за поточний місяць з існуючим API."
 }

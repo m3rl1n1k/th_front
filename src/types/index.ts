@@ -523,9 +523,8 @@ export interface CategoryMonthlySummary {
 }
 
 export interface ReportPageStats {
-  startOfMonthBalance: number; // in cents
-  endOfMonthBalance: number; // in cents
-  // Potentially add income/expense for the selected month here too
+  startOfMonthBalance?: number; // in cents
+  endOfMonthBalance?: number; // in cents
   selectedMonthIncome: number; // in cents
   selectedMonthExpense: number; // in cents
 }

@@ -707,5 +707,7 @@
   "aiReport.generationFailedError": "Could not generate the AI summary. Please try again later.",
   "aiReport.unexpectedError": "An unexpected error occurred while generating the report.",
   "aiReport.missingPrerequisites": "User currency or authentication token is missing. Please check your profile and login status.",
-  "applyReportFiltersButton": "Apply Filters"
+  "applyReportFiltersButton": "Apply Filters",
+  "historicalDataUnavailableTitle": "Historical Data Unavailable",
+  "historicalDataUnavailableDesc": "Report data can only be generated for the current month with the existing API."
 }

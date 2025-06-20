@@ -26,7 +26,6 @@ import { z } from 'zod';
 interface UserProfileData {
   login: string;
   email: string;
-  // memberSince: string; // Removed
   profilePictureUrl?: string;
   userCurrencyCode?: string | null;
 }
@@ -113,7 +112,6 @@ export default function ProfilePage() {
       const newProfileData = {
         login: user.login,
         email: user.email,
-        // memberSince: user.memberSince || new Date().toISOString(), // Removed
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`,
         userCurrencyCode: user.userCurrency?.code || null,
       };
@@ -285,15 +283,6 @@ export default function ProfilePage() {
     )
   }
 
-  // let formattedMemberSince = "N/A"; // Removed
-  // try { // Removed
-  //   if (profileData.memberSince) { // Removed
-  //     formattedMemberSince = format(new Date(profileData.memberSince), "MMMM d, yyyy", { locale: dateFnsLocale }); // Removed
-  //   } // Removed
-  // } catch (error) { // Removed
-  //   // error formatting date // Removed
-  // } // Removed
-
   return (
     <MainLayout>
       <div className="space-y-8 max-w-2xl mx-auto">
@@ -329,15 +318,6 @@ export default function ProfilePage() {
                   <p className="text-md font-medium text-foreground">{profileData.email}</p>
                 </div>
               </div>
-              {/* Member Since Block Removed
-              <div className="flex items-center">
-                <UserCircle className="mr-4 h-6 w-6 text-primary" />
-                 <div>
-                  <p className="text-xs text-muted-foreground">{t('memberSinceLabel')}</p>
-                  <p className="text-md font-medium text-foreground">{formattedMemberSince}</p>
-                </div>
-              </div>
-              */}
               <div className="flex items-center">
                 <Briefcase className="mr-4 h-6 w-6 text-primary" />
                  <div>

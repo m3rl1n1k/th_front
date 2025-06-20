@@ -17,6 +17,7 @@ import { format, getYear, getMonth } from 'date-fns';
 import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getDashboardChartTotalExpense, getDashboardMonthExpenses, getDashboardMonthlyIncome } from '@/lib/api';
 
 interface ActiveShapeProps {
   cx: number;
@@ -57,21 +58,56 @@ export default function GeneralReportPage() {
 
   const fetchReportData = useCallback(async (yearToFetch: number, monthToFetch: number) => {
     setIsLoading(true);
-    // TODO: Implement API calls to fetch actual report data based on yearToFetch/monthToFetch
-    // For now, as API endpoints for this specific aggregated view are not defined,
-    // we will set data to empty/null and the UI will show "No data available".
-    
-    // Simulating an API call delay before showing "No data"
-    const timer = setTimeout(() => {
-      setReportStats(null); // No data for stats
-      setYearlySummary([]);   // No data for yearly summary
-      setCategorySummary([]); // No data for category summary
-      setIsLoading(false);
-      // Example: toast({ variant: "default", title: "Information", description: "Reporting data backend not yet fully implemented for this view." });
-    }, 1000); // Simulate a 1-second fetch
 
-    return () => clearTimeout(timer);
-  }, [currencyCode, token, toast, t]); // Dependencies for fetchReportData
+    const now = new Date();
+    const isCurrentMonth = getYear(now) === yearToFetch && (getMonth(now) + 1) === monthToFetch;
+
+    if (token && isCurrentMonth) {
+        try {
+            const [incomeData, expenseData, categoryData] = await Promise.all([
+                getDashboardMonthlyIncome(token),
+                getDashboardMonthExpenses(token),
+                getDashboardChartTotalExpense(token),
+            ]);
+
+            const stats: ReportPageStats = {
+                selectedMonthIncome: incomeData.month_income,
+                selectedMonthExpense: expenseData.month_expense,
+            };
+            setReportStats(stats);
+
+            const categories: CategoryMonthlySummary[] = categoryData.month_expense_chart
+                ? Object.entries(categoryData.month_expense_chart).map(([name, data]) => ({
+                    categoryName: name === 'no_category' ? t('noCategory') : name,
+                    amount: data.amount,
+                    color: data.color
+                }))
+                : [];
+            setCategorySummary(categories);
+            setYearlySummary([]);
+
+        } catch (error: any) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+            setReportStats(null);
+            setCategorySummary([]);
+            setYearlySummary([]);
+        } finally {
+            setIsLoading(false);
+        }
+    } else {
+        if (token) {
+            toast({
+                title: t('historicalDataUnavailableTitle'),
+                description: t('historicalDataUnavailableDesc'),
+                variant: 'default',
+            });
+        }
+        setReportStats(null);
+        setYearlySummary([]);
+        setCategorySummary([]);
+        setIsLoading(false);
+    }
+  }, [token, t, toast]);
 
   useEffect(() => {
     fetchReportData(appliedYear, appliedMonth);
@@ -161,7 +197,7 @@ export default function GeneralReportPage() {
     <div className="flex flex-col items-center justify-center h-full text-center py-10">
       <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
       <p className="text-lg text-muted-foreground">{t('noDataAvailable')}</p>
-      <p className="text-sm text-muted-foreground">{t('reportPage.noDataDesc') || 'There is no data to display for the selected period or this report requires further backend integration.'}</p>
+      <p className="text-sm text-muted-foreground">{t('reportPage.noDataDesc')}</p>
     </div>
   );
 
@@ -178,7 +214,7 @@ export default function GeneralReportPage() {
         <div className="space-y-6 bg-background p-4 rounded-lg">
           <Card>
             <CardHeader>
-              <CardTitle>{t('reportFiltersTitle') || "Report Filters"}</CardTitle>
+              <CardTitle>{t('reportFiltersTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
@@ -224,8 +260,6 @@ export default function GeneralReportPage() {
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Skeleton className="h-20 w-full rounded-md" />
                 <Skeleton className="h-20 w-full rounded-md" />
-                <Skeleton className="h-20 w-full rounded-md" />
-                <Skeleton className="h-20 w-full rounded-md" />
               </CardContent>
             </Card>
           ) : reportStats ? (
@@ -237,14 +271,18 @@ export default function GeneralReportPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-muted/30 rounded-md">
-                  <p className="text-xs text-muted-foreground">{t('startOfMonthBalanceLabel')}</p>
-                  <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.startOfMonthBalance} currencyCode={currencyCode} /></p>
-                </div>
-                <div className="p-4 bg-muted/30 rounded-md">
-                  <p className="text-xs text-muted-foreground">{t('endOfMonthBalanceLabel')}</p>
-                  <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.endOfMonthBalance} currencyCode={currencyCode} /></p>
-                </div>
+                {reportStats.startOfMonthBalance !== undefined && (
+                    <div className="p-4 bg-muted/30 rounded-md">
+                        <p className="text-xs text-muted-foreground">{t('startOfMonthBalanceLabel')}</p>
+                        <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.startOfMonthBalance} currencyCode={currencyCode} /></p>
+                    </div>
+                )}
+                {reportStats.endOfMonthBalance !== undefined && (
+                    <div className="p-4 bg-muted/30 rounded-md">
+                        <p className="text-xs text-muted-foreground">{t('endOfMonthBalanceLabel')}</p>
+                        <p className="text-xl font-semibold"><CurrencyDisplay amountInCents={reportStats.endOfMonthBalance} currencyCode={currencyCode} /></p>
+                    </div>
+                )}
                 <div className="p-4 bg-green-500/10 rounded-md">
                   <p className="text-xs text-green-700 dark:text-green-400">{t('incomeLabel')} ({t('forSelectedMonth')})</p>
                   <p className="text-xl font-semibold text-green-600 dark:text-green-300"><CurrencyDisplay amountInCents={reportStats.selectedMonthIncome} currencyCode={currencyCode} /></p>
