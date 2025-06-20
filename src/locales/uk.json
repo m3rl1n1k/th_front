@@ -683,15 +683,6 @@
   "monthlyCategorySummaryChartTitle": "Місячні витрати за категоріями",
   "forSelectedMonth": "за обраний місяць",
   "incomeLabel": "Дохід",
-  "expenseLabel": "Витрати",
-  "saveToPdfButton": "Зберегти в PDF",
-  "generatingPdfButton": "Генерація PDF...",
-  "reportContentMissingError": "Вміст звіту не знайдено для генерації PDF.",
-  "pdfGenerationFailedTitle": "Помилка генерації PDF",
-  "pdfGenerationFailedDesc": "Не вдалося створити PDF-звіт. Будь ласка, спробуйте ще раз.",
-  "aiFinancialAnalysisTitle": "AI Фінансовий Аналіз",
-  "aiSummaryGenerationFailedError": "Не вдалося створити AI-звіт для аналізу.",
-  "aiSummaryGenerationFailedTitle": "Помилка AI-Звіту",
-  "aiSummaryNotAvailableError": "AI-аналіз наразі неможливо включити."
+  "expenseLabel": "Витрати"
 }
 

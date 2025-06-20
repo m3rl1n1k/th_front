@@ -10,15 +10,13 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon, Download, Loader2, Brain } from 'lucide-react';
+import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector, TooltipProps } from "recharts";
 import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
 import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
-import type { GenerateReportSummaryInput } from '@/ai/flows/generate-report-summary-flow'; // Import for type usage
+
 
 // Placeholder data - replace with actual API calls
 const getPlaceholderReportStats = (year: number, month: number, currencyCode: string): ReportPageStats => {
@@ -81,9 +79,7 @@ export default function GeneralReportPage() {
   const [yearlySummary, setYearlySummary] = useState<MonthlyFinancialSummary[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategoryMonthlySummary[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const reportContentRef = useRef<HTMLDivElement>(null);
-
+  
 
   useEffect(() => {
     // In a real app, these would be API calls based on selectedYear/Month
@@ -166,117 +162,6 @@ export default function GeneralReportPage() {
     );
   };
 
-  const handleSaveToPdf = async () => {
-    if (!reportContentRef.current) {
-      toast({ variant: 'destructive', title: t('error'), description: t('reportContentMissingError') });
-      return;
-    }
-    setIsGeneratingPdf(true);
-    try {
-      const saveButton = document.getElementById('save-pdf-button');
-      const originalDisplay = saveButton ? saveButton.style.display : '';
-      if (saveButton) saveButton.style.display = 'none';
-
-      const canvas = await html2canvas(reportContentRef.current, {
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-      });
-      
-      if (saveButton) saveButton.style.display = originalDisplay;
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4',
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = imgProps.width;
-      const imgHeight = imgProps.height;
-
-      const ratio = imgWidth / imgHeight;
-      let newImgWidth = pdfWidth - 40; 
-      let newImgHeight = newImgWidth / ratio;
-
-      if (newImgHeight > pdfHeight - 40) {
-        newImgHeight = pdfHeight - 40;
-        newImgWidth = newImgHeight * ratio;
-      }
-
-      const x = (pdfWidth - newImgWidth) / 2;
-      const y = 20; // Top margin for the main report content
-
-      pdf.addImage(imgData, 'PNG', x, y, newImgWidth, newImgHeight);
-
-      // AI Summary Section
-      if (reportStats) {
-        const aiReportInput: GenerateReportSummaryInput = {
-          reportStats: {
-            startOfMonthBalance: reportStats.startOfMonthBalance,
-            endOfMonthBalance: reportStats.endOfMonthBalance,
-            selectedMonthIncome: reportStats.selectedMonthIncome,
-            selectedMonthExpense: reportStats.selectedMonthExpense,
-          },
-          yearlySummary,
-          categorySummary,
-          selectedYear,
-          selectedMonth,
-          currencyCode,
-          language,
-          monthName: format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale }),
-        };
-
-        try {
-          const response = await fetch('/api/generate-report-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(aiReportInput),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || t('aiSummaryGenerationFailedError'));
-          }
-
-          const { summaryText } = await response.json();
-          
-          pdf.addPage();
-          pdf.setFontSize(16);
-          pdf.text(t('aiFinancialAnalysisTitle'), pdfWidth / 2, 40, { align: 'center' });
-          
-          pdf.setFontSize(10);
-          const aiLines = pdf.splitTextToSize(summaryText, pdfWidth - 60); // 60 for wider margins
-          pdf.text(aiLines, 30, 70);
-
-        } catch (aiError: any) {
-          console.error("AI Summary Generation Error:", aiError);
-          toast({ variant: 'destructive', title: t('aiSummaryGenerationFailedTitle'), description: aiError.message });
-          
-          // Optionally add a note to the PDF that AI summary failed
-          pdf.addPage();
-          pdf.setFontSize(12);
-          pdf.text(t('aiFinancialAnalysisTitle'), pdfWidth / 2, 40, { align: 'center' });
-          pdf.setFontSize(10);
-          pdf.text(t('aiSummaryNotAvailableError'), 30, 70);
-        }
-      }
-
-      const filename = `FinanceFlow_Report_${format(new Date(selectedYear, selectedMonth -1), 'yyyy-MM')}.pdf`;
-      pdf.save(filename);
-
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast({ variant: 'destructive', title: t('pdfGenerationFailedTitle'), description: t('pdfGenerationFailedDesc') });
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
-
-
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -285,17 +170,9 @@ export default function GeneralReportPage() {
             <FileSignature className="mr-3 h-8 w-8 text-primary" />
             {t('generalReportPageTitle')}
           </h1>
-          <Button id="save-pdf-button" onClick={handleSaveToPdf} disabled={isGeneratingPdf}>
-            {isGeneratingPdf ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="mr-2 h-4 w-4" />
-            )}
-            {isGeneratingPdf ? t('generatingPdfButton') : t('saveToPdfButton')}
-          </Button>
         </div>
         
-        <div ref={reportContentRef} className="space-y-6 bg-background p-4 rounded-lg"> {/* Added bg and padding for better capture */}
+        <div className="space-y-6 bg-background p-4 rounded-lg"> {/* Added bg and padding for better capture */}
           {/* Filters */}
           <Card className="shadow-md">
             <CardHeader>
