@@ -347,8 +347,8 @@ export default function WalletsPage() {
             ))}
           </div>
         ) : (
-          <Card className="shadow-xl border-border/60">
-            <CardHeader className="border-b border-border/60">
+          <Card className="shadow-xl">
+            <CardHeader className="border-b">
               <CardTitle>{t('walletsListTableTitle')}</CardTitle>
               <CardDescription>{t('walletsListTableDescription')}</CardDescription>
             </CardHeader>
