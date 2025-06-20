@@ -18,7 +18,7 @@ import { Save, Info, Palette, ListChecks, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { updateUserSettings, getUserSettings } from '@/lib/api';
 import type { UserSettings, ApiError } from '@/types';
-import { ColorSwatches } from '@/components/common/ColorSwatches'; // Updated import
+import { ColorSwatches } from '@/components/common/ColorSwatches';
 
 const GEMINI_API_KEY_STORAGE_KEY = 'financeflow_gemini_api_key';
 const DEFAULT_RECORDS_PER_PAGE = 20;
@@ -76,9 +76,9 @@ export default function SettingsPage() {
   const watchedCapitalColor = watch("chart_capital_color");
 
   const fetchSettingsData = useCallback(async () => {
-    if (!token) { // Rely primarily on token for fetching
+    if (!token) {
         setIsLoadingPageData(false);
-        reset({ // Reset to application defaults if no token (user not logged in)
+        reset({
             chart_income_color: DEFAULT_CHART_INCOME_COLOR,
             chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
             chart_capital_color: DEFAULT_CHART_CAPITAL_COLOR,
@@ -88,8 +88,8 @@ export default function SettingsPage() {
     }
     setIsLoadingPageData(true);
     try {
-        const response = await getUserSettings(token);
-        const fetchedSettings = response.settings;
+        const response = await getUserSettings(token); // response type is { settings: UserSettings }
+        const fetchedSettings = response.settings;    // fetchedSettings is UserSettings | undefined
         
         reset({
             chart_income_color: fetchedSettings?.chart_income_color ?? user?.settings?.chart_income_color ?? DEFAULT_CHART_INCOME_COLOR,
@@ -100,7 +100,7 @@ export default function SettingsPage() {
     } catch (error) {
         console.error("Failed to fetch user settings:", error);
         toast({ variant: "destructive", title: t('errorFetchingUserSettings'), description: (error as ApiError).message });
-        reset({ // Fallback to context user settings or app defaults on API error
+        reset({
             chart_income_color: user?.settings?.chart_income_color ?? DEFAULT_CHART_INCOME_COLOR,
             chart_expense_color: user?.settings?.chart_expense_color ?? DEFAULT_CHART_EXPENSE_COLOR,
             chart_capital_color: user?.settings?.chart_capital_color ?? DEFAULT_CHART_CAPITAL_COLOR,
@@ -119,13 +119,10 @@ export default function SettingsPage() {
         setGeminiApiKey(storedApiKey);
       }
     }
-    // Fetch settings if token exists and auth is not loading.
-    // This prioritizes fetching from server based on token.
     if (token && !authIsLoading) {
         fetchSettingsData();
-    } else if (!authIsLoading && !token) { // Auth settled, no token (not logged in)
+    } else if (!authIsLoading && !token) {
         setIsLoadingPageData(false);
-        // Reset to application defaults as there's no user session
         reset({
             chart_income_color: DEFAULT_CHART_INCOME_COLOR,
             chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
@@ -149,7 +146,7 @@ export default function SettingsPage() {
         records_per_page: data.records_per_page ? Number(data.records_per_page) : null,
       };
       await updateUserSettings(payload, token);
-      await fetchUser(); // Refresh user context, which includes settings
+      await fetchUser();
       toast({
         title: t('userSettingsSavedSuccess'),
         description: t('settingsSavedDesc'),
@@ -372,7 +369,7 @@ export default function SettingsPage() {
                             max="100"
                             placeholder={String(DEFAULT_RECORDS_PER_PAGE)}
                             {...field}
-                            value={field.value ?? ''} // Ensure value is not null/undefined for input
+                            value={field.value ?? ''}
                             className={errors.records_per_page ? 'border-destructive' : ''}
                         />
                         )}
