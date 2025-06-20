@@ -17,7 +17,7 @@ import { format, getYear, getMonth } from 'date-fns';
 import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getDashboardChartTotalExpense, getDashboardMonthExpenses, getDashboardMonthlyIncome } from '@/lib/api';
+import { getReportData } from '@/lib/api';
 
 interface ActiveShapeProps {
   cx: number;
@@ -59,62 +59,39 @@ export default function GeneralReportPage() {
   const fetchReportData = useCallback(async (yearToFetch: number, monthToFetch: number) => {
     setIsLoading(true);
 
-    const now = new Date();
-    const isCurrentMonth = getYear(now) === yearToFetch && (getMonth(now) + 1) === monthToFetch;
+    if (!token) {
+        setIsLoading(false);
+        return;
+    }
 
-    if (token && isCurrentMonth) {
-        try {
-            const [incomeData, expenseData, categoryData] = await Promise.all([
-                getDashboardMonthlyIncome(token),
-                getDashboardMonthExpenses(token),
-                getDashboardChartTotalExpense(token),
-            ]);
+    try {
+        const data = await getReportData(token, yearToFetch, monthToFetch);
+        setReportStats(data.reportStats);
+        setYearlySummary(data.yearlySummary || []);
+        
+        // Transform category names for translation
+        const translatedCategorySummary = (data.categorySummary || []).map(item => ({
+            ...item,
+            categoryName: item.categoryName === 'no_category' ? t('noCategory') : item.categoryName,
+        }));
+        setCategorySummary(translatedCategorySummary);
 
-            const stats: ReportPageStats = {
-                selectedMonthIncome: incomeData.month_income,
-                selectedMonthExpense: expenseData.month_expense,
-            };
-            setReportStats(stats);
-
-            const categories: CategoryMonthlySummary[] = categoryData.month_expense_chart
-                ? Object.entries(categoryData.month_expense_chart).map(([name, data]) => ({
-                    categoryName: name === 'no_category' ? t('noCategory') : name,
-                    amount: data.amount,
-                    color: data.color
-                }))
-                : [];
-            setCategorySummary(categories);
-            setYearlySummary([]);
-
-        } catch (error: any) {
-            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-            setReportStats(null);
-            setCategorySummary([]);
-            setYearlySummary([]);
-        } finally {
-            setIsLoading(false);
-        }
-    } else {
-        if (token) {
-            toast({
-                title: t('historicalDataUnavailableTitle'),
-                description: t('historicalDataUnavailableDesc'),
-                variant: 'default',
-            });
-        }
+    } catch (error: any) {
+        toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         setReportStats(null);
         setYearlySummary([]);
         setCategorySummary([]);
+    } finally {
         setIsLoading(false);
     }
   }, [token, t, toast]);
+
 
   useEffect(() => {
     fetchReportData(appliedYear, appliedMonth);
   }, [appliedYear, appliedMonth, fetchReportData]);
 
   const handleApplyReportFilters = () => {
-    setIsLoading(true);
     setAppliedYear(selectedYear);
     setAppliedMonth(selectedMonth);
   };

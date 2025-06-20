@@ -529,6 +529,12 @@ export interface ReportPageStats {
   selectedMonthExpense: number; // in cents
 }
 
+export interface ReportDataResponse {
+  reportStats: ReportPageStats;
+  yearlySummary: MonthlyFinancialSummary[];
+  categorySummary: CategoryMonthlySummary[];
+}
+
 export interface PaginationInfo {
   page: number;
   per_page: number;
