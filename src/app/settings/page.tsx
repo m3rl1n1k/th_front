@@ -10,17 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Info, Palette, ListChecks, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Save, Palette, ListChecks, Loader2 } from 'lucide-react';
 import { updateUserSettings, getUserSettings } from '@/lib/api';
 import type { UserSettings, ApiError } from '@/types';
 import { ColorSwatches } from '@/components/common/ColorSwatches';
 
-const GEMINI_API_KEY_STORAGE_KEY = 'financeflow_gemini_api_key';
 const DEFAULT_RECORDS_PER_PAGE = 20;
 const DEFAULT_CHART_INCOME_COLOR = '#10b981';
 const DEFAULT_CHART_EXPENSE_COLOR = '#ef4444';
@@ -52,7 +50,6 @@ export default function SettingsPage() {
   const { user, token, fetchUser, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   
-  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoadingPageData, setIsLoadingPageData] = useState(true);
 
   const [isIncomeColorModalOpen, setIsIncomeColorModalOpen] = useState(false);
@@ -88,8 +85,8 @@ export default function SettingsPage() {
     }
     setIsLoadingPageData(true);
     try {
-        const response = await getUserSettings(token); // response type is { settings: UserSettings }
-        const fetchedSettings = response.settings;    // fetchedSettings is UserSettings | undefined
+        const response = await getUserSettings(token); 
+        const fetchedSettings = response.settings;    
         
         reset({
             chart_income_color: fetchedSettings?.chart_income_color ?? user?.settings?.chart_income_color ?? DEFAULT_CHART_INCOME_COLOR,
@@ -113,12 +110,6 @@ export default function SettingsPage() {
 
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedApiKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
-      if (storedApiKey) {
-        setGeminiApiKey(storedApiKey);
-      }
-    }
     if (token && !authIsLoading) {
         fetchSettingsData();
     } else if (!authIsLoading && !token) {
@@ -158,28 +149,6 @@ export default function SettingsPage() {
         title: t('errorUpdatingUserSettings'),
         description: apiError.message || t('unexpectedError'),
       });
-    }
-  };
-
-  const handleApiKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setGeminiApiKey(event.target.value);
-  };
-
-  const handleSaveApiKey = () => {
-    if (typeof window !== 'undefined') {
-      if (geminiApiKey.trim()) {
-        localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, geminiApiKey.trim());
-        toast({
-          title: t('geminiApiKeySavedTitle'),
-          description: t('geminiApiKeySavedDesc'),
-        });
-      } else {
-        localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
-         toast({
-          title: t('geminiApiKeyRemovedTitle'),
-          description: t('geminiApiKeyRemovedDesc'),
-        });
-      }
     }
   };
   
@@ -387,34 +356,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>{t('geminiApiKeySettingsTitle')}</CardTitle>
-            <CardDescription>{t('geminiApiKeySettingsDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="geminiApiKey">{t('geminiApiKeyLabel')}</Label>
-              <Input
-                id="geminiApiKey"
-                type="password"
-                value={geminiApiKey}
-                onChange={handleApiKeyChange}
-                placeholder={t('geminiApiKeyPlaceholder')}
-              />
-            </div>
-             <Alert variant="default" className="bg-primary/5 border-primary/20 text-primary-foreground dark:bg-primary/10 dark:border-primary/30">
-              <Info className="h-4 w-4 !text-primary" />
-              <AlertDescription className="text-xs">
-                {t('geminiApiKeyNote')}
-              </AlertDescription>
-            </Alert>
-            <Button onClick={handleSaveApiKey} className="w-full sm:w-auto">
-              <Save className="mr-2 h-4 w-4" />
-              {t('geminiApiKeySaveButton')}
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </MainLayout>
   );

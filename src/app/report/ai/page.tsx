@@ -14,26 +14,14 @@ import { getDashboardMonthlyIncome, getDashboardMonthExpenses, getDashboardChart
 import type { GenerateReportSummaryInput, CategoryMonthlySummary } from '@/ai/flows/generate-report-summary-flow';
 import { format, getYear, getMonth } from 'date-fns';
 
-const GEMINI_API_KEY_STORAGE_KEY = 'financeflow_gemini_api_key';
-
 export default function AiReportPage() {
   const { t, language, dateFnsLocale } = useTranslation();
   const { user, token } = useAuth();
   const { toast } = useToast();
 
-  const [apiKeySet, setApiKeySet] = useState(false);
-  const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [reportSummary, setReportSummary] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
-      setApiKeySet(!!storedKey);
-    }
-    setIsLoadingKey(false);
-  }, []);
 
   const handleGenerateReport = useCallback(async () => {
     if (!token || !user?.userCurrency?.code) {
@@ -70,7 +58,6 @@ export default function AiReportPage() {
         reportStats: {
           selectedMonthIncome: incomeData.month_income,
           selectedMonthExpense: expenseData.month_expense,
-          // startOfMonthBalance and endOfMonthBalance are optional and not easily available from dashboard
         },
         categorySummary: categorySummaryForAI,
         selectedYear,
@@ -78,7 +65,6 @@ export default function AiReportPage() {
         monthName,
         currencyCode,
         language,
-        // yearlySummary is optional and omitted for now
       };
 
       const response = await fetch('/api/generate-report-summary', {
@@ -120,43 +106,22 @@ export default function AiReportPage() {
             <CardDescription>{t('aiReport.getYourSummaryDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {isLoadingKey ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : !apiKeySet ? (
-              <div className="text-center py-10">
-                <AlertTriangle className="mx-auto h-16 w-16 text-destructive mb-4" />
-                <p className="text-lg font-semibold text-destructive-foreground mb-2">
-                  {t('aiReportApiKeyMissingTitle')}
-                </p>
-                <p className="text-muted-foreground mb-4">
-                  {t('aiReportApiKeyMissingDesc')}
-                </p>
-                <Button asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    {t('navigateToSettings')}
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center">
-                <Button
-                  onClick={handleGenerateReport}
-                  disabled={isGeneratingReport}
-                  size="lg"
-                  className="w-full sm:w-auto"
-                >
-                  {isGeneratingReport ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-2 h-5 w-5" />
-                  )}
-                  {isGeneratingReport ? t('aiReport.generatingButton') : t('aiReport.generateButton')}
-                </Button>
-              </div>
-            )}
+            <div className="text-center">
+              <Button
+                onClick={handleGenerateReport}
+                disabled={isGeneratingReport || !token}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
+                {isGeneratingReport ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-5 w-5" />
+                )}
+                {isGeneratingReport ? t('aiReport.generatingButton') : t('aiReport.generateButton')}
+              </Button>
+            </div>
+            
 
             {reportSummary && (
               <Card className="mt-6 bg-muted/30 dark:bg-muted/10">
