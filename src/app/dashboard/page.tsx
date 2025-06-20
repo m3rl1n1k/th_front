@@ -487,14 +487,14 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center space-x-3 flex-shrink min-w-0">
                                 {item.icon}
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0"> {/* Added min-w-0 here */}
                                     <p className="text-sm font-medium text-foreground truncate" title={item.displayText}>
                                         {item.displayText}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{item.date}</p>
                                 </div>
                             </div>
-                            <div className="text-sm font-medium text-right flex-shrink-0 ml-2">
+                            <div className="text-sm font-medium text-right flex-shrink-0 ml-2"> {/* Added ml-2 for spacing */}
                                 <CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} />
                             </div>
                         </div>
