@@ -3,10 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: var(--font-inter), sans-serif;
-}
-
 @layer base {
   :root {
     --background: 210 20% 95%; /* HSL(210, 20%, 95%) -> RGB(#F0F5FF) */
@@ -43,6 +39,7 @@ body {
     --sidebar-border: 210 20% 80%;
     --sidebar-ring: 210 70% 50%;
   }
+
   .dark {
     --background: 210 20% 10%; /* Darker blue background */
     --foreground: 210 20% 95%;
@@ -76,14 +73,5 @@ body {
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 210 20% 30%;
     --sidebar-ring: 210 70% 50%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
