@@ -15,20 +15,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { useAuth } from '@/context/auth-context'; 
-import { 
-  getTransactionTypes, 
-  getTransactionsList, 
-  getMainCategories, 
+import { useAuth } from '@/context/auth-context';
+import {
+  getTransactionTypes,
+  getTransactionsList,
+  getMainCategories,
   deleteTransaction,
   getRepeatedTransactionsList,
   toggleRepeatedTransactionStatus,
   deleteRepeatedTransactionDefinition,
   getTransactionFrequencies
 } from '@/lib/api';
-import { useTranslation } from '@/context/i18n-context'; 
-import { 
-  CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
+import { useTranslation } from '@/context/i18n-context';
+import {
+  CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History,
   ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText, Shapes
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -62,30 +62,30 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function TransactionsPage() {
-  const { user, token, isAuthenticated } = useAuth(); 
-  const { t, dateFnsLocale } = useTranslation(); 
+  const { user, token, isAuthenticated } = useAuth();
+  const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
-  const [apiFrequencies, setApiFrequencies] = useState<AppFrequency[]>([]); 
-  
-  const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]); 
-  const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null); 
-  
+  const [apiFrequencies, setApiFrequencies] = useState<AppFrequency[]>([]);
+
+  const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]);
+  const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null);
+
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true); 
-  const [isLoadingMore, setIsLoadingMore] = useState(false); 
-  const [isLoadingRepeatedDefinitions, setIsLoadingRepeatedDefinitions] = useState(false); 
+  const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingRepeatedDefinitions, setIsLoadingRepeatedDefinitions] = useState(false);
 
   const [filters, setFilters] = useState<{
     startDate?: Date;
     endDate?: Date;
-    categoryId?: string; 
+    categoryId?: string;
     typeId?: string;
   }>({});
   const [activeTab, setActiveTab] = useState<"all" | "recurring">("all");
@@ -110,7 +110,7 @@ export default function TransactionsPage() {
         .then(data => {
           const formattedTypes = Object.entries(data.types).map(([id, name]) => ({
             id: id,
-            name: name as string 
+            name: name as string
           }));
           setTransactionTypes(formattedTypes);
         })
@@ -125,7 +125,7 @@ export default function TransactionsPage() {
         })
         .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
         .finally(() => setIsLoadingCategories(false));
-      
+
       setIsLoadingFrequencies(true);
       getTransactionFrequencies(token)
         .then(data => {
@@ -155,19 +155,19 @@ export default function TransactionsPage() {
       } else {
         setIsLoadingMore(true);
       }
-      const params: Record<string, string | number | undefined> = {}; 
+      const params: Record<string, string | number | undefined> = {};
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
-      
+
       params.page = pageToFetch;
-      
+
       getTransactionsList(token, params)
-        .then((result: GetTransactionsListResponse) => { 
+        .then((result: GetTransactionsListResponse) => {
           const newItems = result.transactions.items || [];
           const pagination = result.transactions.pagination;
-          
+
           setRawTransactions(prev => pageToFetch === 1 ? newItems : [...prev, ...newItems]);
           setCurrentPage(pagination.page);
           setTotalPages(pagination.total_pages);
@@ -188,7 +188,7 @@ export default function TransactionsPage() {
       setTotalPages(1);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab, toast, t]); 
+  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab, toast, t]);
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
@@ -209,14 +209,14 @@ export default function TransactionsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token, activeTab, t, toast]);
 
+
   useEffect(() => {
     if (activeTab === "all" && isAuthenticated && token) {
-      fetchTransactions(1); 
+      fetchTransactions(1);
     } else if (activeTab === "recurring" && isAuthenticated && token) {
       fetchRepeatedDefinitions();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, activeTab]); 
+  }, [isAuthenticated, token, activeTab, fetchTransactions, fetchRepeatedDefinitions]);
 
 
   useEffect(() => {
@@ -225,8 +225,8 @@ export default function TransactionsPage() {
 
   const processedTransactions = useMemo(() => {
     return rawTransactions.map(tx => {
-      const categoryName = tx.subCategory 
-        ? t(generateCategoryTranslationKey(tx.subCategory.name), {defaultValue: tx.subCategory.name}) 
+      const categoryName = tx.subCategory
+        ? t(generateCategoryTranslationKey(tx.subCategory.name), {defaultValue: tx.subCategory.name})
         : t('noCategory');
       return {
         ...tx,
@@ -234,8 +234,8 @@ export default function TransactionsPage() {
         categoryName: categoryName
       };
     });
-  }, [rawTransactions, transactionTypes, t, allSubCategories]); 
-  
+  }, [rawTransactions, transactionTypes, t, allSubCategories]);
+
   const { groups, sortedDateKeys } = useMemo(() => {
     const newGroups: GroupedTransactions = processedTransactions.reduce((acc, tx) => {
       const dateKey = format(parseISO(tx.date), 'yyyy-MM-dd');
@@ -265,8 +265,8 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    setRawTransactions([]); 
-    setCurrentPage(1);    
+    setRawTransactions([]);
+    setCurrentPage(1);
     fetchTransactions(1);
   };
 
@@ -276,7 +276,7 @@ export default function TransactionsPage() {
     setCurrentPage(1);
     fetchTransactions(1);
   };
-  
+
   const handleAddNewTransaction = () => router.push('/transactions/new');
 
   const openDeleteDialog = (transaction: Transaction) => {
@@ -291,7 +291,7 @@ export default function TransactionsPage() {
       await deleteTransaction(selectedTransactionForDelete.id, token);
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
       setRawTransactions(prev => prev.filter(tx => tx.id !== selectedTransactionForDelete.id));
-      if (rawTransactions.length === 1 && currentPage > 1) { 
+      if (rawTransactions.length === 1 && currentPage > 1) {
         fetchTransactions(currentPage - 1);
       } else if (rawTransactions.length % (user?.settings?.records_per_page || 20) === 1 && rawTransactions.length > 1) {
         fetchTransactions(currentPage);
@@ -314,14 +314,14 @@ export default function TransactionsPage() {
     setInitiatingActionForTxId(txId);
     router.push(`/transactions/${txId}/edit`);
   };
-  
+
   const handleToggleDefinitionStatus = async (definition: RepeatedTransactionEntry) => {
     if (!token) return;
-    setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } })); 
+    setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: true } }));
     try {
-      await toggleRepeatedTransactionStatus(definition.id, token); 
+      await toggleRepeatedTransactionStatus(definition.id, token);
       toast({ title: t('statusToggledTitle'), description: t('statusToggledDesc')});
-      fetchRepeatedDefinitions(false); 
+      fetchRepeatedDefinitions(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorTogglingStatus'), description: error.message || t('unexpectedError') });
     } finally {
@@ -338,9 +338,9 @@ export default function TransactionsPage() {
     if (!selectedDefinitionForDelete || !token) return;
     setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: true } }));
     try {
-      await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token); 
+      await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token);
       toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
-      fetchRepeatedDefinitions(false); 
+      fetchRepeatedDefinitions(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorRemovingDefinition'), description: error.message || t('unexpectedError') });
     } finally {
@@ -377,7 +377,7 @@ export default function TransactionsPage() {
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noTransactionsFound')}</p>
-                <p className="text-sm">{t('tryAdjustingFilters')}</p> 
+                <p className="text-sm">{t('tryAdjustingFilters')}</p>
             </div>
           </TableCell>
         </TableRow>
@@ -400,8 +400,8 @@ export default function TransactionsPage() {
           } else if (tx.typeName?.toUpperCase() === 'TRANSFER') {
               typeIcon = <ArrowRightLeft className="h-5 w-5 text-blue-500" />;
           }
-          
-          const showLoaderForThisTx = 
+
+          const showLoaderForThisTx =
             (initiatingActionForTxId === tx.id) ||
             (selectedTransactionForDelete?.id === tx.id && (isDeleting || deleteConfirmationOpen));
 
@@ -435,16 +435,16 @@ export default function TransactionsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onSelect={() => handleViewAction(tx.id)} 
+                    <DropdownMenuItem
+                      onSelect={() => handleViewAction(tx.id)}
                       className="flex items-center cursor-pointer"
                       disabled={initiatingActionForTxId === tx.id}
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       {t('viewAction')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onSelect={() => handleEditAction(tx.id)} 
+                    <DropdownMenuItem
+                      onSelect={() => handleEditAction(tx.id)}
                       className="flex items-center cursor-pointer"
                       disabled={initiatingActionForTxId === tx.id}
                     >
@@ -453,7 +453,7 @@ export default function TransactionsPage() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onSelect={() => openDeleteDialog(tx)} 
+                      onSelect={() => openDeleteDialog(tx)}
                       className="text-destructive focus:text-destructive flex items-center cursor-pointer"
                       disabled={isDeleting && selectedTransactionForDelete?.id === tx.id}
                     >
@@ -469,12 +469,12 @@ export default function TransactionsPage() {
       </React.Fragment>
     ));
   };
-  
+
   const renderRepeatedDefinitionsTableContent = () => {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center border-b-0"> 
+          <TableCell colSpan={6} className="h-60 text-center border-b-0">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -487,17 +487,17 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground border-b-0"> 
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground border-b-0">
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
-                <p className="text-sm">{t('addNewTransaction')}</p> 
+                <p className="text-sm">{t('addNewTransaction')}</p>
             </div>
           </TableCell>
         </TableRow>
       );
     }
-    
+
     return repeatedDefinitions.map(def => {
       const isActionLoading = definitionActionStates[def.id]?.isLoading || false;
       const templateTransactionId = def.transaction?.id;
@@ -506,9 +506,9 @@ export default function TransactionsPage() {
       <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors border-b-0">
         <TableCell className="py-3 px-4 align-top text-sm">
           {templateTransactionId ? (
-            <Button 
-              variant="link" 
-              className="p-0 h-auto text-primary hover:underline" 
+            <Button
+              variant="link"
+              className="p-0 h-auto text-primary hover:underline"
               onClick={() => router.push(`/transactions/${templateTransactionId}/edit`)}
             >
                {t('templateId')} #{templateTransactionId}
@@ -551,7 +551,6 @@ export default function TransactionsPage() {
       </TableRow>
     )});
   };
-
 
   return (
     <MainLayout>
@@ -631,7 +630,7 @@ export default function TransactionsPage() {
                               <SelectItem value="all">{t('allTypes')}</SelectItem>
                               {transactionTypes.map(type => (
                                 <SelectItem key={type.id} value={type.id}>
-                                  {t(\`transactionType_\${type.name}\` as any, {defaultValue: type.name})}
+                                  {t(`transactionType_${type.name}` as any, {defaultValue: type.name})}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -761,8 +760,8 @@ export default function TransactionsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSelectedDefinitionForDelete(null)}>{t('cancelButton')}</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteDefinitionConfirmed} 
+            <AlertDialogAction
+              onClick={handleDeleteDefinitionConfirmed}
               disabled={definitionActionStates[selectedDefinitionForDelete?.id || '']?.isLoading}
               className="bg-destructive hover:bg-destructive/90"
             >
