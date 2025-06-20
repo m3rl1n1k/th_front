@@ -1,51 +1,21 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon, Download, Loader2 } from 'lucide-react';
+import { FileSignature, LineChart as LineChartIcon, PieChart as PieChartIcon, DollarSign, CalendarDays, Loader2, AlertTriangle } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector, TooltipProps } from "recharts";
-import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
-import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary, UserSettings } from '@/types';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Legend, Sector } from "recharts";
+import { format, getYear, getMonth, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-
-// Placeholder data - replace with actual API calls
-const getPlaceholderReportStats = (year: number, month: number, currencyCode: string): ReportPageStats => {
-  return {
-    startOfMonthBalance: Math.random() * 5000000, 
-    endOfMonthBalance: Math.random() * 6000000,
-    selectedMonthIncome: Math.random() * 1000000,
-    selectedMonthExpense: Math.random() * 800000,
-  };
-};
-
-const getPlaceholderYearlySummary = (year: number, currencyCode: string): MonthlyFinancialSummary[] => {
-  const months = eachMonthOfInterval({ start: startOfMonth(new Date(year, 0, 1)), end: endOfMonth(new Date(year, 11, 1)) });
-  return months.map(m => ({
-    month: format(m, 'MMM', {}), 
-    income: Math.random() * 1500000,
-    expense: Math.random() * 1200000,
-  }));
-};
-
-const getPlaceholderCategorySummary = (year: number, month: number, currencyCode: string): CategoryMonthlySummary[] => {
-  const categories = ["Groceries", "Utilities", "Transport", "Entertainment", "Healthcare"];
-  const colors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
-  return categories.map((cat, i) => ({
-    categoryName: cat,
-    amount: Math.random() * 50000,
-    color: colors[i % colors.length],
-  }));
-};
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ActiveShapeProps {
   cx: number;
@@ -56,20 +26,19 @@ interface ActiveShapeProps {
   startAngle: number;
   endAngle: number;
   fill: string;
-  payload: CategoryMonthlySummary; 
+  payload: CategoryMonthlySummary;
   percent: number;
-  value: number; 
+  value: number;
 }
-
 
 export default function GeneralReportPage() {
   const { t, dateFnsLocale, language } = useTranslation();
-  const { user, token } = useAuth(); // Added token
+  const { user, token } = useAuth();
   const currencyCode = user?.userCurrency?.code || 'USD';
   const { toast } = useToast();
 
   const currentYear = getYear(new Date());
-  const currentMonth = getMonth(new Date()) + 1; 
+  const currentMonth = getMonth(new Date()) + 1;
 
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
@@ -78,34 +47,28 @@ export default function GeneralReportPage() {
   const [yearlySummary, setYearlySummary] = useState<MonthlyFinancialSummary[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategoryMonthlySummary[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
+  const [isLoadingReportData, setIsLoadingReportData] = useState(true);
 
   const userSettings = user?.settings;
 
-
   useEffect(() => {
-    // In a real app, these would be API calls based on selectedYear/Month
-    // For now, we keep using placeholder data.
-    // TODO: Replace with actual API calls when backend is ready
-    // Example:
-    // if (token) {
-    //   setIsLoadingReportData(true);
-    //   Promise.all([
-    //     fetchReportStats(token, selectedYear, selectedMonth),
-    //     fetchYearlySummary(token, selectedYear),
-    //     fetchCategorySummary(token, selectedYear, selectedMonth)
-    //   ]).then(([stats, yearly, category]) => {
-    //     setReportStats(stats);
-    //     setYearlySummary(yearly);
-    //     setCategorySummary(category);
-    //   }).catch(error => {
-    //     toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-    //   }).finally(() => setIsLoadingReportData(false));
-    // }
-    setReportStats(getPlaceholderReportStats(selectedYear, selectedMonth, currencyCode));
-    setYearlySummary(getPlaceholderYearlySummary(selectedYear, currencyCode));
-    setCategorySummary(getPlaceholderCategorySummary(selectedYear, selectedMonth, currencyCode));
+    setIsLoadingReportData(true);
+    // TODO: Implement API calls to fetch actual report data based on selectedYear/Month
+    // For now, as API endpoints for this specific aggregated view are not defined,
+    // we will set data to empty/null and the UI will show "No data available".
+    
+    // Simulating an API call delay before showing "No data"
+    const timer = setTimeout(() => {
+      setReportStats(null); // No data for stats
+      setYearlySummary([]);   // No data for yearly summary
+      setCategorySummary([]); // No data for category summary
+      setIsLoadingReportData(false);
+      // Example: toast({ variant: "default", title: "Information", description: "Reporting data backend not yet fully implemented for this view." });
+    }, 1000); // Simulate a 1-second fetch
+
+    return () => clearTimeout(timer);
   }, [selectedYear, selectedMonth, currencyCode, token, toast, t]);
-  
+
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i).reverse();
   const months = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
@@ -116,7 +79,6 @@ export default function GeneralReportPage() {
     income: { label: t('incomeLabel'), color: userSettings?.chart_income_color || "hsl(var(--chart-2))" },
     expense: { label: t('expenseLabel'), color: userSettings?.chart_expense_color || "hsl(var(--chart-1))" },
   } satisfies ChartConfig), [t, userSettings]);
-
 
   const categoryChartConfig = useMemo(() => {
     const config: ChartConfig = {};
@@ -132,7 +94,7 @@ export default function GeneralReportPage() {
   const onPieEnter = (_: any, index: number) => {
     setActivePieIndex(index);
   };
-  
+
   const renderActiveShape = (props: ActiveShapeProps) => {
     const RADIAN = Math.PI / 180;
     const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
@@ -180,6 +142,14 @@ export default function GeneralReportPage() {
       </g>
     );
   };
+  
+  const renderNoDataMessage = () => (
+    <div className="flex flex-col items-center justify-center h-full text-center py-10">
+      <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
+      <p className="text-lg text-muted-foreground">{t('noDataAvailable')}</p>
+      <p className="text-sm text-muted-foreground">{t('reportPage.noDataDesc') || 'There is no data to display for the selected period or this report requires further backend integration.'}</p>
+    </div>
+  );
 
   return (
     <MainLayout>
@@ -190,10 +160,9 @@ export default function GeneralReportPage() {
             {t('generalReportPageTitle')}
           </h1>
         </div>
-        
-        <div className="space-y-6 bg-background p-4 rounded-lg"> 
-          {/* Filters */}
-          <Card className="shadow-md">
+
+        <div className="space-y-6 bg-background p-4 rounded-lg">
+          <Card>
             <CardHeader>
               <CardTitle>{t('reportFiltersTitle') || "Report Filters"}</CardTitle>
             </CardHeader>
@@ -225,9 +194,20 @@ export default function GeneralReportPage() {
             </CardContent>
           </Card>
 
-          {/* Stats Block */}
-          {reportStats && (
-            <Card className="shadow-md">
+          {isLoadingReportData ? (
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-1/2 mb-2" />
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Skeleton className="h-20 w-full rounded-md" />
+                <Skeleton className="h-20 w-full rounded-md" />
+                <Skeleton className="h-20 w-full rounded-md" />
+                <Skeleton className="h-20 w-full rounded-md" />
+              </CardContent>
+            </Card>
+          ) : reportStats ? (
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <DollarSign className="mr-2 h-5 w-5 text-primary" />
@@ -253,99 +233,116 @@ export default function GeneralReportPage() {
                 </div>
               </CardContent>
             </Card>
+          ) : (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center">
+                    <DollarSign className="mr-2 h-5 w-5 text-primary" />
+                    {t('reportPageStatsTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {renderNoDataMessage()}
+                </CardContent>
+            </Card>
           )}
-          
-          {/* Charts Row */}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Yearly Income/Expense Line Chart */}
-            <Card className="shadow-md">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                    <LineChartIcon className="mr-2 h-5 w-5 text-primary"/>
-                    {t('yearlyIncomeExpenseChartTitle')} - {selectedYear}
+                  <LineChartIcon className="mr-2 h-5 w-5 text-primary" />
+                  {t('yearlyIncomeExpenseChartTitle')} - {selectedYear}
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-[350px] w-full">
-                <ChartContainer config={yearlyChartConfig} className="h-full w-full">
-                  <LineChart data={yearlySummary} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                    <YAxis tickFormatter={(value) => new Intl.NumberFormat(language, { notation: 'compact', compactDisplay: 'short' }).format(value / 100)} tickLine={false} axisLine={false} />
-                    <ChartTooltip
+                {isLoadingReportData ? (
+                  <div className="flex justify-center items-center h-full"> <Skeleton className="h-full w-full" /></div>
+                ) : yearlySummary.length > 0 ? (
+                  <ChartContainer config={yearlyChartConfig} className="h-full w-full">
+                    <LineChart data={yearlySummary} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                      <YAxis tickFormatter={(value) => new Intl.NumberFormat(language, { notation: 'compact', compactDisplay: 'short' }).format(value / 100)} tickLine={false} axisLine={false} />
+                      <ChartTooltip
                         cursor={true}
-                        content={<ChartTooltipContent indicator="dot" hideLabel 
-                        formatter={(value, name) => {
+                        content={<ChartTooltipContent indicator="dot" hideLabel
+                          formatter={(value, name) => {
                             const configKey = name as keyof typeof yearlyChartConfig;
                             const color = yearlyChartConfig[configKey]?.color;
                             return (
-                                <div className="flex items-center gap-2">
-                                    <div 
-                                        className="h-2.5 w-2.5 rounded-full" 
-                                        style={{ backgroundColor: color }} 
-                                    />
-                                    <div>
-                                        <p className="font-medium text-foreground">{yearlyChartConfig[configKey]?.label}</p>
-                                        <p className="text-muted-foreground">
-                                            <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/>
-                                        </p>
-                                    </div>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="h-2.5 w-2.5 rounded-full"
+                                  style={{ backgroundColor: color }}
+                                />
+                                <div>
+                                  <p className="font-medium text-foreground">{yearlyChartConfig[configKey]?.label}</p>
+                                  <p className="text-muted-foreground">
+                                    <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode} />
+                                  </p>
                                 </div>
-                            );
-                        }}
-                      />}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="income" stroke={yearlyChartConfig.income.color} strokeWidth={2} dot={{ r: 4, fill: yearlyChartConfig.income.color }} activeDot={{ r: 6, strokeWidth: 1, fill: yearlyChartConfig.income.color }} name={yearlyChartConfig.income.label} />
-                    <Line type="monotone" dataKey="expense" stroke={yearlyChartConfig.expense.color} strokeWidth={2} dot={{ r: 4, fill: yearlyChartConfig.expense.color }} activeDot={{ r: 6, strokeWidth: 1, fill: yearlyChartConfig.expense.color }} name={yearlyChartConfig.expense.label} />
-                  </LineChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            {/* Monthly Category Summary Pie Chart */}
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                    <PieChartIcon className="mr-2 h-5 w-5 text-primary"/>
-                    {t('monthlyCategorySummaryChartTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="h-[350px] w-full flex justify-center items-center">
-                {categorySummary.length > 0 ? (
-                    <ChartContainer config={categoryChartConfig} className="aspect-square h-full max-h-[300px]">
-                        <PieChart>
-                        <ChartTooltip content={<ChartTooltipContent nameKey="categoryName" hideLabel />} />
-                        <Pie
-                            data={categorySummary}
-                            dataKey="amount"
-                            nameKey="categoryName"
-                            innerRadius="50%"
-                            activeIndex={activePieIndex}
-                            activeShape={renderActiveShape}
-                            onMouseEnter={onPieEnter}
-                        >
-                            {categorySummary.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color || categoryChartConfig[entry.categoryName]?.color || 'hsl(var(--primary))'} />
-                            ))}
-                        </Pie>
-                         <Legend content={({ payload }) => {
-                            if (!payload) return null;
-                            return (
-                              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-4 text-xs">
-                                {payload.map((entry, index) => ( 
-                                  <div key={`item-${index}`} className="flex items-center gap-1.5">
-                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                                    <span>{entry.value}</span> 
-                                  </div>
-                                ))}
                               </div>
                             );
                           }}
-                        />
-                        </PieChart>
-                    </ChartContainer>
+                        />}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="income" stroke={yearlyChartConfig.income.color} strokeWidth={2} dot={{ r: 4, fill: yearlyChartConfig.income.color }} activeDot={{ r: 6, strokeWidth: 1, fill: yearlyChartConfig.income.color }} name={yearlyChartConfig.income.label} />
+                      <Line type="monotone" dataKey="expense" stroke={yearlyChartConfig.expense.color} strokeWidth={2} dot={{ r: 4, fill: yearlyChartConfig.expense.color }} activeDot={{ r: 6, strokeWidth: 1, fill: yearlyChartConfig.expense.color }} name={yearlyChartConfig.expense.label} />
+                    </LineChart>
+                  </ChartContainer>
                 ) : (
-                    <p className="text-muted-foreground">{t('noDataAvailable')}</p>
+                  renderNoDataMessage()
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PieChartIcon className="mr-2 h-5 w-5 text-primary" />
+                  {t('monthlyCategorySummaryChartTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="h-[350px] w-full flex justify-center items-center">
+                {isLoadingReportData ? (
+                  <div className="flex justify-center items-center h-full"> <Skeleton className="h-64 w-64 rounded-full" /> </div>
+                ) : categorySummary.length > 0 ? (
+                  <ChartContainer config={categoryChartConfig} className="aspect-square h-full max-h-[300px]">
+                    <PieChart>
+                      <ChartTooltip content={<ChartTooltipContent nameKey="categoryName" hideLabel />} />
+                      <Pie
+                        data={categorySummary}
+                        dataKey="amount"
+                        nameKey="categoryName"
+                        innerRadius="50%"
+                        activeIndex={activePieIndex}
+                        activeShape={renderActiveShape}
+                        onMouseEnter={onPieEnter}
+                      >
+                        {categorySummary.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || categoryChartConfig[entry.categoryName]?.color || 'hsl(var(--primary))'} />
+                        ))}
+                      </Pie>
+                      <Legend content={({ payload }) => {
+                        if (!payload) return null;
+                        return (
+                          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-4 text-xs">
+                            {payload.map((entry, index) => (
+                              <div key={`item-${index}`} className="flex items-center gap-1.5">
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                                <span>{entry.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }}
+                      />
+                    </PieChart>
+                  </ChartContainer>
+                ) : (
+                  renderNoDataMessage()
                 )}
               </CardContent>
             </Card>
@@ -355,3 +352,4 @@ export default function GeneralReportPage() {
     </MainLayout>
   );
 }
+

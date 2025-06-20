@@ -695,7 +695,7 @@
   "monthlyCategorySummaryChartTitle": "Місячні витрати за категоріями",
   "forSelectedMonth": "за обраний місяць",
   "incomeLabel": "Дохід",
-  "expenseLabel": "Витрати"
+  "expenseLabel": "Витрати",
+  "reportPage.noDataDesc": "Даних для відображення за обраний період немає, або цей звіт потребує подальшої інтеграції з бекендом."
 }
 
-```

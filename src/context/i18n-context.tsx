@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -5,7 +6,7 @@ import type { Locale } from 'date-fns';
 import { enUS, uk as ukLocale } from 'date-fns/locale'; // Import date-fns locales
 
 import en from '@/locales/en.json';
-import es from '@/locales/es.json';
+// import es from '@/locales/es.json'; // Removed missing import
 import uk from '@/locales/uk.json';
 
 type Translations = typeof en;
@@ -20,7 +21,7 @@ interface I18nContextType {
 
 const translationsMap: Record<string, Translations> = {
   en,
-  es,
+  // es, // Removed from map
   uk,
 };
 
@@ -28,7 +29,7 @@ const dateFnsLocaleMap: Record<string, Locale> = {
   en: enUS,
   uk: ukLocale,
   // Add es locale from date-fns if Spanish date formatting is needed
-  // es: esLocale, 
+  // es: esLocale, // Removed from map
 };
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);

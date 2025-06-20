@@ -696,7 +696,7 @@
   "monthlyCategorySummaryChartTitle": "Monthly expenses by category",
   "forSelectedMonth": "for selected month",
   "incomeLabel": "Income",
-  "expenseLabel": "Expense"
+  "expenseLabel": "Expense",
+  "reportPage.noDataDesc": "There is no data to display for the selected period or this report requires further backend integration."
 }
 
-```
