@@ -147,7 +147,7 @@
   "errorUpdatingProfile": "Error updating profile",
   "invalidCurrencyCodeFormat": "Invalid currency code. it must be 3 uppercase letters (e.g., USD, EUR).",
   "setYourCurrencyTitle": "Set your currency",
-  "setYourCurrencyDesc": "Please set your preferred currency in your profile to continue.",
+  "setYourCurrencyDesc": "Please set your preferred currency in your profile to ensure accurate financial tracking.",
   "completeYourProfileTitle": "Complete your profile",
   "completeYourProfileDesc": "Please set your preferred currency using the 'Edit profile' button below to ensure accurate financial tracking.",
   "loginLabel": "Username",
@@ -423,7 +423,6 @@
   "restaurants": "Restaurants",
   "allCategories": "All categories",
   "invalidHexColorError": "Invalid hex color format (e.g., #RRGGBB).",
-  "categoryNameRequiredError": "Category name is required.",
   "parentCategoryRequiredError": "Parent category is required.",
   "selectColorButton": "Select",
   "selectCategoryColorTitle": "Select category color",
@@ -710,4 +709,3 @@
   "aiReport.missingPrerequisites": "User currency or authentication token is missing. Please check your profile and login status.",
   "applyReportFiltersButton": "Apply Filters"
 }
-

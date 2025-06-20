@@ -50,13 +50,13 @@ export default function GeneralReportPage() {
   const [yearlySummary, setYearlySummary] = useState<MonthlyFinancialSummary[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategoryMonthlySummary[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
-  const [isLoadingReportData, setIsLoadingReportData] = useState(true);
-  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  
+  const [isLoading, setIsLoading] = useState(true);
 
   const userSettings = user?.settings;
 
   const fetchReportData = useCallback(async (yearToFetch: number, monthToFetch: number) => {
-    setIsLoadingReportData(true);
+    setIsLoading(true);
     // TODO: Implement API calls to fetch actual report data based on yearToFetch/monthToFetch
     // For now, as API endpoints for this specific aggregated view are not defined,
     // we will set data to empty/null and the UI will show "No data available".
@@ -66,8 +66,7 @@ export default function GeneralReportPage() {
       setReportStats(null); // No data for stats
       setYearlySummary([]);   // No data for yearly summary
       setCategorySummary([]); // No data for category summary
-      setIsLoadingReportData(false);
-      setIsApplyingFilters(false); // Reset applying filters state
+      setIsLoading(false);
       // Example: toast({ variant: "default", title: "Information", description: "Reporting data backend not yet fully implemented for this view." });
     }, 1000); // Simulate a 1-second fetch
 
@@ -79,10 +78,9 @@ export default function GeneralReportPage() {
   }, [appliedYear, appliedMonth, fetchReportData]);
 
   const handleApplyReportFilters = () => {
-    setIsApplyingFilters(true);
+    setIsLoading(true);
     setAppliedYear(selectedYear);
     setAppliedMonth(selectedMonth);
-    // fetchReportData will be called by the useEffect watching appliedYear/appliedMonth
   };
 
   const years = Array.from({ length: 5 }, (_, i) => initialYear - i).reverse();
@@ -210,15 +208,15 @@ export default function GeneralReportPage() {
                 </div>
               </div>
                <div className="flex justify-end pt-2">
-                <Button onClick={handleApplyReportFilters} disabled={isApplyingFilters || isLoadingReportData}>
-                  {isApplyingFilters ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                <Button onClick={handleApplyReportFilters} disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                   {t('applyReportFiltersButton')}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {isLoadingReportData ? (
+          {isLoading ? (
             <Card>
               <CardHeader>
                 <Skeleton className="h-6 w-1/2 mb-2" />
@@ -280,7 +278,7 @@ export default function GeneralReportPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-[350px] w-full">
-                {isLoadingReportData ? (
+                {isLoading ? (
                   <div className="flex justify-center items-center h-full"> <Skeleton className="h-full w-full" /></div>
                 ) : yearlySummary.length > 0 ? (
                   <ChartContainer config={yearlyChartConfig} className="h-full w-full">
@@ -330,7 +328,7 @@ export default function GeneralReportPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-[350px] w-full flex justify-center items-center">
-                {isLoadingReportData ? (
+                {isLoading ? (
                   <div className="flex justify-center items-center h-full"> <Skeleton className="h-64 w-64 rounded-full" /> </div>
                 ) : categorySummary.length > 0 ? (
                   <ChartContainer config={categoryChartConfig} className="aspect-square h-full max-h-[300px]">
@@ -376,4 +374,3 @@ export default function GeneralReportPage() {
     </MainLayout>
   );
 }
-

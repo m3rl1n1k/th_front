@@ -146,7 +146,7 @@
   "errorUpdatingProfile": "Помилка оновлення профілю",
   "invalidCurrencyCodeFormat": "Неправильний код валюти. він повинен складатися з 3 великих літер (напр., USD, EUR).",
   "setYourCurrencyTitle": "Встановіть валюту",
-  "setYourCurrencyDesc": "Будь ласка, встановіть бажану валюту у своєму профілі, щоб продовжити.",
+  "setYourCurrencyDesc": "Будь ласка, встановіть бажану валюту у своєму профілі для точного фінансового обліку.",
   "completeYourProfileTitle": "Завершіть налаштування профілю",
   "completeYourProfileDesc": "Будь ласка, встановіть бажану валюту за допомогою кнопки 'Редагувати профіль' нижче для точного фінансового обліку.",
   "loginLabel": "Ім'я користувача",
@@ -422,7 +422,6 @@
   "restaurants": "Ресторани",
   "allCategories": "Всі категорії",
   "invalidHexColorError": "Неправильний формат шістнадцяткового коду кольору (напр., #RRGGBB).",
-  "categoryNameRequiredError": "Назва категорії обов'язкова.",
   "parentCategoryRequiredError": "Батьківська категорія обов'язкова.",
   "selectColorButton": "Вибрати",
   "selectCategoryColorTitle": "Виберіть колір категорії",
@@ -709,4 +708,3 @@
   "aiReport.missingPrerequisites": "Відсутня валюта користувача або токен автентифікації. Будь ласка, перевірте свій профіль та статус входу.",
   "applyReportFiltersButton": "Застосувати фільтри"
 }
-
