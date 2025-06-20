@@ -11,6 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
+// Define schemas internally, do not export them from a 'use server' file.
 const ReportStatsSchema = z.object({
   startOfMonthBalance: z.number().optional().describe("Balance at the start of the selected month, in cents."),
   endOfMonthBalance: z.number().optional().describe("Balance at the end of the selected month, in cents."),
@@ -30,7 +31,7 @@ const CategoryMonthlySummarySchema = z.object({
   color: z.string().optional().describe("Color associated with the category (hex code)."),
 });
 
-export const GenerateReportSummaryInputSchema = z.object({
+const GenerateReportSummaryInputInternalSchema = z.object({
   reportStats: ReportStatsSchema.describe("Key financial statistics for the selected month."),
   yearlySummary: z.array(MonthlyFinancialSummarySchema).optional().describe("Summary of income and expenses for each month of the selected year."),
   categorySummary: z.array(CategoryMonthlySummarySchema).optional().describe("Summary of expenses by category for the selected month."),
@@ -40,12 +41,12 @@ export const GenerateReportSummaryInputSchema = z.object({
   currencyCode: z.string().length(3).describe("The currency code (e.g., USD, UAH)."),
   language: z.string().describe("The language for the report summary (e.g., 'en', 'uk')."),
 });
-export type GenerateReportSummaryInput = z.infer<typeof GenerateReportSummaryInputSchema>;
+export type GenerateReportSummaryInput = z.infer<typeof GenerateReportSummaryInputInternalSchema>;
 
-export const GenerateReportSummaryOutputSchema = z.object({
+const GenerateReportSummaryOutputInternalSchema = z.object({
   summaryText: z.string().describe("AI-generated financial summary and analysis in the requested language."),
 });
-export type GenerateReportSummaryOutput = z.infer<typeof GenerateReportSummaryOutputSchema>;
+export type GenerateReportSummaryOutput = z.infer<typeof GenerateReportSummaryOutputInternalSchema>;
 
 export async function generateReportSummary(input: GenerateReportSummaryInput): Promise<GenerateReportSummaryOutput> {
   return generateReportSummaryFlow(input);
@@ -53,8 +54,8 @@ export async function generateReportSummary(input: GenerateReportSummaryInput): 
 
 const generateReportSummaryPrompt = ai.definePrompt({
   name: 'generateFinancialReportSummaryPrompt',
-  input: { schema: GenerateReportSummaryInputSchema },
-  output: { schema: GenerateReportSummaryOutputSchema },
+  input: { schema: GenerateReportSummaryInputInternalSchema }, // Use internal schema
+  output: { schema: GenerateReportSummaryOutputInternalSchema }, // Use internal schema
   prompt: `You are a helpful financial assistant. Analyze the provided financial data for {{monthName}} {{selectedYear}} and generate a concise summary in {{language}}.
 The currency for all amounts is {{currencyCode}}. All monetary values are provided in cents and should be presented to the user in a human-readable format (e.g., by dividing by 100 and showing two decimal places).
 
@@ -68,30 +69,34 @@ Data Overview for {{monthName}} {{selectedYear}}:
 - Total Income: {{reportStats.selectedMonthIncome}} cents
 - Total Expenses: {{reportStats.selectedMonthExpense}} cents
 
-{{#if yearlySummary}}
+{{#if yearlySummary.length}}
 Monthly Breakdown for {{selectedYear}} (Income/Expense in cents):
 {{#each yearlySummary}}
 - {{month}}: Income {{income}}, Expense {{expense}}
 {{/each}}
+{{else}}
+{{#unless reportStats.startOfMonthBalance}} 
+{{#unless reportStats.endOfMonthBalance}}
+{{! If no yearly data AND no balance data, consider mentioning no extensive historical data }}
+- No detailed yearly breakdown available for {{selectedYear}}.
+{{/unless}}
+{{/unless}}
 {{/if}}
 
+
 Top Expense Categories for {{monthName}} {{selectedYear}} (Amount in cents):
-{{#if categorySummary}}
-  {{#if categorySummary.length}}
-    {{#each categorySummary}}
-    - {{categoryName}}: {{amount}}
-    {{/each}}
-  {{else}}
-  - No specific category spending data provided for this month.
-  {{/if}}
+{{#if categorySummary.length}}
+  {{#each categorySummary}}
+  - {{categoryName}}: {{amount}}
+  {{/each}}
 {{else}}
-- No category spending data provided for this month.
+- No specific category spending data provided for this month.
 {{/if}}
 
 Based on this data:
 1. Provide a brief overview of the financial situation for {{monthName}} {{selectedYear}}.
 2. Comment on the income vs. expense for the month. Was there a surplus or deficit?
-{{#if yearlySummary}}
+{{#if yearlySummary.length}}
 3. Highlight any notable trends from the yearly summary if applicable (e.g., consistently high/low income/expense months).
 {{/if}}
 4. Mention the top 2-3 spending categories for {{monthName}} and their significance. If no category data is available, state that.
@@ -104,8 +109,8 @@ Present monetary values by dividing them by 100 and formatting with the currency
 const generateReportSummaryFlow = ai.defineFlow(
   {
     name: 'generateReportSummaryFlow',
-    inputSchema: GenerateReportSummaryInputSchema,
-    outputSchema: GenerateReportSummaryOutputSchema,
+    inputSchema: GenerateReportSummaryInputInternalSchema, // Use internal schema
+    outputSchema: GenerateReportSummaryOutputInternalSchema, // Use internal schema
   },
   async (input) => {
     const { output } = await generateReportSummaryPrompt(input);
