@@ -235,7 +235,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </svg>
         </div>
       )}
-      <header className="sticky top-0 z-40 w-full border-b bg-card shadow-sm">
+      <header className="sticky top-0 z-40 w-full bg-card shadow-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center">
             {isAuthenticated && (
@@ -425,7 +425,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1">
         {isAuthenticated && (
-          <aside className="hidden md:flex md:flex-col w-64 border-r bg-card p-4 space-y-1">
+          <aside className="hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1">
             <nav className="flex-1 space-y-1">
               {renderNavGroup(baseNavItems)}
               <Separator className="my-2" />

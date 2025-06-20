@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context'; 
 import { 
   getTransactionTypes, 
   getTransactionsList, 
@@ -26,14 +26,14 @@ import {
   deleteRepeatedTransactionDefinition,
   getTransactionFrequencies
 } from '@/lib/api';
-import { useTranslation } from '@/context/i18n-context';
+import { useTranslation } from '@/context/i18n-context'; 
 import { 
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History, 
   ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText, Shapes
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, PaginationInfo } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, PaginationInfo, GetTransactionsListResponse } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,14 +72,14 @@ export default function TransactionsPage() {
   const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
   const [apiFrequencies, setApiFrequencies] = useState<AppFrequency[]>([]); 
   
-  const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]); // Initialize as empty array
+  const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]); 
   const [repeatedDefinitions, setRepeatedDefinitions] = useState<RepeatedTransactionEntry[] | null>(null); 
   
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingFrequencies, setIsLoadingFrequencies] = useState(true); 
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true); // For initial load
-  const [isLoadingMore, setIsLoadingMore] = useState(false); // For "Load More"
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true); 
+  const [isLoadingMore, setIsLoadingMore] = useState(false); 
   const [isLoadingRepeatedDefinitions, setIsLoadingRepeatedDefinitions] = useState(false); 
 
   const [filters, setFilters] = useState<{
@@ -152,7 +152,6 @@ export default function TransactionsPage() {
     if (isAuthenticated && token && activeTab === "all") {
       if (pageToFetch === 1) {
         setIsLoadingTransactions(true);
-        setRawTransactions([]); // Clear for initial load or filter change
       } else {
         setIsLoadingMore(true);
       }
@@ -165,7 +164,7 @@ export default function TransactionsPage() {
       params.page = pageToFetch;
       
       getTransactionsList(token, params)
-        .then(result => {
+        .then((result: GetTransactionsListResponse) => { // Ensure type annotation
           const newItems = result.transactions.items || [];
           const pagination = result.transactions.pagination;
           
@@ -175,8 +174,8 @@ export default function TransactionsPage() {
         })
         .catch((error: any) => {
           if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-          if (pageToFetch === 1) setRawTransactions([]); // Clear if initial load failed
-          setTotalPages(1); // Reset total pages on error
+          if (pageToFetch === 1) setRawTransactions([]);
+          setTotalPages(1);
         })
         .finally(() => {
           if (pageToFetch === 1) setIsLoadingTransactions(false);
@@ -212,7 +211,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     if (activeTab === "all" && isAuthenticated && token) {
-      fetchTransactions(1); // Fetch first page initially
+      fetchTransactions(1); 
     } else if (activeTab === "recurring" && isAuthenticated && token) {
       fetchRepeatedDefinitions();
     }
@@ -287,15 +286,12 @@ export default function TransactionsPage() {
     try {
       await deleteTransaction(selectedTransactionForDelete.id, token);
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
-      // Refresh by removing the deleted transaction locally or re-fetching page 1
       setRawTransactions(prev => prev.filter(tx => tx.id !== selectedTransactionForDelete.id));
-      if (rawTransactions.length === 1 && currentPage > 1) { // If last item on a page > 1
+      if (rawTransactions.length === 1 && currentPage > 1) { 
         fetchTransactions(currentPage - 1);
       } else if (rawTransactions.length % (user?.settings?.records_per_page || 20) === 1 && rawTransactions.length > 1) {
-        // If deleting the last item that would trigger a new page load, just reload current
         fetchTransactions(currentPage);
       }
-      // else the list updates naturally, or if it becomes empty, "No transactions" will show.
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
     } finally {
@@ -357,10 +353,10 @@ export default function TransactionsPage() {
   };
 
   const renderTransactionTableContent = () => {
-    if (isLoadingTransactions && rawTransactions.length === 0) { // Show loader only on initial empty load
+    if (isLoadingTransactions && rawTransactions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center">
+          <TableCell colSpan={6} className="h-60 text-center border-b-0">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -373,7 +369,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0 && !isLoadingTransactions) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground border-b-0">
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noTransactionsFound')}</p>
@@ -386,7 +382,7 @@ export default function TransactionsPage() {
 
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
-        <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
+        <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30 border-b-0">
           <TableCell colSpan={6} className="py-3 px-4 font-semibold text-foreground text-md">
             {format(parseISO(dateKey), "PPP", { locale: dateFnsLocale })}
           </TableCell>
@@ -406,7 +402,7 @@ export default function TransactionsPage() {
             (selectedTransactionForDelete?.id === tx.id && (isDeleting || deleteConfirmationOpen));
 
           return (
-            <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
+            <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors border-b-0">
               <TableCell className="py-3 px-4 align-top text-sm">
                 {tx.date ? format(parseISO(tx.date), "p", { locale: dateFnsLocale }) : 'N/A'}
               </TableCell>
@@ -474,7 +470,7 @@ export default function TransactionsPage() {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center"> 
+          <TableCell colSpan={6} className="h-60 text-center border-b-0"> 
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -487,7 +483,7 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground"> 
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground border-b-0"> 
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
@@ -503,7 +499,7 @@ export default function TransactionsPage() {
       const templateTransactionId = def.transaction?.id;
 
       return (
-      <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
+      <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors border-b-0">
         <TableCell className="py-3 px-4 align-top text-sm">
           {templateTransactionId ? (
             <Button 
@@ -666,7 +662,7 @@ export default function TransactionsPage() {
 
           <TabsContent value="all" className="mt-6">
             <Card className="shadow-xl">
-              <CardHeader className="border-b">
+              <CardHeader className="border-b-0">
                 <CardTitle className="text-2xl font-semibold text-foreground">{t('recentTransactionsTitle')}</CardTitle>
                 <CardDescription>{t('viewAllYourTransactions')}</CardDescription>
               </CardHeader>
@@ -674,7 +670,7 @@ export default function TransactionsPage() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader className="bg-muted/30 dark:bg-muted/10">
-                      <TableRow>
+                      <TableRow className="border-b-0">
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
@@ -690,7 +686,7 @@ export default function TransactionsPage() {
                 </div>
               </CardContent>
               {activeTab === 'all' && rawTransactions.length > 0 && currentPage < totalPages && (
-                <CardFooter className="flex items-center justify-center py-4 border-t">
+                <CardFooter className="flex items-center justify-center py-4 border-t-0">
                     <Button
                         variant="outline"
                         size="sm"
@@ -706,7 +702,7 @@ export default function TransactionsPage() {
           </TabsContent>
           <TabsContent value="recurring" className="mt-6">
              <Card className="shadow-xl">
-              <CardHeader className="border-b">
+              <CardHeader className="border-b-0">
                 <CardTitle className="text-2xl font-semibold text-foreground">{t('recurringTransactionsListTitle')}</CardTitle>
                 <CardDescription>{t('manageRecurringDefinitions')}</CardDescription>
               </CardHeader>
@@ -714,7 +710,7 @@ export default function TransactionsPage() {
                 <div className="overflow-x-auto">
                    <Table>
                      <TableHeader className="bg-muted/30 dark:bg-muted/10">
-                      <TableRow>
+                      <TableRow className="border-b-0">
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('templateInfo')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('status')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('frequency')}</TableHead>
@@ -775,4 +771,3 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
-    
