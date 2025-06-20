@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,11 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Info, Palette, ListChecks, Loader2, Check } from 'lucide-react'; // Added Check
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { updateUserSettings } from '@/lib/api';
+import { Save, Info, Palette, ListChecks, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert'; // AlertTitle removed as it's not used.
+import { updateUserSettings, getUserSettings } from '@/lib/api';
 import type { UserSettings, ApiError } from '@/types';
-import { cn } from '@/lib/utils'; // Added cn
+import { ColorSwatches } from '@/components/common/ColorSwatches';
 
 const GEMINI_API_KEY_STORAGE_KEY = 'financeflow_gemini_api_key';
 const DEFAULT_RECORDS_PER_PAGE = 20;
@@ -46,45 +46,6 @@ const createSettingsSchema = (t: Function) => z.object({
 
 type SettingsFormData = z.infer<ReturnType<typeof createSettingsSchema>>;
 
-const predefinedColors = [
-  // Soft neutrals & grays
-  '#F3F4F6', '#D1D5DB', '#6B7280', '#374151',
-  // Muted Reds/Pinks
-  '#FECACA', '#F87171', '#FCA5A5',
-  // Muted Oranges/Yellows
-  '#FDE68A', '#FBBF24', '#FCD34D',
-  // Muted Greens
-  '#A7F3D0', '#34D399', '#6EE7B7',
-  // Muted Blues
-  '#BFDBFE', '#60A5FA', '#93C5FD',
-  // Muted Purples/Indigos
-  '#C4B5FD', '#A78BFA', '#DDD6FE',
-  // Other muted tones
-  '#FBCFE8', '#A5B4FC', '#7DD3FC',
-];
-
-const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
-  <div className="grid grid-cols-7 gap-2 p-1 border rounded-md bg-muted/20 max-w-xs">
-    {predefinedColors.map((color) => (
-      <button
-        type="button"
-        key={color}
-        onClick={() => onChange(color)}
-        className={cn(
-          "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
-          value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-          (color === '#FFFFFF' || color === '#F3F4F6') && 'border-input'
-        )}
-        style={{ backgroundColor: color }}
-        title={color}
-        aria-label={`Color ${color}`}
-      >
-        {value === color && <Check className={cn("h-3.5 w-3.5", (color === '#FFFFFF' || color === '#F3F4F6') ? 'text-gray-700' : 'text-primary-foreground mix-blend-difference')} />}
-      </button>
-    ))}
-  </div>
-);
-
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -92,19 +53,50 @@ export default function SettingsPage() {
   const { toast } = useToast();
   
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
-  const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [isLoadingPageData, setIsLoadingPageData] = useState(true);
 
   const settingsSchema = useMemo(() => createSettingsSchema(t), [t]);
 
-  const { control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<SettingsFormData>({
+  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: {
-      chart_income_color: user?.settings?.chart_income_color || DEFAULT_CHART_INCOME_COLOR,
-      chart_expense_color: user?.settings?.chart_expense_color || DEFAULT_CHART_EXPENSE_COLOR,
-      chart_capital_color: user?.settings?.chart_capital_color || DEFAULT_CHART_CAPITAL_COLOR,
-      records_per_page: user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE,
+    defaultValues: { // Initial defaults, will be overridden by fetched data
+      chart_income_color: DEFAULT_CHART_INCOME_COLOR,
+      chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
+      chart_capital_color: DEFAULT_CHART_CAPITAL_COLOR,
+      records_per_page: DEFAULT_RECORDS_PER_PAGE,
     },
   });
+  
+  const fetchSettingsData = useCallback(async () => {
+    if (!token || !user) {
+        setIsLoadingPageData(false);
+        return;
+    }
+    setIsLoadingPageData(true);
+    try {
+        const response = await getUserSettings(token);
+        const fetchedSettings = response.settings;
+        reset({
+            chart_income_color: fetchedSettings?.chart_income_color || user.settings?.chart_income_color || DEFAULT_CHART_INCOME_COLOR,
+            chart_expense_color: fetchedSettings?.chart_expense_color || user.settings?.chart_expense_color || DEFAULT_CHART_EXPENSE_COLOR,
+            chart_capital_color: fetchedSettings?.chart_capital_color || user.settings?.chart_capital_color || DEFAULT_CHART_CAPITAL_COLOR,
+            records_per_page: fetchedSettings?.records_per_page || user.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE,
+        });
+    } catch (error) {
+        console.error("Failed to fetch user settings:", error);
+        toast({ variant: "destructive", title: t('errorFetchingUserSettings'), description: (error as ApiError).message });
+        // Keep defaultValues if fetch fails, or use context as fallback
+        reset({
+            chart_income_color: user.settings?.chart_income_color || DEFAULT_CHART_INCOME_COLOR,
+            chart_expense_color: user.settings?.chart_expense_color || DEFAULT_CHART_EXPENSE_COLOR,
+            chart_capital_color: user.settings?.chart_capital_color || DEFAULT_CHART_CAPITAL_COLOR,
+            records_per_page: user.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE,
+        });
+    } finally {
+        setIsLoadingPageData(false);
+    }
+  }, [token, user, reset, toast, t]);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -113,21 +105,12 @@ export default function SettingsPage() {
         setGeminiApiKey(storedApiKey);
       }
     }
-  }, []);
-
-  useEffect(() => {
-    if (user && !authIsLoading) {
-      reset({
-        chart_income_color: user.settings?.chart_income_color || DEFAULT_CHART_INCOME_COLOR,
-        chart_expense_color: user.settings?.chart_expense_color || DEFAULT_CHART_EXPENSE_COLOR,
-        chart_capital_color: user.settings?.chart_capital_color || DEFAULT_CHART_CAPITAL_COLOR,
-        records_per_page: user.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE,
-      });
-      setIsLoadingPage(false);
-    } else if (!authIsLoading && !user) {
-      setIsLoadingPage(false); 
+    if (token && user) { // Ensure user and token are available before fetching
+        fetchSettingsData();
+    } else if (!authIsLoading) { // If auth is done and still no token/user, stop loading
+        setIsLoadingPageData(false);
     }
-  }, [user, authIsLoading, reset]);
+  }, [token, user, authIsLoading, fetchSettingsData]);
 
 
   const handleSaveUserSettings: SubmitHandler<SettingsFormData> = async (data) => {
@@ -143,7 +126,7 @@ export default function SettingsPage() {
         records_per_page: data.records_per_page ? Number(data.records_per_page) : null,
       };
       await updateUserSettings(payload, token);
-      await fetchUser(); // Refresh user context
+      await fetchUser(); // Refresh user context to get updated settings globally
       toast({
         title: t('userSettingsSavedSuccess'),
         description: t('settingsSavedDesc'),
@@ -179,8 +162,10 @@ export default function SettingsPage() {
       }
     }
   };
+  
+  const effectiveIsLoading = authIsLoading || isLoadingPageData;
 
-  if (isLoadingPage && authIsLoading) {
+  if (effectiveIsLoading) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center h-full py-10">
@@ -283,8 +268,8 @@ export default function SettingsPage() {
                 </div>
               </fieldset>
 
-              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              <Button type="submit" disabled={isSubmitting || effectiveIsLoading} className="w-full sm:w-auto">
+                {(isSubmitting || effectiveIsLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 {t('saveSettingsButton')}
               </Button>
             </form>

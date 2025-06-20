@@ -18,48 +18,11 @@ import { getMainCategoryById, updateMainCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, UpdateMainCategoryPayload } from '@/types';
-import { Save, ArrowLeft, Loader2, AlertTriangle, Check } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, AlertTriangle } from 'lucide-react'; // Removed Check
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
-import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches'; // Import reusable component
 
-const predefinedColors = [
-  // Soft neutrals & grays
-  '#F3F4F6', // Tailwind gray-100 (Light Gray)
-  '#D1D5DB', // Tailwind gray-300 (Medium Gray)
-  '#6B7280', // Tailwind gray-500 (Darker Gray)
-  '#374151', // Tailwind gray-700 (Very Dark Gray)
-
-  // Muted Reds/Pinks
-  '#FECACA', // Tailwind red-200 (Light Red/Pink)
-  '#F87171', // Tailwind red-400 (Soft Red)
-  '#FCA5A5', // Tailwind red-300 (Salmon Pink)
-  
-  // Muted Oranges/Yellows
-  '#FDE68A', // Tailwind yellow-200 (Pale Yellow)
-  '#FBBF24', // Tailwind amber-400 (Soft Orange)
-  '#FCD34D', // Tailwind amber-300 (Light Orange)
-
-  // Muted Greens
-  '#A7F3D0', // Tailwind emerald-200 (Light Mint Green)
-  '#34D399', // Tailwind emerald-400 (Soft Green)
-  '#6EE7B7', // Tailwind emerald-300 (Mint Green)
-
-  // Muted Blues
-  '#BFDBFE', // Tailwind blue-200 (Light Blue)
-  '#60A5FA', // Tailwind blue-400 (Soft Blue)
-  '#93C5FD', // Tailwind blue-300 (Sky Blue)
-
-  // Muted Purples/Indigos
-  '#C4B5FD', // Tailwind indigo-300 (Light Lavender)
-  '#A78BFA', // Tailwind violet-400 (Soft Purple)
-  '#DDD6FE', // Tailwind violet-200 (Very Light Purple)
-
-  // Other muted tones
-  '#FBCFE8', // Tailwind pink-200 (Light Pink)
-  '#A5B4FC', // Tailwind indigo-400 (Muted Indigo)
-  '#7DD3FC', // Tailwind sky-300 (Soft Sky Blue)
-];
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
 const createEditMainCategorySchema = (t: Function) => z.object({
@@ -78,18 +41,18 @@ export default function EditMainCategoryPage() {
   const id = params?.id as string;
 
   const [mainCategory, setMainCategory] = useState<MainCategory | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true); // Renamed from isLoading
-  const [formIsSubmitting, setFormIsSubmitting] = useState(false); // Renamed from isSubmitting
+  const [isLoadingData, setIsLoadingData] = useState(true); 
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false); 
   const [errorOccurred, setErrorOccurred] = useState(false);
 
   const EditMainCategorySchema = useMemo(() => createEditMainCategorySchema(t), [t]);
 
-  const { control, handleSubmit, formState: { errors }, reset, register } = useForm<EditMainCategoryFormData>({
+  const { control, handleSubmit, formState: { errors }, reset, register, watch } = useForm<EditMainCategoryFormData>({
     resolver: zodResolver(EditMainCategorySchema),
     defaultValues: { name: '', icon: null, color: predefinedColors[0] },
   });
 
-  const watchedColor = useWatch({ control, name: 'color' });
+  const watchedColor = watch('color'); // Keep watch for potential dynamic preview if needed elsewhere
 
   const fetchCategoryData = useCallback(async () => {
     if (!id || !token) {
@@ -151,28 +114,6 @@ export default function EditMainCategoryPage() {
     }
   };
 
-  const ColorSwatches = ({ value, onChange }: { value: string | null | undefined, onChange: (color: string) => void }) => (
-    <div className="grid grid-cols-7 gap-2 p-1 border rounded-md bg-muted/20 max-w-xs">
-      {predefinedColors.map((color) => (
-        <button
-          type="button"
-          key={color}
-          onClick={() => onChange(color)}
-          className={cn(
-            "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
-            value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-             (color === '#FFFFFF' || color === '#F3F4F6') && 'border-input'
-          )}
-          style={{ backgroundColor: color }}
-          title={color}
-          aria-label={`Color ${color}`}
-        >
-          {value === color && <Check className={cn("h-3.5 w-3.5", (color === '#FFFFFF' || color === '#F3F4F6') ? 'text-gray-700' : 'text-primary-foreground mix-blend-difference')} />}
-        </button>
-      ))}
-    </div>
-  );
-
   if (isLoadingData || authIsLoading) {
     return (
       <MainLayout>
@@ -217,7 +158,7 @@ export default function EditMainCategoryPage() {
   }
   
   let titleCategoryNameDisplay;
-  if (isLoadingData) { // Use isLoadingData for title display
+  if (isLoadingData) {
     titleCategoryNameDisplay = t('loading');
   } else if (mainCategory && mainCategory.name && mainCategory.name.trim() !== "") {
     titleCategoryNameDisplay = mainCategory.name;
@@ -283,16 +224,7 @@ export default function EditMainCategoryPage() {
                 {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message as any)}</p>}
               </div>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <Label htmlFor="color-swatches">{t('colorLabel')}</Label>
-                  {watchedColor && (
-                    <span
-                      className="h-4 w-4 rounded-sm border border-input"
-                      style={{ backgroundColor: watchedColor }}
-                      title={watchedColor}
-                    />
-                  )}
-                </div>
+                <Label htmlFor="color-swatches">{t('colorLabel')}</Label>
                 <Controller
                     name="color"
                     control={control}
