@@ -421,6 +421,8 @@
   "invalidHexColorError": "Invalid hex color format (e.g., #RRGGBB).",
   "categoryNameRequiredError": "Category name is required.",
   "parentCategoryRequiredError": "Parent category is required.",
+  "selectColorButton": "Select",
+  "selectCategoryColorTitle": "Select category color",
 
   "//": "TRANSFERS",
   "createTransferTitle": "Create new transfer",
@@ -574,6 +576,9 @@
   "geminiApiKeyRemovedTitle": "API key removed",
   "geminiApiKeyRemovedDesc": "Your Gemini API Key has been removed from local storage.",
   "geminiApiKeyNote": "Note: API keys are stored in your browser's local storage. For enhanced security in production, consider server-side key management.",
+  "selectIncomeColorTitle": "Select Income Color",
+  "selectExpenseColorTitle": "Select Expense Color",
+  "selectCapitalColorTitle": "Select Capital Color",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Take control of your finances",
@@ -587,8 +592,8 @@
   "featureComprehensiveOverviewDesc": "Get a clear picture of your total balance, income, expenses, and recent activity, all in one place.",
   "featureSmartBudgetingTitle": "Smart budgeting & planning",
   "featureSmartBudgetingDesc": "Set monthly budgets for different categories, track your spending, and stay on top of your financial goals.",
-  "featureCollaborativeFinancesTitle": "Shared capital visibility",
-  "featureCollaborativeFinancesDesc": "Create groups to share visibility of your total capital with family or partners, and manage your collective financial picture transparently.",
+  "featureCollaborativeFinancesTitle": "Collaborative finances",
+  "featureCollaborativeFinancesDesc": "Easily share wallets and financial insights with family or partners, and manage your collective financial picture transparently.",
   "featureOrganizeYourWayTitle": "Organize your way",
   "featureOrganizeYourWayDesc": "Customize hierarchical categories with icons and colors, and manage multiple wallets of different types.",
 
@@ -675,6 +680,7 @@
   "sentOnLabel": "Sent on",
   "noSentInvitationsFound": "You haven't sent any invitations for this group yet.",
   "capitalNameLabel": "Capital group",
+  "ownerCanInvite": "Only the group owner can send new invitations.",
 
   "//": "REPORTS",
   "aiReportPageTitle": "AI financial report",
@@ -699,4 +705,3 @@
   "expenseLabel": "Expense",
   "reportPage.noDataDesc": "There is no data to display for the selected period or this report requires further backend integration."
 }
-

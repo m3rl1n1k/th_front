@@ -14,16 +14,16 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/context/auth-context';
 import { createMainCategory, createSubCategory, getMainCategories } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload } from '@/types';
-import { Save, ArrowLeft, PlusCircle, Tag, Loader2 } from 'lucide-react'; // Removed Check
+import { Save, ArrowLeft, PlusCircle, Tag, Loader2, Palette } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
-import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches'; // Import reusable component
+import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches';
 
-// Schemas
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
 const createMainCategorySchema = (t: Function) => z.object({
@@ -52,9 +52,11 @@ export default function CreateCategoryPage() {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [activeTab, setActiveTab] = useState("main");
 
+  const [isMainColorModalOpen, setIsMainColorModalOpen] = useState(false);
+  const [isSubColorModalOpen, setIsSubColorModalOpen] = useState(false);
+
   const MainCategorySchema = useMemo(() => createMainCategorySchema(t), [t]);
   const SubCategorySchema = useMemo(() => createSubCategorySchema(t), [t]);
-
 
   const mainCategoryForm = useForm<MainCategoryFormData>({
     resolver: zodResolver(MainCategorySchema),
@@ -66,6 +68,9 @@ export default function CreateCategoryPage() {
     defaultValues: { mainCategoryId: '', name: '', icon: null, color: predefinedColors[0] },
   });
   
+  const watchedMainColor = mainCategoryForm.watch('color');
+  const watchedSubColor = subCategoryForm.watch('color');
+
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingCategories(true);
@@ -148,7 +153,7 @@ export default function CreateCategoryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="main-name">{t('categoryNameLabel')}</Label>
                     <Input id="main-name" {...mainCategoryForm.register('name')} placeholder={t('categoryNamePlaceholder')} />
-                    {mainCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.name.message)}</p>}
+                    {mainCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.name.message as any)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="main-icon-select">{t('iconLabel')}</Label>
@@ -180,15 +185,43 @@ export default function CreateCategoryPage() {
                     {mainCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.icon.message as any)}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="main-color-swatches">{t('colorLabel')}</Label>
-                    <Controller
+                    <Label htmlFor="main-color-input">{t('colorLabel')}</Label>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedMainColor || 'transparent' }} />
+                      <Controller
                         name="color"
                         control={mainCategoryForm.control}
                         render={({ field }) => (
-                          <ColorSwatches value={field.value} onChange={field.onChange} />
+                          <Input
+                            id="main-color-input"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            readOnly
+                            className="flex-grow"
+                            placeholder="#RRGGBB"
+                          />
                         )}
-                    />
-                    {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.color.message)}</p>}
+                      />
+                      <Dialog open={isMainColorModalOpen} onOpenChange={setIsMainColorModalOpen}>
+                        <DialogTrigger asChild>
+                           <Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader><DialogTitle>{t('selectCategoryColorTitle') || "Select Category Color"}</DialogTitle></DialogHeader>
+                          <Controller
+                            name="color"
+                            control={mainCategoryForm.control}
+                            render={({ field }) => (
+                              <ColorSwatches 
+                                value={field.value} 
+                                onChange={(color) => { field.onChange(color); setIsMainColorModalOpen(false); }} 
+                              />
+                            )}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    {mainCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{t(mainCategoryForm.formState.errors.color.message as any)}</p>}
                   </div>
                   <Button type="submit" disabled={isFormsLoading} className="w-full">
                     {isMainFormSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
@@ -235,12 +268,12 @@ export default function CreateCategoryPage() {
                         </Select>
                       )}
                     />
-                    {subCategoryForm.formState.errors.mainCategoryId && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.mainCategoryId.message)}</p>}
+                    {subCategoryForm.formState.errors.mainCategoryId && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.mainCategoryId.message as any)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sub-name">{t('categoryNameLabel')}</Label>
                     <Input id="sub-name" {...subCategoryForm.register('name')} placeholder={t('categoryNamePlaceholder')} />
-                    {subCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.name.message)}</p>}
+                    {subCategoryForm.formState.errors.name && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.name.message as any)}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sub-icon-select">{t('iconLabel')}</Label>
@@ -272,15 +305,43 @@ export default function CreateCategoryPage() {
                     {subCategoryForm.formState.errors.icon && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.icon.message as any)}</p>}
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="sub-color-swatches">{t('colorLabel')}</Label>
-                     <Controller
-                        name="color"
-                        control={subCategoryForm.control}
-                        render={({ field }) => (
-                          <ColorSwatches value={field.value} onChange={field.onChange} />
-                        )}
-                    />
-                    {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.color.message)}</p>}
+                    <Label htmlFor="sub-color-input">{t('colorLabel')}</Label>
+                     <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedSubColor || 'transparent' }} />
+                        <Controller
+                            name="color"
+                            control={subCategoryForm.control}
+                            render={({ field }) => (
+                            <Input
+                                id="sub-color-input"
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                readOnly
+                                className="flex-grow"
+                                placeholder="#RRGGBB"
+                            />
+                            )}
+                        />
+                        <Dialog open={isSubColorModalOpen} onOpenChange={setIsSubColorModalOpen}>
+                            <DialogTrigger asChild>
+                                <Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                            <DialogHeader><DialogTitle>{t('selectCategoryColorTitle') || "Select Category Color"}</DialogTitle></DialogHeader>
+                            <Controller
+                                name="color"
+                                control={subCategoryForm.control}
+                                render={({ field }) => (
+                                <ColorSwatches 
+                                    value={field.value} 
+                                    onChange={(color) => { field.onChange(color); setIsSubColorModalOpen(false); }} 
+                                />
+                                )}
+                            />
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                    {subCategoryForm.formState.errors.color && <p className="text-sm text-destructive">{t(subCategoryForm.formState.errors.color.message as any)}</p>}
                   </div>
                   <Button type="submit" disabled={isFormsLoading} className="w-full">
                      {isSubFormSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Tag className="mr-2 h-4 w-4" />}

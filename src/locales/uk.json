@@ -420,6 +420,8 @@
   "invalidHexColorError": "Неправильний формат шістнадцяткового коду кольору (напр., #RRGGBB).",
   "categoryNameRequiredError": "Назва категорії обов'язкова.",
   "parentCategoryRequiredError": "Батьківська категорія обов'язкова.",
+  "selectColorButton": "Вибрати",
+  "selectCategoryColorTitle": "Виберіть колір категорії",
 
   "//": "ПЕРЕКАЗИ",
   "createTransferTitle": "Створити новий переказ",
@@ -573,6 +575,9 @@
   "geminiApiKeyRemovedTitle": "API ключ видалено",
   "geminiApiKeyRemovedDesc": "Ваш API Ключ Gemini видалено з локального сховища.",
   "geminiApiKeyNote": "Примітка: API ключі зберігаються у локальному сховищі вашого браузера. для підвищеної безпеки у робочому середовищі, розгляньте можливість управління ключами на сервері.",
+  "selectIncomeColorTitle": "Виберіть колір доходу",
+  "selectExpenseColorTitle": "Виберіть колір витрат",
+  "selectCapitalColorTitle": "Виберіть колір капіталу",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Керуйте своїми фінансами",
@@ -674,6 +679,7 @@
   "sentOnLabel": "Надіслано",
   "noSentInvitationsFound": "Ви ще не надсилали запрошень для цієї групи.",
   "capitalNameLabel": "Група капіталу",
+  "ownerCanInvite": "Лише власник групи може надсилати нові запрошення.",
 
   "//": "REPORTS",
   "aiReportPageTitle": "AI фінансовий звіт",
@@ -698,4 +704,3 @@
   "expenseLabel": "Витрати",
   "reportPage.noDataDesc": "Даних для відображення за обраний період немає, або цей звіт потребує подальшої інтеграції з бекендом."
 }
-

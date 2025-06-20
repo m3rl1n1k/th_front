@@ -13,15 +13,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/context/auth-context';
 import { getMainCategoryById, updateMainCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { MainCategory, UpdateMainCategoryPayload } from '@/types';
-import { Save, ArrowLeft, Loader2, AlertTriangle } from 'lucide-react'; // Removed Check
+import { Save, ArrowLeft, Loader2, AlertTriangle, Palette } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches'; // Import reusable component
+import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches';
 
 const hexColorRegex = /^#([0-9A-Fa-f]{6})$/i;
 
@@ -44,6 +45,7 @@ export default function EditMainCategoryPage() {
   const [isLoadingData, setIsLoadingData] = useState(true); 
   const [formIsSubmitting, setFormIsSubmitting] = useState(false); 
   const [errorOccurred, setErrorOccurred] = useState(false);
+  const [isColorModalOpen, setIsColorModalOpen] = useState(false);
 
   const EditMainCategorySchema = useMemo(() => createEditMainCategorySchema(t), [t]);
 
@@ -52,7 +54,7 @@ export default function EditMainCategoryPage() {
     defaultValues: { name: '', icon: null, color: predefinedColors[0] },
   });
 
-  const watchedColor = watch('color'); // Keep watch for potential dynamic preview if needed elsewhere
+  const watchedColor = watch('color');
 
   const fetchCategoryData = useCallback(async () => {
     if (!id || !token) {
@@ -192,7 +194,7 @@ export default function EditMainCategoryPage() {
               <div className="space-y-2">
                 <Label htmlFor="name">{t('categoryNameLabel')}</Label>
                 <Input id="name" {...register('name')} placeholder={t('categoryNamePlaceholder')} className={errors.name ? 'border-destructive' : ''} />
-                {errors.name && <p className="text-sm text-destructive">{t(errors.name.message)}</p>}
+                {errors.name && <p className="text-sm text-destructive">{t(errors.name.message as any)}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="icon-select">{t('iconLabel')}</Label>
@@ -224,15 +226,43 @@ export default function EditMainCategoryPage() {
                 {errors.icon && <p className="text-sm text-destructive">{t(errors.icon.message as any)}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="color-swatches">{t('colorLabel')}</Label>
-                <Controller
-                    name="color"
-                    control={control}
-                    render={({ field }) => (
-                      <ColorSwatches value={field.value} onChange={field.onChange} />
-                    )}
-                />
-                {errors.color && <p className="text-sm text-destructive">{t(errors.color.message)}</p>}
+                <Label htmlFor="color-input">{t('colorLabel')}</Label>
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedColor || 'transparent' }} />
+                    <Controller
+                        name="color"
+                        control={control}
+                        render={({ field }) => (
+                        <Input
+                            id="color-input"
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            readOnly
+                            className="flex-grow"
+                            placeholder="#RRGGBB"
+                        />
+                        )}
+                    />
+                    <Dialog open={isColorModalOpen} onOpenChange={setIsColorModalOpen}>
+                        <DialogTrigger asChild>
+                            <Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                        <DialogHeader><DialogTitle>{t('selectCategoryColorTitle') || "Select Category Color"}</DialogTitle></DialogHeader>
+                        <Controller
+                            name="color"
+                            control={control}
+                            render={({ field }) => (
+                            <ColorSwatches 
+                                value={field.value} 
+                                onChange={(color) => { field.onChange(color); setIsColorModalOpen(false); }} 
+                            />
+                            )}
+                        />
+                        </DialogContent>
+                    </Dialog>
+                </div>
+                {errors.color && <p className="text-sm text-destructive">{t(errors.color.message as any)}</p>}
               </div>
               <div className="flex justify-end">
                 <Button type="submit" disabled={formIsSubmitting || isLoadingData}>

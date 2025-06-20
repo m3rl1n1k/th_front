@@ -10,20 +10,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Info, Palette, ListChecks, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert'; // AlertTitle removed as it's not used.
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { updateUserSettings, getUserSettings } from '@/lib/api';
 import type { UserSettings, ApiError } from '@/types';
-import { ColorSwatches } from '@/components/common/ColorSwatches';
+import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches';
 
 const GEMINI_API_KEY_STORAGE_KEY = 'financeflow_gemini_api_key';
 const DEFAULT_RECORDS_PER_PAGE = 20;
-const DEFAULT_CHART_INCOME_COLOR = '#10b981'; // Tailwind green-500
-const DEFAULT_CHART_EXPENSE_COLOR = '#ef4444'; // Tailwind red-500
-const DEFAULT_CHART_CAPITAL_COLOR = '#f59e0b'; // Tailwind amber-500
+const DEFAULT_CHART_INCOME_COLOR = '#10b981';
+const DEFAULT_CHART_EXPENSE_COLOR = '#ef4444';
+const DEFAULT_CHART_CAPITAL_COLOR = '#f59e0b';
 
 const hexColorRegex = /^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/i;
 
@@ -46,7 +47,6 @@ const createSettingsSchema = (t: Function) => z.object({
 
 type SettingsFormData = z.infer<ReturnType<typeof createSettingsSchema>>;
 
-
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { user, token, fetchUser, isLoading: authIsLoading } = useAuth();
@@ -55,11 +55,15 @@ export default function SettingsPage() {
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoadingPageData, setIsLoadingPageData] = useState(true);
 
+  const [isIncomeColorModalOpen, setIsIncomeColorModalOpen] = useState(false);
+  const [isExpenseColorModalOpen, setIsExpenseColorModalOpen] = useState(false);
+  const [isCapitalColorModalOpen, setIsCapitalColorModalOpen] = useState(false);
+
   const settingsSchema = useMemo(() => createSettingsSchema(t), [t]);
 
-  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<SettingsFormData>({
+  const { control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: { // Initial defaults, will be overridden by fetched data
+    defaultValues: {
       chart_income_color: DEFAULT_CHART_INCOME_COLOR,
       chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
       chart_capital_color: DEFAULT_CHART_CAPITAL_COLOR,
@@ -67,6 +71,10 @@ export default function SettingsPage() {
     },
   });
   
+  const watchedIncomeColor = watch("chart_income_color");
+  const watchedExpenseColor = watch("chart_expense_color");
+  const watchedCapitalColor = watch("chart_capital_color");
+
   const fetchSettingsData = useCallback(async () => {
     if (!token || !user) {
         setIsLoadingPageData(false);
@@ -85,7 +93,6 @@ export default function SettingsPage() {
     } catch (error) {
         console.error("Failed to fetch user settings:", error);
         toast({ variant: "destructive", title: t('errorFetchingUserSettings'), description: (error as ApiError).message });
-        // Keep defaultValues if fetch fails, or use context as fallback
         reset({
             chart_income_color: user.settings?.chart_income_color || DEFAULT_CHART_INCOME_COLOR,
             chart_expense_color: user.settings?.chart_expense_color || DEFAULT_CHART_EXPENSE_COLOR,
@@ -105,9 +112,9 @@ export default function SettingsPage() {
         setGeminiApiKey(storedApiKey);
       }
     }
-    if (token && user) { // Ensure user and token are available before fetching
+    if (token && user) {
         fetchSettingsData();
-    } else if (!authIsLoading) { // If auth is done and still no token/user, stop loading
+    } else if (!authIsLoading) {
         setIsLoadingPageData(false);
     }
   }, [token, user, authIsLoading, fetchSettingsData]);
@@ -126,7 +133,7 @@ export default function SettingsPage() {
         records_per_page: data.records_per_page ? Number(data.records_per_page) : null,
       };
       await updateUserSettings(payload, token);
-      await fetchUser(); // Refresh user context to get updated settings globally
+      await fetchUser();
       toast({
         title: t('userSettingsSavedSuccess'),
         description: t('settingsSavedDesc'),
@@ -194,50 +201,144 @@ export default function SettingsPage() {
                   <Palette className="h-5 w-5 text-primary" />
                   {t('chartColorsTitle')}
                 </legend>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="chart_income_color">{t('chartIncomeColorLabel')}</Label>
+                
+                {/* Chart Income Color */}
+                <div className="space-y-2">
+                  <Label htmlFor="chart_income_color_input">{t('chartIncomeColorLabel')}</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedIncomeColor || 'transparent' }} />
                     <Controller
                       name="chart_income_color"
                       control={control}
                       render={({ field }) => (
-                        <ColorSwatches 
-                          value={field.value} 
+                        <Input
+                          id="chart_income_color_input"
+                          value={field.value || ''}
                           onChange={field.onChange} 
+                          readOnly 
+                          className="flex-grow"
+                          placeholder="#10b981"
                         />
                       )}
                     />
-                    {errors.chart_income_color && <p className="text-sm text-destructive">{errors.chart_income_color.message}</p>}
+                    <Dialog open={isIncomeColorModalOpen} onOpenChange={setIsIncomeColorModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{t('selectIncomeColorTitle') || "Select Income Color"}</DialogTitle>
+                        </DialogHeader>
+                        <Controller
+                          name="chart_income_color"
+                          control={control}
+                          render={({ field }) => (
+                            <ColorSwatches 
+                              value={field.value} 
+                              onChange={(color) => {
+                                field.onChange(color);
+                                setIsIncomeColorModalOpen(false);
+                              }} 
+                            />
+                          )}
+                        />
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="chart_expense_color">{t('chartExpenseColorLabel')}</Label>
+                  {errors.chart_income_color && <p className="text-sm text-destructive">{errors.chart_income_color.message}</p>}
+                </div>
+
+                {/* Chart Expense Color */}
+                <div className="space-y-2">
+                  <Label htmlFor="chart_expense_color_input">{t('chartExpenseColorLabel')}</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedExpenseColor || 'transparent' }} />
                     <Controller
                       name="chart_expense_color"
                       control={control}
                       render={({ field }) => (
-                        <ColorSwatches 
-                          value={field.value} 
-                          onChange={field.onChange} 
+                        <Input
+                          id="chart_expense_color_input"
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          readOnly
+                          className="flex-grow"
+                          placeholder="#ef4444"
                         />
                       )}
                     />
-                    {errors.chart_expense_color && <p className="text-sm text-destructive">{errors.chart_expense_color.message}</p>}
+                    <Dialog open={isExpenseColorModalOpen} onOpenChange={setIsExpenseColorModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{t('selectExpenseColorTitle') || "Select Expense Color"}</DialogTitle>
+                        </DialogHeader>
+                        <Controller
+                          name="chart_expense_color"
+                          control={control}
+                          render={({ field }) => (
+                            <ColorSwatches 
+                              value={field.value} 
+                              onChange={(color) => {
+                                field.onChange(color);
+                                setIsExpenseColorModalOpen(false);
+                              }} 
+                            />
+                          )}
+                        />
+                      </DialogContent>
+                    </Dialog>
                   </div>
+                  {errors.chart_expense_color && <p className="text-sm text-destructive">{errors.chart_expense_color.message}</p>}
                 </div>
+
+                {/* Chart Capital Color */}
                 <div className="space-y-2">
-                    <Label htmlFor="chart_capital_color">{t('chartCapitalColorLabel')}</Label>
+                  <Label htmlFor="chart_capital_color_input">{t('chartCapitalColorLabel')}</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedCapitalColor || 'transparent' }} />
                     <Controller
                       name="chart_capital_color"
                       control={control}
                       render={({ field }) => (
-                        <ColorSwatches 
-                          value={field.value} 
-                          onChange={field.onChange} 
+                        <Input
+                          id="chart_capital_color_input"
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          readOnly
+                          className="flex-grow"
+                          placeholder="#f59e0b"
                         />
                       )}
                     />
-                    {errors.chart_capital_color && <p className="text-sm text-destructive">{errors.chart_capital_color.message}</p>}
+                     <Dialog open={isCapitalColorModalOpen} onOpenChange={setIsCapitalColorModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{t('selectCapitalColorTitle') || "Select Capital Color"}</DialogTitle>
+                        </DialogHeader>
+                        <Controller
+                          name="chart_capital_color"
+                          control={control}
+                          render={({ field }) => (
+                            <ColorSwatches 
+                              value={field.value} 
+                              onChange={(color) => {
+                                field.onChange(color);
+                                setIsCapitalColorModalOpen(false);
+                              }} 
+                            />
+                          )}
+                        />
+                      </DialogContent>
+                    </Dialog>
                   </div>
+                  {errors.chart_capital_color && <p className="text-sm text-destructive">{errors.chart_capital_color.message}</p>}
+                </div>
               </fieldset>
               
               <fieldset className="space-y-4 p-4 border rounded-md">
