@@ -30,7 +30,11 @@ interface ColorSwatchesProps {
 
 export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, disabled = false }) => {
   return (
-    <div className="grid grid-cols-7 gap-2 p-1 border rounded-md bg-muted/20 max-w-xs">
+    <div className={cn(
+      "grid gap-1 p-0.5 border rounded-md bg-muted/20 max-w-xs", // Base: more compact
+      "grid-cols-5", // Default to 5 columns (mobile-first)
+      "sm:grid-cols-7 sm:gap-2 sm:p-1" // For 'sm' breakpoint (640px) and up, use 7 columns and larger gaps/padding
+    )}>
       {predefinedColors.map((color) => (
         <button
           type="button"
@@ -39,7 +43,7 @@ export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, d
           className={cn(
             "w-full aspect-square rounded-md border-2 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 flex items-center justify-center",
             value === color ? 'border-primary ring-2 ring-primary ring-offset-background' : 'border-transparent hover:border-muted-foreground/50',
-            (color === '#FFFFFF' || color === '#F3F4F6') && 'border-input',
+            (color === '#FFFFFF' || color === '#F3F4F6') && 'border-input', // Explicit border for very light colors
             disabled && 'cursor-not-allowed opacity-50'
           )}
           style={{ backgroundColor: color }}
@@ -60,3 +64,4 @@ export const ColorSwatches: React.FC<ColorSwatchesProps> = ({ value, onChange, d
     </div>
   );
 };
+
