@@ -3,16 +3,17 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { FileSignature, LineChart as LineChartIcon, PieChart as PieChartIcon, DollarSign, CalendarDays, Loader2, AlertTriangle } from 'lucide-react';
+import { FileSignature, LineChart as LineChartIcon, PieChart as PieChartIcon, DollarSign, CalendarDays, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Legend, Sector } from "recharts";
-import { format, getYear, getMonth, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, getYear, getMonth } from 'date-fns';
 import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,23 +38,26 @@ export default function GeneralReportPage() {
   const currencyCode = user?.userCurrency?.code || 'USD';
   const { toast } = useToast();
 
-  const currentYear = getYear(new Date());
-  const currentMonth = getMonth(new Date()) + 1;
+  const initialYear = getYear(new Date());
+  const initialMonth = getMonth(new Date()) + 1;
 
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
+  const [selectedYear, setSelectedYear] = useState<number>(initialYear);
+  const [selectedMonth, setSelectedMonth] = useState<number>(initialMonth);
+  const [appliedYear, setAppliedYear] = useState<number>(initialYear);
+  const [appliedMonth, setAppliedMonth] = useState<number>(initialMonth);
 
   const [reportStats, setReportStats] = useState<ReportPageStats | null>(null);
   const [yearlySummary, setYearlySummary] = useState<MonthlyFinancialSummary[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategoryMonthlySummary[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
   const [isLoadingReportData, setIsLoadingReportData] = useState(true);
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
 
   const userSettings = user?.settings;
 
-  useEffect(() => {
+  const fetchReportData = useCallback(async (yearToFetch: number, monthToFetch: number) => {
     setIsLoadingReportData(true);
-    // TODO: Implement API calls to fetch actual report data based on selectedYear/Month
+    // TODO: Implement API calls to fetch actual report data based on yearToFetch/monthToFetch
     // For now, as API endpoints for this specific aggregated view are not defined,
     // we will set data to empty/null and the UI will show "No data available".
     
@@ -63,13 +67,25 @@ export default function GeneralReportPage() {
       setYearlySummary([]);   // No data for yearly summary
       setCategorySummary([]); // No data for category summary
       setIsLoadingReportData(false);
+      setIsApplyingFilters(false); // Reset applying filters state
       // Example: toast({ variant: "default", title: "Information", description: "Reporting data backend not yet fully implemented for this view." });
     }, 1000); // Simulate a 1-second fetch
 
     return () => clearTimeout(timer);
-  }, [selectedYear, selectedMonth, currencyCode, token, toast, t]);
+  }, [currencyCode, token, toast, t]); // Dependencies for fetchReportData
 
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i).reverse();
+  useEffect(() => {
+    fetchReportData(appliedYear, appliedMonth);
+  }, [appliedYear, appliedMonth, fetchReportData]);
+
+  const handleApplyReportFilters = () => {
+    setIsApplyingFilters(true);
+    setAppliedYear(selectedYear);
+    setAppliedMonth(selectedMonth);
+    // fetchReportData will be called by the useEffect watching appliedYear/appliedMonth
+  };
+
+  const years = Array.from({ length: 5 }, (_, i) => initialYear - i).reverse();
   const months = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
     label: format(new Date(selectedYear, i), 'MMMM', { locale: dateFnsLocale }),
@@ -82,10 +98,10 @@ export default function GeneralReportPage() {
 
   const categoryChartConfig = useMemo(() => {
     const config: ChartConfig = {};
-    categorySummary.forEach((item) => {
+    categorySummary.forEach((item, index) => { // Added index for fallback color
       config[item.categoryName] = {
         label: item.categoryName,
-        color: item.color || `hsl(var(--chart-${(Object.keys(config).length % 5) + 1}))`,
+        color: item.color || `hsl(var(--chart-${(index % 5) + 1}))`,
       };
     });
     return config;
@@ -166,30 +182,38 @@ export default function GeneralReportPage() {
             <CardHeader>
               <CardTitle>{t('reportFiltersTitle') || "Report Filters"}</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="reportYear">{t('selectYear')}</Label>
-                <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
-                  <SelectTrigger id="reportYear">
-                    <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder={t('selectYear')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="reportYear">{t('selectYear')}</Label>
+                  <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
+                    <SelectTrigger id="reportYear">
+                      <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder={t('selectYear')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reportMonth">{t('selectMonthPlaceholder')}</Label>
+                  <Select value={String(selectedMonth)} onValueChange={(val) => setSelectedMonth(Number(val))}>
+                    <SelectTrigger id="reportMonth">
+                      <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder={t('selectMonthPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map(month => <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="reportMonth">{t('selectMonthPlaceholder')}</Label>
-                <Select value={String(selectedMonth)} onValueChange={(val) => setSelectedMonth(Number(val))}>
-                  <SelectTrigger id="reportMonth">
-                    <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder={t('selectMonthPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map(month => <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+               <div className="flex justify-end pt-2">
+                <Button onClick={handleApplyReportFilters} disabled={isApplyingFilters || isLoadingReportData}>
+                  {isApplyingFilters ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                  {t('applyReportFiltersButton')}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -211,7 +235,7 @@ export default function GeneralReportPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <DollarSign className="mr-2 h-5 w-5 text-primary" />
-                  {t('reportPageStatsTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+                  {t('reportPageStatsTitle')} - {format(new Date(appliedYear, appliedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -238,7 +262,7 @@ export default function GeneralReportPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center">
                     <DollarSign className="mr-2 h-5 w-5 text-primary" />
-                    {t('reportPageStatsTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+                    {t('reportPageStatsTitle')} - {format(new Date(appliedYear, appliedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -252,7 +276,7 @@ export default function GeneralReportPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <LineChartIcon className="mr-2 h-5 w-5 text-primary" />
-                  {t('yearlyIncomeExpenseChartTitle')} - {selectedYear}
+                  {t('yearlyIncomeExpenseChartTitle')} - {appliedYear}
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-[350px] w-full">
@@ -302,7 +326,7 @@ export default function GeneralReportPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <PieChartIcon className="mr-2 h-5 w-5 text-primary" />
-                  {t('monthlyCategorySummaryChartTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+                  {t('monthlyCategorySummaryChartTitle')} - {format(new Date(appliedYear, appliedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-[350px] w-full flex justify-center items-center">

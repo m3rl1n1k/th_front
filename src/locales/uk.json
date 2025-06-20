@@ -140,7 +140,6 @@
   "currencyCodeLabel": "Код валюти",
   "currencyLabel": "Валюта",
   "preferredCurrencyLabel": "Бажана валюта",
-  "memberSinceLabel": "Учасник з",
   "profileUpdateSuccessTitle": "Профіль оновлено",
   "profileUpdateSuccessDesc": "Зміни у вашому профілі збережено (локально на даний момент).",
   "profileUpdateSuccessDescApi": "Зміни у вашому профілі успішно збережено.",
@@ -492,6 +491,7 @@
   "feedbackFormTitle": "Надішліть ваш відгук",
   "feedbackFormDesc": "Ми цінуємо ваш внесок! Будь ласка, поділіться своїми думками, звітами про помилки або запитами на нові функції.",
 
+
   "//": "БЮДЖЕТИ",
   "budgetCreateNewButton": "Створити новий бюджет",
   "budgetNoBudgetsFoundTitle": "Бюджетів не знайдено",
@@ -572,19 +572,6 @@
   "errorUpdatingUserSettings": "Помилка оновлення налаштувань користувача",
   "userSettingsSavedSuccess": "Налаштування користувача успішно збережено.",
   "displayPreferencesTitle": "Налаштування відображення",
-  "geminiApiKeySettingsTitle": "Налаштування AI моделі",
-  "geminiApiKeySettingsDesc": "Налаштуйте API ключі для функцій на базі AI.",
-  "geminiApiKeyLabel": "API Ключ Gemini",
-  "geminiApiKeyPlaceholder": "Введіть ваш API Ключ Gemini",
-  "geminiApiKeySaveButton": "Зберегти API ключ",
-  "geminiApiKeySavedTitle": "API ключ збережено",
-  "geminiApiKeySavedDesc": "Ваш API Ключ Gemini збережено локально.",
-  "geminiApiKeyRemovedTitle": "API ключ видалено",
-  "geminiApiKeyRemovedDesc": "Ваш API Ключ Gemini видалено з локального сховища.",
-  "geminiApiKeyNote": "Примітка: API ключі зберігаються у локальному сховищі вашого браузера. для підвищеної безпеки у робочому середовищі, розгляньте можливість управління ключами на сервері.",
-  "selectIncomeColorTitle": "Виберіть колір доходу",
-  "selectExpenseColorTitle": "Виберіть колір витрат",
-  "selectCapitalColorTitle": "Виберіть колір капіталу",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Керуйте своїми фінансами",
@@ -719,5 +706,7 @@
   "aiReport.generationFailedTitle": "Не вдалося згенерувати AI звіт",
   "aiReport.generationFailedError": "Не вдалося згенерувати AI звіт. Будь ласка, спробуйте пізніше.",
   "aiReport.unexpectedError": "Сталася неочікувана помилка під час генерації звіту.",
-  "aiReport.missingPrerequisites": "Відсутня валюта користувача або токен автентифікації. Будь ласка, перевірте свій профіль та статус входу."
+  "aiReport.missingPrerequisites": "Відсутня валюта користувача або токен автентифікації. Будь ласка, перевірте свій профіль та статус входу.",
+  "applyReportFiltersButton": "Застосувати фільтри"
 }
+

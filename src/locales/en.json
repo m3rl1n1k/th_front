@@ -141,7 +141,6 @@
   "currencyCodeLabel": "Currency code",
   "currencyLabel": "Currency",
   "preferredCurrencyLabel": "Preferred currency",
-  "memberSinceLabel": "Member since",
   "profileUpdateSuccessTitle": "Profile updated",
   "profileUpdateSuccessDesc": "Your profile changes have been saved (locally for now).",
   "profileUpdateSuccessDescApi": "Your profile changes have been successfully saved.",
@@ -574,19 +573,6 @@
   "errorUpdatingUserSettings": "Error updating user settings",
   "userSettingsSavedSuccess": "User settings saved successfully.",
   "displayPreferencesTitle": "Display preferences",
-  "geminiApiKeySettingsTitle": "AI model configuration",
-  "geminiApiKeySettingsDesc": "Configure API keys for AI-powered features.",
-  "geminiApiKeyLabel": "Gemini API Key",
-  "geminiApiKeyPlaceholder": "Enter your Gemini API Key",
-  "geminiApiKeySaveButton": "Save API key",
-  "geminiApiKeySavedTitle": "API key saved",
-  "geminiApiKeySavedDesc": "Your Gemini API Key has been saved locally.",
-  "geminiApiKeyRemovedTitle": "API key removed",
-  "geminiApiKeyRemovedDesc": "Your Gemini API Key has been removed from local storage.",
-  "geminiApiKeyNote": "Note: API keys are stored in your browser's local storage. For enhanced security in production, consider server-side key management.",
-  "selectIncomeColorTitle": "Select Income Color",
-  "selectExpenseColorTitle": "Select Expense Color",
-  "selectCapitalColorTitle": "Select Capital Color",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Take control of your finances",
@@ -721,5 +707,7 @@
   "aiReport.generationFailedTitle": "AI Report Generation Failed",
   "aiReport.generationFailedError": "Could not generate the AI summary. Please try again later.",
   "aiReport.unexpectedError": "An unexpected error occurred while generating the report.",
-  "aiReport.missingPrerequisites": "User currency or authentication token is missing. Please check your profile and login status."
+  "aiReport.missingPrerequisites": "User currency or authentication token is missing. Please check your profile and login status.",
+  "applyReportFiltersButton": "Apply Filters"
 }
+
