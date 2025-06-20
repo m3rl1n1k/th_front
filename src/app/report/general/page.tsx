@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign } from 'lucide-react';
+import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon } from 'lucide-react'; // Added LineChartIcon
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { Bar, BarChart, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector } from "recharts";
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector } from "recharts"; // Added LineChart, Line
 import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval, subYears } from 'date-fns';
 import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types'; // Assuming these types exist
 
@@ -215,84 +215,87 @@ export default function GeneralReportPage() {
           </Card>
         )}
         
-        {/* Yearly Income/Expense Chart */}
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-                <BarChart3 className="mr-2 h-5 w-5 text-primary"/>
-                {t('yearlyIncomeExpenseChartTitle')} - {selectedYear}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[350px] w-full">
-            <ChartContainer config={yearlyChartConfig} className="h-full w-full">
-              <BarChart data={yearlySummary} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickFormatter={(value) => new Intl.NumberFormat(language, { notation: 'compact', compactDisplay: 'short' }).format(value / 100)} tickLine={false} axisLine={false} />
-                <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" hideLabel 
-                    formatter={(value, name) => {
-                        const config = yearlyChartConfig[name as keyof typeof yearlyChartConfig];
-                        const color = config?.color;
-                        return (
-                            <div className="flex items-center gap-2">
-                                <div 
-                                    className="h-2.5 w-2.5 rounded-full" 
-                                    style={{ backgroundColor: color }} 
-                                />
-                                <div>
-                                    <p className="font-medium text-foreground">{config?.label}</p>
-                                    <p className="text-muted-foreground">
-                                        <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/>
-                                    </p>
-                                </div>
-                            </div>
-                        );
-                    }}
-                  />}
-                />
-                <Legend />
-                <Bar dataKey="income" fill="var(--color-income)" radius={4} />
-                <Bar dataKey="expense" fill="var(--color-expense)" radius={4} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Yearly Income/Expense Line Chart */}
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                  <LineChartIcon className="mr-2 h-5 w-5 text-primary"/> {/* Changed icon */}
+                  {t('yearlyIncomeExpenseChartTitle')} - {selectedYear}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-[350px] w-full">
+              <ChartContainer config={yearlyChartConfig} className="h-full w-full">
+                <LineChart data={yearlySummary} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                  <YAxis tickFormatter={(value) => new Intl.NumberFormat(language, { notation: 'compact', compactDisplay: 'short' }).format(value / 100)} tickLine={false} axisLine={false} />
+                  <ChartTooltip
+                      cursor={true}
+                      content={<ChartTooltipContent indicator="dot" hideLabel 
+                      formatter={(value, name) => {
+                          const config = yearlyChartConfig[name as keyof typeof yearlyChartConfig];
+                          const color = config?.color;
+                          return (
+                              <div className="flex items-center gap-2">
+                                  <div 
+                                      className="h-2.5 w-2.5 rounded-full" 
+                                      style={{ backgroundColor: color }} 
+                                  />
+                                  <div>
+                                      <p className="font-medium text-foreground">{config?.label}</p>
+                                      <p className="text-muted-foreground">
+                                          <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/>
+                                      </p>
+                                  </div>
+                              </div>
+                          );
+                      }}
+                    />}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-income)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-income)" }} />
+                  <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-expense)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-expense)" }} />
+                </LineChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
 
-        {/* Monthly Category Summary Chart */}
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-                <PieChartIcon className="mr-2 h-5 w-5 text-primary"/>
-                {t('monthlyCategorySummaryChartTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[350px] w-full flex justify-center items-center">
-            {categorySummary.length > 0 ? (
-                <ChartContainer config={categoryChartConfig} className="aspect-square h-full max-h-[300px]">
-                    <PieChart>
-                    <ChartTooltip content={<ChartTooltipContent nameKey="categoryName" hideLabel />} />
-                    <Pie
-                        data={categorySummary}
-                        dataKey="amount"
-                        nameKey="categoryName"
-                        innerRadius="50%"
-                        activeIndex={activePieIndex}
-                        activeShape={renderActiveShape}
-                        onMouseEnter={onPieEnter}
-                    >
-                        {categorySummary.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || categoryChartConfig[entry.categoryName]?.color} />
-                        ))}
-                    </Pie>
-                    </PieChart>
-                </ChartContainer>
-             ) : (
-                <p className="text-muted-foreground">{t('noDataAvailable')}</p>
-             )}
-          </CardContent>
-        </Card>
+          {/* Monthly Category Summary Pie Chart */}
+          <Card className="shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                  <PieChartIcon className="mr-2 h-5 w-5 text-primary"/>
+                  {t('monthlyCategorySummaryChartTitle')} - {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-[350px] w-full flex justify-center items-center">
+              {categorySummary.length > 0 ? (
+                  <ChartContainer config={categoryChartConfig} className="aspect-square h-full max-h-[300px]">
+                      <PieChart>
+                      <ChartTooltip content={<ChartTooltipContent nameKey="categoryName" hideLabel />} />
+                      <Pie
+                          data={categorySummary}
+                          dataKey="amount"
+                          nameKey="categoryName"
+                          innerRadius="50%"
+                          activeIndex={activePieIndex}
+                          activeShape={renderActiveShape}
+                          onMouseEnter={onPieEnter}
+                      >
+                          {categorySummary.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color || categoryChartConfig[entry.categoryName]?.color || 'hsl(var(--primary))'} />
+                          ))}
+                      </Pie>
+                      </PieChart>
+                  </ChartContainer>
+               ) : (
+                  <p className="text-muted-foreground">{t('noDataAvailable')}</p>
+               )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </MainLayout>
   );
