@@ -50,7 +50,8 @@ import type {
   CreateInvitationPayload,
   AcceptInvitationPayload,
   RejectInvitationPayload,
-  GetInvitationsApiResponse, 
+  GetInvitationsApiResponse,
+  UserSettings, // Added UserSettings type
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -172,6 +173,14 @@ export const updateUserProfile = (data: Partial<User & { userCurrencyCode?: stri
 export const changePassword = (data: ChangePasswordPayload, token: string): Promise<void> =>
   request(URLS.changePassword, { method: 'POST', body: data, token });
 
+// User Settings
+export const getUserSettings = (token: string): Promise<{ settings: UserSettings }> =>
+  request(URLS.userSettings, { method: 'GET', token });
+
+export const updateUserSettings = (data: Partial<UserSettings>, token: string): Promise<{ settings: UserSettings }> =>
+  request(URLS.userSettings, { method: 'POST', body: data, token });
+
+
 // Dashboard
 export const getDashboardTotalBalance = (token: string): Promise<{ total_balance: number }> =>
   request(URLS.dashboardTotalBalance, { method: 'GET', token });
@@ -198,12 +207,12 @@ export const createTransaction = (data: CreateTransactionPayload, token: string)
 
 export const getTransactionsList = (
   token: string,
-  params: Record<string, string | undefined> = {}
+  params: Record<string, string | undefined | number> = {} // Allow number for limit
 ): Promise<{ transactions: Transaction[] }> => {
   const definedParams: Record<string, string> = {};
   for (const key in params) {
     if (params[key] !== undefined) {
-      definedParams[key] = params[key] as string;
+      definedParams[key] = String(params[key]);
     }
   }
   const queryString = new URLSearchParams(definedParams).toString();

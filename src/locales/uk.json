@@ -545,13 +545,24 @@
 
   "//": "SETTINGS",
   "settingsPageTitle": "Налаштування додатку",
-  "dashboardSettingsTitle": "Налаштування панелі",
-  "dashboardSettingsDesc": "Налаштуйте вигляд вашої панелі.",
-  "lastTransactionsLimitLabel": "Кількість останніх транзакцій для відображення на панелі",
+  "userSettingsTitle": "Налаштування користувача",
+  "userSettingsDesc": "Налаштуйте свій додаток.",
+  "chartColorsTitle": "Кольори графіків",
+  "chartIncomeColorLabel": "Колір графіку доходів",
+  "chartExpenseColorLabel": "Колір графіку витрат",
+  "chartCapitalColorLabel": "Колір графіку капіталу",
+  "recordsPerPageLabel": "Записів на сторінку",
+  "recordsPerPageDesc": "Кількість елементів для відображення у списках, наприклад, транзакцій.",
+  "recordsPerPageMinError": "Кількість записів на сторінку повинна бути не менше 1.",
+  "recordsPerPageMaxError": "Кількість записів на сторінку не може перевищувати 100.",
+  "colorPreview": "Попередній перегляд кольору",
   "saveSettingsButton": "Зберегти налаштування",
   "settingsSavedTitle": "Налаштування збережено",
   "settingsSavedDesc": "Ваші налаштування оновлено.",
-  "invalidLimitValueResetToDefault": "Неправильне значення ліміту. скинено до стандартного.",
+  "errorFetchingUserSettings": "Помилка завантаження налаштувань користувача",
+  "errorUpdatingUserSettings": "Помилка оновлення налаштувань користувача",
+  "userSettingsSavedSuccess": "Налаштування користувача успішно збережено.",
+  "displayPreferencesTitle": "Налаштування відображення",
   "geminiApiKeySettingsTitle": "Налаштування AI моделі",
   "geminiApiKeySettingsDesc": "Налаштуйте API ключі для функцій на базі AI.",
   "geminiApiKeyLabel": "API Ключ Gemini",
@@ -676,6 +687,7 @@
   "reportFiltersTitle": "Фільтри звіту",
   "selectYear": "Обрати рік",
   "selectMonth": "Обрати місяць",
+  "selectMonthPlaceholder": "Обрати місяць",
   "reportPageStatsTitle": "Місячний огляд",
   "startOfMonthBalanceLabel": "Баланс на початок місяця",
   "endOfMonthBalanceLabel": "Баланс на кінець місяця",
@@ -683,7 +695,7 @@
   "monthlyCategorySummaryChartTitle": "Місячні витрати за категоріями",
   "forSelectedMonth": "за обраний місяць",
   "incomeLabel": "Дохід",
-  "expenseLabel": "Витрати",
-  "selectMonthPlaceholder": "Обрати місяць"
+  "expenseLabel": "Витрати"
 }
 
+```

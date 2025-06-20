@@ -546,13 +546,24 @@
 
   "//": "SETTINGS",
   "settingsPageTitle": "Application settings",
-  "dashboardSettingsTitle": "Dashboard settings",
-  "dashboardSettingsDesc": "Customize your dashboard view.",
-  "lastTransactionsLimitLabel": "Number of recent transactions to display on dashboard",
+  "userSettingsTitle": "User preferences",
+  "userSettingsDesc": "Customize your application experience.",
+  "chartColorsTitle": "Chart colors",
+  "chartIncomeColorLabel": "Income chart color",
+  "chartExpenseColorLabel": "Expense chart color",
+  "chartCapitalColorLabel": "Capital chart color",
+  "recordsPerPageLabel": "Records per page",
+  "recordsPerPageDesc": "Number of items to show in lists like transactions.",
+  "recordsPerPageMinError": "Records per page must be at least 1.",
+  "recordsPerPageMaxError": "Records per page cannot exceed 100.",
+  "colorPreview": "Color preview",
   "saveSettingsButton": "Save settings",
   "settingsSavedTitle": "Settings saved",
   "settingsSavedDesc": "Your preferences have been updated.",
-  "invalidLimitValueResetToDefault": "Invalid limit value. it has been reset to default.",
+  "errorFetchingUserSettings": "Error fetching user settings",
+  "errorUpdatingUserSettings": "Error updating user settings",
+  "userSettingsSavedSuccess": "User settings saved successfully.",
+  "displayPreferencesTitle": "Display preferences",
   "geminiApiKeySettingsTitle": "AI model configuration",
   "geminiApiKeySettingsDesc": "Configure API keys for AI-powered features.",
   "geminiApiKeyLabel": "Gemini API Key",
@@ -677,6 +688,7 @@
   "reportFiltersTitle": "Report filters",
   "selectYear": "Select year",
   "selectMonth": "Select month",
+  "selectMonthPlaceholder": "Select month",
   "reportPageStatsTitle": "Monthly snapshot",
   "startOfMonthBalanceLabel": "Balance at start of month",
   "endOfMonthBalanceLabel": "Balance at end of month",
@@ -687,3 +699,4 @@
   "expenseLabel": "Expense"
 }
 
+```

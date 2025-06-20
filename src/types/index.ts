@@ -1,5 +1,12 @@
 
 
+export interface UserSettings {
+  chart_income_color?: string | null;
+  chart_expense_color?: string | null;
+  chart_capital_color?: string | null;
+  records_per_page?: number | null;
+}
+
 export interface User {
   id: string | number;
   login: string; // This is the username
@@ -12,6 +19,7 @@ export interface User {
   capital?: {
     id: number;
   } | null;
+  settings?: UserSettings; // Added user settings
 }
 
 export interface LoginCredentials {
@@ -521,5 +529,4 @@ export interface ReportPageStats {
   selectedMonthIncome: number; // in cents
   selectedMonthExpense: number; // in cents
 }
-
 ```

@@ -66,7 +66,13 @@ Logs in a user.
            "code": "USD"
         },
         "memberSince": "2023-01-15T10:00:00Z",
-        "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]
+        "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"],
+        "settings": { // User settings included here
+            "chart_income_color": "#10b981",
+            "chart_expense_color": "#ef4444",
+            "chart_capital_color": "#f59e0b",
+            "records_per_page": 10
+        }
       },
       "token": "your_jwt_token_here"
     }
@@ -127,7 +133,13 @@ Retrieves the profile information for the currently authenticated user.
       "userCurrency": {
         "code": "USD"
       },
-      "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]
+      "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"],
+      "settings": { // User settings included here
+        "chart_income_color": "#10b981",
+        "chart_expense_color": "#ef4444",
+        "chart_capital_color": "#f59e0b",
+        "records_per_page": 10
+      }
     }
     ```
 *   **Failure Response (401 Unauthorized)**
@@ -144,7 +156,7 @@ Updates the profile information for the currently authenticated user.
       // Password changes should be handled by POST /user/change-password
     }
     ```
-*   **Success Response (200 OK)**: Returns the updated user profile.
+*   **Success Response (200 OK)**: Returns the updated user profile (including settings).
     ```json
     {
       "id": 1,
@@ -154,7 +166,13 @@ Updates the profile information for the currently authenticated user.
       "userCurrency": {
         "code": "EUR"
       },
-      "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]
+      "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"],
+      "settings": {
+        "chart_income_color": "#10b981",
+        "chart_expense_color": "#ef4444",
+        "chart_capital_color": "#f59e0b",
+        "records_per_page": 10
+      }
     }
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
@@ -205,7 +223,7 @@ Retrieves data for the monthly expenses by category chart.
 
 #### `GET /dashboard/last-transactions/{limit}`
 Retrieves a list of the last N transactions.
-*   **Path Parameter**: `limit` (integer, e.g., 10)
+*   **Path Parameter**: `limit` (integer, e.g., 5 or 10)
 *   **Success Response (200 OK)**:
     ```json
     {
@@ -305,7 +323,7 @@ Retrieves a list of transactions for the authenticated user. The response should
 
 *   **Query Parameters (Examples)**:
     *   `page=1`
-    *   `limit=20`
+    *   `limit=20` (This value will be driven by user settings `records_per_page`)
     *   `typeId=1` (numeric ID)
     *   `startDate=2024-01-01`
     *   `endDate=2024-01-31`
@@ -909,7 +927,49 @@ Rejects an invitation to join a shared capital pool.
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized, 404 Not Found for invitation)**
 
-### 10. General
+### 10. User Settings
+
+#### `GET /settings`
+Retrieves the settings for the currently authenticated user.
+*   **Request Body**: None (token in header)
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "settings": {
+        "chart_income_color": "#10b981", // Hex color code
+        "chart_expense_color": "#ef4444", // Hex color code
+        "chart_capital_color": "#f59e0b", // Hex color code
+        "records_per_page": 20 // Integer
+      }
+    }
+    ```
+*   **Failure Response (401 Unauthorized)**
+
+#### `POST /settings`
+Updates the settings for the currently authenticated user.
+*   **Request Body**:
+    ```json
+    {
+      "chart_income_color": "#10b981", // Optional, Hex color code
+      "chart_expense_color": "#ef4444", // Optional, Hex color code
+      "chart_capital_color": "#f59e0b", // Optional, Hex color code
+      "records_per_page": 15 // Optional, Integer
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated settings object.
+    ```json
+    {
+      "settings": {
+        "chart_income_color": "#10b981",
+        "chart_expense_color": "#ef4444",
+        "chart_capital_color": "#f59e0b",
+        "records_per_page": 15
+      }
+    }
+    ```
+*   **Failure Response (400 Bad Request, 401 Unauthorized)**
+
+### 11. General
 
 #### `GET /currencies`
 Retrieves a list of available currencies.
@@ -942,8 +1002,15 @@ Consider these when designing your database and PHP classes/objects.
 *   `password_hash` (string)
 *   `user_currency_code` (string, e.g., "USD", "EUR")
 *   `roles` (array of strings, e.g. `["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"]`)
+*   `settings` (object, UserSettings - see below)
 *   `created_at` (datetime)
 *   `updated_at` (datetime)
+
+### UserSettings
+*   `chart_income_color` (string, nullable, hex color code)
+*   `chart_expense_color` (string, nullable, hex color code)
+*   `chart_capital_color` (string, nullable, hex color code)
+*   `records_per_page` (int, default e.g., 20)
 
 ### Transaction
 *   `id` (int, primary key)

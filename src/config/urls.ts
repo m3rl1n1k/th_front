@@ -35,6 +35,7 @@ export const URLS = {
   // User Profile
   userProfile: `${API_BASE_URL}/user`,
   changePassword: `${API_BASE_URL}/user/change-password`,
+  userSettings: `${API_BASE_URL}/settings`, // New User Settings URL
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,
@@ -81,11 +82,10 @@ export const URLS = {
   createCapital: `${API_BASE_URL}/capitals`,
   getCapitalDetails: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
   deleteCapital: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
-  removeUserFromCapital: (userId: string | number) => `${API_BASE_URL}/capital/user/${userId}/remove`, // Changed: capitalId removed from path
+  removeUserFromCapital: (userId: string | number) => `${API_BASE_URL}/capital/user/${userId}/remove`, 
   
   getInvitations: `${API_BASE_URL}/invitations`,
   createInvitation: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}/invite`,
   acceptInvitation: (invitationId: string | number) => `${API_BASE_URL}/invitation/${invitationId}/accept`,
   rejectInvitation: (invitationId: string | number) => `${API_BASE_URL}/invitation/${invitationId}/reject`,
 };
-

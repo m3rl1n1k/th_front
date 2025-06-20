@@ -112,8 +112,7 @@ interface ProcessedLastTransactionItem {
   date: string; // Formatted date
 }
 
-const LAST_TRANSACTIONS_LIMIT_KEY = 'dashboardLastTransactionsLimit';
-const DEFAULT_LAST_TRANSACTIONS_LIMIT = 10;
+const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5; // Changed from localStorage to constant
 
 export default function DashboardPage() {
   const { user, token, isAuthenticated } = useAuth();
@@ -138,16 +137,8 @@ export default function DashboardPage() {
       setIsLoadingLastActivity(true);
       setIsLoadingTransactionTypes(true);
 
-      let limit = DEFAULT_LAST_TRANSACTIONS_LIMIT;
-      if (typeof window !== 'undefined') {
-        const storedLimit = localStorage.getItem(LAST_TRANSACTIONS_LIMIT_KEY);
-        if (storedLimit) {
-          const parsedLimit = parseInt(storedLimit, 10);
-          if (!isNaN(parsedLimit) && parsedLimit > 0) {
-            limit = parsedLimit;
-          }
-        }
-      }
+      // Removed localStorage logic for limit, using DASHBOARD_LAST_TRANSACTIONS_LIMIT constant
+      const limit = DASHBOARD_LAST_TRANSACTIONS_LIMIT;
 
       Promise.all([
         getDashboardTotalBalance(token),
@@ -278,7 +269,7 @@ export default function DashboardPage() {
   );
 
   const renderErrorState = (messageKey: string, spanFull?: boolean) => (
-    <Card className={`bg-destructive/10 border-destructive text-destructive-foreground ${spanFull ? 'md:col-span-3 lg:col-span-2' : ''}`}>
+    <Card className={`bg-destructive/10 text-destructive-foreground ${spanFull ? 'md:col-span-3 lg:col-span-2' : ''}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{t('errorFetchingData')}</CardTitle>
         <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -402,7 +393,7 @@ export default function DashboardPage() {
                       content={
                         <ChartTooltipContent
                           hideLabel
-                          className="bg-card text-card-foreground shadow-lg border"
+                          className="bg-card text-card-foreground shadow-lg"
                           formatter={(value, name, itemProps) => {
                             const currency = user?.userCurrency?.code || 'USD';
                             const categoryDisplayName = itemProps.payload.categoryName;
@@ -487,14 +478,14 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center space-x-3 flex-shrink min-w-0">
                                 {item.icon}
-                                <div className="flex-1 min-w-0"> {/* Added min-w-0 here */}
+                                <div className="flex-1 min-w-0"> 
                                     <p className="text-sm font-medium text-foreground truncate" title={item.displayText}>
                                         {item.displayText}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{item.date}</p>
                                 </div>
                             </div>
-                            <div className="text-sm font-medium text-right flex-shrink-0 ml-2"> {/* Added ml-2 for spacing */}
+                            <div className="text-sm font-medium text-right flex-shrink-0 ml-2"> 
                                 <CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} />
                             </div>
                         </div>
@@ -516,3 +507,4 @@ export default function DashboardPage() {
     </MainLayout>
   );
 }
+```

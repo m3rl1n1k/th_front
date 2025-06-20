@@ -10,13 +10,12 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon } from 'lucide-react';
+import { FileSignature, BarChart3, PieChart as PieChartIcon, TrendingUp, TrendingDown, CalendarDays, DollarSign, LineChart as LineChartIcon, Download, Loader2 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Sector, TooltipProps } from "recharts";
-import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
-import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary } from '@/types';
+import { format, getYear, getMonth, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
+import type { ReportPageStats, MonthlyFinancialSummary, CategoryMonthlySummary, UserSettings } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-
 
 // Placeholder data - replace with actual API calls
 const getPlaceholderReportStats = (year: number, month: number, currencyCode: string): ReportPageStats => {
@@ -57,15 +56,15 @@ interface ActiveShapeProps {
   startAngle: number;
   endAngle: number;
   fill: string;
-  payload: CategoryMonthlySummary; // Ensure payload is correctly typed
+  payload: CategoryMonthlySummary; 
   percent: number;
-  value: number; // This is `amount` from payload, in cents
+  value: number; 
 }
 
 
 export default function GeneralReportPage() {
   const { t, dateFnsLocale, language } = useTranslation();
-  const { user } = useAuth();
+  const { user, token } = useAuth(); // Added token
   const currencyCode = user?.userCurrency?.code || 'USD';
   const { toast } = useToast();
 
@@ -79,14 +78,33 @@ export default function GeneralReportPage() {
   const [yearlySummary, setYearlySummary] = useState<MonthlyFinancialSummary[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategoryMonthlySummary[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
-  
+
+  const userSettings = user?.settings;
+
 
   useEffect(() => {
     // In a real app, these would be API calls based on selectedYear/Month
+    // For now, we keep using placeholder data.
+    // TODO: Replace with actual API calls when backend is ready
+    // Example:
+    // if (token) {
+    //   setIsLoadingReportData(true);
+    //   Promise.all([
+    //     fetchReportStats(token, selectedYear, selectedMonth),
+    //     fetchYearlySummary(token, selectedYear),
+    //     fetchCategorySummary(token, selectedYear, selectedMonth)
+    //   ]).then(([stats, yearly, category]) => {
+    //     setReportStats(stats);
+    //     setYearlySummary(yearly);
+    //     setCategorySummary(category);
+    //   }).catch(error => {
+    //     toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+    //   }).finally(() => setIsLoadingReportData(false));
+    // }
     setReportStats(getPlaceholderReportStats(selectedYear, selectedMonth, currencyCode));
     setYearlySummary(getPlaceholderYearlySummary(selectedYear, currencyCode));
     setCategorySummary(getPlaceholderCategorySummary(selectedYear, selectedMonth, currencyCode));
-  }, [selectedYear, selectedMonth, currencyCode]);
+  }, [selectedYear, selectedMonth, currencyCode, token, toast, t]);
   
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i).reverse();
   const months = Array.from({ length: 12 }, (_, i) => ({
@@ -94,10 +112,11 @@ export default function GeneralReportPage() {
     label: format(new Date(selectedYear, i), 'MMMM', { locale: dateFnsLocale }),
   }));
 
-  const yearlyChartConfig = {
-    income: { label: t('incomeLabel'), color: "hsl(var(--chart-2))" },
-    expense: { label: t('expenseLabel'), color: "hsl(var(--chart-1))" },
-  } satisfies ChartConfig;
+  const yearlyChartConfig = useMemo(() => ({
+    income: { label: t('incomeLabel'), color: userSettings?.chart_income_color || "hsl(var(--chart-2))" },
+    expense: { label: t('expenseLabel'), color: userSettings?.chart_expense_color || "hsl(var(--chart-1))" },
+  } satisfies ChartConfig), [t, userSettings]);
+
 
   const categoryChartConfig = useMemo(() => {
     const config: ChartConfig = {};
@@ -172,7 +191,7 @@ export default function GeneralReportPage() {
           </h1>
         </div>
         
-        <div className="space-y-6 bg-background p-4 rounded-lg"> {/* Added bg and padding for better capture */}
+        <div className="space-y-6 bg-background p-4 rounded-lg"> 
           {/* Filters */}
           <Card className="shadow-md">
             <CardHeader>
@@ -256,8 +275,8 @@ export default function GeneralReportPage() {
                         cursor={true}
                         content={<ChartTooltipContent indicator="dot" hideLabel 
                         formatter={(value, name) => {
-                            const config = yearlyChartConfig[name as keyof typeof yearlyChartConfig];
-                            const color = config?.color;
+                            const configKey = name as keyof typeof yearlyChartConfig;
+                            const color = yearlyChartConfig[configKey]?.color;
                             return (
                                 <div className="flex items-center gap-2">
                                     <div 
@@ -265,7 +284,7 @@ export default function GeneralReportPage() {
                                         style={{ backgroundColor: color }} 
                                     />
                                     <div>
-                                        <p className="font-medium text-foreground">{config?.label}</p>
+                                        <p className="font-medium text-foreground">{yearlyChartConfig[configKey]?.label}</p>
                                         <p className="text-muted-foreground">
                                             <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/>
                                         </p>
@@ -276,8 +295,8 @@ export default function GeneralReportPage() {
                       />}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="income" stroke="var(--color-income)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-income)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-income)" }} />
-                    <Line type="monotone" dataKey="expense" stroke="var(--color-expense)" strokeWidth={2} dot={{ r: 4, fill: "var(--color-expense)" }} activeDot={{ r: 6, strokeWidth: 1, fill: "var(--color-expense)" }} />
+                    <Line type="monotone" dataKey="income" stroke={yearlyChartConfig.income.color} strokeWidth={2} dot={{ r: 4, fill: yearlyChartConfig.income.color }} activeDot={{ r: 6, strokeWidth: 1, fill: yearlyChartConfig.income.color }} name={yearlyChartConfig.income.label} />
+                    <Line type="monotone" dataKey="expense" stroke={yearlyChartConfig.expense.color} strokeWidth={2} dot={{ r: 4, fill: yearlyChartConfig.expense.color }} activeDot={{ r: 6, strokeWidth: 1, fill: yearlyChartConfig.expense.color }} name={yearlyChartConfig.expense.label} />
                   </LineChart>
                 </ChartContainer>
               </CardContent>
@@ -337,3 +356,4 @@ export default function GeneralReportPage() {
   );
 }
 
+```

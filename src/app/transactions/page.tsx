@@ -61,8 +61,10 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
 
+const DEFAULT_RECORDS_PER_PAGE_FALLBACK = 20;
+
 export default function TransactionsPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated } = useAuth(); // Added user
   const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
@@ -147,11 +149,14 @@ export default function TransactionsPage() {
   const fetchTransactions = useCallback((showLoadingIndicator = true) => {
     if (isAuthenticated && token && activeTab === "all") {
       if(showLoadingIndicator) setIsLoadingTransactions(true);
-      const params: Record<string, string> = {};
+      const params: Record<string, string | number | undefined> = {}; // Allow number for limit
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
+
+      const recordsPerPage = user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE_FALLBACK;
+      params.limit = recordsPerPage;
       
       getTransactionsList(token, params)
         .then(result => setRawTransactions(result.transactions || []))
@@ -167,7 +172,7 @@ export default function TransactionsPage() {
       if(showLoadingIndicator) setIsLoadingTransactions(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab]); 
+  }, [isAuthenticated, token, user, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab]); 
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
@@ -195,7 +200,7 @@ export default function TransactionsPage() {
       fetchRepeatedDefinitions();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, activeTab]);
+  }, [isAuthenticated, token, activeTab, user]); // Added user to deps for records_per_page change
 
   useEffect(() => {
     setInitiatingActionForTxId(null);
@@ -213,7 +218,7 @@ export default function TransactionsPage() {
         categoryName: categoryName
       };
     });
-  }, [rawTransactions, transactionTypes, t, allSubCategories]); // Added allSubCategories as dep
+  }, [rawTransactions, transactionTypes, t, allSubCategories]); 
   
   const { groups, sortedDateKeys } = useMemo(() => {
     const newGroups: GroupedTransactions = processedTransactions.reduce((acc, tx) => {
@@ -250,7 +255,8 @@ export default function TransactionsPage() {
     setFilters({});
     if (activeTab === 'all' && isAuthenticated && token) {
       setIsLoadingTransactions(true);
-      getTransactionsList(token, {}) 
+      const recordsPerPage = user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE_FALLBACK;
+      getTransactionsList(token, { limit: recordsPerPage }) 
         .then(result => setRawTransactions(result.transactions || []))
         .catch((error: any) => {
           if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
@@ -537,7 +543,7 @@ export default function TransactionsPage() {
         </div>
 
         {activeTab === 'all' && (
-          <Card className="shadow-xl border-border/60">
+          <Card className="shadow-xl">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="filters" className="border-b-0">
                   <AccordionTrigger className="w-full px-6 py-4 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/10 transition-colors rounded-t-lg">
@@ -546,7 +552,7 @@ export default function TransactionsPage() {
                       {t('filterTransactionsTitle')}
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="border-t border-border/60">
+                  <AccordionContent className="border-t">
                     <div className="p-6 space-y-6 bg-background rounded-b-lg">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
                         <div className="space-y-2">
@@ -637,8 +643,8 @@ export default function TransactionsPage() {
           </TabsList>
 
           <TabsContent value="all" className="mt-6">
-            <Card className="shadow-xl border-border/60">
-              <CardHeader className="border-b border-border/60">
+            <Card className="shadow-xl">
+              <CardHeader className="border-b">
                 <CardTitle className="text-2xl font-semibold text-foreground">{t('recentTransactionsTitle')}</CardTitle>
                 <CardDescription>{t('viewAllYourTransactions')}</CardDescription>
               </CardHeader>
@@ -664,8 +670,8 @@ export default function TransactionsPage() {
             </Card>
           </TabsContent>
           <TabsContent value="recurring" className="mt-6">
-             <Card className="shadow-xl border-border/60">
-              <CardHeader className="border-b border-border/60">
+             <Card className="shadow-xl">
+              <CardHeader className="border-b">
                 <CardTitle className="text-2xl font-semibold text-foreground">{t('recurringTransactionsListTitle')}</CardTitle>
                 <CardDescription>{t('manageRecurringDefinitions')}</CardDescription>
               </CardHeader>
@@ -735,3 +741,4 @@ export default function TransactionsPage() {
   );
 }
     
+```
