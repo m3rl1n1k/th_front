@@ -232,15 +232,24 @@ export default function GeneralReportPage() {
                 <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent indicator="dot" hideLabel 
-                    formatter={(value, name) => (
-                        <div className="flex items-center gap-2">
-                            <div className={`h-2.5 w-2.5 rounded-full bg-[var(--color-${name})]`} />
-                            <div>
-                                <p className="font-medium text-foreground">{yearlyChartConfig[name as keyof typeof yearlyChartConfig]?.label}</p>
-                                <p className="text-muted-foreground"><CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/></p>
+                    formatter={(value, name) => {
+                        const config = yearlyChartConfig[name as keyof typeof yearlyChartConfig];
+                        const color = config?.color;
+                        return (
+                            <div className="flex items-center gap-2">
+                                <div 
+                                    className="h-2.5 w-2.5 rounded-full" 
+                                    style={{ backgroundColor: color }} 
+                                />
+                                <div>
+                                    <p className="font-medium text-foreground">{config?.label}</p>
+                                    <p className="text-muted-foreground">
+                                        <CurrencyDisplay amountInCents={value as number} currencyCode={currencyCode}/>
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    }}
                   />}
                 />
                 <Legend />
@@ -288,3 +297,4 @@ export default function GeneralReportPage() {
     </MainLayout>
   );
 }
+
