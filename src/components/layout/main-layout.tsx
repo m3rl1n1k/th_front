@@ -21,7 +21,7 @@ import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
   Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, Target, Briefcase,
-  BarChart3, Brain, FileSignature // Added new icons
+  BarChart3, Brain, FileSignature
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
@@ -78,7 +78,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const getNavItems = useCallback(() => {
     if (!isAuthenticated) return [];
     let items = [...baseNavItems];
-    items.push(...reportNavItems); // Add report items
+    items.push(...reportNavItems); 
 
     adminNavItems.forEach(item => {
       if (item.requiredRole && userHasRole(item.requiredRole)) {
@@ -226,7 +226,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-background">
       {isNavigating && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/50 backdrop-blur-sm">
             <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -423,9 +423,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 pt-16"> {/* Added pt-16 to account for fixed header height */}
         {isAuthenticated && (
-          <aside className="hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1">
+          <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto"> {/* Adjusted for fixed positioning */}
             <nav className="flex-1 space-y-1">
               {renderNavGroup(baseNavItems)}
               <Separator className="my-2" />
@@ -441,7 +441,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </aside>
         )}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}> {/* Added md:ml-64 for main content offset */}
           { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
         </main>
       </div>
