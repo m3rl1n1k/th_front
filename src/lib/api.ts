@@ -1,5 +1,4 @@
 
-
 import { URLS } from '@/config/urls';
 import type {
   ApiError,
@@ -207,12 +206,12 @@ export const createTransaction = (data: CreateTransactionPayload, token: string)
 
 export const getTransactionsList = (
   token: string,
-  params: Record<string, string | undefined | number> = {} // Allow number for limit
+  params: Record<string, string | number | undefined> = {} // Page can be number, other filters typically string
 ): Promise<{ transactions: Transaction[] }> => {
   const definedParams: Record<string, string> = {};
   for (const key in params) {
     if (params[key] !== undefined) {
-      definedParams[key] = String(params[key]);
+      definedParams[key] = String(params[key]); // Ensure all params are string for URLSearchParams
     }
   }
   const queryString = new URLSearchParams(definedParams).toString();

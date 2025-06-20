@@ -46,6 +46,9 @@
   "genericError": "Щось пішло не так. будь ласка, спробуйте знову.",
   "validationFailedWithReason": "Перевірка не вдалася: {reason}. будь ласка, перевірте форму.",
   "formContainsInvalidData": "Форма містить недійсні дані.",
+  "previousPageButton": "Попередня",
+  "nextPageButton": "Наступна",
+  "pageIndicator": "Сторінка {currentPage}",
 
   "//": "НАВІГАЦІЯ / МАКЕТ",
   "toggleNavigation": "Перемкнути навігацію",
@@ -704,3 +707,4 @@
   "expenseLabel": "Витрати",
   "reportPage.noDataDesc": "Даних для відображення за обраний період немає, або цей звіт потребує подальшої інтеграції з бекендом."
 }
+

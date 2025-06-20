@@ -64,7 +64,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 const DEFAULT_RECORDS_PER_PAGE_FALLBACK = 20;
 
 export default function TransactionsPage() {
-  const { user, token, isAuthenticated } = useAuth(); // Added user
+  const { user, token, isAuthenticated } = useAuth(); 
   const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
@@ -99,6 +99,9 @@ export default function TransactionsPage() {
   const [definitionActionStates, setDefinitionActionStates] = useState<Record<string | number, { isLoading: boolean }>>({});
   const [showDeleteDefinitionDialog, setShowDeleteDefinitionDialog] = useState(false);
   const [selectedDefinitionForDelete, setSelectedDefinitionForDelete] = useState<RepeatedTransactionEntry | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(true);
 
 
   useEffect(() => {
@@ -146,33 +149,38 @@ export default function TransactionsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, toast, t]);
 
-  const fetchTransactions = useCallback((showLoadingIndicator = true) => {
+  const fetchTransactions = useCallback((showLoadingIndicator = true, pageToFetch: number) => {
     if (isAuthenticated && token && activeTab === "all") {
       if(showLoadingIndicator) setIsLoadingTransactions(true);
-      const params: Record<string, string | number | undefined> = {}; // Allow number for limit
+      const params: Record<string, string | number | undefined> = {}; 
       if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
       if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
       if (filters.categoryId) params.categoryId = filters.categoryId;
       if (filters.typeId) params.typeId = filters.typeId;
-
-      const recordsPerPage = user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE_FALLBACK;
-      params.limit = recordsPerPage;
+      
+      params.page = pageToFetch;
       
       getTransactionsList(token, params)
-        .then(result => setRawTransactions(result.transactions || []))
+        .then(result => {
+          setRawTransactions(result.transactions || []);
+          const effectivePageSize = user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE_FALLBACK;
+          setHasNextPage((result.transactions || []).length === effectivePageSize);
+        })
         .catch((error: any) => {
           if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
           setRawTransactions([]);
+          setHasNextPage(false);
         })
         .finally(() => {
           if(showLoadingIndicator) setIsLoadingTransactions(false);
         });
     } else if (!isAuthenticated || !token) {
       setRawTransactions([]);
+      setHasNextPage(false);
       if(showLoadingIndicator) setIsLoadingTransactions(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, user, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab]); 
+  }, [isAuthenticated, token, user, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab, toast, t]); 
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
@@ -194,13 +202,23 @@ export default function TransactionsPage() {
   }, [isAuthenticated, token, activeTab, t, toast]);
 
   useEffect(() => {
-    if (activeTab === "all") {
-      fetchTransactions();
-    } else if (activeTab === "recurring") {
+    // Initial fetch when tab changes or auth status changes
+    if (activeTab === "all" && isAuthenticated && token) {
+      fetchTransactions(true, currentPage);
+    } else if (activeTab === "recurring" && isAuthenticated && token) {
       fetchRepeatedDefinitions();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, activeTab, user]); // Added user to deps for records_per_page change
+  }, [isAuthenticated, token, activeTab, user]); 
+
+  useEffect(() => {
+    // Fetch when currentPage changes, only for 'all' tab
+    if (activeTab === "all" && isAuthenticated && token) {
+      fetchTransactions(true, currentPage);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, activeTab, isAuthenticated, token]);
+
 
   useEffect(() => {
     setInitiatingActionForTxId(null);
@@ -249,22 +267,16 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    if (activeTab === 'all') fetchTransactions();
+    setCurrentPage(1);
+    setHasNextPage(true);
+    // fetchTransactions will be called by useEffect due to currentPage change
   };
 
   const handleClearFilters = () => {
     setFilters({});
-    if (activeTab === 'all' && isAuthenticated && token) {
-      setIsLoadingTransactions(true);
-      const recordsPerPage = user?.settings?.records_per_page || DEFAULT_RECORDS_PER_PAGE_FALLBACK;
-      getTransactionsList(token, { limit: recordsPerPage }) 
-        .then(result => setRawTransactions(result.transactions || []))
-        .catch((error: any) => {
-          if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-          setRawTransactions([]);
-        })
-        .finally(() => setIsLoadingTransactions(false));
-    }
+    setCurrentPage(1);
+    setHasNextPage(true);
+     // fetchTransactions will be called by useEffect due to currentPage change
   };
   
   const handleAddNewTransaction = () => router.push('/transactions/new');
@@ -280,7 +292,7 @@ export default function TransactionsPage() {
     try {
       await deleteTransaction(selectedTransactionForDelete.id, token);
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
-      fetchTransactions(false); 
+      fetchTransactions(false, currentPage); // Re-fetch current page
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
     } finally {
@@ -332,6 +344,12 @@ export default function TransactionsPage() {
       setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: false } }));
       setShowDeleteDefinitionDialog(false);
       setSelectedDefinitionForDelete(null);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage > 0) {
+      setCurrentPage(newPage);
     }
   };
 
@@ -631,7 +649,7 @@ export default function TransactionsPage() {
           </Card>
         )}
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "all" | "recurring")} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as "all" | "recurring"); setCurrentPage(1); setHasNextPage(true); }} className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
             <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
               <History className="h-5 w-5" />
@@ -668,6 +686,29 @@ export default function TransactionsPage() {
                   </Table>
                 </div>
               </CardContent>
+              {activeTab === 'all' && rawTransactions && rawTransactions.length > 0 && (
+                <CardFooter className="flex items-center justify-center space-x-2 py-4 border-t">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || isLoadingTransactions}
+                    >
+                        {t('previousPageButton')}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        {t('pageIndicator', { currentPage: currentPage })}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={!hasNextPage || isLoadingTransactions}
+                    >
+                        {t('nextPageButton')}
+                    </Button>
+                </CardFooter>
+              )}
             </Card>
           </TabsContent>
           <TabsContent value="recurring" className="mt-6">
