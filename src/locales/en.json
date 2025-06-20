@@ -47,6 +47,7 @@
   "validationFailedWithReason": "Validation failed: {reason}. please check the form.",
   "formContainsInvalidData": "The form contains invalid data.",
   "loadMoreButton": "Load More",
+  "noMoreTransactionsToLoad": "No more transactions to load.",
 
   "//": "NAVIGATION / LAYOUT",
   "toggleNavigation": "Toggle navigation",

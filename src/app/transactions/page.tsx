@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, PaginationInfo, GetTransactionsListResponse } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, GetTransactionsListResponse, PaginationInfo } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,6 +101,7 @@ export default function TransactionsPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
 
 
   useEffect(() => {
@@ -152,6 +153,7 @@ export default function TransactionsPage() {
     if (isAuthenticated && token && activeTab === "all") {
       if (pageToFetch === 1) {
         setIsLoadingTransactions(true);
+        setRawTransactions([]); // Clear for initial load or filter change
       } else {
         setIsLoadingMore(true);
       }
@@ -217,6 +219,30 @@ export default function TransactionsPage() {
       fetchRepeatedDefinitions();
     }
   }, [isAuthenticated, token, activeTab, fetchTransactions, fetchRepeatedDefinitions]);
+
+  // Intersection Observer for infinite scrolling
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry.isIntersecting && currentPage < totalPages && !isLoadingMore && !isLoadingTransactions && activeTab === "all") {
+          fetchTransactions(currentPage + 1);
+        }
+      },
+      { threshold: 1.0 } // Trigger when 100% of the loader is visible
+    );
+
+    const currentLoaderRef = loaderRef.current;
+    if (currentLoaderRef) {
+      observer.observe(currentLoaderRef);
+    }
+
+    return () => {
+      if (currentLoaderRef) {
+        observer.unobserve(currentLoaderRef);
+      }
+    };
+  }, [loaderRef, currentPage, totalPages, isLoadingMore, isLoadingTransactions, fetchTransactions, activeTab]);
 
 
   useEffect(() => {
@@ -291,11 +317,9 @@ export default function TransactionsPage() {
       await deleteTransaction(selectedTransactionForDelete.id, token);
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
       setRawTransactions(prev => prev.filter(tx => tx.id !== selectedTransactionForDelete.id));
-      if (rawTransactions.length === 1 && currentPage > 1) {
-        fetchTransactions(currentPage - 1);
-      } else if (rawTransactions.length % (user?.settings?.records_per_page || 20) === 1 && rawTransactions.length > 1) {
-        fetchTransactions(currentPage);
-      }
+      // No need to explicitly fetch previous or current page after delete with infinite scroll,
+      // as the list just gets shorter. If the last item of a "page" is deleted,
+      // the intersection observer will handle fetching more if needed and available.
     } catch (error: any) {
       toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
     } finally {
@@ -350,11 +374,6 @@ export default function TransactionsPage() {
     }
   };
 
-  const handleLoadMore = () => {
-    if (currentPage < totalPages) {
-      fetchTransactions(currentPage + 1);
-    }
-  };
 
   const renderTransactionTableContent = () => {
     if (isLoadingTransactions && rawTransactions.length === 0) {
@@ -651,7 +670,7 @@ export default function TransactionsPage() {
           </Card>
         )}
 
-        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as "all" | "recurring"); setCurrentPage(1); }} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as "all" | "recurring"); setCurrentPage(1); setTotalPages(1); }} className="w-full">
           <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
             <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
               <History className="h-5 w-5" />
@@ -688,17 +707,14 @@ export default function TransactionsPage() {
                   </Table>
                 </div>
               </CardContent>
-              {activeTab === 'all' && rawTransactions.length > 0 && currentPage < totalPages && (
+              {activeTab === 'all' && (
                 <CardFooter className="flex items-center justify-center py-4 border-t-0">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleLoadMore}
-                        disabled={isLoadingMore}
-                    >
-                        {isLoadingMore && <Loader2 className="mr-2 h-4 w-4 animate-spin" /> }
-                        {t('loadMoreButton')}
-                    </Button>
+                  {isLoadingMore ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  ) : currentPage >= totalPages && rawTransactions.length > 0 ? (
+                    <p className="text-sm text-muted-foreground">{t('noMoreTransactionsToLoad')}</p>
+                  ) : null}
+                  <div ref={loaderRef} className="h-1"></div>
                 </CardFooter>
               )}
             </Card>
@@ -774,3 +790,4 @@ export default function TransactionsPage() {
     </MainLayout>
   );
 }
+
