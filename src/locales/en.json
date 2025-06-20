@@ -705,5 +705,15 @@
   "forSelectedMonth": "for selected month",
   "incomeLabel": "Income",
   "expenseLabel": "Expense",
-  "reportPage.noDataDesc": "There is no data to display for the selected period or this report requires further backend integration."
+  "reportPage.noDataDesc": "There is no data to display for the selected period or this report requires further backend integration.",
+  "aiReport.getYourSummaryTitle": "AI Financial Summary",
+  "aiReport.getYourSummaryDesc": "Get an AI-powered analysis of your current financial situation.",
+  "aiReport.generateButton": "Generate AI Summary",
+  "aiReport.generatingButton": "Generating...",
+  "aiReport.summaryTitle": "Your AI Financial Summary",
+  "aiReport.errorTitle": "Report Generation Error",
+  "aiReport.generationFailedTitle": "AI Report Generation Failed",
+  "aiReport.generationFailedError": "Could not generate the AI summary. Please try again later.",
+  "aiReport.unexpectedError": "An unexpected error occurred while generating the report.",
+  "aiReport.missingPrerequisites": "User currency or authentication token is missing. Please check your profile and login status."
 }

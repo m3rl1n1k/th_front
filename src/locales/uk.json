@@ -704,5 +704,15 @@
   "forSelectedMonth": "за обраний місяць",
   "incomeLabel": "Дохід",
   "expenseLabel": "Витрати",
-  "reportPage.noDataDesc": "Даних для відображення за обраний період немає, або цей звіт потребує подальшої інтеграції з бекендом."
+  "reportPage.noDataDesc": "Даних для відображення за обраний період немає, або цей звіт потребує подальшої інтеграції з бекендом.",
+  "aiReport.getYourSummaryTitle": "AI Фінансовий Звіт",
+  "aiReport.getYourSummaryDesc": "Отримайте аналіз вашого поточного фінансового стану за допомогою ШІ.",
+  "aiReport.generateButton": "Згенерувати AI Звіт",
+  "aiReport.generatingButton": "Генерація...",
+  "aiReport.summaryTitle": "Ваш AI Фінансовий Звіт",
+  "aiReport.errorTitle": "Помилка генерації звіту",
+  "aiReport.generationFailedTitle": "Не вдалося згенерувати AI звіт",
+  "aiReport.generationFailedError": "Не вдалося згенерувати AI звіт. Будь ласка, спробуйте пізніше.",
+  "aiReport.unexpectedError": "Сталася неочікувана помилка під час генерації звіту.",
+  "aiReport.missingPrerequisites": "Відсутня валюта користувача або токен автентифікації. Будь ласка, перевірте свій профіль та статус входу."
 }
