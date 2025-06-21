@@ -242,7 +242,7 @@ export default function FeedbackPage() {
                       <TableRow key={fb.id}>
                         <TableCell>
                           <Badge variant={getFeedbackTypeBadgeVariant(fb.type)}>
-                            {t(`feedbackType_${fb.type}` as any, { defaultValue: fb.type.replace(/_/g, ' ') })}
+                            {t(`feedbackType_${fb.type}` as any, { defaultValue: (fb.type || '').replace(/_/g, ' ') })}
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">{fb.subject}</TableCell>
