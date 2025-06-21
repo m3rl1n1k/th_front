@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 
 export const URLS = {
   // Auth
-  login: '/api/login_check',
+  login: '/api/v1/login_check',
   register: `${API_BASE_URL}/auth/register`,
   logout: `${API_BASE_URL}/auth/logout`,
   me: `${API_BASE_URL}/user`,
