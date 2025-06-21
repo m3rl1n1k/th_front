@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -12,18 +12,21 @@ import {
   getDashboardMonthExpenses,
   getDashboardLastTransactions,
   getTransactionTypes,
-  getDashboardChartTotalExpense
+  getDashboardChartTotalExpense,
+  getBudgetList,
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType } from '@/types';
+import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, Sector } from "recharts"
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 interface DashboardSummaryData {
   total_balance: number; // in cents
@@ -77,11 +80,13 @@ export default function DashboardPage() {
   const [lastTransactions, setLastTransactions] = useState<TransactionType[] | null>(null);
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
+  const [currentMonthBudget, setCurrentMonthBudget] = useState<MonthlyBudgetSummary | null>(null);
 
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingExpensesChart, setIsLoadingExpensesChart] = useState(true);
   const [isLoadingLastActivity, setIsLoadingLastActivity] = useState(true);
   const [isLoadingTransactionTypes, setIsLoadingTransactionTypes] = useState(true);
+  const [isLoadingBudget, setIsLoadingBudget] = useState(true);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -89,8 +94,10 @@ export default function DashboardPage() {
       setIsLoadingExpensesChart(true);
       setIsLoadingLastActivity(true);
       setIsLoadingTransactionTypes(true);
+      setIsLoadingBudget(true);
 
       const limit = DASHBOARD_LAST_TRANSACTIONS_LIMIT;
+      const currentMonthKey = format(new Date(), 'yyyy-MM');
 
       Promise.all([
         getDashboardTotalBalance(token),
@@ -98,9 +105,10 @@ export default function DashboardPage() {
         getDashboardMonthExpenses(token),
         getDashboardLastTransactions(token, limit),
         getTransactionTypes(token),
-        getDashboardChartTotalExpense(token)
+        getDashboardChartTotalExpense(token),
+        getBudgetList(token)
       ])
-        .then(([balanceData, incomeData, expenseData, lastTransactionsResp, typesData, chartData]) => {
+        .then(([balanceData, incomeData, expenseData, lastTransactionsResp, typesData, chartData, budgetListResponse]) => {
           setSummaryData({
             total_balance: balanceData.total_balance,
             month_income: incomeData.month_income,
@@ -110,6 +118,9 @@ export default function DashboardPage() {
           setLastTransactions(lastTransactionsResp.last_transactions || []);
           const formattedTypes = Object.entries(typesData.types).map(([id, name]) => ({ id, name: name as string }));
           setTransactionTypes(formattedTypes);
+
+          const budgetData = budgetListResponse.budgets[currentMonthKey];
+          setCurrentMonthBudget(budgetData || null);
         })
         .catch(error => {
           toast({
@@ -121,12 +132,14 @@ export default function DashboardPage() {
           setExpensesByCategoryData(null);
           setLastTransactions([]);
           setTransactionTypes([]);
+          setCurrentMonthBudget(null);
         })
         .finally(() => {
           setIsLoadingSummary(false);
           setIsLoadingExpensesChart(false);
           setIsLoadingLastActivity(false);
           setIsLoadingTransactionTypes(false);
+          setIsLoadingBudget(false);
         });
 
     } else if (!isAuthenticated) {
@@ -134,6 +147,7 @@ export default function DashboardPage() {
       setIsLoadingExpensesChart(false);
       setIsLoadingLastActivity(false);
       setIsLoadingTransactionTypes(false);
+      setIsLoadingBudget(false);
     }
   }, [token, isAuthenticated, t, toast]);
 
@@ -144,8 +158,8 @@ export default function DashboardPage() {
   const transformedChartData = useMemo((): TransformedChartItem[] => {
     if (!expensesByCategoryData?.month_expense_chart) return [];
     return Object.entries(expensesByCategoryData.month_expense_chart).map(([categoryNameFromApi, data], index) => ({
-      categoryName: categoryNameFromApi === 'no_category' 
-                    ? t('noCategory') 
+      categoryName: categoryNameFromApi === 'no_category'
+                    ? t('noCategory')
                     : t(generateCategoryTranslationKey(categoryNameFromApi), { defaultValue: categoryNameFromApi }),
       amount: data.amount,
       color: data.color,
@@ -157,11 +171,11 @@ export default function DashboardPage() {
     if (!expensesByCategoryData?.month_expense_chart) return {} as ChartConfig;
     const config: ChartConfig = {};
     Object.entries(expensesByCategoryData.month_expense_chart).forEach(([keyFromApi, item], index) => {
-      const displayName = keyFromApi === 'no_category' 
-                          ? t('noCategory') 
+      const displayName = keyFromApi === 'no_category'
+                          ? t('noCategory')
                           : t(generateCategoryTranslationKey(keyFromApi), { defaultValue: keyFromApi });
-      config[displayName] = { 
-        label: displayName, 
+      config[displayName] = {
+        label: displayName,
         color: item.color || `hsl(var(--chart-${(index % 5) + 1}))`,
       };
     });
@@ -184,7 +198,7 @@ export default function DashboardPage() {
       } else {
         icon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
       }
-      
+
       const displayText = tx.description || t('noDescription');
 
       return {
@@ -206,6 +220,14 @@ export default function DashboardPage() {
     return 0;
   };
 
+  const getProgressColor = (percentage: number): string => {
+    if (percentage > 100) return 'bg-red-600 dark:bg-red-500';
+    if (percentage > 75) return 'bg-orange-500 dark:bg-orange-400';
+    if (percentage > 50) return 'bg-yellow-500 dark:bg-yellow-400';
+    return 'bg-green-500 dark:bg-green-400';
+  };
+
+
   const renderActiveShape = (props: ActiveShapeProps) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
     const sin = Math.sin(-midAngle * (Math.PI / 180));
@@ -217,7 +239,7 @@ export default function DashboardPage() {
     const ex = mx + (cos >= 0 ? 1 : -1) * 22;
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
-    
+
     return (
       <g>
         <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold">
@@ -264,6 +286,110 @@ export default function DashboardPage() {
       </CardContent>
     </Card>
   );
+
+  const renderCurrentMonthBudget = () => {
+    if (isLoadingBudget) {
+      return (
+         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader>
+            <Skeleton className="h-6 w-1/2 mb-1" />
+            <Skeleton className="h-4 w-1/4" />
+          </CardHeader>
+          <CardContent className="space-y-4 pt-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-2 w-full" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </CardContent>
+           <CardFooter className="p-4">
+             <Skeleton className="h-9 w-24" />
+           </CardFooter>
+        </Card>
+      );
+    }
+
+    if (!currentMonthBudget) {
+      return (
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-center items-center text-center">
+            <CardHeader>
+                <Target className="mx-auto h-10 w-10 text-muted-foreground" />
+                <CardTitle>{t('budgetNoBudgetsFoundTitle')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">{t('noCurrentMonthBudget')}</p>
+                 <Button asChild variant="secondary">
+                    <Link href="/budgets/new">
+                        {t('budgetCreateNewButton')}
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+      );
+    }
+    const { totalPlanned, totalActual, currencyCode } = {
+      totalPlanned: currentMonthBudget.totalPlanned.amount,
+      totalActual: currentMonthBudget.totalActual.amount,
+      currencyCode: currentMonthBudget.totalPlanned.currency.code,
+    };
+    const remainingAmount = totalPlanned - totalActual;
+    const progressPercentage = totalPlanned > 0 ? (totalActual / totalPlanned) * 100 : (totalActual > 0 ? 101 : 0);
+    const progressColorClass = getProgressColor(progressPercentage);
+    const currentMonthKey = format(new Date(), 'yyyy-MM');
+
+    return (
+       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold text-foreground">{t('monthName', { month: format(new Date(), 'MMMM', { locale: dateFnsLocale }) })}</CardTitle>
+          <CardDescription className="text-xs">{format(new Date(), 'yyyy')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 flex-grow">
+          <div>
+            <div className="flex justify-between items-baseline mb-0.5">
+              <span className="text-xs text-muted-foreground">{t('budgetProgress', { percentage: progressPercentage.toFixed(0) })}</span>
+              {progressPercentage > 100 && (
+                <span className="text-xs font-semibold text-red-500">
+                  {t('budgetOverspentWarning')}
+                </span>
+              )}
+            </div>
+            <Progress
+              value={progressPercentage > 100 ? 100 : progressPercentage}
+              indicatorClassName={progressColorClass}
+              aria-label={t('budgetProgress', { percentage: progressPercentage.toFixed(0) })}
+              className="h-1.5"
+            />
+          </div>
+          <div className="space-y-1 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1 h-3 w-3 text-green-500" />{t('budgetTotalPlannedShort')}</span>
+                <span className="font-semibold text-foreground"><CurrencyDisplay amountInCents={totalPlanned} currencyCode={currencyCode} /></span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1 h-3 w-3 text-red-500" />{t('budgetTotalActualShort')}</span>
+                <span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={totalActual} currencyCode={currencyCode} /></span>
+              </div>
+          </div>
+            <div className={cn(
+            "w-full text-center p-2 rounded-md font-semibold text-sm",
+            remainingAmount >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
+            )}>
+            <p className="text-xs uppercase tracking-wider opacity-80 mb-0.5">{t('budgetRemainingAmountShort')}</p>
+            <CurrencyDisplay amountInCents={remainingAmount} currencyCode={currencyCode} />
+            </div>
+        </CardContent>
+          <CardFooter className="pt-3">
+              <Button variant="outline" size="sm" asChild className="w-full">
+                <Link href={`/budgets/summary/${currentMonthKey}`}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    {t('detailsAction')}
+                </Link>
+            </Button>
+          </CardFooter>
+      </Card>
+    );
+  };
+
 
   return (
     <MainLayout>
@@ -337,7 +463,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-1">
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="space-y-0.5">
@@ -375,7 +501,7 @@ export default function DashboardPage() {
                   config={chartConfig}
                   className="mx-auto aspect-square h-[350px]"
                 >
-                  <PieChart margin={{ top: 20, right: 20, bottom: 50, left: 20 }}>
+                  <PieChart margin={{ top: 20, right: 50, bottom: 50, left: 50 }}>
                      <ChartTooltip
                         cursor={false}
                         content={<ChartTooltipContent hideLabel />}
@@ -401,67 +527,73 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
-
-          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 lg:col-span-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
-              <Activity className="h-6 w-6 text-primary" />
-            </CardHeader>
-            <CardContent className="p-6">
-              {isLoadingLastActivity || isLoadingTransactionTypes ? (
-                <div className="space-y-4">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center space-x-3 p-2">
-                      <Skeleton className="h-6 w-6 rounded-md" />
-                      <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                      <Skeleton className="h-4 w-1/4" />
-                    </div>
-                  ))}
-                </div>
-              ) : !processedLastActivity || processedLastActivity.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center">
-                  <ListChecks className="h-12 w-12 text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">{t('noRecentTransactions')}</p>
-                   <Button variant="link" asChild className="mt-2">
-                    <Link href="/transactions/new">
-                      {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {processedLastActivity.map((item) => (
-                    <Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center space-x-3 flex-shrink min-w-0">
-                                {item.icon}
-                                <div className="flex-1 min-w-0"> 
-                                    <p className="text-sm font-medium text-foreground truncate" title={item.displayText}>
-                                        {item.displayText}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">{item.date}</p>
-                                </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                  <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
+                      <Activity className="h-6 w-6 text-primary" />
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {isLoadingLastActivity || isLoadingTransactionTypes ? (
+                        <div className="space-y-4">
+                          {[...Array(5)].map((_, i) => (
+                            <div key={i} className="flex items-center space-x-3 p-2">
+                              <Skeleton className="h-6 w-6 rounded-md" />
+                              <div className="flex-1 space-y-1.5">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-3 w-1/2" />
+                              </div>
+                              <Skeleton className="h-4 w-1/4" />
                             </div>
-                            <div className="text-sm font-medium text-right flex-shrink-0 ml-2"> 
-                                <CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} />
-                            </div>
+                          ))}
                         </div>
-                    </Link>
-                  ))}
-                  {processedLastActivity.length > 0 && (
-                     <Button variant="outline" asChild className="w-full mt-4">
-                        <Link href="/transactions">
-                            {t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4"/>
-                        </Link>
-                    </Button>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      ) : !processedLastActivity || processedLastActivity.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-48 text-center">
+                          <ListChecks className="h-12 w-12 text-muted-foreground mb-3" />
+                          <p className="text-muted-foreground">{t('noRecentTransactions')}</p>
+                          <Button variant="link" asChild className="mt-2">
+                            <Link href="/transactions/new">
+                              {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {processedLastActivity.map((item) => (
+                            <Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center space-x-3 flex-shrink min-w-0">
+                                        {item.icon}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-foreground truncate" title={item.displayText}>
+                                                {item.displayText}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">{item.date}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-sm font-medium text-right flex-shrink-0 ml-2">
+                                        <CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} />
+                                    </div>
+                                </div>
+                            </Link>
+                          ))}
+                          {processedLastActivity.length > 0 && (
+                            <Button variant="outline" asChild className="w-full mt-4">
+                                <Link href="/transactions">
+                                    {t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4"/>
+                                </Link>
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+              </div>
+              <div className="lg:col-span-1">
+                 {renderCurrentMonthBudget()}
+              </div>
+          </div>
         </div>
       </div>
     </MainLayout>

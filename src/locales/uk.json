@@ -171,6 +171,7 @@
   "noRecentTransactions": "Нещодавніх транзакцій не знайдено.",
   "viewAllTransactions": "Переглянути всі транзакції",
   "dashboardDataLoadError": "Не вдалося завантажити дані панелі.",
+  "monthName": "{month}",
 
   "//": "ТРАНЗАКЦІЇ",
   "newTransaction": "Нова транзакція",
@@ -495,6 +496,7 @@
   "budgetCreateNewButton": "Створити новий бюджет",
   "budgetNoBudgetsFoundTitle": "Бюджетів не знайдено",
   "budgetNoBudgetsFoundDescription": "Почніть планувати свої фінанси, створивши свій перший бюджет.",
+  "noCurrentMonthBudget": "Для поточного місяця бюджет не встановлено.",
   "budgetMonthlyOverview": "Місячний огляд",
   "budgetPlannedAmount": "Заплановано",
   "budgetActualExpenses": "Фактичні витрати",
