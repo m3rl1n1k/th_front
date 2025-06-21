@@ -14,11 +14,10 @@ import { getReportData } from '@/lib/api';
 import type { ReportDataResponse } from '@/types';
 import { FileSignature, AlertTriangle, Loader2, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown, LineChart as LineChartIcon } from 'lucide-react';
 import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart } from 'recharts';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+const years = Array.from({ length: 6 }, (_, i) => 2025 + i); // Range from 2025 to 2030
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -31,7 +30,7 @@ export default function GeneralReportPage() {
   const { user, token, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedYear, setSelectedYear] = useState<number>(years[0]);
   const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [appliedYear, setAppliedYear] = useState<number | null>(null);
   const [appliedMonth, setAppliedMonth] = useState<string | null>(null);
@@ -42,7 +41,7 @@ export default function GeneralReportPage() {
 
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => ({
     value: String(i + 1).padStart(2, '0'),
-    label: new Date(currentYear, i).toLocaleString(language, { month: 'long' })
+    label: new Date(new Date().getFullYear(), i).toLocaleString(language, { month: 'long' })
   })), [language]);
 
   const handleApplyFilters = () => {
