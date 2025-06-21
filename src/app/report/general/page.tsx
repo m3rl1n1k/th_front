@@ -182,13 +182,14 @@ export default function GeneralReportPage() {
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                                 layout="vertical"
-                                data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }), amount: item.amount / 100 }))}
+                                data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }) }))}
                                 margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis 
-                                    type="number" 
-                                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
+                                    type="number"
+                                    dataKey="amount"
+                                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value / 100)}
                                     tick={{ fontSize: 12 }}
                                 />
                                 <YAxis 
@@ -199,7 +200,7 @@ export default function GeneralReportPage() {
                                     interval={0}
                                 />
                                 <Tooltip 
-                                    formatter={(value, name, props) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, t('amount')]} 
+                                    formatter={(value, name, props) => [<CurrencyDisplay amountInCents={value as number} />, t('amount')]} 
                                     cursor={{ fill: 'hsl(var(--muted))' }} 
                                 />
                                 <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
@@ -222,21 +223,23 @@ export default function GeneralReportPage() {
             <CardContent className="flex-grow flex flex-col p-4 pt-0 min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={reportData.yearlySummary.map(item => ({
-                    ...item,
-                    income: item.income / 100,
-                    expense: item.expense / 100,
-                  }))}
+                  data={reportData.yearlySummary}
                   margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                   <YAxis
-                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
+                    tickFormatter={(value) => {
+                      const numberValue = typeof value === 'number' ? value : 0;
+                      return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(numberValue / 100)
+                    }}
                     tick={{ fontSize: 12 }}
                   />
                   <Tooltip
-                    formatter={(value, name) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, t(name.toString() as any, { defaultValue: name.toString()})]}
+                    formatter={(value, name) => {
+                      const numberValue = typeof value === 'number' ? value : 0;
+                      return [<CurrencyDisplay amountInCents={numberValue} />, t(name.toString() as any, { defaultValue: name.toString()})]
+                    }}
                     cursor={{ fill: 'hsl(var(--muted))' }}
                   />
                   <Legend />
@@ -306,3 +309,4 @@ export default function GeneralReportPage() {
     </MainLayout>
   );
 }
+
