@@ -345,5 +345,5 @@ export default function GeneralReportPage() {
 
       </div>
     </MainLayout>
-    
-    
+  );
+}
