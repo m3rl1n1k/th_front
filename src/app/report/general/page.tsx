@@ -12,7 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getReportData } from '@/lib/api';
 import type { ReportDataResponse } from '@/types';
-import { FileSignature, AlertTriangle, Loader2, LineChart as LineChartIcon, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { FileSignature, AlertTriangle, Loader2, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown, LineChart as LineChartIcon } from 'lucide-react';
 import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart } from 'recharts';
 import { format } from 'date-fns';
 import { CurrencyDisplay } from '@/components/common/currency-display';
@@ -173,41 +173,43 @@ export default function GeneralReportPage() {
                 </CardContent>
             </Card>
             
-            <Card className="lg:col-span-2 h-full flex flex-col">
+            <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-grow flex flex-col p-4 pt-0 min-h-[400px]">
+                <CardContent className="p-4 pt-0">
                     {reportData.categorySummary && reportData.categorySummary.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                layout="vertical"
-                                data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }) }))}
-                                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis 
-                                    type="number"
-                                    dataKey="amount"
-                                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value / 100)}
-                                    tick={{ fontSize: 12 }}
-                                />
-                                <YAxis 
-                                    dataKey="categoryName" 
-                                    type="category" 
-                                    width={120}
-                                    tick={{ fontSize: 12 }}
-                                    interval={0}
-                                />
-                                <Tooltip 
-                                    formatter={(value, name, props) => [<CurrencyDisplay amountInCents={value as number} />, t('amount')]} 
-                                    cursor={{ fill: 'hsl(var(--muted))' }} 
-                                />
-                                <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <div className="h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    layout="vertical"
+                                    data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }) }))}
+                                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis 
+                                        type="number"
+                                        dataKey="amount"
+                                        tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(Number(value) / 100)}
+                                        tick={{ fontSize: 12 }}
+                                    />
+                                    <YAxis 
+                                        dataKey="categoryName" 
+                                        type="category" 
+                                        width={120}
+                                        tick={{ fontSize: 12 }}
+                                        interval={0}
+                                    />
+                                    <Tooltip 
+                                        formatter={(value) => [<CurrencyDisplay amountInCents={Number(value)} />, t('amount')]} 
+                                        cursor={{ fill: 'hsl(var(--muted))' }} 
+                                    />
+                                    <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     ) : (
-                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <div className="flex items-center justify-center h-[400px] text-muted-foreground">
                         <p>{t('noDataAvailable')}</p>
                       </div>
                     )}
@@ -216,37 +218,39 @@ export default function GeneralReportPage() {
         </div>
         
         {reportData.yearlySummary && reportData.yearlySummary.length > 0 && (
-          <Card className="flex flex-col">
+          <Card>
             <CardHeader>
               <CardTitle>{t('yearlyPerformance')}</CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col p-4 pt-0 min-h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={reportData.yearlySummary}
-                  margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis
-                    tickFormatter={(value) => {
-                      const numberValue = typeof value === 'number' ? value : 0;
-                      return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(numberValue / 100)
-                    }}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip
-                    formatter={(value, name) => {
-                      const numberValue = typeof value === 'number' ? value : 0;
-                      return [<CurrencyDisplay amountInCents={numberValue} />, t(name.toString() as any, { defaultValue: name.toString()})]
-                    }}
-                    cursor={{ fill: 'hsl(var(--muted))' }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="income" name={t('income')} stroke={user?.settings?.chart_income_color || '#10b981'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
-                  <Line type="monotone" dataKey="expense" name={t('expense')} stroke={user?.settings?.chart_expense_color || '#ef4444'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent className="p-4 pt-0">
+              <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={reportData.yearlySummary}
+                      margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis
+                        tickFormatter={(value) => {
+                          const numberValue = typeof value === 'number' ? value : 0;
+                          return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(numberValue / 100)
+                        }}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          const numberValue = typeof value === 'number' ? value : 0;
+                          return [<CurrencyDisplay amountInCents={numberValue} />, t(name.toString() as any, { defaultValue: name.toString()})]
+                        }}
+                        cursor={{ fill: 'hsl(var(--muted))' }}
+                      />
+                      <Legend />
+                      <Line type="monotone" dataKey="income" name={t('income')} stroke={user?.settings?.chart_income_color || '#10b981'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
+                      <Line type="monotone" dataKey="expense" name={t('expense')} stroke={user?.settings?.chart_expense_color || '#ef4444'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
+                    </LineChart>
+                  </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -309,4 +313,3 @@ export default function GeneralReportPage() {
     </MainLayout>
   );
 }
-
