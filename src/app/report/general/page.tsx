@@ -24,6 +24,12 @@ const months = Array.from({ length: 12 }, (_, i) => ({
   label: new Date(0, i).toLocaleString('default', { month: 'long' }),
 }));
 
+const generateCategoryTranslationKey = (name: string | undefined | null): string => {
+  if (!name) return '';
+  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
+
 export default function GeneralReportPage() {
   const { t, dateFnsLocale } = useTranslation();
   const { user, token, isAuthenticated } = useAuth();
@@ -64,6 +70,11 @@ export default function GeneralReportPage() {
       setIsLoading(false);
     }
   }, [appliedYear, appliedMonth, token, t, toast]);
+
+  useEffect(() => {
+    handleApplyFilters();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (appliedYear && appliedMonth) {
@@ -159,17 +170,29 @@ export default function GeneralReportPage() {
               <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={400}>
                 <BarChart
-                  data={reportData.categorySummary.map(item => ({ ...item, amount: item.amount / 100 }))}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }), amount: item.amount / 100 }))}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 80 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tickFormatter={(value) => new Intl.NumberFormat(t('language') === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)} />
-                  <YAxis dataKey="categoryName" type="category" width={150} tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(value, name, props) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, props.payload.categoryName]} cursor={{ fill: 'hsl(var(--muted))' }} />
-                  <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <XAxis 
+                    dataKey="categoryName" 
+                    type="category" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={90}
+                    interval={0}
+                    tick={{ fontSize: 12 }} 
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => new Intl.NumberFormat(t('language') === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
+                  />
+                  <Tooltip 
+                    formatter={(value, name, props) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, props.payload.categoryName]} 
+                    cursor={{ fill: 'hsl(var(--muted))' }} 
+                  />
+                  <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
