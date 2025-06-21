@@ -463,7 +463,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-4">
           <div className="lg:col-span-1">
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
@@ -591,7 +591,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
              {renderCurrentMonthBudget()}
           </div>
         </div>
