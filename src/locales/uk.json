@@ -496,7 +496,9 @@
   "feedbackSubmitFailedTitle": "Не вдалося надіслати відгук",
   "feedbackFormTitle": "Надішліть ваш відгук",
   "feedbackFormDesc": "Ми цінуємо ваш внесок! Будь ласка, поділіться своїми думками, звітами про помилки або запитами на нові функції.",
-
+  "yourSubmittedFeedbackTitle": "Ваші надіслані відгуки",
+  "yourSubmittedFeedbackDesc": "Список відгуків, які ви надіслали.",
+  "youHaveNotSubmittedFeedback": "Ви ще не надсилали жодних відгуків.",
 
   "//": "БЮДЖЕТИ",
   "budgetCreateNewButton": "Створити новий бюджет",

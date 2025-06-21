@@ -496,7 +496,9 @@
   "feedbackSubmitFailedTitle": "Feedback submission failed",
   "feedbackFormTitle": "Submit your feedback",
   "feedbackFormDesc": "We value your input! Please share your thoughts, bug reports, or feature requests.",
-
+  "yourSubmittedFeedbackTitle": "Your Submitted Feedback",
+  "yourSubmittedFeedbackDesc": "A list of the feedback you've sent.",
+  "youHaveNotSubmittedFeedback": "You have not submitted any feedback yet.",
 
   "//": "BUDGETS",
   "budgetCreateNewButton": "Створити новий бюджет",
