@@ -11,16 +11,17 @@ import {
   getDashboardMonthlyIncome,
   getDashboardMonthExpenses,
   getDashboardLastTransactions,
-  getTransactionTypes
+  getTransactionTypes,
+  getDashboardChartTotalExpense
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, BarChart as BarChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { PieChart, Pie, Cell, Legend, Sector } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from "recharts"
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 
@@ -36,71 +37,10 @@ interface TransformedChartItem {
   color?: string;
 }
 
-interface ActiveShapeProps {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  startAngle: number;
-  endAngle: number;
-  fill: string;
-  payload: TransformedChartItem;
-  percent: number;
-  value: number; // This is `amount` from payload, in cents
-}
-
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 };
-
-const renderActiveShape = (props: ActiveShapeProps, currencyCode?: string, t?: Function) => {
-  const RADIAN = Math.PI / 180;
-  const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
-  const sin = Math.sin(-RADIAN * midAngle);
-  const cos = Math.cos(-RADIAN * midAngle);
-  const sx = cx + (outerRadius + 10) * cos;
-  const sy = cy + (outerRadius + 10) * sin;
-  const mx = cx + (outerRadius + 30) * cos;
-  const my = cy + (outerRadius + 30) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
-  const ey = my;
-  const textAnchor = cos >= 0 ? 'start' : 'end';
-
-  return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        className="cursor-pointer transition-opacity hover:opacity-80"
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
-        fill={fill}
-      />
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" dy={0} className="text-xs">
-        {payload.categoryName}
-      </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={16} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">
-         <CurrencyDisplay amountInCents={value} currencyCode={currencyCode}/> {`(${(percent * 100).toFixed(2)}%)`}
-      </text>
-    </g>
-  );
-};
-
 
 interface ProcessedLastTransactionItem {
   id: string | number;
@@ -111,7 +51,7 @@ interface ProcessedLastTransactionItem {
   date: string; // Formatted date
 }
 
-const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5; // Changed from localStorage to constant
+const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
 
 export default function DashboardPage() {
   const { user, token, isAuthenticated } = useAuth();
@@ -127,8 +67,6 @@ export default function DashboardPage() {
   const [isLoadingLastActivity, setIsLoadingLastActivity] = useState(true);
   const [isLoadingTransactionTypes, setIsLoadingTransactionTypes] = useState(true);
 
-  const [activeChartIndex, setActiveChartIndex] = useState(0);
-
   useEffect(() => {
     if (isAuthenticated && token) {
       setIsLoadingSummary(true);
@@ -143,15 +81,16 @@ export default function DashboardPage() {
         getDashboardMonthlyIncome(token),
         getDashboardMonthExpenses(token),
         getDashboardLastTransactions(token, limit),
-        getTransactionTypes(token)
+        getTransactionTypes(token),
+        getDashboardChartTotalExpense(token)
       ])
-        .then(([balanceData, incomeData, expenseData, lastTransactionsResp, typesData]) => {
+        .then(([balanceData, incomeData, expenseData, lastTransactionsResp, typesData, chartData]) => {
           setSummaryData({
             total_balance: balanceData.total_balance,
             month_income: incomeData.month_income,
             month_expense: expenseData.month_expense,
           });
-          setExpensesByCategoryData(null); // Data is no longer fetched
+          setExpensesByCategoryData(chartData);
           setLastTransactions(lastTransactionsResp.last_transactions || []);
           const formattedTypes = Object.entries(typesData.types).map(([id, name]) => ({ id, name: name as string }));
           setTransactionTypes(formattedTypes);
@@ -244,10 +183,6 @@ export default function DashboardPage() {
     if (period === 'daily') return Math.round(monthlyExpenseInCents / 30);
     if (period === 'weekly') return Math.round(monthlyExpenseInCents / 4);
     return 0;
-  };
-
-  const onPieEnter = (_: any, index: number) => {
-    setActiveChartIndex(index);
   };
 
   const renderSkeletonCard = (title: string, icon?: React.ReactNode, className?: string, lineCount = 2) => (
@@ -362,16 +297,16 @@ export default function DashboardPage() {
                   </CardDescription>
                 )}
               </div>
-              <PieChartIcon className="h-6 w-6 text-primary" />
+              <BarChartIcon className="h-6 w-6 text-primary" />
             </CardHeader>
             <CardContent className="pt-4">
               {isLoadingExpensesChart ? (
                 <div className="flex justify-center items-center h-72">
-                  <Skeleton className="h-64 w-64 rounded-full" />
+                  <Skeleton className="h-full w-full rounded-md" />
                 </div>
               ) : !expensesByCategoryData || transformedChartData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-72 text-center">
-                    <PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
+                    <BarChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">{t('noDataAvailable')}</p>
                     <p className="text-sm text-muted-foreground">
                       {t('tryAddingExpenses')}
@@ -383,58 +318,61 @@ export default function DashboardPage() {
                     </Button>
                   </div>
               ) : (
-                <ChartContainer config={chartConfig} className="aspect-square h-[300px] sm:h-[350px] w-full mx-auto">
-                  <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={
-                        <ChartTooltipContent
-                          hideLabel
-                          className="bg-card text-card-foreground shadow-lg"
-                          formatter={(value, name, itemProps) => {
-                            const currency = user?.userCurrency?.code || 'USD';
-                            const categoryDisplayName = itemProps.payload.categoryName;
-                            return (
-                              <div className="flex flex-col gap-0.5">
-                                <span className="font-medium text-foreground">{categoryDisplayName}</span>
-                                <CurrencyDisplay amountInCents={value as number} currencyCode={currency} />
-                              </div>
-                            );
-                          }}
-                        />
-                      }
-                    />
-                    <Pie
+                <ChartContainer
+                    config={chartConfig}
+                    className="h-[350px] w-full"
+                  >
+                    <BarChart
+                      accessibilityLayer
                       data={transformedChartData}
-                      dataKey="amount" 
-                      nameKey="categoryName" 
-                      innerRadius="60%"
-                      outerRadius="80%"
-                      activeIndex={activeChartIndex}
-                      activeShape={(props: ActiveShapeProps) => renderActiveShape(props, user?.userCurrency?.code, t) }
-                      onMouseEnter={onPieEnter}
-                      className="cursor-pointer"
+                      layout="vertical"
+                      margin={{ left: 10, right: 10 }}
                     >
-                      {transformedChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || chartConfig[entry.categoryName]?.color || `hsl(var(--chart-${(index % 5) + 1}))`} />
-                      ))}
-                    </Pie>
-                    <Legend content={({ payload }) => {
-                        if (!payload) return null;
-                        return (
-                          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-4 text-xs">
-                            {payload.map((entry, index) => ( 
-                              <div key={`item-${index}`} className="flex items-center gap-1.5">
-                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                                <span>{entry.value}</span> 
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      }}
-                    />
-                  </PieChart>
-                </ChartContainer>
+                      <CartesianGrid horizontal={false} />
+                      <YAxis
+                        dataKey="categoryName"
+                        type="category"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={10}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        width={100}
+                      />
+                      <XAxis
+                        dataKey="amount"
+                        type="number"
+                        hide
+                      />
+                      <ChartTooltip
+                        cursor={false}
+                        content={
+                          <ChartTooltipContent
+                            indicator="line"
+                            labelClassName="font-medium"
+                            className="bg-card text-card-foreground shadow-lg"
+                            formatter={(value) => (
+                              <CurrencyDisplay
+                                amountInCents={value as number}
+                                currencyCode={user?.userCurrency?.code}
+                              />
+                            )}
+                          />
+                        }
+                      />
+                      <Bar
+                        dataKey="amount"
+                        layout="vertical"
+                        radius={5}
+                      >
+                        {transformedChartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color || `hsl(var(--chart-${(index % 5) + 1}))`}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ChartContainer>
               )}
             </CardContent>
           </Card>

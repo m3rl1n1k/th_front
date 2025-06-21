@@ -15,6 +15,7 @@ export const URLS = {
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,
   dashboardMonthlyIncome: `${API_BASE_URL}/dashboard/monthly-income`,
   dashboardMonthExpenses: `${API_BASE_URL}/dashboard/average-expenses`,
+  dashboardChartTotalExpense: `${API_BASE_URL}/dashboard/chart/total-expense`,
   dashboardLastTransactions: (limit: number) => `${API_BASE_URL}/dashboard/last-transactions/${limit}`,
 
   // Reports
