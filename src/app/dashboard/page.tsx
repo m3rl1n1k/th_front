@@ -463,7 +463,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-4">
+        <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
@@ -531,7 +531,7 @@ export default function DashboardPage() {
           </div>
           <div className="lg:col-span-1">
               <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-6">
                   <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
                   <Activity className="h-6 w-6 text-primary" />
                 </CardHeader>
@@ -591,7 +591,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
              {renderCurrentMonthBudget()}
           </div>
         </div>
