@@ -352,7 +352,7 @@ export default function DashboardPage() {
               </div>
               <PieChartIcon className="h-6 w-6 text-primary" />
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="p-6">
               {isLoadingExpensesChart ? (
                 <div className="flex justify-center items-center h-72">
                   <Skeleton className="h-64 w-64 rounded-full" />
@@ -407,7 +407,7 @@ export default function DashboardPage() {
               <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
               <Activity className="h-6 w-6 text-primary" />
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="p-6">
               {isLoadingLastActivity || isLoadingTransactionTypes ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
