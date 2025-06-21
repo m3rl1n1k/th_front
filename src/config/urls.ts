@@ -64,8 +64,8 @@ export const URLS = {
   currencies: `${API_BASE_URL}/currencies`,
 
   // Feedback
-  submitFeedback: `${API_BASE_URL}/feedback`,
-  getFeedbacks: `${API_BASE_URL}/admin/feedbacks`,
+  submitFeedback: `${API_BASE_URL}/feedbacks`,
+  getFeedbacks: `${API_BASE_URL}/feedbacks`,
 
   // Budgets
   getBudgets: `${API_BASE_URL}/budgets`, 

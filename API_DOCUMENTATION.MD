@@ -620,7 +620,7 @@ Deletes a specific subcategory.
 
 ### 7. Feedback
 
-#### `POST /feedback`
+#### `POST /feedbacks`
 Allows an authenticated user to submit feedback.
 *   **Request Body**:
     ```json
@@ -639,7 +639,7 @@ Allows an authenticated user to submit feedback.
     ```
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**: Standard error format.
 
-#### `GET /admin/feedbacks`
+#### `GET /feedbacks`
 Retrieves all submitted feedbacks. Requires `ROLE_MODERATOR_FEEDBACK` role.
 *   **Request Body**: None (token in header)
 *   **Success Response (200 OK)**:
@@ -1110,5 +1110,3 @@ Consider these when designing your database and PHP classes/objects.
 *   **Validation**: Implement robust server-side validation.
 *   **CORS**: Configure Cross-Origin Resource Sharing headers.
 *   **Troubleshooting Mobile Connectivity**: Refer to detailed steps in the original `API_DOCUMENTATION.md` if "Failed to fetch" errors occur during mobile testing.
-
-```
