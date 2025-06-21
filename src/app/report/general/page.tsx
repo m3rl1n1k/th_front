@@ -88,6 +88,27 @@ export default function GeneralReportPage() {
     return format(new Date(appliedYear, parseInt(appliedMonth, 10) - 1), 'MMMM yyyy', { locale: dateFnsLocale });
   }, [appliedYear, appliedMonth, dateFnsLocale]);
 
+  const yearlyChartData = useMemo(() => {
+    if (!reportData?.yearlySummary) return [];
+
+    const monthMap: { [key: string]: number } = {
+      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+
+    return reportData.yearlySummary.map(item => {
+        const monthIndex = monthMap[item.month as keyof typeof monthMap];
+        if (monthIndex === undefined) {
+          return { ...item };
+        }
+        const monthDate = new Date(appliedYear || new Date().getFullYear(), monthIndex);
+        return {
+          ...item,
+          month: format(monthDate, 'MMM', { locale: dateFnsLocale }),
+        };
+    });
+  }, [reportData?.yearlySummary, appliedYear, dateFnsLocale]);
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -135,7 +156,7 @@ export default function GeneralReportPage() {
 
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             <Card className="lg:col-span-1 h-full flex flex-col">
                 <CardHeader>
                     <CardTitle>{t('keyFinancialStats')}</CardTitle>
@@ -178,6 +199,7 @@ export default function GeneralReportPage() {
                     <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 flex-grow">
+                    <div className="h-[400px]">
                     {reportData.categorySummary && reportData.categorySummary.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
@@ -211,6 +233,7 @@ export default function GeneralReportPage() {
                         <p>{t('noDataAvailable')}</p>
                       </div>
                     )}
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -224,7 +247,7 @@ export default function GeneralReportPage() {
               <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
-                      data={reportData.yearlySummary}
+                      data={yearlyChartData}
                       margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
