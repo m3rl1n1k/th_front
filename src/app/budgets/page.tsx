@@ -256,7 +256,7 @@ export default function BudgetsPage() {
 
         <Accordion type="multiple" defaultValue={sortedYears.length > 0 ? [sortedYears[0]] : []} className="w-full space-y-4">
           {sortedYears.map(year => (
-            <AccordionItem value={year} key={year} className="border bg-card shadow-md rounded-lg">
+            <AccordionItem value={year} key={year} className="bg-card shadow-md rounded-lg">
               <AccordionTrigger className="px-4 py-3 text-lg font-semibold hover:bg-muted/50 rounded-t-lg hover:no-underline data-[state=open]:border-b">
                 {t('yearLabel', { year: year })}
               </AccordionTrigger>
@@ -270,7 +270,7 @@ export default function BudgetsPage() {
                       const monthNameOnly = budget.monthDisplayName.split(' ')[0];
 
                       return (
-                        <Card key={budget.monthYear} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50 p-3">
+                        <Card key={budget.monthYear} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border hover:border-primary/50 p-3">
                           <CardHeader className="p-0 pb-2 border-b mb-2">
                             <CardTitle className="text-base font-semibold text-foreground">{monthNameOnly}</CardTitle>
                             <CardDescription className="text-xs">{budget.year}</CardDescription>
@@ -353,4 +353,3 @@ export default function BudgetsPage() {
     </MainLayout>
   );
 }
-
