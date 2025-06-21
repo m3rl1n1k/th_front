@@ -242,14 +242,14 @@ export default function DashboardPage() {
 
     return (
       <g>
-        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold">
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold text-sm sm:text-base">
           {payload.categoryName}
         </text>
         <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
         <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 6} outerRadius={outerRadius + 10} fill={fill} />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
         <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-sm">
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-xs sm:text-sm">
            <CurrencyDisplay amountInCents={value} currencyCode={user?.userCurrency?.code} />
         </text>
         <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">
@@ -371,10 +371,10 @@ export default function DashboardPage() {
               </div>
           </div>
             <div className={cn(
-            "w-full text-center p-3 rounded-md font-semibold text-lg",
+            "w-full text-center p-3 rounded-md font-semibold text-base sm:text-lg",
             remainingAmount >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
             )}>
-            <p className="text-sm uppercase tracking-wider opacity-80 mb-1">{t('budgetRemainingAmountShort')}</p>
+            <p className="text-xs sm:text-sm uppercase tracking-wider opacity-80 mb-1">{t('budgetRemainingAmountShort')}</p>
             <CurrencyDisplay amountInCents={remainingAmount} currencyCode={currencyCode} />
             </div>
         </CardContent>
@@ -394,7 +394,7 @@ export default function DashboardPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <h1 className="font-headline text-3xl font-bold text-foreground">{t('dashboard')}</h1>
+        <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {isLoadingSummary ? (
@@ -413,7 +413,7 @@ export default function DashboardPage() {
                   <Wallet className="h-5 w-5 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
+                  <div className="text-xl sm:text-2xl font-bold text-foreground">
                     <CurrencyDisplay amountInCents={summaryData.total_balance} />
                   </div>
                 </CardContent>
@@ -425,7 +425,7 @@ export default function DashboardPage() {
                   <TrendingUp className="h-5 w-5 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
                     <CurrencyDisplay amountInCents={summaryData.month_income} />
                   </div>
                 </CardContent>
@@ -440,19 +440,19 @@ export default function DashboardPage() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-xs text-muted-foreground">{t('daily')}</p>
-                      <div className="text-lg font-semibold text-red-600 dark:text-red-400">
+                      <div className="text-base sm:text-lg font-semibold text-red-600 dark:text-red-400">
                         <CurrencyDisplay amountInCents={calculateAverageExpense(summaryData.month_expense, 'daily')} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">{t('weekly')}</p>
-                      <div className="text-lg font-semibold text-red-600 dark:text-red-400">
+                      <div className="text-base sm:text-lg font-semibold text-red-600 dark:text-red-400">
                         <CurrencyDisplay amountInCents={calculateAverageExpense(summaryData.month_expense, 'weekly')} />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">{t('monthly')}</p>
-                      <div className="text-lg font-semibold text-red-600 dark:text-red-400">
+                      <div className="text-base sm:text-lg font-semibold text-red-600 dark:text-red-400">
                         <CurrencyDisplay amountInCents={calculateAverageExpense(summaryData.month_expense, 'monthly')} />
                       </div>
                     </div>
@@ -500,9 +500,9 @@ export default function DashboardPage() {
                 ) : (
                   <ChartContainer
                     config={chartConfig}
-                    className="mx-auto aspect-square h-[350px]"
+                    className="mx-auto aspect-square h-[300px] sm:h-[350px]"
                   >
-                    <PieChart margin={{ top: 50, right: 50, bottom: 50, left: 50 }}>
+                    <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                        <ChartTooltip
                           cursor={false}
                           content={<ChartTooltipContent hideLabel />}
