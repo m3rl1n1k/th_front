@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A support chat flow using Genkit.
@@ -56,7 +57,7 @@ const supportChatFlow = ai.defineFlow(
     const systemPrompt = `You are a friendly and helpful support agent for an application called "FinanceFlow". Your goal is to assist users with their questions about the application. Do not make up features that do not exist. Be concise and clear in your answers. Please respond in the following language: ${language}.`;
     
     const { output } = await generativeAi.generate({
-      model: 'googleai/gemini-pro',
+      model: 'googleai/gemini-1.5-flash-latest',
       prompt: message,
       history: history,
       system: systemPrompt,
