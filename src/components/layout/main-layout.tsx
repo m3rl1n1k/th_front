@@ -21,7 +21,7 @@ import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
   Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, Target, Briefcase,
-  BarChart3, Brain, FileSignature
+  BarChart3, Brain, FileSignature, Bot
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
@@ -41,8 +41,12 @@ const reportNavItems = [
   { href: '/report/general', labelKey: 'generalReportMenu', icon: FileSignature, authRequired: true },
 ];
 
-const userSpecificNavItems = [
+const supportNavItems = [
   { href: '/feedback', labelKey: 'feedbackPageTitle', icon: MessageSquare, authRequired: true },
+  { href: '/support/chat', labelKey: 'supportChat', icon: Bot, authRequired: true },
+];
+
+const userSpecificNavItems = [
   { href: '/profile', labelKey: 'profile', icon: UserCircle, authRequired: true },
   { href: '/settings', labelKey: 'settings', icon: Settings, authRequired: true },
 ];
@@ -86,7 +90,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       }
     });
 
-    items = [...items, ...userSpecificNavItems];
+    items = [...items, ...supportNavItems, ...userSpecificNavItems];
     return items;
   }, [isAuthenticated, userHasRole]);
 
@@ -305,6 +309,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   )}
                   <div className="pt-2">
                      <Separator />
+                     {renderMobileNavGroup(supportNavItems, 'supportGroup')}
+                  </div>
+                  <div className="pt-2">
+                     <Separator />
                      {renderMobileNavGroup(userSpecificNavItems, t('profile'))}
                   </div>
                 </nav>
@@ -454,6 +462,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   {renderNavGroup(adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)), 'Admin')}
                 </>
               )}
+              <Separator className="my-2" />
+              {renderNavGroup(supportNavItems, 'supportGroup')}
               <Separator className="my-2" />
               {renderNavGroup(userSpecificNavItems)}
             </nav>

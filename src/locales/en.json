@@ -70,7 +70,12 @@
   "reportsGroup": "Reports",
   "generalReportMenu": "General",
   "aiReportMenu": "AI Report",
-
+  "supportGroup": "Support",
+  "supportChat": "Support Chat",
+  "supportChatDesc": "Have a question about FinanceFlow? Ask our AI assistant.",
+  "chatPlaceholder": "Type your message here...",
+  "chatMessageRequiredError": "Message cannot be empty.",
+  "supportChatThinking": "Thinking...",
 
   "//": "AUTHENTICATION (LOGIN, REGISTER, SET TOKEN, PASSWORD)",
   "login": "Login",

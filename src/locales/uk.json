@@ -70,6 +70,12 @@
   "reportsGroup": "Звіти",
   "generalReportMenu": "Загальний",
   "aiReportMenu": "AI Звіт",
+  "supportGroup": "Підтримка",
+  "supportChat": "Чат підтримки",
+  "supportChatDesc": "Маєте запитання щодо FinanceFlow? Запитайте нашого AI-помічника.",
+  "chatPlaceholder": "Введіть ваше повідомлення тут...",
+  "chatMessageRequiredError": "Повідомлення не може бути порожнім.",
+  "supportChatThinking": "Думаю...",
 
   "//": "АВТЕНТИФІКАЦІЯ (ВХІД, РЕЄСТРАЦІЯ, ВСТАНОВЛЕННЯ ТОКЕНА, ПАРОЛЬ)",
   "login": "Увійти",
