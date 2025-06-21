@@ -12,8 +12,8 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getReportData } from '@/lib/api';
 import type { ReportDataResponse } from '@/types';
-import { FileSignature, AlertTriangle, Loader2, LineChart, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
-import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
+import { FileSignature, AlertTriangle, Loader2, LineChart as LineChartIcon, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart } from 'recharts';
 import { format } from 'date-fns';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
@@ -31,7 +31,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 
 
 export default function GeneralReportPage() {
-  const { t, language } = useTranslation();
+  const { t, language, dateFnsLocale } = useTranslation();
   const { user, token, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -84,9 +84,8 @@ export default function GeneralReportPage() {
 
   const formattedPeriod = useMemo(() => {
     if (!appliedYear || !appliedMonth) return '';
-    const { dateFnsLocale } = useTranslation(); // Get it inside useMemo
     return format(new Date(appliedYear, appliedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale });
-  }, [appliedYear, appliedMonth, useTranslation]);
+  }, [appliedYear, appliedMonth, dateFnsLocale]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -135,32 +134,41 @@ export default function GeneralReportPage() {
 
     return (
       <div className="space-y-6">
-        <h2 className="font-headline text-2xl font-bold text-foreground">
-          {t('reportForPeriod', { period: formattedPeriod })}
-        </h2>
-
         {/* Key Financial Stats */}
         <Card>
           <CardHeader>
             <CardTitle>{t('keyFinancialStats')}</CardTitle>
+            <CardDescription>{t('reportForPeriod', { period: formattedPeriod })}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4" />{t('startOfMonthBalance')}</p>
-                  <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.startOfMonthBalance} /></p>
+            <Card className="p-4 bg-muted/50">
+              <div className="flex items-center gap-2 mb-1">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{t('startOfMonthBalance')}</p>
               </div>
-              <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-500" />{t('totalIncome')}</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthIncome} /></p>
+              <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.startOfMonthBalance} /></p>
+            </Card>
+            <Card className="p-4 bg-green-500/10">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <p className="text-sm font-semibold text-green-700 dark:text-green-300">{t('totalIncome')}</p>
               </div>
-              <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2"><TrendingDown className="h-4 w-4 text-red-500" />{t('totalExpense')}</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthExpense} /></p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthIncome} /></p>
+            </Card>
+            <Card className="p-4 bg-red-500/10">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300">{t('totalExpense')}</p>
               </div>
-              <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4" />{t('endOfMonthBalance')}</p>
-                  <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.endOfMonthBalance} /></p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthExpense} /></p>
+            </Card>
+            <Card className="p-4 bg-muted/50">
+              <div className="flex items-center gap-2 mb-1">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{t('endOfMonthBalance')}</p>
               </div>
+              <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.endOfMonthBalance} /></p>
+            </Card>
           </CardContent>
         </Card>
         
@@ -172,7 +180,7 @@ export default function GeneralReportPage() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart
+                <LineChart
                   data={reportData.yearlySummary.map(item => ({
                     ...item,
                     income: item.income / 100,
@@ -191,9 +199,9 @@ export default function GeneralReportPage() {
                     cursor={{ fill: 'hsl(var(--muted))' }}
                   />
                   <Legend />
-                  <Bar dataKey="income" name={t('income')} fill={user?.settings?.chart_income_color || '#10b981'} radius={[4, 4, 0, 0]} />
-                  <Line type="monotone" dataKey="expense" name={t('expense')} stroke={user?.settings?.chart_expense_color || '#ef4444'} strokeWidth={2} />
-                </ComposedChart>
+                  <Line type="monotone" dataKey="income" name={t('income')} stroke={user?.settings?.chart_income_color || '#10b981'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
+                  <Line type="monotone" dataKey="expense" name={t('expense')} stroke={user?.settings?.chart_expense_color || '#ef4444'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
