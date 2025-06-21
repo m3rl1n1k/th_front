@@ -19,10 +19,6 @@ import { CurrencyDisplay } from '@/components/common/currency-display';
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
-const months = Array.from({ length: 12 }, (_, i) => ({
-  value: i + 1,
-  label: new Date(0, i).toLocaleString('default', { month: 'long' }),
-}));
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -36,13 +32,18 @@ export default function GeneralReportPage() {
   const { toast } = useToast();
 
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [appliedYear, setAppliedYear] = useState<number | null>(null);
-  const [appliedMonth, setAppliedMonth] = useState<number | null>(null);
+  const [appliedMonth, setAppliedMonth] = useState<string | null>(null);
   
   const [reportData, setReportData] = useState<ReportDataResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => ({
+    value: String(i + 1).padStart(2, '0'),
+    label: new Date(currentYear, i).toLocaleString(language, { month: 'long' })
+  })), [language]);
 
   const handleApplyFilters = () => {
     setAppliedYear(selectedYear);
@@ -84,7 +85,7 @@ export default function GeneralReportPage() {
 
   const formattedPeriod = useMemo(() => {
     if (!appliedYear || !appliedMonth) return '';
-    return format(new Date(appliedYear, appliedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale });
+    return format(new Date(appliedYear, parseInt(appliedMonth, 10) - 1), 'MMMM yyyy', { locale: dateFnsLocale });
   }, [appliedYear, appliedMonth, dateFnsLocale]);
 
   const renderContent = () => {
@@ -134,13 +135,13 @@ export default function GeneralReportPage() {
 
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <Card className="lg:col-span-1 h-full flex flex-col">
                 <CardHeader>
                     <CardTitle>{t('keyFinancialStats')}</CardTitle>
                     <CardDescription>{t('reportForPeriod', { period: formattedPeriod })}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-4">
+                <CardContent className="grid gap-4 flex-grow">
                     <Card className="p-4 bg-muted/50">
                         <div className="flex items-center gap-2 mb-1">
                             <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -213,7 +214,6 @@ export default function GeneralReportPage() {
             </Card>
         </div>
         
-        {/* Yearly Performance Chart */}
         {reportData.yearlySummary && reportData.yearlySummary.length > 0 && (
           <Card className="flex flex-col">
             <CardHeader>
@@ -282,13 +282,13 @@ export default function GeneralReportPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="month-select">{t('selectMonth')}</Label>
-                <Select value={String(selectedMonth)} onValueChange={(val) => setSelectedMonth(Number(val))}>
+                <Select value={selectedMonth} onValueChange={(val) => setSelectedMonth(val)}>
                   <SelectTrigger id="month-select">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {months.map(month => (
-                      <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>
+                      <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

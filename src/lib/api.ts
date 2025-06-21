@@ -409,6 +409,6 @@ export const rejectInvitation = (invitationId: string | number, token: string): 
   request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: Number(invitationId) }, token });
 
 // Reports
-export const getReportData = (token: string, year: number, month: number): Promise<ReportDataResponse> => {
+export const getReportData = (token: string, year: number, month: number | string): Promise<ReportDataResponse> => {
   return request(URLS.getReportData(year, month), { method: 'GET', token });
 };

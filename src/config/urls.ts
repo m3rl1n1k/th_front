@@ -89,5 +89,5 @@ export const URLS = {
   rejectInvitation: (invitationId: string | number) => `${API_BASE_URL}/invitation/${invitationId}/reject`,
 
   // Reports
-  getReportData: (year: number, month: number) => `${API_BASE_URL}/report-data?year=${year}&month=${month}`,
+  getReportData: (year: number, month: number | string) => `${API_BASE_URL}/report-data?year=${year}&month=${month}`,
 };
