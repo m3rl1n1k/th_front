@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -36,13 +37,11 @@ export default function SupportChatPage() {
     resolver: zodResolver(ChatSchema),
   });
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-    }
-  }, [messages]);
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isThinking]);
 
   const onSubmit: SubmitHandler<ChatFormData> = async (data) => {
     const userMessage: ChatMessage = { role: 'user', content: data.message };
@@ -83,7 +82,7 @@ export default function SupportChatPage() {
           <CardDescription>{t('supportChatDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow overflow-hidden p-0">
-          <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
+          <ScrollArea className="h-full p-6">
             <div className="space-y-6">
               {messages.map((msg, index) => (
                 <div
@@ -127,6 +126,7 @@ export default function SupportChatPage() {
                     </div>
                 </div>
               )}
+              <div ref={bottomRef} />
             </div>
           </ScrollArea>
         </CardContent>
