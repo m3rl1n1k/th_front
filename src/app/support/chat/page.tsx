@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import ReactMarkdown from 'react-markdown';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,13 +100,29 @@ export default function SupportChatPage() {
                   )}
                   <div
                     className={cn(
-                      "max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg whitespace-pre-wrap",
+                      "max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg",
                       msg.role === 'user'
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     )}
                   >
-                    <p className="text-sm">{msg.content}</p>
+                    {msg.role === 'model' ? (
+                      <ReactMarkdown
+                        className="text-sm"
+                        components={{
+                          p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc pl-4 space-y-1" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal pl-4 space-y-1" {...props} />,
+                          li: ({node, ...props}) => <li {...props} />,
+                          strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                          a: ({node, ...props}) => <a className="text-primary underline" {...props} />,
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    )}
                   </div>
                   {msg.role === 'user' && user && (
                     <Avatar className="h-8 w-8">
