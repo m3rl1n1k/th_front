@@ -694,5 +694,7 @@
   "yearlyPerformance": "Yearly Performance",
   "monthlyExpensesByCategory": "Monthly Expenses by Category",
   "noReportData": "No data available for the selected period.",
-  "generateReportPrompt": "Select a year and month, then click 'Apply Filters' to generate the report."
+  "generateReportPrompt": "Select a year and month, then click 'Apply Filters' to generate the report.",
+  "income": "Income",
+  "expense": "Expense"
 }

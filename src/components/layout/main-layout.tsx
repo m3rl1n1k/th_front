@@ -423,9 +423,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex flex-1 pt-16"> {/* Added pt-16 to account for fixed header height */}
+      <div className="flex flex-1">
         {isAuthenticated && (
-          <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto"> {/* Adjusted for fixed positioning */}
+          <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto">
             <nav className="flex-1 space-y-1">
               {renderNavGroup(baseNavItems)}
               <Separator className="my-2" />
@@ -441,7 +441,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </aside>
         )}
-        <main className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}> {/* Added md:ml-64 for main content offset */}
+        <main className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}>
           { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
         </main>
       </div>

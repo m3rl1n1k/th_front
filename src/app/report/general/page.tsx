@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getReportData } from '@/lib/api';
 import type { ReportDataResponse } from '@/types';
 import { FileSignature, AlertTriangle, Loader2, LineChart, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
-import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import { format } from 'date-fns';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
@@ -31,7 +31,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 
 
 export default function GeneralReportPage() {
-  const { t, dateFnsLocale } = useTranslation();
+  const { t, language } = useTranslation();
   const { user, token, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -84,8 +84,9 @@ export default function GeneralReportPage() {
 
   const formattedPeriod = useMemo(() => {
     if (!appliedYear || !appliedMonth) return '';
+    const { dateFnsLocale } = useTranslation(); // Get it inside useMemo
     return format(new Date(appliedYear, appliedMonth - 1), 'MMMM yyyy', { locale: dateFnsLocale });
-  }, [appliedYear, appliedMonth, dateFnsLocale]);
+  }, [appliedYear, appliedMonth, useTranslation]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -162,6 +163,41 @@ export default function GeneralReportPage() {
               </div>
           </CardContent>
         </Card>
+        
+        {/* Yearly Performance Chart */}
+        {reportData.yearlySummary && reportData.yearlySummary.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('yearlyPerformance')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart
+                  data={reportData.yearlySummary.map(item => ({
+                    ...item,
+                    income: item.income / 100,
+                    expense: item.expense / 100,
+                  }))}
+                  margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis
+                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, t(name.toString() as any, { defaultValue: name.toString()})]}
+                    cursor={{ fill: 'hsl(var(--muted))' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="income" name={t('income')} fill={user?.settings?.chart_income_color || '#10b981'} radius={[4, 4, 0, 0]} />
+                  <Line type="monotone" dataKey="expense" name={t('expense')} stroke={user?.settings?.chart_expense_color || '#ef4444'} strokeWidth={2} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Expenses by Category Bar Chart */}
         {reportData.categorySummary && reportData.categorySummary.length > 0 && (
@@ -186,7 +222,7 @@ export default function GeneralReportPage() {
                     tick={{ fontSize: 12 }} 
                   />
                   <YAxis 
-                    tickFormatter={(value) => new Intl.NumberFormat(t('language') === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
+                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
                   />
                   <Tooltip 
                     formatter={(value, name, props) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, props.payload.categoryName]} 
