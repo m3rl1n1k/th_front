@@ -11,19 +11,19 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 // Define the schema for a single message in the chat history
-export const ChatMessageSchema = z.object({
+const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
   content: z.string(),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
-export const SupportChatInputSchema = z.object({
+const SupportChatInputSchema = z.object({
   history: z.array(ChatMessageSchema).describe('The chat history between the user and the model.'),
   message: z.string().describe('The latest message from the user.'),
 });
 export type SupportChatInput = z.infer<typeof SupportChatInputSchema>;
 
-export const SupportChatOutputSchema = z.object({
+const SupportChatOutputSchema = z.object({
   response: z.string().describe('The AI-generated response to the user.'),
 });
 export type SupportChatOutput = z.infer<typeof SupportChatOutputSchema>;
