@@ -10,7 +10,6 @@ import {
   getDashboardTotalBalance,
   getDashboardMonthlyIncome,
   getDashboardMonthExpenses,
-  getDashboardChartTotalExpense,
   getDashboardLastTransactions,
   getTransactionTypes
 } from '@/lib/api';
@@ -137,24 +136,22 @@ export default function DashboardPage() {
       setIsLoadingLastActivity(true);
       setIsLoadingTransactionTypes(true);
 
-      // Removed localStorage logic for limit, using DASHBOARD_LAST_TRANSACTIONS_LIMIT constant
       const limit = DASHBOARD_LAST_TRANSACTIONS_LIMIT;
 
       Promise.all([
         getDashboardTotalBalance(token),
         getDashboardMonthlyIncome(token),
         getDashboardMonthExpenses(token),
-        getDashboardChartTotalExpense(token),
         getDashboardLastTransactions(token, limit),
         getTransactionTypes(token)
       ])
-        .then(([balanceData, incomeData, expenseData, chartDataResponse, lastTransactionsResp, typesData]) => {
+        .then(([balanceData, incomeData, expenseData, lastTransactionsResp, typesData]) => {
           setSummaryData({
             total_balance: balanceData.total_balance,
             month_income: incomeData.month_income,
             month_expense: expenseData.month_expense,
           });
-          setExpensesByCategoryData(chartDataResponse);
+          setExpensesByCategoryData(null); // Data is no longer fetched
           setLastTransactions(lastTransactionsResp.last_transactions || []);
           const formattedTypes = Object.entries(typesData.types).map(([id, name]) => ({ id, name: name as string }));
           setTransactionTypes(formattedTypes);

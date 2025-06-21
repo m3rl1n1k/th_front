@@ -10,7 +10,7 @@ import { Brain, Settings, AlertTriangle, Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getDashboardMonthlyIncome, getDashboardMonthExpenses, getDashboardChartTotalExpense } from '@/lib/api';
+import { getDashboardMonthlyIncome, getDashboardMonthExpenses } from '@/lib/api';
 import type { GenerateReportSummaryInput, CategoryMonthlySummary } from '@/ai/flows/generate-report-summary-flow';
 import { format, getYear, getMonth } from 'date-fns';
 
@@ -40,19 +40,12 @@ export default function AiReportPage() {
       const monthName = format(currentMonthDate, 'MMMM', { locale: dateFnsLocale });
       const currencyCode = user.userCurrency.code;
 
-      const [incomeData, expenseData, chartDataResponse] = await Promise.all([
+      const [incomeData, expenseData] = await Promise.all([
         getDashboardMonthlyIncome(token),
         getDashboardMonthExpenses(token),
-        getDashboardChartTotalExpense(token),
       ]);
 
-      const categorySummaryForAI: CategoryMonthlySummary[] = chartDataResponse?.month_expense_chart
-        ? Object.entries(chartDataResponse.month_expense_chart).map(([name, data]) => ({
-            categoryName: name,
-            amount: data.amount,
-            color: data.color,
-          }))
-        : [];
+      const categorySummaryForAI: CategoryMonthlySummary[] = [];
 
       const inputPayload: GenerateReportSummaryInput = {
         reportStats: {
