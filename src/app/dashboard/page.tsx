@@ -375,7 +375,7 @@ export default function DashboardPage() {
                   config={chartConfig}
                   className="mx-auto aspect-square h-[350px]"
                 >
-                  <PieChart>
+                  <PieChart margin={{ top: 20, right: 20, bottom: 50, left: 20 }}>
                      <ChartTooltip
                         cursor={false}
                         content={<ChartTooltipContent hideLabel />}
