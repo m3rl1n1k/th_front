@@ -45,23 +45,32 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center"> {/* Wrapper for logo group */}
             <Link href="/" className="flex items-center space-x-2">
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-8 w-8 text-primary"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8"
               >
-                <line x1="3" y1="6" x2="18" y2="6" />
-                <polyline points="15 4 18 6 15 8" />
-                <line x1="3" y1="12" x2="18" y2="12" />
-                <polyline points="15 10 18 12 15 14" />
-                <line x1="3" y1="18" x2="18" y2="18" />
-                <polyline points="15 16 18 18 15 20" />
+                <path
+                  d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"
+                  fill="currentColor"
+                  className="text-primary/10"
+                />
+                <path
+                  d="M7 14C7 14 9 11 12 11C15 11 17 14 17 14"
+                  stroke="currentColor"
+                  className="text-destructive"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7 10C7 10 9 13 12 13C15 13 17 10 17 10"
+                  stroke="currentColor"
+                  className="text-primary"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
             </Link>
