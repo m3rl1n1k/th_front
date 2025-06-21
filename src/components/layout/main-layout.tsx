@@ -250,72 +250,73 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   <span className="sr-only">{t('toggleNavigation')}</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 bg-card p-0">
-                <SheetHeader>
-                  <SheetTitle className="sr-only">{t('toggleNavigation')}</SheetTitle>
+              <SheetContent side="left" className="w-72 bg-card p-0 flex flex-col">
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle>
+                    <Link
+                      href="/"
+                      onClick={(e) => {
+                        if (pathname === '/') {
+                          setIsSheetOpen(false);
+                          e.preventDefault();
+                        } else {
+                          setIsNavigating(true);
+                        }
+                      }}
+                       className="flex items-center space-x-2"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-8 w-8"
+                      >
+                        <path
+                          d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"
+                          fill="currentColor"
+                          className="text-primary/10"
+                        />
+                        <path
+                          d="M7 14C7 14 9 11 12 11C15 11 17 14 17 14"
+                          stroke="currentColor"
+                          className="text-destructive"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M7 10C7 10 9 13 12 13C15 13 17 10 17 10"
+                          stroke="currentColor"
+                          className="text-primary"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
+                    </Link>
+                  </SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col p-6 space-y-1">
-                  <Link
-                    href="/"
-                    className="mb-4"
-                    onClick={(e) => {
-                      if (pathname === '/') {
-                        setIsSheetOpen(false);
-                        e.preventDefault();
-                      } else {
-                        setIsNavigating(true);
-                      }
-                    }}
-                  >
-                     <div className="flex items-center space-x-2">
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-8 w-8"
-                        >
-                          <path
-                            d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"
-                            fill="currentColor"
-                            className="text-primary/10"
-                          />
-                          <path
-                            d="M7 14C7 14 9 11 12 11C15 11 17 14 17 14"
-                            stroke="currentColor"
-                            className="text-destructive"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M7 10C7 10 9 13 12 13C15 13 17 10 17 10"
-                            stroke="currentColor"
-                            className="text-primary"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
+                <div className="flex-1 overflow-y-auto">
+                    <nav className="flex flex-col p-4 space-y-1">
+                      {renderMobileNavGroup(baseNavItems)}
+                      {renderMobileNavGroup(reportNavItems, 'reportsGroup')}
+                      {adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)).length > 0 && (
+                        <div className="pt-2">
+                          <Separator />
+                          {renderMobileNavGroup(adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)), 'Admin')}
+                        </div>
+                      )}
+                      <div className="pt-2">
+                         <Separator />
+                         {renderMobileNavGroup(supportNavItems, 'supportGroup')}
                       </div>
-                  </Link>
-                  {renderMobileNavGroup(baseNavItems)}
-                  {renderMobileNavGroup(reportNavItems, 'reportsGroup')}
-                  {adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)).length > 0 && (
-                    <div className="pt-2">
-                      <Separator />
-                      {renderMobileNavGroup(adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)), 'Admin')}
-                    </div>
-                  )}
-                  <div className="pt-2">
-                     <Separator />
-                     {renderMobileNavGroup(supportNavItems, 'supportGroup')}
-                  </div>
-                  <div className="pt-2">
-                     <Separator />
-                     {renderMobileNavGroup(userSpecificNavItems, t('profile'))}
-                  </div>
-                </nav>
+                      <div className="pt-2">
+                         <Separator />
+                         {renderMobileNavGroup(userSpecificNavItems, t('profile'))}
+                      </div>
+                    </nav>
+                </div>
               </SheetContent>
             </Sheet>
             )}
