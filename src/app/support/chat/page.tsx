@@ -1,7 +1,7 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,10 +9,11 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { supportChat, type ChatMessage } from '@/ai/flows/support-chat-flow';
-import { Bot, Send, User, Loader2 } from 'lucide-react';
+import { Bot, Send, User, Loader2, AlertTriangle, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -26,12 +27,13 @@ type ChatFormData = z.infer<ReturnType<typeof chatFormSchema>>;
 
 export default function SupportChatPage() {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { toast } = useToast();
   const ChatSchema = chatFormSchema(t);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ChatFormData>({
     resolver: zodResolver(ChatSchema),
@@ -45,7 +47,22 @@ export default function SupportChatPage() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    // Ensure this runs only on the client
+    const key = localStorage.getItem('gemini_api_key');
+    setGeminiApiKey(key);
+  }, []);
+
   const onSubmit: SubmitHandler<ChatFormData> = async (data) => {
+    if (!geminiApiKey) {
+      toast({
+        variant: "destructive",
+        title: "API Key Missing",
+        description: "Please set your Gemini API key in the settings page to use the AI chat.",
+      });
+      return;
+    }
+
     const userMessage: ChatMessage = { role: 'user', content: data.message };
     setMessages(prev => [...prev, userMessage]);
     reset();
@@ -55,6 +72,8 @@ export default function SupportChatPage() {
       const response = await supportChat({
         history: messages,
         message: data.message,
+        language: language, // Pass the current language
+        apiKey: geminiApiKey, // Pass the API key
       });
 
       const modelMessage: ChatMessage = { role: 'model', content: response.response };
@@ -84,6 +103,21 @@ export default function SupportChatPage() {
         </CardHeader>
         <CardContent className="flex-grow overflow-hidden p-0">
           <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
+             {!geminiApiKey && (
+              <Alert variant="default" className="mb-4 bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4 !text-amber-600 dark:!text-amber-400" />
+                <AlertTitle>Gemini API Key Required</AlertTitle>
+                <AlertDescription>
+                  Please go to the settings page to add your Gemini API key to enable this feature.
+                  <Button variant="link" asChild className="p-0 h-auto ml-2 text-amber-800 dark:text-amber-200 font-semibold">
+                    <Link href="/settings">
+                      Go to Settings
+                      <Settings className="ml-1 h-3 w-3" />
+                    </Link>
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-6">
               {messages.map((msg, index) => (
                 <div
@@ -137,9 +171,9 @@ export default function SupportChatPage() {
               placeholder={t('chatPlaceholder')}
               autoComplete="off"
               className={errors.message ? 'border-destructive' : ''}
-              disabled={isThinking}
+              disabled={isThinking || !geminiApiKey}
             />
-            <Button type="submit" size="icon" disabled={isThinking}>
+            <Button type="submit" size="icon" disabled={isThinking || !geminiApiKey}>
               <Send className="h-4 w-4" />
             </Button>
           </form>

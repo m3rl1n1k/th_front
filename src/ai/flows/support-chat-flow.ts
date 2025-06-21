@@ -9,6 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+
 
 // Define the schema for a single message in the chat history
 const ChatMessageSchema = z.object({
@@ -20,6 +23,8 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 const SupportChatInputSchema = z.object({
   history: z.array(ChatMessageSchema).describe('The chat history between the user and the model.'),
   message: z.string().describe('The latest message from the user.'),
+  language: z.string().describe('The language for the AI to respond in (e.g., "en", "uk").'),
+  apiKey: z.string().optional().describe('The Gemini API key.'),
 });
 export type SupportChatInput = z.infer<typeof SupportChatInputSchema>;
 
@@ -40,17 +45,24 @@ const supportChatFlow = ai.defineFlow(
     inputSchema: SupportChatInputSchema,
     outputSchema: SupportChatOutputSchema,
   },
-  async ({ history, message }) => {
+  async ({ history, message, language, apiKey }) => {
     
-    const systemPrompt = `You are a friendly and helpful support agent for an application called "FinanceFlow". Your goal is to assist users with their questions about the application. Do not make up features that do not exist. Be concise and clear in your answers.`;
+    // If an API key is provided on the fly, create a temporary Genkit instance with it.
+    // Otherwise, use the globally configured instance (which may fail if the key isn't in the environment).
+    const generativeAi = apiKey ? genkit({
+      plugins: [googleAI({ apiKey })],
+      model: 'googleai/gemini-2.0-flash',
+    }) : ai;
     
-    const { output } = await ai.generate({
+    const systemPrompt = `You are a friendly and helpful support agent for an application called "FinanceFlow". Your goal is to assist users with their questions about the application. Do not make up features that do not exist. Be concise and clear in your answers. Please respond in the following language: ${language}.`;
+    
+    const { output } = await generativeAi.generate({
       prompt: message,
       history: history,
       system: systemPrompt,
     });
 
-    const textResponse = output ? output.text : "Sorry, I couldn't generate a response. Please try again.";
+    const textResponse = output?.text || "Sorry, I couldn't generate a response. Please try again.";
     
     return { response: textResponse! };
   }
