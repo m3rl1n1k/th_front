@@ -183,7 +183,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           disabled={isNavigating}
         >
           <item.icon className="mr-2 h-5 w-5" />
-          <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
+          <span>{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
           {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
             <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
               {pendingInvitationCount}
@@ -213,7 +213,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           disabled={isNavigating}
         >
           <item.icon className="mr-2 h-5 w-5" />
-          <span className="flex-grow">{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
+          <span>{t(item.labelKey as keyof ReturnType<typeof useTranslation>['translations'])}</span>
            {item.labelKey === 'capitalMenuLabel' && pendingInvitationCount > 0 && (
             <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-destructive-foreground bg-destructive rounded-full">
               {pendingInvitationCount}
