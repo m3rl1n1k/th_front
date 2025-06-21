@@ -114,7 +114,7 @@ export default function GeneralReportPage() {
     });
 
     const maxVal = reportData.yearlySummary.reduce((max, item) => Math.max(max, item.income, item.expense), 0);
-    const topLimit = maxVal + 20000; // Add 200 currency units (200 * 100 cents)
+    const topLimit = maxVal + 20000;
 
     return { yearlyChartData: chartData, yAxisMax: topLimit > 0 ? topLimit : 10000 };
 
@@ -233,9 +233,10 @@ export default function GeneralReportPage() {
                                     tick={{ fontSize: 12 }}
                                     interval={0}
                                 />
-                                <Tooltip 
-                                    formatter={(value) => [<CurrencyDisplay amountInCents={Number(value)} />, t('amount')]} 
-                                    cursor={{ fill: 'hsl(var(--muted))' }} 
+                                <Tooltip
+                                    formatter={(value) => [<CurrencyDisplay amountInCents={Number(value)} />, t('amount')]}
+                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                    labelClassName="font-bold text-primary"
                                 />
                                 <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                             </BarChart>
@@ -278,6 +279,7 @@ export default function GeneralReportPage() {
                           return [<CurrencyDisplay amountInCents={numberValue} />, t(name.toString() as any, { defaultValue: name.toString()})]
                         }}
                         cursor={{ fill: 'hsl(var(--muted))' }}
+                        labelClassName="font-bold text-primary"
                       />
                       <Legend />
                       <Line type="monotone" dataKey="income" name={t('income')} stroke={user?.settings?.chart_income_color || '#10b981'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
