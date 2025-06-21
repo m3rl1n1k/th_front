@@ -51,12 +51,12 @@ const supportChatFlow = ai.defineFlow(
     // Otherwise, use the globally configured instance (which may fail if the key isn't in the environment).
     const generativeAi = apiKey ? genkit({
       plugins: [googleAI({ apiKey })],
-      model: 'googleai/gemini-2.0-flash',
     }) : ai;
     
     const systemPrompt = `You are a friendly and helpful support agent for an application called "FinanceFlow". Your goal is to assist users with their questions about the application. Do not make up features that do not exist. Be concise and clear in your answers. Please respond in the following language: ${language}.`;
     
     const { output } = await generativeAi.generate({
+      model: 'googleai/gemini-pro',
       prompt: message,
       history: history,
       system: systemPrompt,
