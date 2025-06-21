@@ -40,13 +40,20 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<string>('en');
   const [currentTranslations, setCurrentTranslations] = useState<Translations>(translationsMap.en);
   const [currentDateFnsLocale, setCurrentDateFnsLocale] = useState<Locale>(dateFnsLocaleMap.en);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const storedLang = typeof window !== 'undefined' ? localStorage.getItem(LANGUAGE_STORAGE_KEY) : 'en';
-    const initialLang = translationsMap[storedLang] ? storedLang : 'en';
-    setLanguageState(initialLang);
-    setCurrentTranslations(translationsMap[initialLang]);
-    setCurrentDateFnsLocale(dateFnsLocaleMap[initialLang] || enUS);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      const initialLang = translationsMap[storedLang] ? storedLang : 'en';
+      setLanguageState(initialLang);
+      setCurrentTranslations(translationsMap[initialLang]);
+      setCurrentDateFnsLocale(dateFnsLocaleMap[initialLang] || enUS);
+    }
   }, []);
 
   const setLanguage = useCallback(async (lang: string): Promise<void> => {
@@ -77,7 +84,9 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
       const { defaultValue, ...replacements } = options || {};
       const lookupKey = key as keyof Translations; // Assume key is valid for lookups
 
-      let translation = currentTranslations[lookupKey];
+      const translationsToUse = isClient ? currentTranslations : en;
+
+      let translation = translationsToUse[lookupKey];
 
       if (translation === undefined) { // Not found in current language
         translation = en[lookupKey]; // Try English
@@ -94,7 +103,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
       }
       return translation;
     },
-    [currentTranslations]
+    [currentTranslations, isClient]
   );
 
   return (
