@@ -134,43 +134,88 @@ export default function GeneralReportPage() {
 
     return (
       <div className="space-y-6">
-        {/* Key Financial Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('keyFinancialStats')}</CardTitle>
-            <CardDescription>{t('reportForPeriod', { period: formattedPeriod })}</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="p-4 bg-muted/50">
-              <div className="flex items-center gap-2 mb-1">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{t('startOfMonthBalance')}</p>
-              </div>
-              <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.startOfMonthBalance} /></p>
-            </Card>
-            <Card className="p-4 bg-green-500/10">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <p className="text-sm font-semibold text-green-700 dark:text-green-300">{t('totalIncome')}</p>
-              </div>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthIncome} /></p>
-            </Card>
-            <Card className="p-4 bg-red-500/10">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
-                <p className="text-sm font-semibold text-red-700 dark:text-red-300">{t('totalExpense')}</p>
-              </div>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthExpense} /></p>
-            </Card>
-            <Card className="p-4 bg-muted/50">
-              <div className="flex items-center gap-2 mb-1">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{t('endOfMonthBalance')}</p>
-              </div>
-              <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.endOfMonthBalance} /></p>
-            </Card>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+                <Card className="h-full">
+                    <CardHeader>
+                        <CardTitle>{t('keyFinancialStats')}</CardTitle>
+                        <CardDescription>{t('reportForPeriod', { period: formattedPeriod })}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4">
+                        <Card className="p-4 bg-muted/50">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Wallet className="h-4 w-4 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">{t('startOfMonthBalance')}</p>
+                            </div>
+                            <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.startOfMonthBalance} /></p>
+                        </Card>
+                        <Card className="p-4 bg-green-500/10">
+                            <div className="flex items-center gap-2 mb-1">
+                                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <p className="text-sm font-semibold text-green-700 dark:text-green-300">{t('totalIncome')}</p>
+                            </div>
+                            <p className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthIncome} /></p>
+                        </Card>
+                        <Card className="p-4 bg-red-500/10">
+                            <div className="flex items-center gap-2 mb-1">
+                                <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                <p className="text-sm font-semibold text-red-700 dark:text-red-300">{t('totalExpense')}</p>
+                            </div>
+                            <p className="text-2xl font-bold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={reportData.reportStats.selectedMonthExpense} /></p>
+                        </Card>
+                        <Card className="p-4 bg-muted/50">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Wallet className="h-4 w-4 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">{t('endOfMonthBalance')}</p>
+                            </div>
+                            <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={reportData.reportStats.endOfMonthBalance} /></p>
+                        </Card>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="lg:col-span-2">
+                <Card className="h-full flex flex-col">
+                    <CardHeader>
+                        <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        {reportData.categorySummary && reportData.categorySummary.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={400}>
+                                <BarChart
+                                    data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }), amount: item.amount / 100 }))}
+                                    margin={{ top: 5, right: 20, left: 10, bottom: 80 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis 
+                                        dataKey="categoryName" 
+                                        type="category" 
+                                        angle={-45} 
+                                        textAnchor="end" 
+                                        height={90}
+                                        interval={0}
+                                        tick={{ fontSize: 12 }} 
+                                    />
+                                    <YAxis 
+                                        tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
+                                        tick={{ fontSize: 12 }}
+                                    />
+                                    <Tooltip 
+                                        formatter={(value, name, props) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, props.payload.categoryName]} 
+                                        cursor={{ fill: 'hsl(var(--muted))' }} 
+                                    />
+                                    <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-muted-foreground">
+                            <p>{t('noDataAvailable')}</p>
+                          </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
         
         {/* Yearly Performance Chart */}
         {reportData.yearlySummary && reportData.yearlySummary.length > 0 && (
@@ -206,43 +251,6 @@ export default function GeneralReportPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Expenses by Category Bar Chart */}
-        {reportData.categorySummary && reportData.categorySummary.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart
-                  data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }), amount: item.amount / 100 }))}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 80 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="categoryName" 
-                    type="category" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={90}
-                    interval={0}
-                    tick={{ fontSize: 12 }} 
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(value as number)}
-                  />
-                  <Tooltip 
-                    formatter={(value, name, props) => [<CurrencyDisplay amountInCents={(value as number) * 100} />, props.payload.categoryName]} 
-                    cursor={{ fill: 'hsl(var(--muted))' }} 
-                  />
-                  <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-        
       </div>
     );
   };
