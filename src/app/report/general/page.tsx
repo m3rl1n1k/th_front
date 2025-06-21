@@ -179,9 +179,9 @@ export default function GeneralReportPage() {
                     <CardHeader>
                         <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-grow">
+                    <CardContent className="flex-grow flex flex-col p-4 pt-0 min-h-[400px]">
                         {reportData.categorySummary && reportData.categorySummary.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={400}>
+                            <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }), amount: item.amount / 100 }))}
                                     margin={{ top: 5, right: 20, left: 10, bottom: 80 }}
@@ -219,12 +219,12 @@ export default function GeneralReportPage() {
         
         {/* Yearly Performance Chart */}
         {reportData.yearlySummary && reportData.yearlySummary.length > 0 && (
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader>
               <CardTitle>{t('yearlyPerformance')}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+            <CardContent className="flex-grow flex flex-col p-4 pt-0 min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={reportData.yearlySummary.map(item => ({
                     ...item,
