@@ -97,7 +97,10 @@ export default function GeneralReportPage() {
       return { yearlyChartData: [], yAxisMax: 10000 };
     }
     
-    const summaryArray = reportData.yearlySummary; // Directly use the array
+    const summaryArray = Array.isArray(reportData.yearlySummary) 
+      ? reportData.yearlySummary 
+      : Object.values(reportData.yearlySummary);
+
 
     const monthMap: { [key: string]: number } = {
       'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
@@ -305,7 +308,6 @@ export default function GeneralReportPage() {
                         cursor={{ fill: 'hsl(var(--muted))' }}
                         labelClassName="font-bold text-primary"
                       />
-                      <Legend />
                       <Line type="monotone" dataKey="income" name={t('income')} stroke={user?.settings?.chart_income_color || '#10b981'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
                       <Line type="monotone" dataKey="expense" name={t('expense')} stroke={user?.settings?.chart_expense_color || '#ef4444'} strokeWidth={2} dot={{r: 4}} activeDot={{r: 6}} />
                     </LineChart>
