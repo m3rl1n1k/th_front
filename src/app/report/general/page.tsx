@@ -135,7 +135,7 @@ export default function GeneralReportPage() {
 
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-1 h-full flex flex-col">
                 <CardHeader>
                     <CardTitle>{t('keyFinancialStats')}</CardTitle>
@@ -173,43 +173,41 @@ export default function GeneralReportPage() {
                 </CardContent>
             </Card>
             
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 h-full flex flex-col">
                 <CardHeader>
                     <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-0">
+                <CardContent className="p-4 pt-0 flex-grow">
                     {reportData.categorySummary && reportData.categorySummary.length > 0 ? (
-                        <div className="h-[400px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    layout="vertical"
-                                    data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }) }))}
-                                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis 
-                                        type="number"
-                                        dataKey="amount"
-                                        tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(Number(value) / 100)}
-                                        tick={{ fontSize: 12 }}
-                                    />
-                                    <YAxis 
-                                        dataKey="categoryName" 
-                                        type="category" 
-                                        width={120}
-                                        tick={{ fontSize: 12 }}
-                                        interval={0}
-                                    />
-                                    <Tooltip 
-                                        formatter={(value) => [<CurrencyDisplay amountInCents={Number(value)} />, t('amount')]} 
-                                        cursor={{ fill: 'hsl(var(--muted))' }} 
-                                    />
-                                    <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                layout="vertical"
+                                data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }) }))}
+                                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis 
+                                    type="number"
+                                    dataKey="amount"
+                                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(Number(value))}
+                                    tick={{ fontSize: 12 }}
+                                />
+                                <YAxis 
+                                    dataKey="categoryName" 
+                                    type="category" 
+                                    width={120}
+                                    tick={{ fontSize: 12 }}
+                                    interval={0}
+                                />
+                                <Tooltip 
+                                    formatter={(value) => [<CurrencyDisplay amountInCents={Number(value)} />, t('amount')]} 
+                                    cursor={{ fill: 'hsl(var(--muted))' }} 
+                                />
+                                <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     ) : (
-                      <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
                         <p>{t('noDataAvailable')}</p>
                       </div>
                     )}
@@ -234,7 +232,7 @@ export default function GeneralReportPage() {
                       <YAxis
                         tickFormatter={(value) => {
                           const numberValue = typeof value === 'number' ? value : 0;
-                          return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(numberValue / 100)
+                          return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(numberValue)
                         }}
                         tick={{ fontSize: 12 }}
                       />
