@@ -544,6 +544,6 @@ export interface CategoryMonthlySummary {
 
 export interface ReportDataResponse {
   reportStats: ReportPageStats;
-  yearlySummary: MonthlyFinancialSummary[];
+  yearlySummary: Record<string, MonthlyFinancialSummary>;
   categorySummary: CategoryMonthlySummary[];
 }

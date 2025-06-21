@@ -30,7 +30,7 @@ export default function GeneralReportPage() {
   const { user, token, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const [selectedYear, setSelectedYear] = useState<number>(years[0]);
+  const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
   const [appliedYear, setAppliedYear] = useState<number | null>(null);
   const [appliedMonth, setAppliedMonth] = useState<string | null>(null);
@@ -96,27 +96,34 @@ export default function GeneralReportPage() {
     if (!reportData?.yearlySummary) {
         return { yearlyChartData: [], yAxisMax: 10000 };
     }
+
+    const summaryArray = Object.values(reportData.yearlySummary);
+
     const monthMap: { [key: string]: number } = {
       'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
       'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
     };
 
-    const chartData = reportData.yearlySummary.map(item => {
+    const chartData = summaryArray
+      .filter(item => item.month && item.month.trim() !== "") // Filter out entries with empty month name
+      .map(item => {
         const monthIndex = monthMap[item.month as keyof typeof monthMap];
         if (monthIndex === undefined) {
-          return { ...item };
+          return { ...item, monthIndex: -1 }; // Handle unknown months if necessary
         }
         const monthDate = new Date(appliedYear || new Date().getFullYear(), monthIndex);
         return {
           ...item,
           month: t(`month_${item.month.toLowerCase()}` as any, { defaultValue: format(monthDate, 'MMM', { locale: dateFnsLocale }) }),
+          monthIndex: monthIndex
         };
-    });
+    })
+    .sort((a, b) => a.monthIndex - b.monthIndex); // Sort by month index to ensure correct order
 
-    const maxVal = reportData.yearlySummary.reduce((max, item) => Math.max(max, item.income, item.expense), 0);
-    const topLimit = maxVal + 20000;
+    const maxVal = summaryArray.reduce((max, item) => Math.max(max, item.income, item.expense), 0);
+    const topLimit = maxVal > 0 ? maxVal + 20000 : 10000; // Adding buffer of 200 units (20000 cents)
 
-    return { yearlyChartData: chartData, yAxisMax: topLimit > 0 ? topLimit : 10000 };
+    return { yearlyChartData: chartData, yAxisMax: topLimit };
 
   }, [reportData?.yearlySummary, appliedYear, dateFnsLocale, t]);
 
@@ -257,7 +264,7 @@ export default function GeneralReportPage() {
             </Card>
         </div>
         
-        {reportData.yearlySummary && reportData.yearlySummary.length > 0 && (
+        {reportData.yearlySummary && Object.keys(reportData.yearlySummary).length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>{t('yearlyPerformance')}</CardTitle>
