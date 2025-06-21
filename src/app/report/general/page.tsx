@@ -223,7 +223,7 @@ export default function GeneralReportPage() {
                                 <XAxis 
                                     type="number"
                                     dataKey="amount"
-                                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(Number(value))}
+                                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US').format(Number(value) / 100)}
                                     tick={{ fontSize: 12 }}
                                 />
                                 <YAxis 
@@ -268,7 +268,7 @@ export default function GeneralReportPage() {
                         domain={[0, yAxisMax]}
                         tickFormatter={(value) => {
                           const numberValue = typeof value === 'number' ? value : 0;
-                          return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(numberValue)
+                          return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US').format(numberValue / 100)
                         }}
                         tick={{ fontSize: 12 }}
                       />
