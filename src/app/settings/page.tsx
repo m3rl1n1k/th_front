@@ -9,16 +9,15 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Palette, ListChecks, Loader2, KeyRound as GeminiIcon, AlertTriangle } from 'lucide-react';
+import { Save, Palette, ListChecks, Loader2 } from 'lucide-react';
 import { updateUserSettings, getUserSettings } from '@/lib/api';
 import type { UserSettings, ApiError } from '@/types';
 import { ColorSwatches } from '@/components/common/ColorSwatches';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const DEFAULT_RECORDS_PER_PAGE = 20;
 const DEFAULT_CHART_INCOME_COLOR = '#10b981';
@@ -52,7 +51,6 @@ export default function SettingsPage() {
   const { toast } = useToast();
   
   const [isLoadingPageData, setIsLoadingPageData] = useState(true);
-  const [geminiApiKey, setGeminiApiKey] = useState('');
 
   const [isIncomeColorModalOpen, setIsIncomeColorModalOpen] = useState(false);
   const [isExpenseColorModalOpen, setIsExpenseColorModalOpen] = useState(false);
@@ -123,9 +121,6 @@ export default function SettingsPage() {
             records_per_page: DEFAULT_RECORDS_PER_PAGE,
         });
     }
-    if (typeof window !== 'undefined') {
-      setGeminiApiKey(localStorage.getItem('gemini_api_key') || '');
-    }
   }, [token, authIsLoading, fetchSettingsData, reset]);
 
 
@@ -154,16 +149,6 @@ export default function SettingsPage() {
         title: t('errorUpdatingUserSettings'),
         description: apiError.message || t('unexpectedError'),
       });
-    }
-  };
-
-  const handleSaveApiKey = () => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('gemini_api_key', geminiApiKey);
-        toast({
-            title: t('settingsSavedTitle'),
-            description: "Gemini API Key saved locally.",
-        });
     }
   };
   
@@ -370,44 +355,6 @@ export default function SettingsPage() {
             </form>
           </CardContent>
         </Card>
-
-        <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle className="flex items-center">
-                    <GeminiIcon className="mr-2 h-5 w-5 text-primary" />
-                    Gemini API Key for AI Features
-                </CardTitle>
-                <CardDescription>
-                    Provide your Gemini API Key to enable AI-powered reports and insights. This key is saved only in your browser&apos;s local storage.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Alert variant="default" className="mb-4 bg-blue-500/10 border-blue-500/30">
-                    <AlertTriangle className="h-4 w-4 !text-blue-600" />
-                    <AlertTitle>Where to get an API Key?</AlertTitle>
-                    <AlertDescription>
-                        You can get a Gemini API key from Google AI Studio. Make sure to keep your key secure and do not share it publicly.
-                    </AlertDescription>
-                </Alert>
-                <div className="space-y-2">
-                    <Label htmlFor="gemini-api-key">Your Gemini API Key</Label>
-                    <Input
-                        id="gemini-api-key"
-                        type="password"
-                        value={geminiApiKey}
-                        onChange={(e) => setGeminiApiKey(e.target.value)}
-                        placeholder="Enter your API key here"
-                    />
-                </div>
-            </CardContent>
-            <CardFooter>
-                 <Button onClick={handleSaveApiKey}>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save API Key
-                </Button>
-            </CardFooter>
-        </Card>
-
       </div>
     </MainLayout>
   );

@@ -4,10 +4,8 @@
 import React from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/context/i18n-context';
-import { Brain, Settings } from 'lucide-react';
-import Link from 'next/link';
+import { Brain } from 'lucide-react';
 
 export default function AiReportPage() {
   const { t } = useTranslation();
@@ -25,16 +23,8 @@ export default function AiReportPage() {
             <CardTitle>{t('aiReportComingSoon')}</CardTitle>
             <CardDescription>{t('aiReportPageDesc')}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <p>{t('aiReportEnsureKeyNote')}</p>
-            <div className="flex justify-start">
-              <Button asChild>
-                <Link href="/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  {t('navigateToSettings')}
-                </Link>
-              </Button>
-            </div>
+          <CardContent>
+            <p>This feature is currently under development. Stay tuned for AI-powered insights into your finances!</p>
           </CardContent>
         </Card>
       </div>
