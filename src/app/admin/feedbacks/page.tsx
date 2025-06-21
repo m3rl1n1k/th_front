@@ -154,7 +154,7 @@ export default function AdminFeedbacksPage() {
                         <TableCell className="font-medium">{fb.subject}</TableCell>
                         <TableCell className="max-w-xs truncate" title={fb.message}>{fb.message}</TableCell>
                         <TableCell>{fb.user?.login || t('anonymousUser')}</TableCell>
-                        <TableCell>{format(parseISO(fb.createdAt), "PPp", { locale: dateFnsLocale })}</TableCell>
+                        <TableCell>{fb.createdAt ? format(parseISO(fb.createdAt), "PPp", { locale: dateFnsLocale }) : t('notApplicable')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

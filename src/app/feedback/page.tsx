@@ -251,7 +251,7 @@ export default function FeedbackPage() {
                             </TableCell>
                             <TableCell className="font-medium">{fb.subject}</TableCell>
                             <TableCell className="text-right text-muted-foreground text-sm">
-                                {format(parseISO(fb.createdAt), "PP", { locale: dateFnsLocale })}
+                                {fb.createdAt ? format(parseISO(fb.createdAt), "PP", { locale: dateFnsLocale }) : t('notApplicable')}
                             </TableCell>
                           </TableRow>
                         ))}
