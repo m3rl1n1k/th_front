@@ -109,7 +109,7 @@ export default function GeneralReportPage() {
         const monthDate = new Date(appliedYear || new Date().getFullYear(), monthIndex);
         return {
           ...item,
-          month: format(monthDate, 'MMM', { locale: dateFnsLocale }),
+          month: t(`month_${item.month.toLowerCase()}` as any, { defaultValue: format(monthDate, 'MMM', { locale: dateFnsLocale }) }),
         };
     });
 
@@ -118,7 +118,7 @@ export default function GeneralReportPage() {
 
     return { yearlyChartData: chartData, yAxisMax: topLimit > 0 ? topLimit : 10000 };
 
-  }, [reportData?.yearlySummary, appliedYear, dateFnsLocale]);
+  }, [reportData?.yearlySummary, appliedYear, dateFnsLocale, t]);
 
 
   const renderContent = () => {
@@ -211,7 +211,7 @@ export default function GeneralReportPage() {
                     <CardTitle>{t('monthlyExpensesByCategory')}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 flex-grow">
-                    <div className="h-[400px]">
+                     <div className="h-[400px]">
                     {reportData.categorySummary && reportData.categorySummary.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
@@ -223,7 +223,13 @@ export default function GeneralReportPage() {
                                 <XAxis 
                                     type="number"
                                     dataKey="amount"
-                                    tickFormatter={(value) => new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US').format(Number(value) / 100)}
+                                    tickFormatter={(value) => {
+                                        const numberValue = typeof value === 'number' ? value / 100 : 0;
+                                        return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', {
+                                            notation: 'compact',
+                                            compactDisplay: 'short'
+                                        }).format(numberValue);
+                                    }}
                                     tick={{ fontSize: 12 }}
                                 />
                                 <YAxis 
@@ -257,7 +263,7 @@ export default function GeneralReportPage() {
               <CardTitle>{t('yearlyPerformance')}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <div className="h-[300px]">
+               <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={yearlyChartData}
@@ -268,8 +274,11 @@ export default function GeneralReportPage() {
                       <YAxis
                         domain={[0, yAxisMax]}
                         tickFormatter={(value) => {
-                          const numberValue = typeof value === 'number' ? value : 0;
-                          return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US').format(numberValue / 100)
+                           const numberValue = typeof value === 'number' ? value / 100 : 0;
+                           return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', {
+                                notation: 'compact',
+                                compactDisplay: 'short'
+                           }).format(numberValue);
                         }}
                         tick={{ fontSize: 12 }}
                       />
