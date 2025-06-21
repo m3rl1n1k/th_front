@@ -51,7 +51,8 @@ import type {
   RejectInvitationPayload,
   GetInvitationsApiResponse,
   UserSettings,
-  GetTransactionsListResponse, // Added for new paginated response
+  GetTransactionsListResponse,
+  ReportDataResponse,
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -406,3 +407,8 @@ export const acceptInvitation = (invitationId: string | number, token: string): 
 
 export const rejectInvitation = (invitationId: string | number, token: string): Promise<{message: string}> =>
   request(URLS.rejectInvitation(invitationId), { method: 'POST', body: { capital_invitation: Number(invitationId) }, token });
+
+// Reports
+export const getReportData = (token: string, year: number, month: number): Promise<ReportDataResponse> => {
+  return request(URLS.getReportData(year, month), { method: 'GET', token });
+};

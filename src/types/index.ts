@@ -521,3 +521,29 @@ export interface GetTransactionsListResponse {
     pagination: PaginationInfo;
   };
 }
+
+// Report Types
+export interface ReportPageStats {
+  startOfMonthBalance: number;
+  endOfMonthBalance: number;
+  selectedMonthIncome: number;
+  selectedMonthExpense: number;
+}
+
+export interface MonthlyFinancialSummary {
+  month: string;
+  income: number;
+  expense: number;
+}
+
+export interface CategoryMonthlySummary {
+  categoryName: string;
+  amount: number; // in cents
+  color?: string;
+}
+
+export interface ReportDataResponse {
+  reportStats: ReportPageStats;
+  yearlySummary: MonthlyFinancialSummary[];
+  categorySummary: CategoryMonthlySummary[];
+}

@@ -67,6 +67,9 @@
   "changeLanguage": "Change language",
   "selectLanguage": "Select language",
   "capitalMenuLabel": "Capital",
+  "reportsGroup": "Reports",
+  "generalReportMenu": "General",
+  "aiReportMenu": "AI Report",
 
 
   "//": "AUTHENTICATION (LOGIN, REGISTER, SET TOKEN, PASSWORD)",
@@ -203,7 +206,7 @@
   "selectCategoryOptionalPlaceholder": "Select category (optional)",
   "filterByType": "Type",
   "allTypes": "All types",
-  "applyFiltersButton": "Apply filters",
+  "applyFiltersButton": "Apply Filters",
   "clearFiltersButton": "Clear filters",
   "noTransactionsFound": "No transactions found matching your criteria.",
   "allTransactionsTab": "All transactions",
@@ -678,5 +681,18 @@
   "aiReportComingSoon": "AI-powered reporting features are under development.",
   "aiReportEnsureKeyNote": "Ensure your Gemini API Key remains valid for future features.",
   "navigateToSettings": "Go to settings",
-  "generalReportPageTitle": "General report"
+  "generalReportPageTitle": "General Report",
+  "selectReportPeriod": "Select period to generate report",
+  "selectYear": "Select Year",
+  "selectMonth": "Select Month",
+  "reportForPeriod": "Report for {period}",
+  "keyFinancialStats": "Key Financial Stats",
+  "startOfMonthBalance": "Start of Month Balance",
+  "endOfMonthBalance": "End of Month Balance",
+  "totalIncome": "Total Income",
+  "totalExpense": "Total Expense",
+  "yearlyPerformance": "Yearly Performance",
+  "monthlyExpensesByCategory": "Monthly Expenses by Category",
+  "noReportData": "No data available for the selected period.",
+  "generateReportPrompt": "Select a year and month, then click 'Apply Filters' to generate the report."
 }
