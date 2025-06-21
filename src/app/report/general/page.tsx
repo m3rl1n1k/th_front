@@ -84,18 +84,24 @@ export default function GeneralReportPage() {
 
   const formattedPeriod = useMemo(() => {
     if (!appliedYear || !appliedMonth) return '';
-    return format(new Date(appliedYear, parseInt(appliedMonth, 10) - 1), 'MMMM yyyy', { locale: dateFnsLocale });
+    try {
+        const parsedDate = parse(`${appliedYear}-${appliedMonth}`, 'yyyy-MM', new Date());
+        return format(parsedDate, 'MMMM yyyy', { locale: dateFnsLocale });
+    } catch {
+        return `${appliedMonth} ${appliedYear}`;
+    }
   }, [appliedYear, appliedMonth, dateFnsLocale]);
 
-  const yearlyChartData = useMemo(() => {
-    if (!reportData?.yearlySummary) return [];
-
+  const { yearlyChartData, yAxisMax } = useMemo(() => {
+    if (!reportData?.yearlySummary) {
+        return { yearlyChartData: [], yAxisMax: 10000 };
+    }
     const monthMap: { [key: string]: number } = {
       'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
       'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
     };
 
-    return reportData.yearlySummary.map(item => {
+    const chartData = reportData.yearlySummary.map(item => {
         const monthIndex = monthMap[item.month as keyof typeof monthMap];
         if (monthIndex === undefined) {
           return { ...item };
@@ -106,7 +112,14 @@ export default function GeneralReportPage() {
           month: format(monthDate, 'MMM', { locale: dateFnsLocale }),
         };
     });
+
+    const maxVal = reportData.yearlySummary.reduce((max, item) => Math.max(max, item.income, item.expense), 0);
+    const topLimit = maxVal + 20000; // Add 200 currency units (200 * 100 cents)
+
+    return { yearlyChartData: chartData, yAxisMax: topLimit > 0 ? topLimit : 10000 };
+
   }, [reportData?.yearlySummary, appliedYear, dateFnsLocale]);
+
 
   const renderContent = () => {
     if (isLoading) {
@@ -252,6 +265,7 @@ export default function GeneralReportPage() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                       <YAxis
+                        domain={[0, yAxisMax]}
                         tickFormatter={(value) => {
                           const numberValue = typeof value === 'number' ? value : 0;
                           return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(numberValue)
@@ -331,5 +345,5 @@ export default function GeneralReportPage() {
 
       </div>
     </MainLayout>
-  );
-}
+    
+    
