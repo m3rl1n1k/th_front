@@ -290,7 +290,7 @@ export default function DashboardPage() {
   const renderCurrentMonthBudget = () => {
     if (isLoadingBudget) {
       return (
-         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
           <CardHeader>
             <Skeleton className="h-6 w-1/2 mb-1" />
             <Skeleton className="h-4 w-1/4" />
@@ -311,7 +311,7 @@ export default function DashboardPage() {
 
     if (!currentMonthBudget) {
       return (
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-center items-center text-center">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col justify-center items-center text-center h-full">
             <CardHeader>
                 <Target className="mx-auto h-10 w-10 text-muted-foreground" />
                 <CardTitle>{t('budgetNoBudgetsFoundTitle')}</CardTitle>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
     const currentMonthKey = format(new Date(), 'yyyy-MM');
 
     return (
-       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50">
+       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 h-full">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold text-foreground">{t('monthName', { month: format(new Date(), 'MMMM', { locale: dateFnsLocale }) })}</CardTitle>
           <CardDescription className="text-xs">{format(new Date(), 'yyyy')}</CardDescription>
@@ -463,72 +463,73 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="space-y-0.5">
-              <CardTitle className="text-xl font-semibold text-foreground">
-                {t('monthlyExpensesByCategoryChartTitle')}
-              </CardTitle>
-              {summaryData && (
-                <CardDescription>
-                  {t('totalExpensesLabel')}: <CurrencyDisplay amountInCents={summaryData.month_expense} />
-                </CardDescription>
-              )}
-            </div>
-            <PieChartIcon className="h-6 w-6 text-primary" />
-          </CardHeader>
-          <CardContent className="p-6">
-            {isLoadingExpensesChart ? (
-              <div className="flex justify-center items-center h-72">
-                <Skeleton className="h-64 w-64 rounded-full" />
-              </div>
-            ) : !expensesByCategoryData || transformedChartData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-72 text-center">
-                  <PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">{t('noDataAvailable')}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {t('tryAddingExpenses')}
-                  </p>
-                  <Button variant="link" asChild className="mt-2">
-                    <Link href="/transactions/new">
-                      {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-            ) : (
-              <ChartContainer
-                config={chartConfig}
-                className="mx-auto aspect-square h-[350px]"
-              >
-                <PieChart margin={{ top: 20, right: 50, bottom: 50, left: 50 }}>
-                   <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                  <Pie
-                    data={transformedChartData}
-                    dataKey="amount"
-                    nameKey="categoryName"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="30%"
-                    strokeWidth={2}
-                    activeIndex={activePieIndex}
-                    activeShape={renderActiveShape}
-                    onMouseEnter={onPieEnter}
-                  >
-                    {transformedChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
-
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+                <div className="space-y-0.5">
+                  <CardTitle className="text-xl font-semibold text-foreground">
+                    {t('monthlyExpensesByCategoryChartTitle')}
+                  </CardTitle>
+                  {summaryData && (
+                    <CardDescription>
+                      {t('totalExpensesLabel')}: <CurrencyDisplay amountInCents={summaryData.month_expense} />
+                    </CardDescription>
+                  )}
+                </div>
+                <PieChartIcon className="h-6 w-6 text-primary" />
+              </CardHeader>
+              <CardContent className="p-0">
+                {isLoadingExpensesChart ? (
+                  <div className="flex justify-center items-center h-72">
+                    <Skeleton className="h-64 w-64 rounded-full" />
+                  </div>
+                ) : !expensesByCategoryData || transformedChartData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-72 text-center">
+                      <PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">{t('noDataAvailable')}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('tryAddingExpenses')}
+                      </p>
+                      <Button variant="link" asChild className="mt-2">
+                        <Link href="/transactions/new">
+                          {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                ) : (
+                  <ChartContainer
+                    config={chartConfig}
+                    className="mx-auto aspect-square h-[350px]"
+                  >
+                    <PieChart margin={{ top: 50, right: 50, bottom: 50, left: 50 }}>
+                       <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent hideLabel />}
+                        />
+                      <Pie
+                        data={transformedChartData}
+                        dataKey="amount"
+                        nameKey="categoryName"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="30%"
+                        strokeWidth={2}
+                        activeIndex={activePieIndex}
+                        activeShape={renderActiveShape}
+                        onMouseEnter={onPieEnter}
+                      >
+                        {transformedChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-1">
               <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
