@@ -340,15 +340,15 @@ export default function DashboardPage() {
     return (
        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 h-full">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold text-foreground">{t('monthName', { month: format(new Date(), 'MMMM', { locale: dateFnsLocale }) })}</CardTitle>
-          <CardDescription className="text-xs">{format(new Date(), 'yyyy')}</CardDescription>
+          <CardTitle className="text-lg font-semibold text-foreground">{t('monthName', { month: format(new Date(), 'MMMM', { locale: dateFnsLocale }) })}</CardTitle>
+          <CardDescription className="text-sm">{format(new Date(), 'yyyy')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 flex-grow">
+        <CardContent className="space-y-4 flex-grow p-4">
           <div>
-            <div className="flex justify-between items-baseline mb-0.5">
-              <span className="text-xs text-muted-foreground">{t('budgetProgress', { percentage: progressPercentage.toFixed(0) })}</span>
+            <div className="flex justify-between items-baseline mb-1">
+              <span className="text-sm text-muted-foreground">{t('budgetProgress', { percentage: progressPercentage.toFixed(0) })}</span>
               {progressPercentage > 100 && (
-                <span className="text-xs font-semibold text-red-500">
+                <span className="text-sm font-semibold text-red-500">
                   {t('budgetOverspentWarning')}
                 </span>
               )}
@@ -357,31 +357,31 @@ export default function DashboardPage() {
               value={progressPercentage > 100 ? 100 : progressPercentage}
               indicatorClassName={progressColorClass}
               aria-label={t('budgetProgress', { percentage: progressPercentage.toFixed(0) })}
-              className="h-1.5"
+              className="h-2"
             />
           </div>
-          <div className="space-y-1 text-xs">
+          <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1 h-3 w-3 text-green-500" />{t('budgetTotalPlannedShort')}</span>
+                <span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-4 w-4 text-green-500" />{t('budgetTotalPlannedShort')}</span>
                 <span className="font-semibold text-foreground"><CurrencyDisplay amountInCents={totalPlanned} currencyCode={currencyCode} /></span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1 h-3 w-3 text-red-500" />{t('budgetTotalActualShort')}</span>
+                <span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-4 w-4 text-red-500" />{t('budgetTotalActualShort')}</span>
                 <span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={totalActual} currencyCode={currencyCode} /></span>
               </div>
           </div>
             <div className={cn(
-            "w-full text-center p-2 rounded-md font-semibold text-sm",
+            "w-full text-center p-3 rounded-md font-semibold text-lg",
             remainingAmount >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400"
             )}>
-            <p className="text-xs uppercase tracking-wider opacity-80 mb-0.5">{t('budgetRemainingAmountShort')}</p>
+            <p className="text-sm uppercase tracking-wider opacity-80 mb-1">{t('budgetRemainingAmountShort')}</p>
             <CurrencyDisplay amountInCents={remainingAmount} currencyCode={currencyCode} />
             </div>
         </CardContent>
           <CardFooter className="pt-3">
-              <Button variant="outline" size="sm" asChild className="w-full">
+              <Button variant="outline" size="default" asChild className="w-full">
                 <Link href={`/budgets/summary/${currentMonthKey}`}>
-                    <Eye className="mr-2 h-4 w-4" />
+                    <Eye className="mr-2 h-5 w-5" />
                     {t('detailsAction')}
                 </Link>
             </Button>
