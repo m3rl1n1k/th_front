@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { getFeedbacks } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
-import { type Feedback as FeedbackItemType, FeedbackTypeOption } from '@/types';
+import { FeedbackTypeOption } from '@/types';
+import type { Feedback as FeedbackItemType } from '@/types';
 import { Loader2, ShieldAlert, ClipboardList, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
