@@ -463,138 +463,138 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-1">
-          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="space-y-0.5">
-                <CardTitle className="text-xl font-semibold text-foreground">
-                  {t('monthlyExpensesByCategoryChartTitle')}
-                </CardTitle>
-                {summaryData && (
-                  <CardDescription>
-                    {t('totalExpensesLabel')}: <CurrencyDisplay amountInCents={summaryData.month_expense} />
-                  </CardDescription>
-                )}
-              </div>
-              <PieChartIcon className="h-6 w-6 text-primary" />
-            </CardHeader>
-            <CardContent className="p-6">
-              {isLoadingExpensesChart ? (
-                <div className="flex justify-center items-center h-72">
-                  <Skeleton className="h-64 w-64 rounded-full" />
-                </div>
-              ) : !expensesByCategoryData || transformedChartData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-72 text-center">
-                    <PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">{t('noDataAvailable')}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {t('tryAddingExpenses')}
-                    </p>
-                    <Button variant="link" asChild className="mt-2">
-                      <Link href="/transactions/new">
-                        {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-              ) : (
-                <ChartContainer
-                  config={chartConfig}
-                  className="mx-auto aspect-square h-[350px]"
-                >
-                  <PieChart margin={{ top: 20, right: 50, bottom: 50, left: 50 }}>
-                     <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent hideLabel />}
-                      />
-                    <Pie
-                      data={transformedChartData}
-                      dataKey="amount"
-                      nameKey="categoryName"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="30%"
-                      strokeWidth={2}
-                      activeIndex={activePieIndex}
-                      activeShape={renderActiveShape}
-                      onMouseEnter={onPieEnter}
-                    >
-                      {transformedChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-0.5">
+              <CardTitle className="text-xl font-semibold text-foreground">
+                {t('monthlyExpensesByCategoryChartTitle')}
+              </CardTitle>
+              {summaryData && (
+                <CardDescription>
+                  {t('totalExpensesLabel')}: <CurrencyDisplay amountInCents={summaryData.month_expense} />
+                </CardDescription>
               )}
-            </CardContent>
-          </Card>
-          <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                  <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
-                      <Activity className="h-6 w-6 text-primary" />
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      {isLoadingLastActivity || isLoadingTransactionTypes ? (
-                        <div className="space-y-4">
-                          {[...Array(5)].map((_, i) => (
-                            <div key={i} className="flex items-center space-x-3 p-2">
-                              <Skeleton className="h-6 w-6 rounded-md" />
-                              <div className="flex-1 space-y-1.5">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-3 w-1/2" />
-                              </div>
-                              <Skeleton className="h-4 w-1/4" />
-                            </div>
-                          ))}
+            </div>
+            <PieChartIcon className="h-6 w-6 text-primary" />
+          </CardHeader>
+          <CardContent className="p-6">
+            {isLoadingExpensesChart ? (
+              <div className="flex justify-center items-center h-72">
+                <Skeleton className="h-64 w-64 rounded-full" />
+              </div>
+            ) : !expensesByCategoryData || transformedChartData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-72 text-center">
+                  <PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">{t('noDataAvailable')}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('tryAddingExpenses')}
+                  </p>
+                  <Button variant="link" asChild className="mt-2">
+                    <Link href="/transactions/new">
+                      {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+            ) : (
+              <ChartContainer
+                config={chartConfig}
+                className="mx-auto aspect-square h-[350px]"
+              >
+                <PieChart margin={{ top: 20, right: 50, bottom: 50, left: 50 }}>
+                   <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                  <Pie
+                    data={transformedChartData}
+                    dataKey="amount"
+                    nameKey="categoryName"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="30%"
+                    strokeWidth={2}
+                    activeIndex={activePieIndex}
+                    activeShape={renderActiveShape}
+                    onMouseEnter={onPieEnter}
+                  >
+                    {transformedChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+              <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xl font-semibold text-foreground">{t('lastActivityTitle')}</CardTitle>
+                  <Activity className="h-6 w-6 text-primary" />
+                </CardHeader>
+                <CardContent className="p-6">
+                  {isLoadingLastActivity || isLoadingTransactionTypes ? (
+                    <div className="space-y-4">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-center space-x-3 p-2">
+                          <Skeleton className="h-6 w-6 rounded-md" />
+                          <div className="flex-1 space-y-1.5">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-1/2" />
+                          </div>
+                          <Skeleton className="h-4 w-1/4" />
                         </div>
-                      ) : !processedLastActivity || processedLastActivity.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-48 text-center">
-                          <ListChecks className="h-12 w-12 text-muted-foreground mb-3" />
-                          <p className="text-muted-foreground">{t('noRecentTransactions')}</p>
-                          <Button variant="link" asChild className="mt-2">
-                            <Link href="/transactions/new">
-                              {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          {processedLastActivity.map((item) => (
-                            <Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center space-x-3 flex-shrink min-w-0">
-                                        {item.icon}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate" title={item.displayText}>
-                                                {item.displayText}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">{item.date}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-sm font-medium text-right flex-shrink-0 ml-2">
-                                        <CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} />
+                      ))}
+                    </div>
+                  ) : !processedLastActivity || processedLastActivity.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-48 text-center">
+                      <ListChecks className="h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground">{t('noRecentTransactions')}</p>
+                      <Button variant="link" asChild className="mt-2">
+                        <Link href="/transactions/new">
+                          {t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {processedLastActivity.map((item) => (
+                        <Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center space-x-3 flex-shrink min-w-0">
+                                    {item.icon}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-foreground truncate" title={item.displayText}>
+                                            {item.displayText}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">{item.date}</p>
                                     </div>
                                 </div>
+                                <div className="text-sm font-medium text-right flex-shrink-0 ml-2">
+                                    <CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} />
+                                </div>
+                            </div>
+                        </Link>
+                      ))}
+                      {processedLastActivity.length > 0 && (
+                        <Button variant="outline" asChild className="w-full mt-4">
+                            <Link href="/transactions">
+                                {t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4"/>
                             </Link>
-                          ))}
-                          {processedLastActivity.length > 0 && (
-                            <Button variant="outline" asChild className="w-full mt-4">
-                                <Link href="/transactions">
-                                    {t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4"/>
-                                </Link>
-                            </Button>
-                          )}
-                        </div>
+                        </Button>
                       )}
-                    </CardContent>
-                  </Card>
-              </div>
-              <div className="lg:col-span-1">
-                 {renderCurrentMonthBudget()}
-              </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+          </div>
+          <div className="lg:col-span-1">
+             {renderCurrentMonthBudget()}
           </div>
         </div>
+
       </div>
     </MainLayout>
   );
