@@ -51,7 +51,12 @@ export default function AdminFeedbacksPage() {
       setIsLoadingFeedbacks(true);
       getFeedbacks(token)
         .then(response => {
-          setFeedbacks(response.feedbacks || []);
+          // Normalize the 'type' field from snake_case to UPPER_SNAKE_CASE
+          const normalizedFeedbacks = (response.feedbacks || []).map(fb => ({
+            ...fb,
+            type: String(fb.type).toUpperCase() as FeedbackTypeOption,
+          }));
+          setFeedbacks(normalizedFeedbacks);
         })
         .catch(error => {
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
