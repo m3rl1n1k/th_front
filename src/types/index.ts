@@ -537,13 +537,13 @@ export interface MonthlyFinancialSummary {
 }
 
 export interface CategoryMonthlySummary {
-  categoryName: string;
+  name: string;
   amount: number; // in cents
   color?: string;
 }
 
 export interface ReportDataResponse {
   reportStats: ReportPageStats;
-  yearlySummary: Record<string, MonthlyFinancialSummary>;
-  categorySummary: CategoryMonthlySummary[];
+  yearlySummary: MonthlyFinancialSummary[];
+  categorySummary: Record<string, CategoryMonthlySummary>;
 }

@@ -94,10 +94,10 @@ export default function GeneralReportPage() {
 
   const { yearlyChartData, yAxisMax } = useMemo(() => {
     if (!reportData?.yearlySummary) {
-        return { yearlyChartData: [], yAxisMax: 10000 };
+      return { yearlyChartData: [], yAxisMax: 10000 };
     }
-
-    const summaryArray = Object.values(reportData.yearlySummary);
+    
+    const summaryArray = reportData.yearlySummary; // Directly use the array
 
     const monthMap: { [key: string]: number } = {
       'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
@@ -105,27 +105,35 @@ export default function GeneralReportPage() {
     };
 
     const chartData = summaryArray
-      .filter(item => item.month && item.month.trim() !== "") // Filter out entries with empty month name
+      .filter(item => item.month && item.month.trim() !== "")
       .map(item => {
         const monthIndex = monthMap[item.month as keyof typeof monthMap];
-        if (monthIndex === undefined) {
-          return { ...item, monthIndex: -1 }; // Handle unknown months if necessary
-        }
+        if (monthIndex === undefined) return { ...item, monthIndex: -1 };
         const monthDate = new Date(appliedYear || new Date().getFullYear(), monthIndex);
         return {
           ...item,
           month: t(`month_${item.month.toLowerCase()}` as any, { defaultValue: format(monthDate, 'MMM', { locale: dateFnsLocale }) }),
           monthIndex: monthIndex
         };
-    })
-    .sort((a, b) => a.monthIndex - b.monthIndex); // Sort by month index to ensure correct order
+      })
+      .sort((a, b) => a.monthIndex - b.monthIndex);
 
     const maxVal = summaryArray.reduce((max, item) => Math.max(max, item.income, item.expense), 0);
-    const topLimit = maxVal > 0 ? maxVal + 20000 : 10000; // Adding buffer of 200 units (20000 cents)
+    const topLimit = maxVal > 0 ? (maxVal / 100) + 200 : 1000; // Buffer of 200 units on the base currency
 
     return { yearlyChartData: chartData, yAxisMax: topLimit };
-
   }, [reportData?.yearlySummary, appliedYear, dateFnsLocale, t]);
+
+  const categoryChartData = useMemo(() => {
+    if (!reportData?.categorySummary || typeof reportData.categorySummary !== 'object') {
+        return [];
+    }
+    return Object.values(reportData.categorySummary).map(item => ({
+        categoryName: t(generateCategoryTranslationKey(item.name), { defaultValue: item.name }),
+        amount: item.amount,
+        color: item.color,
+    }));
+  }, [reportData?.categorySummary, t]);
 
 
   const renderContent = () => {
@@ -219,11 +227,11 @@ export default function GeneralReportPage() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0 flex-grow">
                      <div className="h-[400px]">
-                    {reportData.categorySummary && reportData.categorySummary.length > 0 ? (
+                    {categoryChartData && categoryChartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                                 layout="vertical"
-                                data={reportData.categorySummary.map(item => ({ ...item, categoryName: t(generateCategoryTranslationKey(item.categoryName), { defaultValue: item.categoryName }) }))}
+                                data={categoryChartData}
                                 margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
@@ -264,7 +272,7 @@ export default function GeneralReportPage() {
             </Card>
         </div>
         
-        {reportData.yearlySummary && Object.keys(reportData.yearlySummary).length > 0 && (
+        {yearlyChartData && yearlyChartData.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>{t('yearlyPerformance')}</CardTitle>
@@ -281,7 +289,7 @@ export default function GeneralReportPage() {
                       <YAxis
                         domain={[0, yAxisMax]}
                         tickFormatter={(value) => {
-                           const numberValue = typeof value === 'number' ? value / 100 : 0;
+                           const numberValue = typeof value === 'number' ? value : 0;
                            return new Intl.NumberFormat(language === 'uk' ? 'uk-UA' : 'en-US', {
                                 notation: 'compact',
                                 compactDisplay: 'short'
