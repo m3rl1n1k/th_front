@@ -1,5 +1,4 @@
 
-
 import { URLS } from '@/config/urls';
 import type {
   ApiError,
@@ -53,7 +52,6 @@ import type {
   GetInvitationsApiResponse,
   UserSettings,
   GetTransactionsListResponse, // Added for new paginated response
-  ReportDataResponse,
 } from '@/types';
 
 interface RequestOptions extends RequestInit {
@@ -198,13 +196,6 @@ export const getDashboardChartTotalExpense = (token: string): Promise<MonthlyExp
 
 export const getDashboardLastTransactions = (token: string, limit: number): Promise<DashboardLastTransactionsResponse> =>
   request(URLS.dashboardLastTransactions(limit), { method: 'GET', token });
-
-
-// Reports
-export const getReportData = (token: string, year: number, month: number): Promise<ReportDataResponse> => {
-  return request(URLS.reportData(year, month), { method: 'GET', token });
-};
-
 
 // Transactions
 export const getTransactionTypes = (token: string): Promise<{ types: Record<string, string> }> =>

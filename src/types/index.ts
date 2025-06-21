@@ -508,33 +508,6 @@ export interface RejectInvitationPayload {
   capital_invitation: number; // ID of the invitation
 }
 
-// Report Page Types
-export interface MonthlyFinancialSummary {
-  month: string; // YYYY-MM format or just month name like "Jan", "Feb"
-  income: number; // in cents
-  expense: number; // in cents
-}
-
-export interface CategoryMonthlySummary {
-  // For pie chart on report page
-  categoryName: string;
-  amount: number; // in cents
-  color?: string; // Optional color for chart segments
-}
-
-export interface ReportPageStats {
-  startOfMonthBalance?: number; // in cents
-  endOfMonthBalance?: number; // in cents
-  selectedMonthIncome: number; // in cents
-  selectedMonthExpense: number; // in cents
-}
-
-export interface ReportDataResponse {
-  reportStats: ReportPageStats;
-  yearlySummary: MonthlyFinancialSummary[];
-  categorySummary: CategoryMonthlySummary[];
-}
-
 export interface PaginationInfo {
   page: number;
   per_page: number;

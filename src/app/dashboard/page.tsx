@@ -16,12 +16,12 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, BarChart as BarChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from "recharts"
+import { PieChart, Pie, Cell, Sector } from "recharts"
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 
@@ -35,6 +35,21 @@ interface TransformedChartItem {
   categoryName: string;
   amount: number; // in cents
   color?: string;
+  fill?: string;
+}
+
+interface ActiveShapeProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: TransformedChartItem;
+  percent: number;
+  value: number;
 }
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
@@ -55,12 +70,13 @@ const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
 
 export default function DashboardPage() {
   const { user, token, isAuthenticated } = useAuth();
-  const { t, dateFnsLocale } = useTranslation();
+  const { t, dateFnsLocale, language } = useTranslation();
   const { toast } = useToast();
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
   const [lastTransactions, setLastTransactions] = useState<TransactionType[] | null>(null);
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
+  const [activePieIndex, setActivePieIndex] = useState(0);
 
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingExpensesChart, setIsLoadingExpensesChart] = useState(true);
@@ -121,14 +137,19 @@ export default function DashboardPage() {
     }
   }, [token, isAuthenticated, t, toast]);
 
+  const onPieEnter = useCallback((_: any, index: number) => {
+    setActivePieIndex(index);
+  }, []);
+
   const transformedChartData = useMemo((): TransformedChartItem[] => {
     if (!expensesByCategoryData?.month_expense_chart) return [];
-    return Object.entries(expensesByCategoryData.month_expense_chart).map(([categoryNameFromApi, data]) => ({
+    return Object.entries(expensesByCategoryData.month_expense_chart).map(([categoryNameFromApi, data], index) => ({
       categoryName: categoryNameFromApi === 'no_category' 
                     ? t('noCategory') 
                     : t(generateCategoryTranslationKey(categoryNameFromApi), { defaultValue: categoryNameFromApi }),
       amount: data.amount,
-      color: data.color
+      color: data.color,
+      fill: data.color || `hsl(var(--chart-${(index % 5) + 1}))`,
     }));
   }, [expensesByCategoryData, t]);
 
@@ -184,6 +205,38 @@ export default function DashboardPage() {
     if (period === 'weekly') return Math.round(monthlyExpenseInCents / 4);
     return 0;
   };
+
+  const renderActiveShape = (props: ActiveShapeProps) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+    const sin = Math.sin(-midAngle * (Math.PI / 180));
+    const cos = Math.cos(-midAngle * (Math.PI / 180));
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 30) * cos;
+    const my = cy + (outerRadius + 30) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? 'start' : 'end';
+    
+    return (
+      <g>
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold">
+          {payload.categoryName}
+        </text>
+        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+        <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 6} outerRadius={outerRadius + 10} fill={fill} />
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+        <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-sm">
+           <CurrencyDisplay amountInCents={value} currencyCode={user?.userCurrency?.code} />
+        </text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">
+          {`(${(percent * 100).toFixed(2)}%)`}
+        </text>
+      </g>
+    );
+  };
+
 
   const renderSkeletonCard = (title: string, icon?: React.ReactNode, className?: string, lineCount = 2) => (
     <Card className={`shadow-lg hover:shadow-xl transition-shadow duration-300 ${className || ''}`}>
@@ -297,16 +350,16 @@ export default function DashboardPage() {
                   </CardDescription>
                 )}
               </div>
-              <BarChartIcon className="h-6 w-6 text-primary" />
+              <PieChartIcon className="h-6 w-6 text-primary" />
             </CardHeader>
             <CardContent className="pt-4">
               {isLoadingExpensesChart ? (
                 <div className="flex justify-center items-center h-72">
-                  <Skeleton className="h-full w-full rounded-md" />
+                  <Skeleton className="h-64 w-64 rounded-full" />
                 </div>
               ) : !expensesByCategoryData || transformedChartData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-72 text-center">
-                    <BarChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
+                    <PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">{t('noDataAvailable')}</p>
                     <p className="text-sm text-muted-foreground">
                       {t('tryAddingExpenses')}
@@ -319,60 +372,32 @@ export default function DashboardPage() {
                   </div>
               ) : (
                 <ChartContainer
-                    config={chartConfig}
-                    className="h-[350px] w-full"
-                  >
-                    <BarChart
-                      accessibilityLayer
-                      data={transformedChartData}
-                      layout="vertical"
-                      margin={{ left: 10, right: 10 }}
-                    >
-                      <CartesianGrid horizontal={false} />
-                      <YAxis
-                        dataKey="categoryName"
-                        type="category"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={10}
-                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                        width={100}
-                      />
-                      <XAxis
-                        dataKey="amount"
-                        type="number"
-                        hide
-                      />
-                      <ChartTooltip
+                  config={chartConfig}
+                  className="mx-auto aspect-square h-[350px]"
+                >
+                  <PieChart>
+                     <ChartTooltip
                         cursor={false}
-                        content={
-                          <ChartTooltipContent
-                            indicator="line"
-                            labelClassName="font-medium"
-                            className="bg-card text-card-foreground shadow-lg"
-                            formatter={(value) => (
-                              <CurrencyDisplay
-                                amountInCents={value as number}
-                                currencyCode={user?.userCurrency?.code}
-                              />
-                            )}
-                          />
-                        }
+                        content={<ChartTooltipContent hideLabel />}
                       />
-                      <Bar
-                        dataKey="amount"
-                        layout="vertical"
-                        radius={5}
-                      >
-                        {transformedChartData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.color || `hsl(var(--chart-${(index % 5) + 1}))`}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ChartContainer>
+                    <Pie
+                      data={transformedChartData}
+                      dataKey="amount"
+                      nameKey="categoryName"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="30%"
+                      strokeWidth={2}
+                      activeIndex={activePieIndex}
+                      activeShape={renderActiveShape}
+                      onMouseEnter={onPieEnter}
+                    >
+                      {transformedChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
               )}
             </CardContent>
           </Card>

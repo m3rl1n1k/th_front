@@ -18,9 +18,6 @@ export const URLS = {
   dashboardChartTotalExpense: `${API_BASE_URL}/dashboard/chart/total-expense`,
   dashboardLastTransactions: (limit: number) => `${API_BASE_URL}/dashboard/last-transactions/${limit}`,
 
-  // Reports
-  reportData: (year: number, month: number) => `${API_BASE_URL}/report-data?year=${year}&month=${month}`,
-
   // Transactions
   transactions: `${API_BASE_URL}/transactions`,
   transactionById: (id: string | number) => `${API_BASE_URL}/transactions/${id}`,
