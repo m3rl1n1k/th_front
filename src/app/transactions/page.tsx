@@ -648,7 +648,7 @@ export default function TransactionsPage() {
                         <div className="space-y-2">
                           <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
                           <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)} disabled={isLoadingCategories}>
-                            <SelectTrigger id="filterCategory" className="hover:border-primary transition-colors">
+                            <SelectTrigger id="filterCategory" className="border border-input font-normal hover:border-primary transition-colors">
                               <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
                               <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
                             </SelectTrigger>
@@ -670,13 +670,13 @@ export default function TransactionsPage() {
                         <div className="space-y-2">
                           <Label htmlFor="filterType" className="font-medium">{t('filterByType')}</Label>
                           <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
-                            <SelectTrigger id="filterType" className="hover:border-primary transition-colors">
+                            <SelectTrigger id="filterType" className="border border-input font-normal hover:border-primary transition-colors">
                               <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
                               <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">{t('allTypes')}</SelectItem>
-                              {transactionTypes.map(type => (
+                              {transactionTypes && transactionTypes.length > 0 && transactionTypes.map(type => (
                                 <SelectItem key={type.id} value={type.id}>
                                   {t(`transactionType_${type.name}` as any, {defaultValue: type.name})}
                                 </SelectItem>
