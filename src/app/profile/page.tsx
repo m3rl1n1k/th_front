@@ -104,7 +104,7 @@ export default function ProfilePage() {
       const formattedCurrencies = Object.entries(currenciesData.currencies).map(([nameKey, code]) => ({
         code,
         nameKey,
-        displayName: `${code} - ${nameKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`,
+        displayName: `${code} - ${t(`currency_${nameKey}`, { defaultValue: nameKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') })}`,
       }));
       setAllCurrencies(formattedCurrencies);
       setIsLoadingCurrencies(false);

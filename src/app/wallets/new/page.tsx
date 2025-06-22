@@ -80,14 +80,13 @@ export default function NewWalletPage() {
           const formattedCurrencies = Object.entries(data.currencies).map(([nameKey, code]) => ({
             code,
             nameKey,
-            displayName: `${code} - ${nameKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`,
+            displayName: `${code} - ${t(`currency_${nameKey}`, { defaultValue: nameKey.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') })}`,
           }));
           setAllCurrencies(formattedCurrencies);
         })
         .catch(error => toast({ variant: "destructive", title: t('errorFetchingCurrencies'), description: error.message}))
         .finally(() => setIsLoadingCurrencies(false));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, isAuthenticated, t, toast]);
 
   useEffect(() => {
