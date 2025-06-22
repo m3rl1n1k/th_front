@@ -452,7 +452,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex flex-1 flex-col">
-        {isAuthenticated && <EmailVerificationBanner />}
         <div className="flex flex-1">
           {isAuthenticated && (
             <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto">
@@ -474,6 +473,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </aside>
           )}
           <main className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}>
+            {isAuthenticated && <EmailVerificationBanner />}
             { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
           </main>
         </div>
