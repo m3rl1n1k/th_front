@@ -616,7 +616,7 @@ export default function TransactionsPage() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} disabled={(date) => filters.startDate ? date < filters.startDate : false} locale={dateFnsLocale}/>
+                              <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} locale={dateFnsLocale}/>
                             </PopoverContent>
                           </Popover>
                         </div>
