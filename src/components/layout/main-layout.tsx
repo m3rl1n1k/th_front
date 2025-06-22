@@ -477,4 +477,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
           </main>
         </div>
-      
+      </div>
+    </div>
+  );
+}
