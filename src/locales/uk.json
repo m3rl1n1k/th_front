@@ -259,6 +259,7 @@
   "transactionUpdateFailedTitle": "Не вдалося оновити транзакцію",
   "errorFetchingTransactionForEdit": "Помилка завантаження транзакції",
   "couldNotLoadTransactionEdit": "Не вдалося завантажити транзакцію для редагування. будь ласка, спробуйте знову.",
+  "dateRangeTooLargeError": "Вибраний діапазон дат не може перевищувати 90 днів.",
   "exchangeRateLabel": "Обмінний курс",
   "templateInfo": "Інформація про шаблон",
   "templateId": "ID шаблону",

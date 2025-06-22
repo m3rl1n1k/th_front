@@ -31,7 +31,7 @@ import {
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History,
   ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText, Shapes
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, GetTransactionsListResponse, PaginationInfo } from '@/types';
 import {
@@ -291,6 +291,14 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
+    if (filters.startDate && filters.endDate && differenceInDays(filters.endDate, filters.startDate) > 90) {
+      toast({
+        variant: "destructive",
+        title: t('errorTitle'),
+        description: t('dateRangeTooLargeError'),
+      });
+      return;
+    }
     setRawTransactions([]);
     setCurrentPage(1);
     fetchTransactions(1);
