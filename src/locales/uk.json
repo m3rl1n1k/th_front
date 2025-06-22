@@ -684,6 +684,7 @@
   "noSentInvitationsFound": "Ви ще не надсилали запрошень для цієї групи.",
   "capitalNameLabel": "Група капіталу",
   "ownerCanInvite": "Лише власник групи може надсилати нові запрошення.",
+  "userAlreadyInCapitalError": "Цей користувач вже є учасником групи спільного капіталу і не може бути запрошений.",
 
   "//": "REPORTS",
   "aiReportPageTitle": "AI фінансовий звіт",

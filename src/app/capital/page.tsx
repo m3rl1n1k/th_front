@@ -186,7 +186,15 @@ export default function CapitalPage() {
       invitationForm.reset();
       fetchData(); // Re-fetch to update invitation lists
     } catch (err: any) {
-      toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description: (err as ApiError).message });
+      const apiError = err as ApiError;
+      let description = apiError.message as string || t('unexpectedError');
+
+      // Check for the specific server message
+      if (typeof apiError.message === 'string' && apiError.message.includes("User have capital")) {
+        description = t('userAlreadyInCapitalError');
+      }
+
+      toast({ variant: 'destructive', title: t('invitationSendFailedTitle'), description });
     } finally {
       setActionLoading(prev => ({ ...prev, createInvitation: false }));
     }
