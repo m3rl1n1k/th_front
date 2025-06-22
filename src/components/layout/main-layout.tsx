@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
+import { EmailVerificationBanner } from '@/components/common/email-verification-banner';
 
 const baseNavItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
@@ -96,7 +97,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
+    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
@@ -161,7 +162,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token'];
+  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
   if (!isAuthenticated && !authIsLoading && !publicPaths.includes(pathname)) {
      return null;
   }
@@ -450,30 +451,30 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex flex-1">
-        {isAuthenticated && (
-          <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto">
-            <nav className="flex-1 space-y-1">
-              {renderNavGroup(baseNavItems)}
-              <Separator className="my-2" />
-              {renderNavGroup(reportNavItems, 'reportsGroup')}
-              {adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)).length > 0 && (
-                <>
-                  <Separator className="my-2" />
-                  {renderNavGroup(adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)), 'Admin')}
-                </>
-              )}
-              <Separator className="my-2" />
-              {renderNavGroup(supportNavItems, 'supportGroup')}
-              <Separator className="my-2" />
-              {renderNavGroup(userSpecificNavItems)}
-            </nav>
-          </aside>
-        )}
-        <main className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}>
-          { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
-        </main>
-      </div>
-    </div>
-  );
-}
+      <div className="flex flex-1 flex-col">
+        {isAuthenticated && <EmailVerificationBanner />}
+        <div className="flex flex-1">
+          {isAuthenticated && (
+            <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto">
+              <nav className="flex-1 space-y-1">
+                {renderNavGroup(baseNavItems)}
+                <Separator className="my-2" />
+                {renderNavGroup(reportNavItems, 'reportsGroup')}
+                {adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)).length > 0 && (
+                  <>
+                    <Separator className="my-2" />
+                    {renderNavGroup(adminNavItems.filter(item => item.requiredRole && userHasRole(item.requiredRole)), 'Admin')}
+                  </>
+                )}
+                <Separator className="my-2" />
+                {renderNavGroup(supportNavItems, 'supportGroup')}
+                <Separator className="my-2" />
+                {renderNavGroup(userSpecificNavItems)}
+              </nav>
+            </aside>
+          )}
+          <main className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}>
+            { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
+          </main>
+        </div>
+      

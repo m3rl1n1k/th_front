@@ -1,4 +1,3 @@
-
 import { URLS } from '@/config/urls';
 import type {
   ApiError,
@@ -173,6 +172,12 @@ export const updateUserProfile = (data: Partial<User & { userCurrencyCode?: stri
 
 export const changePassword = (data: ChangePasswordPayload, token: string): Promise<void> =>
   request(URLS.changePassword, { method: 'POST', body: data, token });
+
+export const verifyEmail = (verificationToken: string): Promise<{ message: string }> =>
+  request(URLS.verifyEmail, { method: 'POST', body: { token: verificationToken } });
+
+export const resendVerificationEmail = (token: string): Promise<{ message: string }> =>
+  request(URLS.resendVerificationEmail, { method: 'POST', token });
 
 // User Settings
 export const getUserSettings = (token: string): Promise<{ settings: UserSettings }> =>

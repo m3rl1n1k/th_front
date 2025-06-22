@@ -1,5 +1,3 @@
-
-
 export interface UserSettings {
   chart_income_color?: string | null;
   chart_expense_color?: string | null;
@@ -11,6 +9,7 @@ export interface User {
   id: string | number;
   login: string; // This is the username
   email: string;
+  isVerified: boolean;
   memberSince?: string;
   userCurrency?: {
     code: string;
