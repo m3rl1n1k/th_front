@@ -109,7 +109,7 @@ export default function TransactionsPage() {
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
-          const formattedTypes = Object.entries(data.types).map(([id, name]) => ({
+          const formattedTypes = Object.entries(data.types || {}).map(([id, name]) => ({
             id: id,
             name: name as string
           }));
@@ -671,6 +671,7 @@ export default function TransactionsPage() {
                           <Label htmlFor="filterType" className="font-medium">{t('filterByType')}</Label>
                           <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
                             <SelectTrigger id="filterType" className="hover:border-primary transition-colors">
+                              <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
                               <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
                             </SelectTrigger>
                             <SelectContent>
@@ -699,7 +700,7 @@ export default function TransactionsPage() {
         )}
 
         <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as "all" | "recurring"); setCurrentPage(1); setTotalPages(1); }} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/20 p-1.5 rounded-lg">
             <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
               <History className="h-5 w-5" />
               {t('allTransactionsTab')}
