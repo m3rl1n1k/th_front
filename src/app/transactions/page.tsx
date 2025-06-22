@@ -333,6 +333,7 @@ export default function TransactionsPage() {
     setFilters({});
     setRawTransactions([]);
     setCurrentPage(1);
+    setTotalPages(1);
     fetchTransactions(1, {});
   };
 
