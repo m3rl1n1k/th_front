@@ -109,13 +109,20 @@ export default function TransactionsPage() {
       setIsLoadingTypes(true);
       getTransactionTypes(token)
         .then(data => {
-          const formattedTypes = Object.entries(data.types || {}).map(([id, name]) => ({
-            id: id,
-            name: name as string
-          }));
-          setTransactionTypes(formattedTypes);
+          if (data && data.types && typeof data.types === 'object') {
+            const formattedTypes = Object.entries(data.types || {}).map(([id, name]) => ({
+              id: id,
+              name: name as string
+            }));
+            setTransactionTypes(formattedTypes);
+          } else {
+            setTransactionTypes([]);
+          }
         })
-        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
+        .catch(error => {
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          setTransactionTypes([]);
+        })
         .finally(() => setIsLoadingTypes(false));
 
       setIsLoadingCategories(true);
@@ -123,7 +130,10 @@ export default function TransactionsPage() {
         .then(data => {
           setMainCategories(Array.isArray(data) ? data : []);
         })
-        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
+        .catch(error => {
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          setMainCategories([]);
+        })
         .finally(() => setIsLoadingCategories(false));
 
       setIsLoadingFrequencies(true);
@@ -137,6 +147,7 @@ export default function TransactionsPage() {
         })
         .catch(error => {
             toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+            setApiFrequencies([]);
         })
         .finally(() => setIsLoadingFrequencies(false));
 
