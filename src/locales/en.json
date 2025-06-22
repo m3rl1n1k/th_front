@@ -259,7 +259,7 @@
   "transactionUpdateFailedTitle": "Failed to update transaction",
   "errorFetchingTransactionForEdit": "Error fetching transaction",
   "couldNotLoadTransactionEdit": "Could not load the transaction for editing. please try again.",
-  "dateRangeTooLargeError": "The selected date range cannot exceed 90 days.",
+  "dateRangeTooLargeError": "The selected date range cannot exceed 1 year.",
   "exchangeRateLabel": "Exchange rate",
   "templateInfo": "Template info",
   "templateId": "Template ID",

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
@@ -31,7 +30,7 @@ import {
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History,
   ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText, Shapes
 } from 'lucide-react';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, add, sub } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, GetTransactionsListResponse, PaginationInfo } from '@/types';
 import {
@@ -291,7 +290,7 @@ export default function TransactionsPage() {
   };
 
   const handleApplyFilters = () => {
-    if (filters.startDate && filters.endDate && differenceInDays(filters.endDate, filters.startDate) > 90) {
+    if (filters.startDate && filters.endDate && differenceInDays(filters.endDate, filters.startDate) > 365) {
       toast({
         variant: "destructive",
         title: t('errorTitle'),
@@ -302,6 +301,24 @@ export default function TransactionsPage() {
     setRawTransactions([]);
     setCurrentPage(1);
     fetchTransactions(1);
+  };
+  
+  const disabledStartDate = (date: Date): boolean => {
+    if (date > new Date()) return true;
+    if (filters.endDate) {
+        const oneYearBeforeEndDate = sub(filters.endDate, { years: 1 });
+        return date > filters.endDate || date < oneYearBeforeEndDate;
+    }
+    return false;
+  };
+
+  const disabledEndDate = (date: Date): boolean => {
+    if (date > new Date()) return true;
+    if (filters.startDate) {
+        const oneYearAfterStartDate = add(filters.startDate, { years: 1 });
+        return date < filters.startDate || date > oneYearAfterStartDate;
+    }
+    return false;
   };
 
   const handleClearFilters = () => {
@@ -370,7 +387,7 @@ export default function TransactionsPage() {
       await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token);
       toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
       fetchRepeatedDefinitions(false);
-    } catch (error: any) {
+    } catch (error: any) => {
       toast({ variant: "destructive", title: t('errorRemovingDefinition'), description: error.message || t('unexpectedError') });
     } finally {
       setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: false } }));
@@ -610,7 +627,7 @@ export default function TransactionsPage() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} locale={dateFnsLocale} />
+                              <Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date || undefined)} locale={dateFnsLocale} disabled={disabledStartDate} />
                             </PopoverContent>
                           </Popover>
                         </div>
@@ -624,7 +641,7 @@ export default function TransactionsPage() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} locale={dateFnsLocale}/>
+                              <Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date || undefined)} locale={dateFnsLocale} disabled={disabledEndDate}/>
                             </PopoverContent>
                           </Popover>
                         </div>
