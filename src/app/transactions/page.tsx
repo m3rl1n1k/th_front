@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, add, sub } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, SubCategory, RepeatedTransactionEntry, Frequency as AppFrequency, GetTransactionsListResponse, PaginationInfo } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, MainCategory, RepeatedTransactionEntry, Frequency as AppFrequency, GetTransactionsListResponse, PaginationInfo } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +69,7 @@ export default function TransactionsPage() {
   const pathname = usePathname();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
-  const [allSubCategories, setAllSubCategories] = useState<SubCategory[]>([]);
+  const [mainCategories, setMainCategories] = useState<MainCategory[]>([]);
   const [apiFrequencies, setApiFrequencies] = useState<AppFrequency[]>([]);
 
   const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]);
@@ -121,8 +121,7 @@ export default function TransactionsPage() {
       setIsLoadingCategories(true);
       getMainCategories(token)
         .then(data => {
-          const subCategories = (Array.isArray(data) ? data : []).flatMap(mainCat => mainCat.subCategories || []);
-          setAllSubCategories(subCategories);
+          setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
         .finally(() => setIsLoadingCategories(false));
@@ -260,7 +259,7 @@ export default function TransactionsPage() {
         categoryName: categoryName
       };
     });
-  }, [rawTransactions, transactionTypes, t, allSubCategories]);
+  }, [rawTransactions, transactionTypes, t]);
 
   const { groups, sortedDateKeys } = useMemo(() => {
     const newGroups: GroupedTransactions = processedTransactions.reduce((acc, tx) => {
@@ -650,14 +649,20 @@ export default function TransactionsPage() {
                           <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
                           <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)} disabled={isLoadingCategories}>
                             <SelectTrigger id="filterCategory" className="hover:border-primary transition-colors">
+                              <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
                               <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-h-72">
                               <SelectItem value="all">{t('allCategories')}</SelectItem>
-                              {allSubCategories.map(subCat => (
-                                <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                   {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
-                                </SelectItem>
+                              {mainCategories.map(mainCat => (
+                                <SelectGroup key={mainCat.id}>
+                                  <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
+                                  {mainCat.subCategories && mainCat.subCategories.map(subCat => (
+                                    <SelectItem key={subCat.id} value={String(subCat.id)}>
+                                      {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
                               ))}
                             </SelectContent>
                           </Select>
