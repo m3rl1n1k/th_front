@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAuthenticated(false);
     setPendingInvitationCount(0); // Reset count on clear
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
     }
   }, []);
 
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(apiToken);
       setIsAuthenticated(true);
       if (typeof window !== 'undefined') {
-        localStorage.setItem(AUTH_TOKEN_KEY, apiToken);
+        sessionStorage.setItem(AUTH_TOKEN_KEY, apiToken);
       }
       await updatePendingInvitations(apiToken, userData.id); // Fetch invitations after user is set
       return userData;
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const attemptAutoLogin = async () => {
       if (typeof window !== 'undefined') {
-        const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+        const storedToken = sessionStorage.getItem(AUTH_TOKEN_KEY);
         if (storedToken) {
           try {
             const userData = await fetchUserProfile(storedToken);
@@ -169,7 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [router, toast, t, clearAuthData]);
 
   const fetchUser = useCallback(async () => {
-    const currentToken = token || (typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null);
+    const currentToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem(AUTH_TOKEN_KEY) : null);
     if (currentToken) {
       setIsLoading(true);
       try {
