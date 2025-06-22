@@ -44,7 +44,7 @@ export interface RegistrationResponse {
 }
 
 export interface ChangePasswordPayload {
-  currentPassword?: string;
+  currentPassword: string;
   newPassword: string;
 }
 
