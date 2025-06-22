@@ -126,7 +126,7 @@ Verifies a user's email address using a token sent to their email.
     }
     ```
 
-#### `POST /auth/verify/resend`
+#### `GET /re-send/verify-email`
 Resends the verification email to the currently authenticated user if their email is not yet verified.
 *   **Request Body**: None (token in header)
 *   **Success Response (200 OK)**:

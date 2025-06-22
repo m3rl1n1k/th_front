@@ -11,7 +11,7 @@ export const URLS = {
   logout: `${API_BASE_URL}/auth/logout`,
   me: `${API_BASE_URL}/user`,
   verifyEmail: `${API_BASE_URL}/verify-email`,
-  resendVerificationEmail: `${API_BASE_URL}/auth/verify/resend`,
+  resendVerificationEmail: `${API_BASE_URL}/re-send/verify-email`,
 
   // Dashboard
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,

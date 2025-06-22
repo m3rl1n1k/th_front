@@ -177,7 +177,7 @@ export const verifyEmail = (verificationToken: string): Promise<{ message: strin
   request(URLS.verifyEmail, { method: 'POST', body: { token: verificationToken } });
 
 export const resendVerificationEmail = (token: string): Promise<{ message: string }> =>
-  request(URLS.resendVerificationEmail, { method: 'POST', token });
+  request(URLS.resendVerificationEmail, { method: 'GET', token });
 
 // User Settings
 export const getUserSettings = (token: string): Promise<{ settings: UserSettings }> =>
