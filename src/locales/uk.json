@@ -84,6 +84,8 @@
   "loginButtonNav": "Вхід",
   "loginSuccessTitle": "Вхід успішний",
   "loginSuccessDesc": "Ласкаво просимо!",
+  "logoutSuccessTitle": "Вихід виконано успішно",
+  "logoutSuccessDesc": "Ви були безпечно відключені від системи.",
   "loginFailedTitle": "Помилка входу",
   "loginFailedDesc": "Будь ласка, перевірте ваші дані або спробуйте пізніше.",
   "loginTitle": "З поверненням!",
@@ -867,3 +869,5 @@
   "currency_zambian_kwacha": "Замбійська квача",
   "currency_zimbabwean_dollar": "Зімбабвійський долар"
 }
+
+    

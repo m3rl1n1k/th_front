@@ -84,6 +84,8 @@
   "loginButtonNav": "Login",
   "loginSuccessTitle": "Login successful",
   "loginSuccessDesc": "Welcome back!",
+  "logoutSuccessTitle": "Logged Out Successfully",
+  "logoutSuccessDesc": "You have been securely logged out.",
   "loginFailedTitle": "Login failed",
   "loginFailedDesc": "Please check your credentials or try again later.",
   "loginTitle": "Welcome back!",
@@ -867,3 +869,5 @@
   "currency_zambian_kwacha": "Zambian Kwacha",
   "currency_zimbabwean_dollar": "Zimbabwean Dollar"
 }
+
+    
