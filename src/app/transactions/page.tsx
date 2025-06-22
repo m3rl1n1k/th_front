@@ -158,21 +158,21 @@ export default function TransactionsPage() {
       setIsLoadingFrequencies(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, toast, t]);
+  }, [token, isAuthenticated]);
 
-  const fetchTransactions = useCallback((pageToFetch: number) => {
+  const fetchTransactions = useCallback((pageToFetch: number, filtersToUse: typeof filters) => {
     if (isAuthenticated && token && activeTab === "all") {
       if (pageToFetch === 1) {
         setIsLoadingTransactions(true);
-        setRawTransactions([]); 
+        setRawTransactions([]);
       } else {
         setIsLoadingMore(true);
       }
       const params: Record<string, string | number | undefined> = {};
-      if (filters.startDate) params.startDate = format(filters.startDate, 'yyyy-MM-dd');
-      if (filters.endDate) params.endDate = format(filters.endDate, 'yyyy-MM-dd');
-      if (filters.categoryId) params.categoryId = filters.categoryId;
-      if (filters.typeId) params.typeId = filters.typeId;
+      if (filtersToUse.startDate) params.startDate = format(filtersToUse.startDate, 'yyyy-MM-dd');
+      if (filtersToUse.endDate) params.endDate = format(filtersToUse.endDate, 'yyyy-MM-dd');
+      if (filtersToUse.categoryId) params.categoryId = filtersToUse.categoryId;
+      if (filtersToUse.typeId) params.typeId = filtersToUse.typeId;
 
       params.page = pageToFetch;
 
@@ -200,8 +200,7 @@ export default function TransactionsPage() {
       setIsLoadingMore(false);
       setTotalPages(1);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, token, filters.startDate, filters.endDate, filters.categoryId, filters.typeId, activeTab, toast, t]);
+  }, [isAuthenticated, token, activeTab, toast, t]);
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
@@ -219,26 +218,23 @@ export default function TransactionsPage() {
         setRepeatedDefinitions([]);
         if (showLoading) setIsLoadingRepeatedDefinitions(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token, activeTab, t, toast]);
-
 
   useEffect(() => {
     if (activeTab === "all" && isAuthenticated && token) {
-      fetchTransactions(1);
+      fetchTransactions(1, filters);
     } else if (activeTab === "recurring" && isAuthenticated && token) {
       fetchRepeatedDefinitions();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, token, activeTab]);
 
-  // Intersection Observer for infinite scrolling
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
         if (firstEntry.isIntersecting && currentPage < totalPages && !isLoadingMore && !isLoadingTransactions && activeTab === "all") {
-          fetchTransactions(currentPage + 1);
+          fetchTransactions(currentPage + 1, filters);
         }
       },
       { threshold: 1.0 } 
@@ -254,8 +250,7 @@ export default function TransactionsPage() {
         observer.unobserve(currentLoaderRef);
       }
     };
-  }, [loaderRef, currentPage, totalPages, isLoadingMore, isLoadingTransactions, fetchTransactions, activeTab]);
-
+  }, [loaderRef, currentPage, totalPages, isLoadingMore, isLoadingTransactions, fetchTransactions, activeTab, filters]);
 
   useEffect(() => {
     setInitiatingActionForTxId(null);
@@ -313,7 +308,7 @@ export default function TransactionsPage() {
     }
     setRawTransactions([]);
     setCurrentPage(1);
-    fetchTransactions(1);
+    fetchTransactions(1, filters);
   };
   
   const disabledStartDate = (date: Date): boolean => {
@@ -338,7 +333,7 @@ export default function TransactionsPage() {
     setFilters({});
     setRawTransactions([]);
     setCurrentPage(1);
-    fetchTransactions(1);
+    fetchTransactions(1, {});
   };
 
   const handleAddNewTransaction = () => router.push('/transactions/new');
