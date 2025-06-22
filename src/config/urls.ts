@@ -10,7 +10,7 @@ export const URLS = {
   register: `${API_BASE_URL}/auth/register`,
   logout: `${API_BASE_URL}/auth/logout`,
   me: `${API_BASE_URL}/user`,
-  verifyEmail: `${API_BASE_URL}/auth/verify`,
+  verifyEmail: `${API_BASE_URL}/verify-email`,
   resendVerificationEmail: `${API_BASE_URL}/auth/verify/resend`,
 
   // Dashboard
