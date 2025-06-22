@@ -2,7 +2,8 @@
 // All API endpoints used in the application
 
 // Replace with your actual backend base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
+const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, ""); // Remove trailing slash to prevent double slashes
 
 export const URLS = {
   // Auth
