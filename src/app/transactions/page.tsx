@@ -51,6 +51,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
 interface GroupedTransactions {
   [date: string]: Transaction[];
@@ -228,7 +229,8 @@ export default function TransactionsPage() {
     } else if (activeTab === "recurring" && isAuthenticated && token) {
       fetchRepeatedDefinitions();
     }
-  }, [isAuthenticated, token, activeTab, fetchTransactions, fetchRepeatedDefinitions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, token, activeTab]);
 
   // Intersection Observer for infinite scrolling
   useEffect(() => {
@@ -659,7 +661,7 @@ export default function TransactionsPage() {
                         <div className="space-y-2">
                           <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
                           <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)} disabled={isLoadingCategories}>
-                            <SelectTrigger id="filterCategory" className="border border-input font-normal hover:border-primary transition-colors">
+                            <SelectTrigger id="filterCategory" className={cn("border border-input font-normal hover:border-primary transition-colors")}>
                               <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
                               <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
                             </SelectTrigger>
@@ -681,7 +683,7 @@ export default function TransactionsPage() {
                         <div className="space-y-2">
                           <Label htmlFor="filterType" className="font-medium">{t('filterByType')}</Label>
                           <Select value={filters.typeId || 'all'} onValueChange={(value) => handleFilterChange('typeId', value === 'all' ? undefined : value)} disabled={isLoadingTypes}>
-                            <SelectTrigger id="filterType" className="border border-input font-normal hover:border-primary transition-colors">
+                            <SelectTrigger id="filterType" className={cn("border border-input font-normal hover:border-primary transition-colors")}>
                               <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
                               <SelectValue placeholder={isLoadingTypes ? t('loading') : t('selectTypePlaceholder')} />
                             </SelectTrigger>
