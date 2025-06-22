@@ -400,7 +400,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled={isNavigating}>
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={'https://placehold.co/100x100.png?text=${user.login.charAt(0).toUpperCase()}'} alt={user.login} data-ai-hint="avatar user"/>
+                      <AvatarImage src={`https://placehold.co/100x100.png?text=${user.login.charAt(0).toUpperCase()}`} alt={user.login} data-ai-hint="avatar user"/>
                       <AvatarFallback>{user.login.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
@@ -473,13 +473,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </aside>
           )}
           <main className={`flex-1 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}>
-            {isAuthenticated && (
-                <div className="p-4 sm:p-6 lg:p-8">
-                    <EmailVerificationBanner />
-                </div>
-            )}
-            <div className="p-4 sm:p-6 lg:p-8 pt-0">
-                { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
+            <div className="p-4 sm:p-6 lg:p-8">
+              {isAuthenticated && <EmailVerificationBanner />}
+              { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
             </div>
           </main>
         </div>
