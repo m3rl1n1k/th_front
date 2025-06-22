@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
@@ -387,7 +388,7 @@ export default function TransactionsPage() {
       await deleteRepeatedTransactionDefinition(selectedDefinitionForDelete.id, token);
       toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
       fetchRepeatedDefinitions(false);
-    } catch (error: any) => {
+    } catch (error: any) {
       toast({ variant: "destructive", title: t('errorRemovingDefinition'), description: error.message || t('unexpectedError') });
     } finally {
       setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: false } }));
