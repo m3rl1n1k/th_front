@@ -17,7 +17,7 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal, GripVertical } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary } from '@/types';
@@ -27,6 +27,10 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 
 interface DashboardSummaryData {
   total_balance: number;
@@ -76,7 +80,6 @@ interface ProcessedLastTransactionItem {
 }
 
 const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
-const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'expenses_chart', 'last_activity', 'current_budget'];
 
 type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget';
 
@@ -85,6 +88,18 @@ interface DashboardCard {
   component: React.ReactNode;
   className?: string;
 }
+
+const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
+
+const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'expenses_chart', 'last_activity', 'current_budget'];
+const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
+  total_balance: true,
+  monthly_income: true,
+  average_expenses: true,
+  expenses_chart: true,
+  last_activity: true,
+  current_budget: true,
+};
 
 
 export default function DashboardPage() {
@@ -102,9 +117,36 @@ export default function DashboardPage() {
 
   const [isLoading, setIsLoading] = useState(true);
 
+  const [dashboardSettings, setDashboardSettings] = useState({
+    order: DEFAULT_CARD_ORDER,
+    visibility: DEFAULT_VISIBILITY,
+  });
+
+  useEffect(() => {
+    // This effect runs on the client after hydration
+    if (typeof window !== 'undefined') {
+      const storedSettings = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
+      if (storedSettings) {
+        try {
+          const parsedSettings = JSON.parse(storedSettings);
+          setDashboardSettings({
+            order: parsedSettings.dashboard_cards_order || DEFAULT_CARD_ORDER,
+            visibility: parsedSettings.dashboard_cards_visibility || DEFAULT_VISIBILITY,
+          });
+        } catch (e) {
+          console.error("Failed to parse dashboard settings, using defaults.", e);
+          setDashboardSettings({
+            order: DEFAULT_CARD_ORDER,
+            visibility: DEFAULT_VISIBILITY,
+          });
+        }
+      }
+    }
+  }, []);
+
   const orderedCardIds = useMemo(() => {
-    return user?.settings?.dashboard_cards_order as DashboardCardId[] || DEFAULT_CARD_ORDER;
-  }, [user]);
+    return dashboardSettings.order;
+  }, [dashboardSettings.order]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -232,41 +274,35 @@ export default function DashboardPage() {
 
   const renderTotalBalanceCard = () => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
-          <Wallet className="h-6 w-6 text-primary" />
-          {t('totalBalance')}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{t('totalBalance')}</CardTitle>
+        <Wallet className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <p className="text-3xl font-bold"><CurrencyDisplay amountInCents={summaryData.total_balance} /></p>}
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold"><CurrencyDisplay amountInCents={summaryData.total_balance} /></div>}
       </CardContent>
     </Card>
   );
-
+  
   const renderMonthlyIncomeCard = () => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
-          <TrendingUp className="h-6 w-6 text-green-500" />
-          {t('monthlyIncome')}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{t('monthlyIncome')}</CardTitle>
+        <TrendingUp className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <p className="text-3xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={summaryData.month_income} /></p>}
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={summaryData.month_income} /></div>}
       </CardContent>
     </Card>
   );
-
+  
   const renderAverageExpensesCard = () => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
-          <BarChartHorizontal className="h-6 w-6 text-red-500" />
-          {t('averageExpense')}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{t('averageExpense')}</CardTitle>
+        <BarChartHorizontal className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 pt-2">
         {isLoading || !averageExpenses ? (
           <>
             <Skeleton className="h-5 w-full" />
@@ -275,16 +311,16 @@ export default function DashboardPage() {
           </>
         ) : (
           <>
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm text-muted-foreground">{t('daily')}</span>
+            <div className="flex justify-between items-baseline text-sm">
+              <span className="text-muted-foreground">{t('daily')}</span>
               <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.daily} /></span>
             </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm text-muted-foreground">{t('weekly')}</span>
+            <div className="flex justify-between items-baseline text-sm">
+              <span className="text-muted-foreground">{t('weekly')}</span>
               <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.weekly} /></span>
             </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm text-muted-foreground">{t('monthly')}</span>
+            <div className="flex justify-between items-baseline text-sm">
+              <span className="text-muted-foreground">{t('monthly')}</span>
               <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.monthly} /></span>
             </div>
           </>
@@ -294,7 +330,7 @@ export default function DashboardPage() {
   );
 
   const renderExpensesChart = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 h-full flex flex-col">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 h-full flex flex-col lg:col-span-2">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
         <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <PieChartIcon className="h-6 w-6 text-primary" />
@@ -363,25 +399,18 @@ export default function DashboardPage() {
   };
   
   const allCards: DashboardCard[] = [
-    { id: 'total_balance', component: renderTotalBalanceCard(), className: 'lg:col-span-1' },
-    { id: 'monthly_income', component: renderMonthlyIncomeCard(), className: 'lg:col-span-1' },
-    { id: 'average_expenses', component: renderAverageExpensesCard(), className: 'lg:col-span-1' },
-    { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-1' },
-    { id: 'last_activity', component: renderLastActivity(), className: 'lg:col-span-1' },
-    { id: 'current_budget', component: renderCurrentMonthBudget(), className: 'lg:col-span-1' },
+    { id: 'total_balance', component: renderTotalBalanceCard() },
+    { id: 'monthly_income', component: renderMonthlyIncomeCard() },
+    { id: 'average_expenses', component: renderAverageExpensesCard() },
+    { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-2' },
+    { id: 'last_activity', component: renderLastActivity() },
+    { id: 'current_budget', component: renderCurrentMonthBudget() },
   ];
 
   const visibleCardIds = useMemo(() => {
-    const visibility = user?.settings?.dashboard_cards_visibility ?? {
-      total_balance: true,
-      monthly_income: true,
-      average_expenses: true,
-      expenses_chart: true,
-      last_activity: true,
-      current_budget: true,
-    };
+    const visibility = dashboardSettings.visibility;
     return orderedCardIds.filter(id => visibility[id] !== false);
-  }, [user, orderedCardIds]);
+  }, [orderedCardIds, dashboardSettings.visibility]);
 
   const visibleCards = useMemo(() => {
     return visibleCardIds.map(id => allCards.find(c => c.id === id)).filter(Boolean) as DashboardCard[];

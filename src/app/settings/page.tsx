@@ -39,6 +39,8 @@ const defaultDashboardVisibility = {
 
 const defaultDashboardOrder = ['total_balance', 'monthly_income', 'average_expenses', 'expenses_chart', 'last_activity', 'current_budget'];
 
+const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
+
 const hexColorRegex = /^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/i;
 
 const generalSettingsSchema = (t: Function) => z.object({
@@ -124,6 +126,7 @@ export default function SettingsPage() {
   );
 
   useEffect(() => {
+    // Populate General Settings from user object
     if (user?.settings) {
       generalForm.reset({
         chart_income_color: user.settings.chart_income_color ?? DEFAULT_CHART_INCOME_COLOR,
@@ -131,26 +134,39 @@ export default function SettingsPage() {
         chart_capital_color: user.settings.chart_capital_color ?? DEFAULT_CHART_CAPITAL_COLOR,
         records_per_page: user.settings.records_per_page ?? DEFAULT_RECORDS_PER_PAGE,
       });
-
-      const savedOrder = user.settings.dashboard_cards_order || defaultDashboardOrder;
-      const savedVisibility = user.settings.dashboard_cards_visibility || defaultDashboardVisibility;
-
-      dashboardForm.reset({
-        dashboard_cards_order: savedOrder,
-        dashboard_cards_visibility: savedVisibility
-      });
-
-      // Ensure all cards are present in the order, even if new ones were added
-      const allCardIds = new Set(ALL_DASHBOARD_CARDS.map(c => c.id));
-      const currentOrder = savedOrder.filter(id => allCardIds.has(id));
-      ALL_DASHBOARD_CARDS.forEach(card => {
-        if (!currentOrder.includes(card.id)) {
-          currentOrder.push(card.id);
-        }
-      });
-
-      setOrderedCards(currentOrder.map(id => ALL_DASHBOARD_CARDS.find(c => c.id === id)!));
     }
+
+    // Populate Dashboard Settings from localStorage
+    let savedDashboardSettings = null;
+    if (typeof window !== 'undefined') {
+      const storedSettings = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
+      if (storedSettings) {
+        try {
+          savedDashboardSettings = JSON.parse(storedSettings);
+        } catch (e) {
+          console.error("Failed to parse dashboard settings from localStorage", e);
+        }
+      }
+    }
+
+    const savedOrder = savedDashboardSettings?.dashboard_cards_order || defaultDashboardOrder;
+    const savedVisibility = savedDashboardSettings?.dashboard_cards_visibility || defaultDashboardVisibility;
+
+    dashboardForm.reset({
+      dashboard_cards_order: savedOrder,
+      dashboard_cards_visibility: savedVisibility
+    });
+
+    const allCardIds = new Set(ALL_DASHBOARD_CARDS.map(c => c.id));
+    const currentOrder = savedOrder.filter((id: string) => allCardIds.has(id));
+    ALL_DASHBOARD_CARDS.forEach(card => {
+      if (!currentOrder.includes(card.id)) {
+        currentOrder.push(card.id);
+      }
+    });
+
+    setOrderedCards(currentOrder.map((id: string) => ALL_DASHBOARD_CARDS.find(c => c.id === id)!));
+    
   }, [user, generalForm, dashboardForm]);
   
   const watchedIncomeColor = generalForm.watch("chart_income_color");
@@ -185,7 +201,7 @@ export default function SettingsPage() {
       };
       await updateUserSettings(payload, token);
       await fetchUser();
-      toast({ title: t('userSettingsSavedSuccess'), description: t('settingsSavedDesc') });
+      toast({ title: t('userSettingsSavedSuccess'), description: t('generalSettingsSavedDesc') });
       generalForm.reset(data); // Reset dirty state
     } catch (error) {
       const apiError = error as ApiError;
@@ -194,22 +210,15 @@ export default function SettingsPage() {
   };
 
   const handleDashboardSettingsSave: SubmitHandler<DashboardSettingsFormData> = async (data) => {
-    if (!token) {
-      toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
-      return;
-    }
     try {
-      const payload: Partial<UserSettings> = {
-        dashboard_cards_order: data.dashboard_cards_order,
-        dashboard_cards_visibility: data.dashboard_cards_visibility,
-      };
-      await updateUserSettings(payload, token);
-      await fetchUser();
-      toast({ title: t('userSettingsSavedSuccess'), description: t('settingsSavedDesc') });
-      dashboardForm.reset(data); // Reset dirty state
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(DASHBOARD_SETTINGS_KEY, JSON.stringify(data));
+        toast({ title: t('userSettingsSavedSuccess'), description: t('dashboardSettingsSavedDesc') });
+        dashboardForm.reset(data); // Reset dirty state
+      }
     } catch (error) {
-      const apiError = error as ApiError;
-      toast({ variant: "destructive", title: t('errorUpdatingUserSettings'), description: apiError.message || t('unexpectedError') });
+      const e = error as Error;
+      toast({ variant: "destructive", title: t('errorUpdatingUserSettings'), description: e.message || t('unexpectedError') });
     }
   };
   
