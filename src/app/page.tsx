@@ -3,74 +3,234 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import type { Metadata } from 'next';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader} from '@/components/ui/card';
-import { LayoutDashboard, Target, Users, Shapes } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowRight, BarChartBig, CheckCircle, ListChecks, Quote, Target, Users } from 'lucide-react';
 import { useTranslation } from '@/context/i18n-context';
-import Image from 'next/image';
 
 export default function HomePage() {
   const { t } = useTranslation();
 
   const features = [
-    { icon: <LayoutDashboard className="h-8 w-8 text-primary" />, titleKey: "featureComprehensiveOverviewTitle", descriptionKey: "featureComprehensiveOverviewDesc" },
-    { icon: <Target className="h-8 w-8 text-primary" />, titleKey: "featureSmartBudgetingTitle", descriptionKey: "featureSmartBudgetingDesc" },
-    { icon: <Users className="h-8 w-8 text-primary" />, titleKey: "featureCollaborativeFinancesTitle", descriptionKey: "featureCollaborativeFinancesDesc" },
-    { icon: <Shapes className="h-8 w-8 text-primary" />, titleKey: "featureOrganizeYourWayTitle", descriptionKey: "featureOrganizeYourWayDesc" },
+    {
+      icon: <Target className="h-10 w-10 text-primary" />,
+      titleKey: "featureSmartBudgetingTitle",
+      descriptionKey: "featureSmartBudgetingDesc",
+      image: {
+        src: "https://placehold.co/600x400.png",
+        alt: "Screenshot of the budgeting feature in FinanceFlow.",
+        hint: "budget tracking"
+      }
+    },
+    {
+      icon: <ListChecks className="h-10 w-10 text-primary" />,
+      titleKey: "transactions",
+      descriptionKey: "homePageFeatureTrackDesc",
+      image: {
+        src: "https://placehold.co/600x400.png",
+        alt: "Screenshot of the transaction list in FinanceFlow.",
+        hint: "expense list"
+      }
+    },
+    {
+      icon: <BarChartBig className="h-10 w-10 text-primary" />,
+      titleKey: "homePageFeatureReportsTitle",
+      descriptionKey: "homePageFeatureReportsDesc",
+      image: {
+        src: "https://placehold.co/600x400.png",
+        alt: "Screenshot of a financial report chart in FinanceFlow.",
+        hint: "financial report"
+      }
+    },
+    {
+      icon: <Users className="h-10 w-10 text-primary" />,
+      titleKey: "featureCollaborativeFinancesTitle",
+      descriptionKey: "featureCollaborativeFinancesDesc",
+      image: {
+        src: "https://placehold.co/600x400.png",
+        alt: "Illustration of multiple users collaborating.",
+        hint: "team collaboration"
+      }
+    }
   ];
+
+  const testimonials = [
+    {
+      quoteKey: "homePageTestimonial1",
+      name: "Alex D.",
+      roleKey: "homePageTestimonial1Role",
+      avatarHint: "person avatar"
+    },
+    {
+      quoteKey: "homePageTestimonial2",
+      name: "Sarah K.",
+      roleKey: "homePageTestimonial2Role",
+      avatarHint: "user portrait"
+    },
+    {
+      quoteKey: "homePageTestimonial3",
+      name: "Mike R.",
+      roleKey: "homePageTestimonial3Role",
+      avatarHint: "professional headshot"
+    }
+  ];
+  
+  const howItWorksSteps = [
+    {
+      icon: CheckCircle,
+      titleKey: 'homePageHowItWorks1Title',
+      descriptionKey: 'homePageHowItWorks1Desc'
+    },
+    {
+      icon: CheckCircle,
+      titleKey: 'homePageHowItWorks2Title',
+      descriptionKey: 'homePageHowItWorks2Desc'
+    },
+    {
+      icon: CheckCircle,
+      titleKey: 'homePageHowItWorks3Title',
+      descriptionKey: 'homePageHowItWorks3Desc'
+    }
+  ]
 
   return (
     <PublicLayout>
-      <div className="container mx-auto px-4 py-8 md:py-16 text-center">
-        <Card className="max-w-4xl mx-auto shadow-xl overflow-hidden bg-card/80 backdrop-blur-sm">
-          <CardHeader className="p-8 md:p-12 bg-gradient-to-br from-primary/10 via-transparent to-accent/10">
-            <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+      <div className="w-full">
+        {/* Hero Section */}
+        <section className="text-center py-20 lg:py-32">
+          <div className="container mx-auto px-4">
+            <h1 className="font-headline text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 max-w-4xl mx-auto">
               {t('homePageTitle')}
             </h1>
-            <CardDescription className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
               {t('homePageSubtitle')}
-            </CardDescription>
-             <div className="relative mx-auto w-full max-w-lg h-64 md:h-80 mb-8 rounded-lg overflow-hidden shadow-lg">
-                <Image
-                  src="https://placehold.co/800x600.png"
-                  alt={t('altFinancialPlanning')}
-                  layout="fill"
-                  objectFit="cover"
-                  data-ai-hint="financial planning dashboard"
-                />
-            </div>
+            </p>
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
               <Button size="lg" asChild className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <Link href="/register">{t('getStartedButton')}</Link>
+                <Link href="/register">
+                  {t('getStartedButton')} <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <Link href="/login">{t('loginToAccountButton')}</Link>
               </Button>
             </div>
-          </CardHeader>
+          </div>
+        </section>
 
-          <CardContent className="py-12 md:py-16 px-6">
-            <h2 className="text-3xl font-semibold text-foreground mb-10">{t('featuresTitle')}</h2>
-            <div className="grid md:grid-cols-2 gap-8">
+        {/* Main Feature Screenshot */}
+        <section className="container mx-auto px-4 -mt-16">
+           <div className="relative mx-auto w-full max-w-5xl h-auto aspect-video rounded-xl overflow-hidden shadow-2xl border-4 border-card">
+              <Image
+                src="https://placehold.co/1200x675.png"
+                alt={t('altFinancialPlanning')}
+                layout="fill"
+                objectFit="cover"
+                data-ai-hint="financial dashboard analytics"
+              />
+            </div>
+        </section>
+
+
+        {/* Detailed Features Section */}
+        <section className="py-20 lg:py-32">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="font-headline text-3xl md:text-4xl font-bold text-foreground">{t('featuresTitle')}</h2>
+              <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">{t('homePageFeatureMainDesc')}</p>
+            </div>
+            <div className="space-y-24">
               {features.map((feature, index) => (
-                <div key={index} className="flex flex-col items-center p-6 bg-background rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                  <div className="p-3 bg-primary/10 rounded-full mb-4">
-                    {feature.icon}
+                <div key={feature.titleKey} className="grid md:grid-cols-2 items-center gap-12">
+                  <div className={`md:order-${index % 2 === 0 ? '1' : '2'}`}>
+                    <div className="inline-flex items-center gap-3 bg-primary/10 text-primary px-4 py-2 rounded-full mb-4">
+                      {feature.icon}
+                      <h3 className="text-xl font-semibold">{t(feature.titleKey as any)}</h3>
+                    </div>
+                    <p className="text-muted-foreground text-lg">{t(feature.descriptionKey as any)}</p>
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">{t(feature.titleKey as any)}</h3>
-                  <p className="text-muted-foreground text-center">{t(feature.descriptionKey as any)}</p>
+                  <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg md:order-${index % 2 === 0 ? '2' : '1'}`}>
+                     <Image
+                      src={feature.image.src}
+                      alt={feature.image.alt}
+                      layout="fill"
+                      objectFit="cover"
+                      data-ai-hint={feature.image.hint}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-          
-          <CardFooter className="p-8 md:p-12 bg-muted/30 text-center">
-             <p className="text-muted-foreground">{t('homePageFooterText')}</p>
-          </CardFooter>
-        </Card>
+          </div>
+        </section>
+        
+        {/* How It Works Section */}
+        <section className="py-20 lg:py-24 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="font-headline text-3xl md:text-4xl font-bold text-foreground">{t('homePageHowItWorksTitle')}</h2>
+              <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">{t('homePageHowItWorksDesc')}</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {howItWorksSteps.map((step, index) => (
+                 <Card key={index} className="text-center p-8 shadow-lg hover:shadow-xl transition-shadow">
+                  <div className="mx-auto flex items-center justify-center h-16 w-16 bg-primary/10 rounded-full mb-6">
+                    <step.icon className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{t(step.titleKey as any)}</h3>
+                  <p className="text-muted-foreground">{t(step.descriptionKey as any)}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-20 lg:py-32">
+          <div className="container mx-auto px-4">
+             <div className="text-center mb-16">
+                <h2 className="font-headline text-3xl md:text-4xl font-bold text-foreground">{t('homePageTestimonialsTitle')}</h2>
+                <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">{t('homePageTestimonialsDesc')}</p>
+            </div>
+            <div className="grid lg:grid-cols-3 gap-8">
+              {testimonials.map((testimonial, index) => (
+                <Card key={index} className="p-8 shadow-lg flex flex-col">
+                  <Quote className="w-10 h-10 text-primary/30 mb-4" />
+                  <p className="text-muted-foreground flex-grow mb-6">"{t(testimonial.quoteKey as any)}"</p>
+                  <div className="flex items-center">
+                    <Avatar>
+                      <AvatarImage src={`https://placehold.co/40x40.png?text=${testimonial.name.charAt(0)}`} alt={testimonial.name} data-ai-hint={testimonial.avatarHint} />
+                      <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-4">
+                      <p className="font-semibold">{testimonial.name}</p>
+                      <p className="text-sm text-muted-foreground">{t(testimonial.roleKey as any)}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section className="py-20 lg:py-24">
+          <div className="container mx-auto px-4">
+            <div className="bg-primary text-primary-foreground p-12 rounded-lg text-center shadow-xl">
+              <h2 className="font-headline text-3xl md:text-4xl font-bold mb-4">{t('homePageFinalCTATitle')}</h2>
+              <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">{t('homePageFinalCTADesc')}</p>
+              <Button size="lg" variant="secondary" asChild className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <Link href="/register">{t('getStartedButton')}</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
       </div>
     </PublicLayout>
   );
 }
-

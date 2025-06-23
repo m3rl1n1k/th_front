@@ -5,8 +5,34 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from 'next-themes';
 
 export const metadata: Metadata = {
-  title: 'FinanceFlow',
-  description: 'Manage your finances with ease.',
+  title: {
+    template: '%s | FinanceFlow',
+    default: 'FinanceFlow - Your Personal Finance Manager',
+  },
+  description: 'Track expenses, manage budgets, and achieve your financial goals with FinanceFlow. The all-in-one finance app for clarity and control.',
+  keywords: ['finance', 'budget', 'expense tracker', 'money manager', 'personal finance', 'savings', 'financial planning'],
+  openGraph: {
+    title: 'FinanceFlow - Your Personal Finance Manager',
+    description: 'Track expenses, manage budgets, and achieve your financial goals with FinanceFlow.',
+    url: 'https://financeflow.app', // placeholder
+    siteName: 'FinanceFlow',
+    images: [
+      {
+        url: 'https://placehold.co/1200x630.png', // placeholder OG image
+        width: 1200,
+        height: 630,
+        alt: 'An overview of the FinanceFlow dashboard showing charts and financial data.',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FinanceFlow - Your Personal Finance Manager',
+    description: 'Track expenses, manage budgets, and achieve your financial goals with FinanceFlow.',
+    images: ['https://placehold.co/1200x630.png'], // placeholder
+  },
 };
 
 export const viewport: Viewport = {
