@@ -4,12 +4,10 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import type { Metadata } from 'next';
 import { PublicLayout } from '@/components/layout/public-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowRight, BarChartBig, CheckCircle, ListChecks, Quote, Target, Users } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowRight, BarChartBig, CheckCircle, ListChecks, Target, Users } from 'lucide-react';
 import { useTranslation } from '@/context/i18n-context';
 
 export default function HomePage() {
@@ -55,27 +53,6 @@ export default function HomePage() {
         alt: "Illustration of multiple users collaborating.",
         hint: "team collaboration"
       }
-    }
-  ];
-
-  const testimonials = [
-    {
-      quoteKey: "homePageTestimonial1",
-      name: "Alex D.",
-      roleKey: "homePageTestimonial1Role",
-      avatarHint: "person avatar"
-    },
-    {
-      quoteKey: "homePageTestimonial2",
-      name: "Sarah K.",
-      roleKey: "homePageTestimonial2Role",
-      avatarHint: "user portrait"
-    },
-    {
-      quoteKey: "homePageTestimonial3",
-      name: "Mike R.",
-      roleKey: "homePageTestimonial3Role",
-      avatarHint: "professional headshot"
     }
   ];
   
@@ -183,34 +160,6 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{t(step.titleKey as any)}</h3>
                   <p className="text-muted-foreground">{t(step.descriptionKey as any)}</p>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section */}
-        <section className="py-20 lg:py-32">
-          <div className="container mx-auto px-4">
-             <div className="text-center mb-16">
-                <h2 className="font-headline text-3xl md:text-4xl font-bold text-foreground">{t('homePageTestimonialsTitle')}</h2>
-                <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">{t('homePageTestimonialsDesc')}</p>
-            </div>
-            <div className="grid lg:grid-cols-3 gap-8">
-              {testimonials.map((testimonial, index) => (
-                <Card key={index} className="p-8 shadow-lg flex flex-col">
-                  <Quote className="w-10 h-10 text-primary/30 mb-4" />
-                  <p className="text-muted-foreground flex-grow mb-6">"{t(testimonial.quoteKey as any)}"</p>
-                  <div className="flex items-center">
-                    <Avatar>
-                      <AvatarImage src={`https://placehold.co/40x40.png?text=${testimonial.name.charAt(0)}`} alt={testimonial.name} data-ai-hint={testimonial.avatarHint} />
-                      <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="ml-4">
-                      <p className="font-semibold">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground">{t(testimonial.roleKey as any)}</p>
-                    </div>
-                  </div>
                 </Card>
               ))}
             </div>
