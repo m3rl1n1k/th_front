@@ -598,6 +598,12 @@
   "errorUpdatingUserSettings": "Помилка оновлення налаштувань користувача",
   "userSettingsSavedSuccess": "Налаштування користувача успішно збережено.",
   "displayPreferencesTitle": "Налаштування відображення",
+  "dashboardLayoutSettingsTitle": "Налаштування панелі приладів",
+  "dashboardLayoutSettingsDesc": "Налаштуйте, які картки відображатимуться на вашій панелі приладів.",
+  "dashboardCardSummary": "Картки зведення (Баланс, Дохід, Витрати)",
+  "dashboardCardExpensesChart": "Діаграма витрат за категоріями",
+  "dashboardCardLastActivity": "Список останніх активностей",
+  "dashboardCardCurrentBudget": "Бюджет на поточний місяць",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Керуйте своїми фінансами",

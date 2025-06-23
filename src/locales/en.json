@@ -598,6 +598,12 @@
   "errorUpdatingUserSettings": "Error updating user settings",
   "userSettingsSavedSuccess": "User settings saved successfully.",
   "displayPreferencesTitle": "Display preferences",
+  "dashboardLayoutSettingsTitle": "Dashboard Layout",
+  "dashboardLayoutSettingsDesc": "Customize which cards are visible on your dashboard.",
+  "dashboardCardSummary": "Summary Cards (Balance, Income, Expense)",
+  "dashboardCardExpensesChart": "Expenses by Category Chart",
+  "dashboardCardLastActivity": "Last Activity List",
+  "dashboardCardCurrentBudget": "Current Month's Budget",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Take control of your finances",

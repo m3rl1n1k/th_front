@@ -1,8 +1,11 @@
+
 export interface UserSettings {
   chart_income_color?: string | null;
   chart_expense_color?: string | null;
   chart_capital_color?: string | null;
   records_per_page?: number | null;
+  dashboard_cards_visibility?: Record<string, boolean>;
+  dashboard_cards_order?: string[];
 }
 
 export interface User {
