@@ -369,7 +369,7 @@
   "balanceCannotBeNegative": "Balance cannot be negative.",
 
   "//": "CATEGORIES",
-  "noCategory": "No category",
+  "noCategory": "No Category",
   "noCategoryOption": "No category (optional)",
   "noCategoriesFoundTitle": "No categories found",
   "noCategoriesFoundDescription": "It seems there are no categories set up yet.",

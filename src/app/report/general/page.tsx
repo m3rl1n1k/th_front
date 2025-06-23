@@ -132,7 +132,7 @@ export default function GeneralReportPage() {
         return [];
     }
     return Object.values(reportData.categorySummary).map(item => ({
-        categoryName: t(generateCategoryTranslationKey(item.name), { defaultValue: item.name }),
+        categoryName: item.name === 'no_category' ? t('noCategory') : t(generateCategoryTranslationKey(item.name), { defaultValue: item.name }),
         amount: item.amount,
         color: item.color,
     }));
