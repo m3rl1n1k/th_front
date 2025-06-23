@@ -105,8 +105,8 @@ export default function HomePage() {
               <Image
                 src="https://placehold.co/1200x675.png"
                 alt={t('altFinancialPlanning')}
-                layout="fill"
-                objectFit="cover"
+                fill
+                className="object-cover"
                 data-ai-hint="financial dashboard analytics"
               />
             </div>
@@ -134,8 +134,8 @@ export default function HomePage() {
                      <Image
                       src={feature.image.src}
                       alt={feature.image.alt}
-                      layout="fill"
-                      objectFit="cover"
+                      fill
+                      className="object-cover"
                       data-ai-hint={feature.image.hint}
                     />
                   </div>
