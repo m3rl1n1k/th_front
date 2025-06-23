@@ -14,11 +14,10 @@ import {
   getTransactionTypes,
   getDashboardChartTotalExpense,
   getBudgetList,
-  updateUserSettings
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, GripVertical } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary } from '@/types';
@@ -28,14 +27,17 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { DndContext, closestCenter, type DragEndEvent, useSensor, useSensors, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
-import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 interface DashboardSummaryData {
   total_balance: number;
   month_income: number;
   month_expense: number;
+}
+
+interface AverageExpensesData {
+  daily: number;
+  weekly: number;
+  monthly: number;
 }
 
 interface TransformedChartItem {
@@ -74,8 +76,9 @@ interface ProcessedLastTransactionItem {
 }
 
 const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
+const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'expenses_chart', 'last_activity', 'current_budget'];
 
-type DashboardCardId = 'summary_cards' | 'expenses_chart' | 'last_activity' | 'current_budget';
+type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget';
 
 interface DashboardCard {
   id: DashboardCardId;
@@ -83,30 +86,14 @@ interface DashboardCard {
   className?: string;
 }
 
-const SortableItem = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className={cn("relative group/item", className)}>
-      <Button variant="ghost" size="icon" {...listeners} {...attributes} className="absolute top-3 right-3 z-10 cursor-grab active:cursor-grabbing opacity-30 group-hover/item:opacity-100 transition-opacity">
-        <GripVertical className="h-5 w-5 text-muted-foreground" />
-      </Button>
-      {children}
-    </div>
-  );
-};
 
 export default function DashboardPage() {
-  const { user, token, isAuthenticated, fetchUser } = useAuth();
-  const { t, dateFnsLocale, language } = useTranslation();
+  const { user, token, isAuthenticated } = useAuth();
+  const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
+  const [averageExpenses, setAverageExpenses] = useState<AverageExpensesData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
   const [lastTransactions, setLastTransactions] = useState<TransactionType[] | null>(null);
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
@@ -115,17 +102,8 @@ export default function DashboardPage() {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const [orderedCardIds, setOrderedCardIds] = useState<DashboardCardId[]>(['summary_cards', 'expenses_chart', 'last_activity', 'current_budget']);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
-  );
-
-  useEffect(() => {
-    if (user?.settings?.dashboard_cards_order) {
-      setOrderedCardIds(user.settings.dashboard_cards_order as DashboardCardId[]);
-    }
+  const orderedCardIds = useMemo(() => {
+    return user?.settings?.dashboard_cards_order as DashboardCardId[] || DEFAULT_CARD_ORDER;
   }, [user]);
 
   useEffect(() => {
@@ -149,6 +127,14 @@ export default function DashboardPage() {
             month_income: incomeData.month_income,
             month_expense: expenseData.month_expense,
           });
+
+          const monthlyExpense = expenseData.month_expense;
+          setAverageExpenses({
+            daily: monthlyExpense / 30, // Approximation
+            weekly: monthlyExpense / 4.345, // Approximation
+            monthly: monthlyExpense,
+          });
+
           setExpensesByCategoryData(chartData);
           setLastTransactions(lastTransactionsResp.last_transactions || []);
           const formattedTypes = Object.entries(typesData.types).map(([id, name]) => ({ id, name: name as string }));
@@ -238,45 +224,68 @@ export default function DashboardPage() {
         <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 6} outerRadius={outerRadius + 10} fill={fill} />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
         <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-xs sm:text-sm"><CurrencyDisplay amountInCents={value} currencyCode={user?.userCurrency?.code} /></text>
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs">{`(${(percent * 100).toFixed(2)}%)`}</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-sm pl-2"><CurrencyDisplay amountInCents={value} currencyCode={user?.userCurrency?.code} /></text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs pl-2">{`(${(percent * 100).toFixed(2)}%)`}</text>
       </g>
     );
   };
 
-  const renderSummaryCards = () => (
+  const renderTotalBalanceCard = () => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <Wallet className="h-6 w-6 text-primary" />
-          {t('dashboardCardSummary')}
+          {t('totalBalance')}
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        {isLoading ? (
+      <CardContent>
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <p className="text-3xl font-bold"><CurrencyDisplay amountInCents={summaryData.total_balance} /></p>}
+      </CardContent>
+    </Card>
+  );
+
+  const renderMonthlyIncomeCard = () => (
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+          <TrendingUp className="h-6 w-6 text-green-500" />
+          {t('monthlyIncome')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <p className="text-3xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={summaryData.month_income} /></p>}
+      </CardContent>
+    </Card>
+  );
+
+  const renderAverageExpensesCard = () => (
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+          <BarChartHorizontal className="h-6 w-6 text-red-500" />
+          {t('averageExpense')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading || !averageExpenses ? (
           <>
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
           </>
-        ) : !summaryData ? (
-          <Card className="sm:col-span-3 bg-destructive/10 text-destructive-foreground p-4">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            <p className="text-sm">{t('dashboardDataLoadError')}</p>
-          </Card>
         ) : (
           <>
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <p className="text-sm text-muted-foreground pb-1">{t('totalBalance')}</p>
-              <p className="text-2xl font-bold"><CurrencyDisplay amountInCents={summaryData.total_balance} /></p>
+            <div className="flex justify-between items-baseline">
+              <span className="text-sm text-muted-foreground">{t('daily')}</span>
+              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.daily} /></span>
             </div>
-            <div className="p-4 bg-green-500/10 rounded-lg">
-              <p className="text-sm text-green-800 dark:text-green-300 pb-1">{t('monthlyIncome')}</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={summaryData.month_income} /></p>
+            <div className="flex justify-between items-baseline">
+              <span className="text-sm text-muted-foreground">{t('weekly')}</span>
+              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.weekly} /></span>
             </div>
-             <div className="p-4 bg-red-500/10 rounded-lg">
-              <p className="text-sm text-red-800 dark:text-red-300 pb-1">{t('monthly')}</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={summaryData.month_expense} /></p>
+            <div className="flex justify-between items-baseline">
+              <span className="text-sm text-muted-foreground">{t('monthly')}</span>
+              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.monthly} /></span>
             </div>
           </>
         )}
@@ -354,15 +363,19 @@ export default function DashboardPage() {
   };
   
   const allCards: DashboardCard[] = [
-    { id: 'summary_cards', component: renderSummaryCards(), className: 'lg:col-span-3' },
-    { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-2' },
+    { id: 'total_balance', component: renderTotalBalanceCard(), className: 'lg:col-span-1' },
+    { id: 'monthly_income', component: renderMonthlyIncomeCard(), className: 'lg:col-span-1' },
+    { id: 'average_expenses', component: renderAverageExpensesCard(), className: 'lg:col-span-1' },
+    { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-1' },
     { id: 'last_activity', component: renderLastActivity(), className: 'lg:col-span-1' },
     { id: 'current_budget', component: renderCurrentMonthBudget(), className: 'lg:col-span-1' },
   ];
 
   const visibleCardIds = useMemo(() => {
     const visibility = user?.settings?.dashboard_cards_visibility ?? {
-      summary_cards: true,
+      total_balance: true,
+      monthly_income: true,
+      average_expenses: true,
       expenses_chart: true,
       last_activity: true,
       current_budget: true,
@@ -371,62 +384,23 @@ export default function DashboardPage() {
   }, [user, orderedCardIds]);
 
   const visibleCards = useMemo(() => {
-    // A temporary mapping to handle the class name for the wider 'expenses_chart'
-    const cardIdToClassMap: Record<DashboardCardId, string | undefined> = {
-      summary_cards: 'lg:col-span-3',
-      expenses_chart: 'lg:col-span-2',
-      last_activity: 'lg:col-span-1',
-      current_budget: 'lg:col-span-1',
-    };
-    
-    return visibleCardIds.map(id => {
-        const card = allCards.find(c => c.id === id);
-        if (!card) return null;
-        return {
-          ...card,
-          className: cardIdToClassMap[id] || 'lg:col-span-1' // Fallback
-        };
-    }).filter(Boolean) as DashboardCard[];
-  }, [visibleCardIds, allCards]);
+    return visibleCardIds.map(id => allCards.find(c => c.id === id)).filter(Boolean) as DashboardCard[];
+  }, [visibleCardIds]);
 
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = orderedCardIds.indexOf(active.id as DashboardCardId);
-      const newIndex = orderedCardIds.indexOf(over.id as DashboardCardId);
-      const newOrder = arrayMove(orderedCardIds, oldIndex, newIndex);
-      setOrderedCardIds(newOrder);
-
-      if (token) {
-        try {
-          await updateUserSettings({ dashboard_cards_order: newOrder }, token);
-          toast({ title: "Dashboard layout saved!" });
-          await fetchUser(); // To ensure context is up to date
-        } catch (error) {
-          toast({ variant: 'destructive', title: "Error saving layout", description: (error as Error).message });
-          // Optionally revert state on error
-          setOrderedCardIds(orderedCardIds);
-        }
-      }
-    }
-  };
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={visibleCardIds} strategy={verticalListSortingStrategy}>
-            <div className="grid gap-6 lg:grid-cols-3">
-              {visibleCards.map(({ id, component, className }) => (
-                <SortableItem key={id} id={id} className={className}>
-                  {component}
-                </SortableItem>
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+          {isLoading ? 
+            [...Array(6)].map((_, i) => <Skeleton key={i} className="h-48" />) :
+            visibleCards.map(({ id, component, className }) => (
+              <div key={id} className={className}>
+                {component}
+              </div>
+          ))}
+        </div>
       </div>
     </MainLayout>
   );
