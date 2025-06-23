@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -296,7 +295,7 @@ export default function NewTransactionPage() {
                   <div className="flex items-center justify-between mb-1">
                     <Label htmlFor="walletId">{t('wallet')}</Label>
                     <Button asChild variant="outline" size="sm" className="text-xs px-2 py-1 h-auto">
-                      <Link href="/wallets/new" target="_blank">
+                      <Link href="/wallets/new">
                         <PlusCircle className="mr-1 h-3 w-3" />
                         {t('createNewButton')}
                       </Link>
@@ -331,7 +330,7 @@ export default function NewTransactionPage() {
                   <div className="flex items-center justify-between mb-1">
                     <Label htmlFor="categoryId">{t('category')}</Label>
                     <Button asChild variant="outline" size="sm" className="text-xs px-2 py-1 h-auto">
-                      <Link href="/categories/new" target="_blank">
+                      <Link href="/categories/new">
                         <PlusCircle className="mr-1 h-3 w-3" />
                         {t('createNewButton')}
                       </Link>
