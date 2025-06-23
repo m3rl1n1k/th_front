@@ -17,7 +17,7 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal, GripVertical } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary } from '@/types';
@@ -27,10 +27,6 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-
 
 interface DashboardSummaryData {
   total_balance: number;
@@ -414,14 +410,14 @@ export default function DashboardPage() {
 
   const visibleCards = useMemo(() => {
     return visibleCardIds.map(id => allCards.find(c => c.id === id)).filter(Boolean) as DashboardCard[];
-  }, [visibleCardIds]);
+  }, [visibleCardIds, allCards]);
 
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
           {isLoading ? 
             [...Array(6)].map((_, i) => <Skeleton key={i} className="h-48" />) :
             visibleCards.map(({ id, component, className }) => (
