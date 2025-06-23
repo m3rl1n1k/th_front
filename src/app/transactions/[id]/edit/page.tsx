@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,7 +45,7 @@ const EditTransactionSchema = z.object({
   date: z.date({ required_error: "Date is required." }),
   walletId: z.string().min(1, { message: "Wallet is required." }),
   categoryId: z.string().optional().nullable(),
-  frequencyId: z.string().min(1, { message: "Frequency is required." }),
+  frequencyId: z.string().optional().nullable(),
 });
 
 type EditTransactionFormData = z.infer<typeof EditTransactionSchema>;
@@ -128,7 +128,7 @@ export default function EditTransactionPage() {
             date: parseISO(data.date),
             walletId: String(data.wallet.id),
             categoryId: data.subCategory?.id ? String(data.subCategory.id) : null,
-            frequencyId: data.frequencyId != null ? String(data.frequencyId) : '',
+            frequencyId: data.frequencyId != null ? String(data.frequencyId) : '0',
           });
         })
         .catch(error => {
@@ -157,7 +157,7 @@ export default function EditTransactionPage() {
         date: format(data.date, 'yyyy-MM-dd'),
         wallet_id: parseInt(data.walletId),
         category_id: data.categoryId ? parseInt(data.categoryId) : null,
-        frequencyId: data.frequencyId,
+        frequencyId: data.frequencyId || "0",
       };
       await updateTransaction(id, payload, token);
       toast({
@@ -408,7 +408,7 @@ export default function EditTransactionPage() {
                     render={({ field }) => (
                       <Select
                         onValueChange={field.onChange}
-                        value={field.value}
+                        value={field.value || '0'}
                         disabled={isLoadingFrequencies || frequencies.length === 0}
                       >
                         <SelectTrigger id="frequencyId" className={errors.frequencyId ? 'border-destructive' : ''}>
