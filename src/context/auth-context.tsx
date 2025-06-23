@@ -65,7 +65,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ).length;
       setPendingInvitationCount(count);
     } catch (error) {
-      console.error("Failed to fetch invitations for badge:", error);
       setPendingInvitationCount(0); // Reset on error
     }
   }, []);
@@ -250,4 +249,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

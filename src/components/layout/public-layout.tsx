@@ -30,7 +30,6 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
     try {
       await setLanguage(lang);
     } catch (error) {
-      console.error("Error changing language:", error);
       // Optionally, show a toast message here if language change fails
     } finally {
       setIsNavigating(false);

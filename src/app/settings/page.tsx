@@ -144,7 +144,7 @@ export default function SettingsPage() {
         try {
           savedDashboardSettings = JSON.parse(storedSettings);
         } catch (e) {
-          console.error("Failed to parse dashboard settings from localStorage", e);
+          // Failed to parse dashboard settings from localStorage
         }
       }
     }

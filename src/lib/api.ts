@@ -87,9 +87,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
     } catch (e) {
       errorData.message = rawResponseBody || errorData.message;
     }
-    console.error(`[API Error Response] Status: ${response.status}, URL: ${response.url}`);
-    console.error('[API Error Response] Raw body:', rawResponseBody);
-    console.error('[API Error Response] Processed error object to be thrown:', errorData);
     throw errorData;
   }
 
@@ -104,9 +101,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
   const { token, isFormData, ...fetchOptions } = options;
   const headers = new Headers(fetchOptions.headers || {});
 
-  console.log(`[API Request] Attempting to call: ${fetchOptions.method || 'GET'} ${url}`);
-
-
   if (token && token.trim() !== "") {
     headers.set('Authorization', `Bearer ${token.trim()}`);
   }
@@ -118,9 +112,6 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
         headers.set('Content-Type', 'application/json');
       }
       fetchOptions.body = JSON.stringify(fetchOptions.body);
-      console.log('[API Request] Body (post-stringify):', fetchOptions.body);
-    } else {
-       console.log('[API Request] Body (as-is string):', fetchOptions.body);
     }
   } else {
     if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
@@ -134,25 +125,11 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     headers.set('Accept', 'application/json');
   }
 
-  const headersToLog: Record<string, string> = {};
-  headers.forEach((value, key) => {
-    headersToLog[key] = value;
-  });
-  console.log('[API Request] Headers:', headersToLog);
-
-
   const response = await fetch(url, {
     mode: 'cors',
     ...fetchOptions,
     headers,
   });
-
-  console.log(`[API Response] Status for ${fetchOptions.method || 'GET'} ${url}: ${response.status}`);
-  if (!response.ok) {
-    const responseContentType = response.headers.get("content-type");
-    console.log(`[API Response] Content-Type for error: ${responseContentType}`);
-  }
-
 
   return handleResponse<T>(response);
 }
@@ -400,7 +377,6 @@ export const removeUserFromCapital = (userId: string | number, token: string): P
 
 export const getInvitations = async (token: string): Promise<GetInvitationsApiResponse> => {
   const response = await request<GetInvitationsApiResponse>(URLS.getInvitations, { method: 'GET', token });
-  console.log('[API Response] GET /invitations:', response);
   return response;
 }
 

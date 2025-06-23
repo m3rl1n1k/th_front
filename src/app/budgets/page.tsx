@@ -86,7 +86,7 @@ export default function BudgetsPage() {
           const parsedDate = parse(monthYear, 'yyyy-MM', new Date());
           monthDisplayName = format(parsedDate, 'MMMM yyyy', { locale: dateFnsLocale });
         } catch (e) {
-          console.warn(`[BudgetPage] Could not parse monthYear: ${monthYear}, using it directly.`);
+          // Could not parse monthYear, using it directly.
         }
         return {
           monthYear,

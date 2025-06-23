@@ -131,7 +131,6 @@ export default function ProfilePage() {
       }
 
     } catch (error) {
-        console.error("Error fetching page data for profile:", error);
         toast({ variant: "destructive", title: t('errorFetchingData'), description: (error as ApiError).message });
     } finally {
         setIsLoadingPage(false);

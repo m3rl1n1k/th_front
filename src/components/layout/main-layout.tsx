@@ -136,7 +136,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     try {
       await setLanguage(lang);
     } catch (error) {
-      console.error("Error changing language:", error);
+      // Error changing language
     } finally {
       setIsNavigating(false);
     }
