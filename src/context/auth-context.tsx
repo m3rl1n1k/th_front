@@ -26,6 +26,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const INTENDED_DESTINATION_KEY = 'intended_destination';
 const AUTH_TOKEN_KEY = 'financeflow_auth_token';
 
+const augmentUserData = (user: User): User => {
+  // The server might send `verifiedAt` instead of `isVerified`.
+  // We'll ensure `isVerified` is correctly set for use in the app.
+  const isVerified = !!user.verifiedAt || !!user.isVerified;
+  return { ...user, isVerified };
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -64,7 +72,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const processSuccessfulLogin = useCallback(async (apiToken: string, fetchedUser?: User) => {
     try {
-      const userData = fetchedUser || await fetchUserProfile(apiToken);
+      let userData = fetchedUser || await fetchUserProfile(apiToken);
+      userData = augmentUserData(userData);
       setUser(userData);
       setToken(apiToken);
       setIsAuthenticated(true);
@@ -85,7 +94,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedToken = sessionStorage.getItem(AUTH_TOKEN_KEY);
         if (storedToken) {
           try {
-            const userData = await fetchUserProfile(storedToken);
+            let userData = await fetchUserProfile(storedToken);
+            userData = augmentUserData(userData);
             setUser(userData);
             setToken(storedToken);
             setIsAuthenticated(true);
@@ -173,7 +183,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (currentToken) {
       setIsLoading(true);
       try {
-        const userData = await fetchUserProfile(currentToken);
+        let userData = await fetchUserProfile(currentToken);
+        userData = augmentUserData(userData);
         setUser(userData);
         setToken(currentToken);
         setIsAuthenticated(true);

@@ -9,7 +9,8 @@ export interface User {
   id: string | number;
   login: string; // This is the username
   email: string;
-  isVerified: boolean;
+  isVerified?: boolean; // Make optional to handle different API responses
+  verifiedAt?: string | null; // Add to handle responses with verification date
   memberSince?: string;
   userCurrency?: {
     code: string;
