@@ -162,95 +162,101 @@ export default function SettingsPage() {
           {t('settingsPageTitle')}
         </h1>
 
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>{t('userSettingsTitle')}</CardTitle>
-            <CardDescription>{t('userSettingsDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(handleSaveUserSettings)} className="space-y-6">
-              
-              <fieldset className="space-y-4 p-4 border rounded-md">
-                <legend className="text-lg font-medium px-1 flex items-center gap-2">
-                  <LayoutDashboard className="h-5 w-5 text-primary" />
-                  {t('dashboardLayoutSettingsTitle')}
-                </legend>
-                <p className="text-sm text-muted-foreground -mt-2 px-1">{t('dashboardLayoutSettingsDesc')}</p>
-                <div className="space-y-3">
-                  {dashboardCards.map((card) => (
-                    <Controller
-                      key={card.id}
-                      name={`dashboard_cards_visibility.${card.id}`}
-                      control={control}
-                      render={({ field }) => (
-                        <div className="flex items-center justify-between rounded-md p-3 bg-muted/30">
-                          <Label htmlFor={`visibility-${card.id}`} className="flex-1 cursor-pointer">{t(card.labelKey as any)}</Label>
-                          <Switch
-                            id={`visibility-${card.id}`}
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </div>
-                      )}
-                    />
-                  ))}
-                </div>
-              </fieldset>
-              
-              <fieldset className="space-y-4 p-4 border rounded-md">
-                <legend className="text-lg font-medium px-1 flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-primary" />
-                  {t('chartColorsTitle')}
-                </legend>
-                <div className="space-y-2">
-                  <Label htmlFor="chart_income_color_input">{t('chartIncomeColorLabel')}</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedIncomeColor || 'transparent' }} />
-                    <Controller name="chart_income_color" control={control} render={({ field }) => (<Input id="chart_income_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#10b981"/>)}/>
-                    <Dialog open={isIncomeColorModalOpen} onOpenChange={setIsIncomeColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectIncomeColorTitle') || "Select Income Color"}</DialogTitle></DialogHeader><Controller name="chart_income_color" control={control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsIncomeColorModalOpen(false); }} />)}/></DialogContent></Dialog>
-                  </div>
-                  {errors.chart_income_color && <p className="text-sm text-destructive">{errors.chart_income_color.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="chart_expense_color_input">{t('chartExpenseColorLabel')}</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedExpenseColor || 'transparent' }} />
-                    <Controller name="chart_expense_color" control={control} render={({ field }) => (<Input id="chart_expense_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#ef4444"/>)}/>
-                    <Dialog open={isExpenseColorModalOpen} onOpenChange={setIsExpenseColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectExpenseColorTitle') || "Select Expense Color"}</DialogTitle></DialogHeader><Controller name="chart_expense_color" control={control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsExpenseColorModalOpen(false); }} />)}/></DialogContent></Dialog>
-                  </div>
-                  {errors.chart_expense_color && <p className="text-sm text-destructive">{errors.chart_expense_color.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="chart_capital_color_input">{t('chartCapitalColorLabel')}</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedCapitalColor || 'transparent' }} />
-                    <Controller name="chart_capital_color" control={control} render={({ field }) => (<Input id="chart_capital_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#f59e0b"/>)}/>
-                     <Dialog open={isCapitalColorModalOpen} onOpenChange={setIsCapitalColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectCapitalColorTitle') || "Select Capital Color"}</DialogTitle></DialogHeader><Controller name="chart_capital_color" control={control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsCapitalColorModalOpen(false); }} />)}/></DialogContent></Dialog>
-                  </div>
-                  {errors.chart_capital_color && <p className="text-sm text-destructive">{errors.chart_capital_color.message}</p>}
-                </div>
-              </fieldset>
-              
-              <fieldset className="space-y-4 p-4 border rounded-md">
-                 <legend className="text-lg font-medium px-1 flex items-center gap-2">
-                  <ListChecks className="h-5 w-5 text-primary" />
-                  {t('displayPreferencesTitle')}
-                </legend>
-                <div className="space-y-2 sm:max-w-xs">
-                    <Label htmlFor="records_per_page">{t('recordsPerPageLabel')}</Label>
-                    <Controller name="records_per_page" control={control} render={({ field }) => (<Input id="records_per_page" type="number" min="1" max="100" placeholder={String(DEFAULT_RECORDS_PER_PAGE)} {...field} value={field.value ?? ''} className={errors.records_per_page ? 'border-destructive' : ''}/>)}/>
-                    <p className="text-xs text-muted-foreground">{t('recordsPerPageDesc')}</p>
-                    {errors.records_per_page && <p className="text-sm text-destructive">{errors.records_per_page.message}</p>}
-                </div>
-              </fieldset>
+        <form onSubmit={handleSubmit(handleSaveUserSettings)} className="space-y-6">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutDashboard className="h-5 w-5 text-primary" />
+                {t('dashboardLayoutSettingsTitle')}
+              </CardTitle>
+              <CardDescription>{t('dashboardLayoutSettingsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {dashboardCards.map((card) => (
+                  <Controller
+                    key={card.id}
+                    name={`dashboard_cards_visibility.${card.id}`}
+                    control={control}
+                    render={({ field }) => (
+                      <div className="flex items-center justify-between rounded-md p-3 bg-muted/30">
+                        <Label htmlFor={`visibility-${card.id}`} className="flex-1 cursor-pointer">{t(card.labelKey as any)}</Label>
+                        <Switch
+                          id={`visibility-${card.id}`}
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </div>
+                    )}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-              <Button type="submit" disabled={isSubmitting || effectiveIsLoading} className="w-full sm:w-auto">
-                {(isSubmitting || effectiveIsLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {t('saveSettingsButton')}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
+                {t('chartColorsTitle')}
+              </CardTitle>
+              <CardDescription>{t('userSettingsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="chart_income_color_input">{t('chartIncomeColorLabel')}</Label>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedIncomeColor || 'transparent' }} />
+                  <Controller name="chart_income_color" control={control} render={({ field }) => (<Input id="chart_income_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#10b981"/>)}/>
+                  <Dialog open={isIncomeColorModalOpen} onOpenChange={setIsIncomeColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectIncomeColorTitle') || "Select Income Color"}</DialogTitle></DialogHeader><Controller name="chart_income_color" control={control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsIncomeColorModalOpen(false); }} />)}/></DialogContent></Dialog>
+                </div>
+                {errors.chart_income_color && <p className="text-sm text-destructive">{errors.chart_income_color.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="chart_expense_color_input">{t('chartExpenseColorLabel')}</Label>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedExpenseColor || 'transparent' }} />
+                  <Controller name="chart_expense_color" control={control} render={({ field }) => (<Input id="chart_expense_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#ef4444"/>)}/>
+                  <Dialog open={isExpenseColorModalOpen} onOpenChange={setIsExpenseColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectExpenseColorTitle') || "Select Expense Color"}</DialogTitle></DialogHeader><Controller name="chart_expense_color" control={control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsExpenseColorModalOpen(false); }} />)}/></DialogContent></Dialog>
+                </div>
+                {errors.chart_expense_color && <p className="text-sm text-destructive">{errors.chart_expense_color.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="chart_capital_color_input">{t('chartCapitalColorLabel')}</Label>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedCapitalColor || 'transparent' }} />
+                  <Controller name="chart_capital_color" control={control} render={({ field }) => (<Input id="chart_capital_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#f59e0b"/>)}/>
+                   <Dialog open={isCapitalColorModalOpen} onOpenChange={setIsCapitalColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectCapitalColorTitle') || "Select Capital Color"}</DialogTitle></DialogHeader><Controller name="chart_capital_color" control={control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsCapitalColorModalOpen(false); }} />)}/></DialogContent></Dialog>
+                </div>
+                {errors.chart_capital_color && <p className="text-sm text-destructive">{errors.chart_capital_color.message}</p>}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ListChecks className="h-5 w-5 text-primary" />
+                {t('displayPreferencesTitle')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 sm:max-w-xs">
+                  <Label htmlFor="records_per_page">{t('recordsPerPageLabel')}</Label>
+                  <Controller name="records_per_page" control={control} render={({ field }) => (<Input id="records_per_page" type="number" min="1" max="100" placeholder={String(DEFAULT_RECORDS_PER_PAGE)} {...field} value={field.value ?? ''} className={errors.records_per_page ? 'border-destructive' : ''}/>)}/>
+                  <p className="text-xs text-muted-foreground">{t('recordsPerPageDesc')}</p>
+                  {errors.records_per_page && <p className="text-sm text-destructive">{errors.records_per_page.message}</p>}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting || effectiveIsLoading} className="w-full sm:w-auto">
+              {(isSubmitting || effectiveIsLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {t('saveSettingsButton')}
+            </Button>
+          </div>
+        </form>
       </div>
     </MainLayout>
   );
