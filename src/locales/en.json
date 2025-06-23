@@ -177,6 +177,7 @@
   "invalidEmail": "Invalid email address.",
   "loginPlaceholder": "Choose a username",
   "emailPlaceholder": "you@example.com",
+  "memberSinceLabel": "Member since",
 
   "//": "DASHBOARD",
   "totalBalance": "Total balance",

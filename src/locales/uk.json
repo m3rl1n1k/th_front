@@ -177,6 +177,7 @@
   "invalidEmail": "Неправильна адреса електронної пошти.",
   "loginPlaceholder": "Оберіть ім'я користувача",
   "emailPlaceholder": "you@example.com",
+  "memberSinceLabel": "Учасник з",
 
   "//": "ПАНЕЛЬ",
   "totalBalance": "Загальний баланс",

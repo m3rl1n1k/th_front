@@ -8,13 +8,13 @@ import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2, Lock, KeyRound as KeyIcon } from 'lucide-react';
+import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2, Lock, KeyRound as KeyIcon, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile, getCurrencies, changePassword as apiChangePassword } from '@/lib/api';
 import type { ApiError, User as UserType, CurrenciesApiResponse, CurrencyInfo, ChangePasswordPayload } from '@/types';
@@ -28,6 +28,7 @@ interface UserProfileData {
   email: string;
   profilePictureUrl?: string;
   userCurrencyCode?: string | null;
+  memberSince?: string;
 }
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
@@ -109,11 +110,12 @@ export default function ProfilePage() {
       setAllCurrencies(formattedCurrencies);
       setIsLoadingCurrencies(false);
       
-      const newProfileData = {
+      const newProfileData: UserProfileData = {
         login: user.login,
         email: user.email,
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`,
         userCurrencyCode: user.userCurrency?.code || null,
+        memberSince: user.memberSince,
       };
       setProfileData(newProfileData);
       editProfileForm.reset({
@@ -325,6 +327,17 @@ export default function ProfilePage() {
                   <p className="text-md font-medium text-foreground">{profileData.userCurrencyCode || t('notSet')}</p>
                 </div>
               </div>
+              {profileData.memberSince && (
+                <div className="flex items-center">
+                  <CalendarDays className="mr-4 h-6 w-6 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">{t('memberSinceLabel')}</p>
+                    <p className="text-md font-medium text-foreground">
+                      {format(parseISO(profileData.memberSince), 'PPP', { locale: dateFnsLocale })}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Dialog>
