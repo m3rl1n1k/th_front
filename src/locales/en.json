@@ -362,6 +362,7 @@
   "allCurrenciesLabel": "All currencies",
   "walletDetailsTitle": "Wallet details",
   "editWalletButton": "Edit wallet",
+  "editWalletTitle": "Edit Wallet",
   "walletNotFoundTitle": "Wallet not found",
   "walletNotFoundDesc": "The wallet you are looking for could not be found or you do not have permission to view it.",
   "updateWalletDetails": "Update wallet details",

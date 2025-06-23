@@ -362,6 +362,7 @@
   "allCurrenciesLabel": "Всі валюти",
   "walletDetailsTitle": "Деталі гаманця",
   "editWalletButton": "Редагувати гаманець",
+  "editWalletTitle": "Редагувати гаманець",
   "walletNotFoundTitle": "Гаманець не знайдено",
   "walletNotFoundDesc": "Гаманець, який ви шукаєте, не знайдено або у вас немає дозволу на його перегляд.",
   "updateWalletDetails": "Оновити деталі гаманця",
