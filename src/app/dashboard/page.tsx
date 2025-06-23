@@ -269,36 +269,36 @@ export default function DashboardPage() {
   };
 
   const renderTotalBalanceCard = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{t('totalBalance')}</CardTitle>
         <Wallet className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow flex items-center">
         {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold"><CurrencyDisplay amountInCents={summaryData.total_balance} /></div>}
       </CardContent>
     </Card>
   );
   
   const renderMonthlyIncomeCard = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{t('monthlyIncome')}</CardTitle>
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow flex items-center">
         {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={summaryData.month_income} /></div>}
       </CardContent>
     </Card>
   );
   
   const renderAverageExpensesCard = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{t('averageExpense')}</CardTitle>
         <BarChartHorizontal className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="space-y-2 pt-2">
+      <CardContent className="space-y-2 pt-2 flex-grow flex flex-col justify-center">
         {isLoading || !averageExpenses ? (
           <>
             <Skeleton className="h-5 w-full" />
