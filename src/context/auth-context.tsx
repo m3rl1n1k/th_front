@@ -8,6 +8,8 @@ import { fetchUserProfile, loginUser as apiLoginUser, registerUser as apiRegiste
 import type { User, ApiError, LoginCredentials, RegistrationPayload, LoginResponse, Invitation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from './i18n-context';
+import { SessionRenewalModal } from '@/components/common/session-renewal-modal';
+
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +21,7 @@ interface AuthContextType {
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
+  promptSessionRenewal: () => void; // Function to trigger the modal
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,7 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [pendingInvitationCount, setPendingInvitationCount] = useState(0); // Added state
+  const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
+  const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -49,11 +53,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
-    setPendingInvitationCount(0); // Reset count on clear
+    setPendingInvitationCount(0);
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
     }
   }, []);
+
+  const logout = useCallback(() => {
+    setIsLoading(true);
+    clearAuthData();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(INTENDED_DESTINATION_KEY);
+    }
+    toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
+    router.push('/login');
+    setIsLoading(false);
+  }, [router, toast, t, clearAuthData]);
+
+  const handleRenewalClose = useCallback(() => {
+    setIsRenewalModalOpen(false);
+    logout();
+  }, [logout]);
+  
+  const promptSessionRenewal = useCallback(() => {
+    // Prevent opening if already open or if no user was logged in previously
+    if (!isRenewalModalOpen && user) {
+        setIsRenewalModalOpen(true);
+    }
+  }, [isRenewalModalOpen, user]);
+
 
   const updatePendingInvitations = useCallback(async (apiToken: string, currentUserId?: string | number) => {
     if (!currentUserId) return;
@@ -65,9 +93,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ).length;
       setPendingInvitationCount(count);
     } catch (error) {
+      const apiError = error as ApiError;
+      if (apiError.code === 401) {
+        promptSessionRenewal();
+      }
       setPendingInvitationCount(0); // Reset on error
     }
-  }, []);
+  }, [promptSessionRenewal]);
 
   const processSuccessfulLogin = useCallback(async (apiToken: string, fetchedUser?: User) => {
     try {
@@ -86,6 +118,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw error;
     }
   }, [clearAuthData, updatePendingInvitations]);
+  
+  const handleRenewalSuccess = useCallback(async (newToken: string) => {
+    await processSuccessfulLogin(newToken);
+    setIsRenewalModalOpen(false);
+    toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
+    window.location.reload();
+  }, [processSuccessfulLogin, toast, t]);
+
 
   useEffect(() => {
     const attemptAutoLogin = async () => {
@@ -113,7 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     attemptAutoLogin();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Removed updatePendingInvitations from deps as it uses useCallback
+  }, []);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -166,17 +206,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    setIsLoading(true);
-    clearAuthData();
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(INTENDED_DESTINATION_KEY);
-    }
-    toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
-    router.push('/login');
-    setIsLoading(false);
-  }, [router, toast, t, clearAuthData]);
-
   const fetchUser = useCallback(async () => {
     const currentToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem(AUTH_TOKEN_KEY) : null);
     if (currentToken) {
@@ -190,13 +219,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await updatePendingInvitations(currentToken, userData.id); // Fetch invitations
       } catch (error) {
         const apiError = error as ApiError;
-        toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
-        clearAuthData();
-        const publicPaths = ['/login', '/register', '/terms', '/'];
-        if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
-          localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
+        if(apiError.code === 401 && user) {
+           promptSessionRenewal();
+        } else {
+            toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
+            clearAuthData();
+            const publicPaths = ['/login', '/register', '/terms', '/'];
+            if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
+            localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
+            }
+            router.replace('/login');
         }
-        router.replace('/login');
       } finally {
         setIsLoading(false);
       }
@@ -206,7 +239,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
        setIsLoading(false);
     }
-  }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations]);
+  }, [token, user, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations, promptSessionRenewal]);
 
   useEffect(() => {
     const publicPaths = ['/login', '/register', '/terms', '/'];
@@ -236,8 +269,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, pendingInvitationCount }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, pendingInvitationCount, promptSessionRenewal }}>
       {children}
+      <SessionRenewalModal
+        isOpen={isRenewalModalOpen}
+        onClose={handleRenewalClose}
+        onSuccess={handleRenewalSuccess}
+        email={user?.email || null}
+      />
     </AuthContext.Provider>
   );
 };

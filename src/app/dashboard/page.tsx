@@ -20,7 +20,7 @@ import { CurrencyDisplay } from '@/components/common/currency-display';
 import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary } from '@/types';
+import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary, ApiError } from '@/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { PieChart, Pie, Cell, Sector } from "recharts"
 import Link from 'next/link';
@@ -99,7 +99,7 @@ const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
 
 
 export default function DashboardPage() {
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   
@@ -179,8 +179,12 @@ export default function DashboardPage() {
           setTransactionTypes(formattedTypes);
           setCurrentMonthBudget(budgetListResponse.budgets[currentMonthKey] || null);
         })
-        .catch(error => {
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('dashboardDataLoadError') });
+        .catch((error: ApiError) => {
+          if (error.code === 401) {
+            promptSessionRenewal();
+          } else {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('dashboardDataLoadError') });
+          }
         })
         .finally(() => {
           setIsLoading(false);
@@ -188,7 +192,7 @@ export default function DashboardPage() {
     } else if (!isAuthenticated) {
       setIsLoading(false);
     }
-  }, [token, isAuthenticated, t, toast]);
+  }, [token, isAuthenticated, t, toast, promptSessionRenewal]);
 
   const onPieEnter = useCallback((_: any, index: number) => {
     setActivePieIndex(index);

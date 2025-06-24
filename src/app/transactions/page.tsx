@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, add, sub } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, MainCategory, RepeatedTransactionEntry, Frequency as AppFrequency, GetTransactionsListResponse, PaginationInfo } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, MainCategory, RepeatedTransactionEntry, Frequency as AppFrequency, GetTransactionsListResponse, PaginationInfo, ApiError } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,7 +63,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function TransactionsPage() {
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -185,8 +185,12 @@ export default function TransactionsPage() {
           setCurrentPage(pagination.page);
           setTotalPages(pagination.total_pages);
         })
-        .catch((error: any) => {
-          if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+        .catch((error: ApiError) => {
+          if (error.code === 401) {
+            promptSessionRenewal();
+          } else {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+          }
           if (pageToFetch === 1) setRawTransactions([]);
           setTotalPages(1);
         })
@@ -200,15 +204,19 @@ export default function TransactionsPage() {
       setIsLoadingMore(false);
       setTotalPages(1);
     }
-  }, [isAuthenticated, token, activeTab, toast, t]);
+  }, [isAuthenticated, token, activeTab, toast, t, promptSessionRenewal]);
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
         if (showLoading) setIsLoadingRepeatedDefinitions(true);
         getRepeatedTransactionsList(token)
             .then(response => setRepeatedDefinitions(response.repeated_transactions || []))
-            .catch(error => {
-                if (error.code !== 401) toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+            .catch((error: ApiError) => {
+                if (error.code === 401) {
+                  promptSessionRenewal();
+                } else {
+                  toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
+                }
                 setRepeatedDefinitions([]);
             })
             .finally(() => {
@@ -218,7 +226,7 @@ export default function TransactionsPage() {
         setRepeatedDefinitions([]);
         if (showLoading) setIsLoadingRepeatedDefinitions(false);
     }
-  }, [isAuthenticated, token, activeTab, t, toast]);
+  }, [isAuthenticated, token, activeTab, t, toast, promptSessionRenewal]);
 
   useEffect(() => {
     if (activeTab === "all" && isAuthenticated && token) {
@@ -694,7 +702,7 @@ export default function TransactionsPage() {
                           </Select>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:justify-end sm:space-x-3">
+                      <div className="flex flex-col gap-2 pt-0 sm:flex-row sm:justify-end sm:space-x-3">
                         <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="w-full sm:w-auto shadow-sm hover:shadow-md transition-shadow">{t('clearFiltersButton')}</Button>
                         <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="w-full sm:w-auto shadow-sm hover:shadow-md transition-shadow">
                           {(isLoadingTransactions && activeTab === 'all') && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
