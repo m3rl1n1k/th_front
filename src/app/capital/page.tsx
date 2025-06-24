@@ -132,7 +132,7 @@ export default function CapitalPage() {
   : t('unexpectedError');
       setInvitationsLoadingError(t('errorFetchingInvitations'));
       if (!capitalLoadingError) { // Only toast if capital didn't already error
-        toast({ variant: 'destructive', title: t('errorFetchingData'), description: message || t('unexpectedError')});
+        toast({ variant: 'destructive', title: t('errorFetchingData'), description: normalizeApiErrorMessage(apiError.message) || t('unexpectedError')});
       }
       setReceivedInvitations([]);
       setSentInvitations([]);
@@ -145,6 +145,14 @@ export default function CapitalPage() {
 
     setIsLoadingPageData(false);
   }, [isAuthenticated, token, user, t, toast, fetchUser, capitalLoadingError, invitationsLoadingError, promptSessionRenewal]);
+  function normalizeApiErrorMessage(
+    error: string | { [key: string]: any; field: string; message: string }[]
+  ): string {
+    if (typeof error === 'string') return error;
+    if (Array.isArray(error)) return error.map(e => e.message).join(', ');
+    return 'Unknown error';
+  }
+  
 
 
   useEffect(() => {
