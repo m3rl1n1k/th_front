@@ -12,7 +12,7 @@ import { getWalletsList, getWalletTypes, deleteWallet } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { WalletCards, Landmark, AlertTriangle, PlusCircle, PiggyBank, CreditCard, LayoutGrid, List, MoreHorizontal, Edit3, Trash2, Eye, Loader2, Archive, ShieldCheck, HelpCircle } from 'lucide-react';
-import type { WalletDetails, WalletTypeMap } from '@/types'; // WalletTypeApiResponse removed as it's an internal detail for api.ts
+import type { WalletDetails, WalletTypeMap, ApiError } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -47,7 +47,7 @@ const walletTypeSortOrder: Record<string, number> = {
 
 
 export default function WalletsPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -69,7 +69,11 @@ export default function WalletsPage() {
         .then(data => {
           setWallets(data.wallets || []);
         })
-        .catch(error => {
+        .catch((error: ApiError) => {
+          if (error.code === 401) {
+            promptSessionRenewal();
+            return;
+          }
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setWallets([]);
         })
@@ -87,7 +91,11 @@ export default function WalletsPage() {
         .then((data: { types: WalletTypeMap }) => { // Adjusted type here
           setWalletTypeMap(data.types || {});
         })
-        .catch(error => {
+        .catch((error: ApiError) => {
+          if (error.code === 401) {
+            promptSessionRenewal();
+            return;
+          }
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingTypes(false));
@@ -173,6 +181,13 @@ export default function WalletsPage() {
       toast({ title: t('walletDeletedTitle'), description: t('walletDeletedDesc') });
       fetchWalletData(); 
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        setIsDeleting(false);
+        setDeleteDialogOpen(false);
+        setWalletToDelete(null);
+        return;
+      }
       toast({ variant: "destructive", title: t('errorDeletingWallet'), description: error.message });
     } finally {
       setIsDeleting(false);

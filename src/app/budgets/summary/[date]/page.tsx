@@ -14,7 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import { getBudgetSummaryForMonth, deleteBudget } from '@/lib/api';
-import type { BudgetSummaryByMonthResponse, BudgetCategorySummaryItem as ApiBudgetCategorySummaryItem } from '@/types';
+import type { BudgetSummaryByMonthResponse, BudgetCategorySummaryItem as ApiBudgetCategorySummaryItem, ApiError } from '@/types';
 import { ArrowLeft, Target, TrendingUp, TrendingDown, Loader2, AlertTriangle, BarChartHorizontalBig, Shapes, Edit3, Trash2, MoreHorizontal } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,7 @@ interface ProcessedCategoryBudgetDetail extends ApiBudgetCategorySummaryItem {
 
 
 export default function BudgetSummaryPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -76,12 +76,16 @@ export default function BudgetSummaryPage() {
       }));
       setCategoryBudgets(processedDetails);
     } catch (err: any) {
+      if ((err as ApiError).code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       setError(err.message || t('errorFetchingBudgetSummary'));
       toast({ variant: "destructive", title: t('errorFetchingBudgetSummary'), description: err.message });
     } finally {
       if(showLoading) setIsLoading(false);
     }
-  }, [monthYear, isAuthenticated, token, t, toast]);
+  }, [monthYear, isAuthenticated, token, t, toast, promptSessionRenewal]);
 
   useEffect(() => {
     fetchBudgetSummary();
@@ -122,6 +126,10 @@ export default function BudgetSummaryPage() {
       toast({ title: t('budgetItemDeletedTitle'), description: t('budgetItemDeletedDesc', { categoryName: itemToDelete.name }) });
       fetchBudgetSummary(false); 
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       toast({ variant: "destructive", title: t('errorDeletingBudgetItem'), description: error.message });
     } finally {
       setIsDeleting(false);
@@ -320,4 +328,3 @@ export default function BudgetSummaryPage() {
     </MainLayout>
   );
 }
-

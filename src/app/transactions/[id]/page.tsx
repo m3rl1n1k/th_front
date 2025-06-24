@@ -23,7 +23,8 @@ import type {
   Transaction, 
   TransactionType as AppTransactionType, 
   Frequency, 
-  SubCategory 
+  SubCategory,
+  ApiError,
 } from '@/types';
 import { ArrowLeft, Edit3, Loader2, AlertTriangle, DollarSign, Tag, CalendarDays, Repeat, WalletIcon, Info, ArrowRightLeft } from 'lucide-react';
 
@@ -33,7 +34,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function ViewTransactionPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
@@ -101,12 +102,16 @@ export default function ViewTransactionPage() {
       }
 
     } catch (err: any) {
+      if ((err as ApiError).code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       setError(err.message || t('errorFetchingData'));
       toast({ variant: "destructive", title: t('errorFetchingData'), description: err.message });
     } finally {
       setIsLoading(false);
     }
-  }, [id, token, t, toast]);
+  }, [id, token, t, toast, promptSessionRenewal]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -251,4 +256,3 @@ export default function ViewTransactionPage() {
     </MainLayout>
   );
 }
-    

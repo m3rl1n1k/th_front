@@ -19,7 +19,7 @@ import { useAuth } from '@/context/auth-context';
 import { createBudget, getMainCategories, getBudgetSummaryForMonth } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { CreateBudgetPayload, MainCategory as ApiMainCategory, BudgetCategorySummaryItem } from '@/types';
+import type { CreateBudgetPayload, MainCategory as ApiMainCategory, BudgetCategorySummaryItem, ApiError } from '@/types';
 import { ArrowLeft, Save, Loader2, Shapes, CalendarDays, DollarSign, AlertTriangle } from 'lucide-react';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
@@ -40,7 +40,7 @@ const createBudgetFormSchema = (t: Function) => z.object({
 type BudgetFormData = z.infer<ReturnType<typeof createBudgetFormSchema>>;
 
 export default function NewBudgetPage() {
-  const { token, isAuthenticated, user } = useAuth();
+  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -68,14 +68,18 @@ export default function NewBudgetPage() {
       setIsLoadingCategories(true);
       getMainCategories(token)
         .then(data => setMainCategoriesHierarchical(Array.isArray(data) ? data : []))
-        .catch(error => {
+        .catch((error: ApiError) => {
+          if (error.code === 401) {
+            promptSessionRenewal();
+            return;
+          }
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setMainCategoriesHierarchical([]);
         })
         .finally(() => setIsLoadingCategories(false));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, toast, t]);
+  }, [token, isAuthenticated, toast, t, promptSessionRenewal]);
 
   // Removed useEffect for fetching existing budgets for revert
 
@@ -104,6 +108,10 @@ export default function NewBudgetPage() {
       toast({ title: t('budgetCreatedTitle'), description: t('budgetCreatedDesc') });
       router.push('/budgets');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       // Simplified error handling for revert
       toast({ variant: "destructive", title: t('errorCreatingBudget'), description: error.message || t('unexpectedError') });
     }

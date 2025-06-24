@@ -13,14 +13,14 @@ import { useAuth } from '@/context/auth-context';
 import { getFeedbacks } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { FeedbackTypeOption } from '@/types';
-import type { Feedback as FeedbackItemType } from '@/types';
+import type { Feedback as FeedbackItemType, ApiError } from '@/types';
 import { Loader2, ShieldAlert, ClipboardList, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const REQUIRED_ROLE = "ROLE_MODERATOR_FEEDBACK";
 
 export default function AdminFeedbacksPage() {
-  const { token, isAuthenticated, user, isLoading: authLoading } = useAuth();
+  const { token, isAuthenticated, user, isLoading: authLoading, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
@@ -59,7 +59,11 @@ export default function AdminFeedbacksPage() {
           }));
           setFeedbacks(normalizedFeedbacks);
         })
-        .catch(error => {
+        .catch((error: ApiError) => {
+          if (error.code === 401) {
+            promptSessionRenewal();
+            return;
+          }
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setFeedbacks([]);
         })
@@ -67,7 +71,7 @@ export default function AdminFeedbacksPage() {
           setIsLoadingFeedbacks(false);
         });
     }
-  }, [token, isAuthenticated, authLoading, userHasRequiredRole, router, t, toast]);
+  }, [token, isAuthenticated, authLoading, userHasRequiredRole, router, t, toast, promptSessionRenewal]);
 
 
   const getFeedbackTypeBadgeVariant = (type: FeedbackTypeOption): "default" | "secondary" | "destructive" | "outline" => {

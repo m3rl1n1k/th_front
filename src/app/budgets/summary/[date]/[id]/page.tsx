@@ -35,7 +35,7 @@ const editBudgetFormSchema = (t: Function) => z.object({
 type BudgetEditFormData = z.infer<ReturnType<typeof editBudgetFormSchema>>;
 
 export default function EditBudgetItemPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -81,12 +81,16 @@ export default function EditBudgetItemPage() {
         });
       }
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       toast({ variant: "destructive", title: t('errorFetchingBudgetItem'), description: error.message });
       setErrorOccurred(true);
     } finally {
       setIsLoadingData(false);
     }
-  }, [budgetId, monthYear, token, reset, toast, t]);
+  }, [budgetId, monthYear, token, reset, toast, t, promptSessionRenewal]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -113,6 +117,11 @@ export default function EditBudgetItemPage() {
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit?.subCategory?.name || t('category')}) });
       router.push(`/budgets/summary/${monthYear}`); // Navigate back to the summary page for that month
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        setFormIsSubmitting(false);
+        return;
+      }
       const apiError = error as ApiError;
       let errorMessage = apiError.message || t('unexpectedError');
 

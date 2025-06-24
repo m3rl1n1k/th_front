@@ -14,7 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import { getBudgetList, deleteBudgetsForMonth } from '@/lib/api'; 
-import type { BudgetListApiResponse, MonthlyBudgetSummary as ApiMonthlyBudget } from '@/types';
+import type { BudgetListApiResponse, MonthlyBudgetSummary as ApiMonthlyBudget, ApiError } from '@/types';
 import { Target, PlusCircle, TrendingUp, TrendingDown, Loader2, BarChartHorizontalBig, Eye, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -50,7 +50,7 @@ interface ItemToDeleteDetails {
 
 
 export default function BudgetsPage() {
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -99,13 +99,17 @@ export default function BudgetsPage() {
       }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
       setMonthlyBudgets(processed);
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
       setMonthlyBudgets([]);
     } finally {
       if (showLoadingIndicator) setIsLoading(false); 
       isFetchingRef.current = false;
     }
-  }, [isAuthenticated, token, toast, t, dateFnsLocale]);
+  }, [isAuthenticated, token, toast, t, dateFnsLocale, promptSessionRenewal]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -165,6 +169,10 @@ export default function BudgetsPage() {
       });
       fetchBudgets(false); 
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       toast({
         variant: "destructive",
         title: t('errorDeletingMonthBudgets'),

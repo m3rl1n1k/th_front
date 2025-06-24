@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { MainLayout } from '@/components/layout/main-layout';
 import { useAuth } from '@/context/auth-context';
 import { getMainCategories, deleteMainCategory, deleteSubCategory } from '@/lib/api';
-import type { MainCategory, SubCategory } from '@/types';
+import type { MainCategory, SubCategory, ApiError } from '@/types';
 import { useTranslation } from '@/context/i18n-context';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -41,7 +41,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function CategoriesPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -61,7 +61,11 @@ export default function CategoriesPage() {
         .then(data => {
           setMainCategories(Array.isArray(data) ? data : []);
         })
-        .catch(error => {
+        .catch((error: ApiError) => {
+          if (error.code === 401) {
+            promptSessionRenewal();
+            return;
+          }
           setMainCategories([]);
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
@@ -70,7 +74,7 @@ export default function CategoriesPage() {
       setIsLoading(false);
       setMainCategories([]);
     }
-  }, [token, isAuthenticated, toast, t]);
+  }, [token, isAuthenticated, toast, t, promptSessionRenewal]);
 
   useEffect(() => {
     fetchCategories();
@@ -102,6 +106,13 @@ export default function CategoriesPage() {
       }
       fetchCategories(); // Refresh list
     } catch (error: any) {
+      if ((error as ApiError).code === 401) {
+        promptSessionRenewal();
+        setIsDeleting(false);
+        setShowDeleteDialog(false);
+        setItemToDelete(null);
+        return;
+      }
       toast({
         variant: "destructive",
         title: itemToDelete.type === 'main' ? t('errorDeletingMainCategory') : t('errorDeletingSubCategory'),
@@ -355,6 +366,3 @@ export default function CategoriesPage() {
     </MainLayout>
   );
 }
-
-
-    
