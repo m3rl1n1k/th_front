@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getReportData } from '@/lib/api';
 import type { ReportDataResponse } from '@/types';
 import { FileSignature, AlertTriangle, Loader2, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown, LineChart as LineChartIcon } from 'lucide-react';
-import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart } from 'recharts';
+import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Cell } from 'recharts';
 import { format, parse } from 'date-fns';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
@@ -262,7 +262,11 @@ export default function GeneralReportPage() {
                                     cursor={{ fill: 'hsl(var(--muted))' }}
                                     labelClassName="font-bold text-primary"
                                 />
-                                <Bar dataKey="amount" name={t('amount')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                <Bar dataKey="amount" name={t('amount')} radius={[0, 4, 4, 0]}>
+                                    {categoryChartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color || 'hsl(var(--primary))'} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
