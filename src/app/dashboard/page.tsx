@@ -365,14 +365,14 @@ export default function DashboardPage() {
   );
 
   const renderExpensesChart = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 h-full flex flex-col lg:col-span-2">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col lg:col-span-2">
+      <CardHeader className="flex flex-col space-y-1.5 p-6">
         <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <PieChartIcon className="h-6 w-6 text-primary" />
           {t('dashboardCardExpensesChart')}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex-grow flex items-center justify-center">
+      <CardContent className="p-6 pt-0 flex-grow flex items-center justify-center">
         {isLoading ? (<div className="flex justify-center items-center h-72"><Skeleton className="h-64 w-64 rounded-full" /></div>) : !expensesByCategoryData || transformedChartData.length === 0 ? (<div className="flex flex-col items-center justify-center h-72 text-center"><PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" /><p className="text-muted-foreground">{t('noDataAvailable')}</p><p className="text-sm text-muted-foreground">{t('tryAddingExpenses')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<ChartContainer config={chartConfig} className="mx-auto h-[25rem] w-[35rem] min-w-[35rem]"><PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}><ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={customTooltipFormatter} />} /><Pie data={transformedChartData} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius="30%" strokeWidth={2} activeIndex={activePieIndex} activeShape={renderActiveShape} onMouseEnter={onPieEnter}>{transformedChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />))}</Pie></PieChart></ChartContainer>)}
       </CardContent>
     </Card>
