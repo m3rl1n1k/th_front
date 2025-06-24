@@ -61,38 +61,60 @@ interface RequestOptions extends RequestInit {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    let errorData: ApiError = {
-      message: response.statusText || 'An unknown error occurred',
-      code: response.status,
-    };
     let rawResponseBody = '';
+    let jsonData: any = null;
+    let finalErrorMessage: string = response.statusText || 'An unknown error occurred';
 
     try {
       rawResponseBody = await response.text();
-      errorData.rawResponse = rawResponseBody;
-
-      const jsonData = JSON.parse(rawResponseBody);
-
-      if (typeof jsonData === 'object' && jsonData !== null) {
-        if (Array.isArray(jsonData.message) && jsonData.message.length > 0 && jsonData.message[0].field && jsonData.message[0].message) {
-          errorData.message = jsonData.message.map((err: any) => `${err.field}: ${err.message}`).join('; ');
-        } else {
-           errorData.message = jsonData.message || jsonData.error || jsonData.detail || errorData.message;
-        }
-        errorData.code = jsonData.code || response.status;
-        errorData.errors = jsonData.errors; 
-      } else {
-        errorData.message = rawResponseBody || errorData.message;
+      // Only parse if there's content
+      if (rawResponseBody) {
+        jsonData = JSON.parse(rawResponseBody);
       }
     } catch (e) {
-      errorData.message = rawResponseBody || errorData.message;
+      // JSON parsing failed, use raw text if available.
+      const errorToThrow: ApiError = {
+        message: rawResponseBody || finalErrorMessage,
+        code: response.status,
+        rawResponse: rawResponseBody,
+      };
+      throw errorToThrow;
     }
-    throw errorData;
+
+    if (typeof jsonData === 'object' && jsonData !== null) {
+      if (jsonData.errors && typeof jsonData.errors === 'object') {
+        // Format from `errors` object: { "field": ["message"] }
+        finalErrorMessage = Object.values(jsonData.errors).flat().join('; ');
+      } else if (Array.isArray(jsonData.message)) {
+         // Format from `message` array: [{ "field": "...", "message": "..." }]
+        finalErrorMessage = jsonData.message
+          .map((err: any) => err.message || JSON.stringify(err))
+          .join('; ');
+      } else if (jsonData.message || jsonData.error || jsonData.detail) {
+        // Fallback to other possible string keys
+        finalErrorMessage = jsonData.message || jsonData.error || jsonData.detail;
+      }
+    } else if (rawResponseBody) {
+      // Handle cases where the response is a non-JSON string
+      finalErrorMessage = rawResponseBody;
+    }
+
+    const errorToThrow: ApiError = {
+      message: finalErrorMessage,
+      code: jsonData?.code || response.status,
+      errors: jsonData?.errors,
+      rawResponse: rawResponseBody,
+    };
+
+    throw errorToThrow;
   }
 
-  if (response.status === 204) {
+  // Handle successful but empty responses (e.g., 204 No Content)
+  const contentType = response.headers.get("content-type");
+  if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
     return undefined as T;
   }
+
   return response.json();
 }
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -104,7 +103,7 @@ export default function DashboardPage() {
   const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
-  
+
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
   const [averageExpenses, setAverageExpenses] = useState<AverageExpensesData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
@@ -271,7 +270,7 @@ export default function DashboardPage() {
     const ex = mx + (cos >= 0 ? 1 : -1) * 22;
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
-    
+
     return (
       <g>
         <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
@@ -318,7 +317,7 @@ export default function DashboardPage() {
       </CardContent>
     </Card>
   );
-  
+
   const renderMonthlyIncomeCard = () => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -330,7 +329,7 @@ export default function DashboardPage() {
       </CardContent>
     </Card>
   );
-  
+
   const renderAverageExpensesCard = () => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -396,7 +395,7 @@ export default function DashboardPage() {
   const renderCurrentMonthBudget = () => {
     if (isLoading) return <Skeleton className="h-full min-h-[400px]" />;
     const currentMonthKey = format(new Date(), 'yyyy-MM');
-    
+
     return (
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 h-full">
         <CardHeader className="p-6">
@@ -432,7 +431,7 @@ export default function DashboardPage() {
       </Card>
     );
   };
-  
+
   const allCards: DashboardCard[] = [
     { id: 'total_balance', component: renderTotalBalanceCard() },
     { id: 'monthly_income', component: renderMonthlyIncomeCard() },
@@ -457,7 +456,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-          {isLoading ? 
+          {isLoading ?
             [...Array(6)].map((_, i) => <Skeleton key={i} className="h-48" />) :
             visibleCards.map(({ id, component, className }) => (
               <div key={id} className={cn(className, "self-stretch")}>

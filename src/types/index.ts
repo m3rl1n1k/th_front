@@ -124,7 +124,7 @@ export interface TransactionType {
 }
 
 export interface ApiError {
-  message: string | Array<{ field: string; message: string; [key: string]: any }>;
+  message: string;
   code?: number;
   errors?: Record<string, string[]>;
   error?: string;

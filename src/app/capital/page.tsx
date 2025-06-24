@@ -118,9 +118,12 @@ export default function CapitalPage() {
       setSentInvitations(invitationsResponse.invitation_list || []);
     } catch (err: any) {
       const apiError = err as ApiError;
+      const message = typeof apiError.message === 'string'
+  ? apiError.message
+  : t('unexpectedError');
       setInvitationsLoadingError(t('errorFetchingInvitations'));
       if (!capitalLoadingError) { // Only toast if capital didn't already error
-        toast({ variant: 'destructive', title: t('errorFetchingData'), description: apiError.message || t('unexpectedError')});
+        toast({ variant: 'destructive', title: t('errorFetchingData'), description: message || t('unexpectedError')});
       }
       setReceivedInvitations([]);
       setSentInvitations([]);
