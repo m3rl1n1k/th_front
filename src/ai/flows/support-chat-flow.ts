@@ -67,15 +67,19 @@ Here is a summary of the features available in FinanceFlow. Use this information
 
 Be concise and clear in your answers.`;
     
+    const chatHistoryForPrompt = history
+    .map((msg) => `${msg.role}: ${msg.content}`)
+    .join('\n');
+
+    const fullPrompt = `${systemPrompt}\n\n## Chat History:\n${chatHistoryForPrompt}\n\n## New User Message:\n${message}`;
+
     const response = await ai.generate({
-      model: 'googleai/gemini-2.0-flash',
-      prompt: message,
-      history: history,
-      system: systemPrompt,
+    model: 'googleai/gemini-2.0-flash',
+    prompt: fullPrompt,
     });
 
     const textResponse = response.text || "Sorry, I couldn't generate a response. Please try again.";
-    
+
     return { response: textResponse };
-  }
+    }
 );
