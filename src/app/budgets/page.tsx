@@ -221,7 +221,7 @@ export default function BudgetsPage() {
               <Target className="mr-3 h-8 w-8 text-primary" />
               {t('budgetsTitle')}
             </h1>
-            <Button onClick={() => router.push('/budgets/new')}>
+            <Button onClick={() => router.push('/budgets/new')} className="hidden sm:inline-flex">
               <PlusCircle className="mr-2 h-4 w-4" />
               {t('budgetCreateNewButton')}
             </Button>
@@ -233,6 +233,10 @@ export default function BudgetsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">{t('budgetNoBudgetsFoundDescription')}</p>
+              <Button onClick={() => router.push('/budgets/new')} className="mt-4 sm:hidden">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t('budgetCreateNewButton')}
+              </Button>
             </CardContent>
           </Card>
         </div>
