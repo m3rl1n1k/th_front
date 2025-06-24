@@ -27,6 +27,11 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, KeyboardSensor, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
+
 
 interface DashboardSummaryData {
   total_balance: number;
@@ -79,13 +84,6 @@ const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
 
 type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget';
 
-interface DashboardCard {
-  id: DashboardCardId;
-  component: React.ReactNode;
-  className?: string;
-}
-
-const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
 
 const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'expenses_chart', 'last_activity', 'current_budget'];
 const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
@@ -97,6 +95,14 @@ const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   current_budget: true,
 };
 
+
+const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
+
+interface DashboardCard {
+  id: DashboardCardId;
+  component: React.ReactNode;
+  className?: string;
+}
 
 export default function DashboardPage() {
   const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
@@ -125,9 +131,19 @@ export default function DashboardPage() {
       if (storedSettings) {
         try {
           const parsedSettings = JSON.parse(storedSettings);
+          const allCardIds = new Set(DEFAULT_CARD_ORDER);
+
+          const savedOrder = parsedSettings.dashboard_cards_order || DEFAULT_CARD_ORDER;
+          const currentOrder = savedOrder.filter((id: string) => allCardIds.has(id));
+          DEFAULT_CARD_ORDER.forEach(card => {
+              if (!currentOrder.includes(card)) {
+                  currentOrder.push(card);
+              }
+          });
+
           setDashboardSettings({
-            order: parsedSettings.dashboard_cards_order || DEFAULT_CARD_ORDER,
-            visibility: parsedSettings.dashboard_cards_visibility || DEFAULT_VISIBILITY,
+            order: currentOrder,
+            visibility: { ...DEFAULT_VISIBILITY, ...parsedSettings.dashboard_cards_visibility },
           });
         } catch (e) {
           // Failed to parse dashboard settings, using defaults.
@@ -249,7 +265,7 @@ export default function DashboardPage() {
   };
 
   const renderActiveShape = (props: ActiveShapeProps) => {
-    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
     const sin = Math.sin(-midAngle * (Math.PI / 180));
     const cos = Math.cos(-midAngle * (Math.PI / 180));
     const sx = cx + (outerRadius + 10) * cos;
@@ -259,12 +275,6 @@ export default function DashboardPage() {
     const ex = mx + (cos >= 0 ? 1 : -1) * 22;
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
-
-    const formattedValue = new Intl.NumberFormat('de-DE', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      useGrouping: false,
-    }).format(value / 100);
     
     return (
       <g>
@@ -273,10 +283,7 @@ export default function DashboardPage() {
         <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 6} outerRadius={outerRadius + 10} fill={fill} />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
         <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-sm pl-2">
-          {`${formattedValue} ${user?.userCurrency?.code || ''}`}
-        </text>
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs pl-2">{`(${(percent * 100).toFixed(2)}%)`}</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs pl-2">{`(${(percent * 100).toFixed(2)}%)`}</text>
       </g>
     );
   };
@@ -457,8 +464,8 @@ export default function DashboardPage() {
           {isLoading ? 
             [...Array(6)].map((_, i) => <Skeleton key={i} className="h-48" />) :
             visibleCards.map(({ id, component, className }) => (
-              <div key={id} className={className}>
-                {component}
+              <div key={id} className={cn(className, "self-stretch")}>
+                {React.cloneElement(component as React.ReactElement, { className: 'h-full' })}
               </div>
           ))}
         </div>
