@@ -615,6 +615,9 @@
   "saveLayoutButton": "Save Layout",
   "generalSettingsTitle": "General Settings",
   "generalSettingsDesc": "Manage general application settings.",
+  "selectIncomeColorTitle": "Select Income Color",
+  "selectExpenseColorTitle": "Select Expense Color",
+  "selectCapitalColorTitle": "Select Capital Color",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Take control of your finances",

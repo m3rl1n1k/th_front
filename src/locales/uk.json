@@ -615,6 +615,9 @@
   "saveLayoutButton": "Зберегти макет",
   "generalSettingsTitle": "Загальні налаштування",
   "generalSettingsDesc": "Керуйте загальними налаштуваннями додатку.",
+  "selectIncomeColorTitle": "Виберіть колір доходу",
+  "selectExpenseColorTitle": "Виберіть колір витрат",
+  "selectCapitalColorTitle": "Виберіть колір капіталу",
 
   "//": "HOMEPAGE",
   "homePageTitle": "Керуйте своїми фінансами",
