@@ -130,7 +130,7 @@ export default function DashboardPage() {
             visibility: parsedSettings.dashboard_cards_visibility || DEFAULT_VISIBILITY,
           });
         } catch (e) {
-          console.error("Failed to parse dashboard settings, using defaults.", e);
+          // Failed to parse dashboard settings, using defaults.
           setDashboardSettings({
             order: DEFAULT_CARD_ORDER,
             visibility: DEFAULT_VISIBILITY,
@@ -255,6 +255,13 @@ export default function DashboardPage() {
     const ex = mx + (cos >= 0 ? 1 : -1) * 22;
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
+
+    const formattedValue = new Intl.NumberFormat('de-DE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: false,
+    }).format(value / 100);
+    
     return (
       <g>
         <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
@@ -262,7 +269,9 @@ export default function DashboardPage() {
         <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 6} outerRadius={outerRadius + 10} fill={fill} />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
         <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-sm pl-2"><CurrencyDisplay amountInCents={value} currencyCode={user?.userCurrency?.code} /></text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-sm pl-2">
+          {`${formattedValue} ${user?.userCurrency?.code || ''}`}
+        </text>
         <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="hsl(var(--muted-foreground))" className="text-xs pl-2">{`(${(percent * 100).toFixed(2)}%)`}</text>
       </g>
     );
