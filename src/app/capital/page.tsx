@@ -42,6 +42,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { format, parseISO } from 'date-fns';
 import { CurrencyDisplay } from '@/components/common/currency-display';
+import { Alert } from '@/components/ui/alert';
 
 const createCapitalSchema = (t: Function) => z.object({
   name: z.string().min(3, { message: t('sharingGroupNameMinLengthError') }).max(50, { message: t('sharingGroupNameMaxLengthError') }),
