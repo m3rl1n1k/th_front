@@ -32,7 +32,10 @@ export type SupportChatOutput = z.infer<typeof SupportChatOutputSchema>;
 
 
 export async function supportChat(input: SupportChatInput): Promise<SupportChatOutput> {
-  return supportChatFlow(input);
+  console.log('DEV LOG: Invoking supportChat flow with input:', JSON.stringify(input, null, 2));
+  const result = await supportChatFlow(input);
+  console.log('DEV LOG: supportChat flow returned output:', JSON.stringify(result, null, 2));
+  return result;
 }
 
 
@@ -73,12 +76,16 @@ Be concise and clear in your answers.`;
 
     const fullPrompt = `${systemPrompt}\n\n## Chat History:\n${chatHistoryForPrompt}\n\n## New User Message:\n${message}`;
 
+    console.log('DEV LOG: Full prompt being sent to AI model:\n', fullPrompt);
+
     const response = await ai.generate({
     model: 'googleai/gemini-2.0-flash',
     prompt: fullPrompt,
     });
 
     const textResponse = response.text || "Sorry, I couldn't generate a response. Please try again.";
+
+    console.log('DEV LOG: Raw text response from AI model:', textResponse);
 
     return { response: textResponse };
     }
