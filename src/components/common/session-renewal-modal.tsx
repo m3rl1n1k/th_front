@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -72,6 +73,9 @@ export function SessionRenewalModal({ isOpen, onClose, onSuccess, email }: Sessi
   };
   
   const handleOpenChange = (open: boolean) => {
+    if (isSubmitting) {
+        return; // Prevent closing while submitting
+    }
     if (!open) {
       reset();
       setLocalError(null);
@@ -113,7 +117,7 @@ export function SessionRenewalModal({ isOpen, onClose, onSuccess, email }: Sessi
           )}
 
           <AlertDialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               {t('logout')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
