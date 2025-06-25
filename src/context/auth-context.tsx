@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { t } = useTranslation();
 
   const clearAuthData = useCallback(() => {
+    console.log('DEV LOG: Clearing auth data from state and session storage.');
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
@@ -61,6 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(() => {
     setIsLoading(true);
+    console.log('DEV LOG: Logging out...');
     clearAuthData();
     if (typeof window !== 'undefined') {
       localStorage.removeItem(INTENDED_DESTINATION_KEY);
@@ -71,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [router, toast, t, clearAuthData]);
 
   const handleRenewalClose = useCallback(() => {
+    console.log('DEV LOG: Session renewal modal closed by user. Logging out.');
     setIsRenewalModalOpen(false);
     logout();
   }, [logout]);
@@ -78,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const promptSessionRenewal = useCallback(() => {
     // Prevent opening if already open or if no user was logged in previously
     if (!isRenewalModalOpen && user) {
+        console.log('DEV LOG: Prompting for session renewal.');
         setIsRenewalModalOpen(true);
     }
   }, [isRenewalModalOpen, user]);
@@ -102,24 +106,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [promptSessionRenewal]);
 
   const processSuccessfulLogin = useCallback(async (apiToken: string, fetchedUser?: User) => {
+    console.log('DEV LOG: Processing successful login...');
     try {
       let userData = fetchedUser || await fetchUserProfile(apiToken);
       userData = augmentUserData(userData);
+      console.log('DEV LOG: Fetched and augmented user data:', userData);
       setUser(userData);
       setToken(apiToken);
       setIsAuthenticated(true);
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(AUTH_TOKEN_KEY, apiToken);
+        console.log('DEV LOG: Auth token stored in session storage.');
       }
       await updatePendingInvitations(apiToken, userData.id); // Fetch invitations after user is set
       return userData;
     } catch (error) {
+      console.error('DEV LOG: Error during post-login processing:', error);
       clearAuthData();
       throw error;
     }
   }, [clearAuthData, updatePendingInvitations]);
   
   const handleRenewalSuccess = useCallback(async (newToken: string) => {
+    console.log('DEV LOG: Session renewal successful. Processing new token.');
     await processSuccessfulLogin(newToken);
     setIsRenewalModalOpen(false);
     toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
@@ -129,9 +138,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const attemptAutoLogin = async () => {
+      console.log('DEV LOG: Attempting auto-login on component mount.');
       if (typeof window !== 'undefined') {
         const storedToken = sessionStorage.getItem(AUTH_TOKEN_KEY);
         if (storedToken) {
+          console.log('DEV LOG: Found token in session storage. Verifying...');
           try {
             let userData = await fetchUserProfile(storedToken);
             userData = augmentUserData(userData);
@@ -139,12 +150,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setToken(storedToken);
             setIsAuthenticated(true);
             await updatePendingInvitations(storedToken, userData.id); // Fetch invitations
+            console.log('DEV LOG: Auto-login successful.');
           } catch (error) {
+            console.log('DEV LOG: Auto-login failed. Clearing auth data.', error);
             clearAuthData();
           } finally {
             setIsLoading(false);
           }
         } else {
+          console.log('DEV LOG: No token found in session storage.');
           setIsLoading(false);
         }
       } else {
@@ -157,8 +171,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsLoading(true);
+    console.log(`DEV LOG: Attempting login for user: ${credentials.username}`);
     try {
       const response: LoginResponse = await apiLoginUser(credentials);
+      console.log('DEV LOG: Login API call successful. Received token and user data.');
       await processSuccessfulLogin(response.token, response.user);
       toast({ title: t('loginSuccessTitle'), description: t('loginSuccessDesc') });
 
@@ -181,9 +197,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       }
+      console.log(`DEV LOG: Redirecting to ${redirectTo}`);
       router.push(redirectTo);
     } catch (error) {
       const apiError = error as ApiError;
+      console.error('DEV LOG: Login failed.', apiError);
       toast({
         variant: "destructive",
         title: t('loginFailedTitle'),
@@ -197,9 +215,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = useCallback(async (payload: RegistrationPayload) => {
     setIsLoading(true);
+    console.log(`DEV LOG: Attempting registration for email: ${payload.email}`);
     try {
       await apiRegisterUser(payload);
+      console.log('DEV LOG: Registration API call successful.');
     } catch (error) {
+      console.error('DEV LOG: Registration failed.', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -210,6 +231,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem(AUTH_TOKEN_KEY) : null);
     if (currentToken) {
       setIsLoading(true);
+      console.log('DEV LOG: Manually fetching/refreshing user profile.');
       try {
         let userData = await fetchUserProfile(currentToken);
         userData = augmentUserData(userData);
@@ -217,8 +239,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(currentToken);
         setIsAuthenticated(true);
         await updatePendingInvitations(currentToken, userData.id); // Fetch invitations
+        console.log('DEV LOG: Successfully fetched and updated user data.');
       } catch (error) {
         const apiError = error as ApiError;
+        console.error('DEV LOG: Failed to fetch user data.', apiError);
         if(apiError.code === 401 && user) {
            promptSessionRenewal();
         } else {
@@ -234,6 +258,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     } else {
+      console.log('DEV LOG: fetchUser called but no token available.');
       if (isAuthenticated) {
         clearAuthData();
       }
@@ -245,6 +270,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const publicPaths = ['/login', '/register', '/terms', '/'];
     if (!isLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       if (typeof window !== 'undefined') {
+        console.log(`DEV LOG: Not authenticated. Storing intended destination: ${pathname}`);
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
       }
       router.replace('/login');
@@ -256,6 +282,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         pathname !== '/profile' &&
         !publicPaths.includes(pathname)
       ) {
+        console.log('DEV LOG: User currency not set. Redirecting to profile.');
         toast({
           title: t('setYourCurrencyTitle'),
           description: t('setYourCurrencyDesc'),
