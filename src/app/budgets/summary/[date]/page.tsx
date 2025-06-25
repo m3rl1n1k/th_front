@@ -70,10 +70,7 @@ export default function BudgetSummaryPage() {
     setError(null);
     try {
       const response: BudgetSummaryByMonthResponse = await getBudgetSummaryForMonth(monthYear, token);
-      const processedDetails: ProcessedCategoryBudgetDetail[] = Object.entries(response.categories || {}).map(([id, data]) => ({
-        id, 
-        ...data, 
-      }));
+      const processedDetails: ProcessedCategoryBudgetDetail[] = Object.values(response.categories || {});
       setCategoryBudgets(processedDetails);
     } catch (err: any) {
       if ((err as ApiError).code === 401) {
