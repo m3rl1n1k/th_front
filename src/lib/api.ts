@@ -55,9 +55,10 @@ import type {
   ReportDataResponse,
 } from '@/types';
 
-interface RequestOptions extends RequestInit {
+interface RequestOptions extends Omit<RequestInit, 'body'> {
   token?: string | null;
   isFormData?: boolean;
+  body?: BodyInit | Record<string, any> | null;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
