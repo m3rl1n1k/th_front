@@ -11,7 +11,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getReportData } from '@/lib/api';
-import type { ReportDataResponse } from '@/types';
+import type { ReportDataResponse, MonthlyFinancialSummary } from '@/types';
 import { FileSignature, AlertTriangle, Loader2, BarChart2 as BarChartIcon, Wallet, TrendingUp, TrendingDown, LineChart as LineChartIcon } from 'lucide-react';
 import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Cell } from 'recharts';
 import { format, parse } from 'date-fns';
@@ -108,8 +108,8 @@ export default function GeneralReportPage() {
     };
 
     const chartData = summaryArray
-      .filter(item => item.month && item.month.trim() !== "")
-      .map(item => {
+      .filter((item: MonthlyFinancialSummary) => item.month && item.month.trim() !== "")
+      .map((item: MonthlyFinancialSummary) => {
         const monthIndex = monthMap[item.month as keyof typeof monthMap];
         if (monthIndex === undefined) return { ...item, monthIndex: -1 };
         const monthDate = new Date(appliedYear || new Date().getFullYear(), monthIndex);
@@ -121,7 +121,7 @@ export default function GeneralReportPage() {
       })
       .sort((a, b) => a.monthIndex - b.monthIndex);
 
-    const maxVal = summaryArray.reduce((max, item) => Math.max(max, item.income, item.expense), 0);
+    const maxVal = summaryArray.reduce((max: number, item: MonthlyFinancialSummary) => Math.max(max, item.income, item.expense), 0);
     const topLimit = maxVal > 0 ? (maxVal / 100) + 200 : 1000; // Buffer of 200 units on the base currency
 
     return { yearlyChartData: chartData, yAxisMax: topLimit };
