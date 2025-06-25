@@ -130,7 +130,7 @@ export default function DashboardPage() {
           const allCardIds = new Set(DEFAULT_CARD_ORDER);
 
           const savedOrder = parsedSettings.dashboard_cards_order || DEFAULT_CARD_ORDER;
-          const currentOrder = savedOrder.filter((id: string): id is DashboardCardId => allCardIds.has(id));
+          const currentOrder = savedOrder.filter((id: string): id is DashboardCardId => allCardIds.has(id as DashboardCardId));
           DEFAULT_CARD_ORDER.forEach(card => {
               if (!currentOrder.includes(card)) {
                   currentOrder.push(card);
@@ -440,7 +440,7 @@ export default function DashboardPage() {
     { id: 'average_expenses', component: renderAverageExpensesCard() },
     { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-2' },
     { id: 'last_activity', component: renderLastActivity() },
-    { id: 'current_budget', component: renderCurrentMonthBudget() },
+    { id: 'current_budget', component: renderCurrentBudget() },
   ];
 
   const visibleCardIds = useMemo(() => {
