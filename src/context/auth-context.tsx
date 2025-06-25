@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
+  const [reloadOnSuccess, setReloadOnSuccess] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -133,13 +134,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await processSuccessfulLogin(newToken);
       setIsRenewalModalOpen(false);
       toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
-      window.location.reload();
+      setReloadOnSuccess(true);
     } catch (error) {
-        // Error during processing login after getting new token
         toast({ variant: 'destructive', title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
         handleRenewalClose(); // Logout user if processing fails
     }
   }, [processSuccessfulLogin, toast, t, handleRenewalClose]);
+
+  useEffect(() => {
+    if (reloadOnSuccess) {
+      // This effect runs after the re-render that closes the modal, preventing a race condition.
+      window.location.reload();
+    }
+  }, [reloadOnSuccess]);
 
 
   useEffect(() => {
