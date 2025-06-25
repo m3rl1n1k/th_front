@@ -122,26 +122,40 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 
 async function request<T>(url: string, options: RequestOptions = {}): Promise<T> {
-  const { token, isFormData, ...fetchOptions } = options;
-  const headers = new Headers(fetchOptions.headers || {});
+  const { token, isFormData, body, ...restOfOptions } = options;
+  const headers = new Headers(restOfOptions.headers || {});
 
   if (token && token.trim() !== "") {
     headers.set('Authorization', `Bearer ${token.trim()}`);
   }
 
-  if (fetchOptions.body) {
+  let finalBody: BodyInit | null | undefined = undefined;
+
+  if (body) {
     if (isFormData) {
-    } else if (typeof fetchOptions.body === 'object') {
+      finalBody = body as FormData;
+    } else if (
+      typeof body === 'object' &&
+      body !== null &&
+      !(body instanceof Blob) &&
+      !(body instanceof FormData) &&
+      !(body instanceof URLSearchParams) &&
+      !(body instanceof ReadableStream)
+    ) {
       if (!headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
       }
-      fetchOptions.body = JSON.stringify(fetchOptions.body);
+      finalBody = JSON.stringify(body);
+    } else {
+      finalBody = body as BodyInit;
     }
-  } else {
-    if (headers.has('Content-Type') && (fetchOptions.method === 'GET' || !fetchOptions.method)) {
-        if (headers.get('Content-Type')?.includes('application/json')) {
-            headers.delete('Content-Type');
-        }
+  }
+
+  if (!finalBody) {
+    if (headers.has('Content-Type') && (options.method === 'GET' || !options.method)) {
+      if (headers.get('Content-Type')?.includes('application/json')) {
+        headers.delete('Content-Type');
+      }
     }
   }
 
@@ -149,23 +163,32 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     headers.set('Accept', 'application/json');
   }
 
+  const fetchRequestInit: RequestInit = {
+    ...restOfOptions,
+    headers,
+    body: finalBody,
+  };
+
+  if (fetchRequestInit.method === 'GET' || fetchRequestInit.method === 'HEAD') {
+    delete fetchRequestInit.body;
+  }
+
   let response;
   try {
-      response = await fetch(url, {
-        mode: 'cors',
-        ...fetchOptions,
-        headers,
-      });
+    response = await fetch(url, {
+      mode: 'cors',
+      ...fetchRequestInit,
+    });
   } catch (error) {
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-          const apiError: ApiError = {
-              message: 'Network error: Could not connect to the API. Please ensure the backend server is running and that CORS is configured correctly.',
-              code: 503, // Service Unavailable
-          };
-          throw apiError;
-      }
-      // Re-throw other network errors
-      throw error;
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      const apiError: ApiError = {
+        message: 'Network error: Could not connect to the API. Please ensure the backend server is running and that CORS is configured correctly.',
+        code: 503, // Service Unavailable
+      };
+      throw apiError;
+    }
+    // Re-throw other network errors
+    throw error;
   }
 
   return handleResponse<T>(response);
