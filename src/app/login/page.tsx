@@ -134,7 +134,12 @@ export default function LoginPage() {
               name="captcha"
               control={control}
               render={({ field }) => (
-                <SimpleCaptcha ref={captchaRef} {...field} error={errors.captcha?.message} />
+                <SimpleCaptcha
+                  ref={captchaRef}
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.captcha?.message}
+                />
               )}
             />
 
