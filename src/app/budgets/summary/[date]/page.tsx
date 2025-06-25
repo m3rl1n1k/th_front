@@ -193,11 +193,11 @@ export default function BudgetSummaryPage() {
     return (
       <MainLayout>
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 className="font-headline text-3xl font-bold text-foreground">
               {t('budgetSummaryForMonthTitle', { monthDisplay: formattedMonthTitle })}
             </h1>
-            <Button variant="outline" onClick={() => router.push('/budgets')}>
+            <Button variant="outline" onClick={() => router.push('/budgets')} className="w-full sm:w-auto">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('backToBudgetsButton')}
             </Button>
@@ -222,11 +222,11 @@ export default function BudgetSummaryPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="font-headline text-3xl font-bold text-foreground">
             {t('budgetSummaryForMonthTitle', { monthDisplay: formattedMonthTitle })}
           </h1>
-          <Button variant="outline" onClick={() => router.push('/budgets')}>
+          <Button variant="outline" onClick={() => router.push('/budgets')} className="w-full sm:w-auto">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('backToBudgetsButton')}
           </Button>
