@@ -62,7 +62,7 @@ type ChangePasswordFormData = z.infer<ReturnType<typeof createChangePasswordSche
 
 
 export default function ProfilePage() {
-  const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
+  const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
@@ -131,11 +131,16 @@ export default function ProfilePage() {
       }
 
     } catch (error) {
-        toast({ variant: "destructive", title: t('errorFetchingData'), description: (error as ApiError).message });
+      const apiError = error as ApiError;
+      if (apiError.code === 401) {
+        promptSessionRenewal();
+        return;
+      }
+      toast({ variant: "destructive", title: t('errorFetchingData'), description: apiError.message });
     } finally {
         setIsLoadingPage(false);
     }
-  }, [isAuthenticated, user, token, editProfileForm, t, toast]);
+  }, [isAuthenticated, user, token, editProfileForm, t, toast, promptSessionRenewal]);
 
 
   useEffect(() => {
@@ -183,6 +188,10 @@ export default function ProfilePage() {
       setShowCurrencyPrompt(false); 
     } catch (error) {
       const apiError = error as ApiError;
+      if (apiError.code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       toast({
         variant: "destructive",
         title: t('errorUpdatingProfile'),
@@ -208,6 +217,10 @@ export default function ProfilePage() {
       changePasswordForm.reset();
     } catch (error) {
       const apiError = error as ApiError;
+      if (apiError.code === 401) {
+        promptSessionRenewal();
+        return;
+      }
       toast({
         variant: "destructive",
         title: t('passwordChangeFailedTitle'),

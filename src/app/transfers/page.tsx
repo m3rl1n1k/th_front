@@ -19,7 +19,7 @@ import { useAuth } from '@/context/auth-context';
 import { getTransferFormData, getTransfersList, createTransfer, deleteTransfer } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransferUserWallet, TransferListItem, CreateTransferPayload } from '@/types';
+import type { TransferUserWallet, TransferListItem, CreateTransferPayload, ApiError } from '@/types';
 import { ArrowRightLeft, Landmark, Trash2, Loader2, AlertTriangle, PlusCircle, RefreshCw } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 
@@ -35,7 +35,7 @@ const createTransferFormSchema = (t: Function) => z.object({
 type TransferFormData = z.infer<ReturnType<typeof createTransferFormSchema>>;
 
 export default function TransfersPage() {
-  const { token, isAuthenticated, user } = useAuth();
+  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
 
@@ -84,11 +84,12 @@ export default function TransfersPage() {
       setUserWallets(data.user_wallets || []);
       setCapitalWalletsGrouped(data.capital_wallets || {});
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
     } finally {
       setIsLoadingFormData(false);
     }
-  }, [isAuthenticated, token, toast, t]);
+  }, [isAuthenticated, token, toast, t, promptSessionRenewal]);
 
   const fetchTransfers = useCallback(async () => {
     if (!isAuthenticated || !token) return;
@@ -97,11 +98,12 @@ export default function TransfersPage() {
       const data = await getTransfersList(token);
       setTransfersList(data.transfers || []);
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
     } finally {
       setIsLoadingTransfers(false);
     }
-  }, [isAuthenticated, token, toast, t]);
+  }, [isAuthenticated, token, toast, t, promptSessionRenewal]);
 
   useEffect(() => {
     fetchFormData();
@@ -123,7 +125,9 @@ export default function TransfersPage() {
       reset();
       fetchTransfers(); 
     } catch (error: any) {
-      toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); } else {
+        toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
+      }
     } finally {
       setFormIsSubmitting(false);
     }
@@ -142,7 +146,9 @@ export default function TransfersPage() {
       toast({ title: t('transferDeletedTitle'), description: t('transferDeletedDesc') });
       fetchTransfers();
     } catch (error: any) {
-      toast({ variant: "destructive", title: t('transferDeleteFailedTitle'), description: error.message });
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); } else {
+        toast({ variant: "destructive", title: t('transferDeleteFailedTitle'), description: error.message });
+      }
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

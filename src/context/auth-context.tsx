@@ -129,11 +129,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const handleRenewalSuccess = useCallback(async (newToken: string) => {
     console.log('DEV LOG: Session renewal successful. Processing new token.');
-    await processSuccessfulLogin(newToken);
-    setIsRenewalModalOpen(false);
-    toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
-    window.location.reload();
-  }, [processSuccessfulLogin, toast, t]);
+    try {
+      await processSuccessfulLogin(newToken);
+      setIsRenewalModalOpen(false);
+      toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
+      window.location.reload();
+    } catch (error) {
+        // Error during processing login after getting new token
+        toast({ variant: 'destructive', title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
+        handleRenewalClose(); // Logout user if processing fails
+    }
+  }, [processSuccessfulLogin, toast, t, handleRenewalClose]);
 
 
   useEffect(() => {
