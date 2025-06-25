@@ -284,7 +284,7 @@ export default function DashboardPage() {
     );
   };
 
-  const customTooltipFormatter = (value: any, name: string, item: any) => {
+  const customTooltipFormatter = (value: any, name: any, item: any) => {
     const numberValue = typeof value === 'number' ? value : 0;
     const formattedValue = new Intl.NumberFormat('de-DE', {
       minimumFractionDigits: 2,
