@@ -202,6 +202,12 @@
   "dashboardCardExpensesChart": "Діаграма витрат за категоріями",
   "dashboardCardLastActivity": "Список останніх активностей",
   "dashboardCardCurrentBudget": "Бюджет на поточний місяць",
+  "dashboardCardQuickActions": "Швидкі дії",
+  "quickActionCreateTransaction": "Нова транзакція",
+  "quickActionCreateWallet": "Новий гаманець",
+  "quickActionCreateCategory": "Нова категорія",
+  "quickActionCreateBudget": "Новий бюджет",
+  "quickActionCreateTransfer": "Новий переказ",
 
   "//": "ТРАНЗАКЦІЇ",
   "newTransaction": "Нова транзакція",

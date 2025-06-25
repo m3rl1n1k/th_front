@@ -202,6 +202,12 @@
   "dashboardCardExpensesChart": "Expenses by Category Chart",
   "dashboardCardLastActivity": "Last Activity List",
   "dashboardCardCurrentBudget": "Current Month's Budget",
+  "dashboardCardQuickActions": "Quick Actions",
+  "quickActionCreateTransaction": "New Transaction",
+  "quickActionCreateWallet": "New Wallet",
+  "quickActionCreateCategory": "New Category",
+  "quickActionCreateBudget": "New Budget",
+  "quickActionCreateTransfer": "New Transfer",
 
   "//": "TRANSACTIONS",
   "newTransaction": "New transaction",

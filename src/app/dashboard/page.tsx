@@ -17,7 +17,7 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal, PlusCircle, WalletCards, Shapes } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary, ApiError } from '@/types';
@@ -78,10 +78,10 @@ interface ProcessedLastTransactionItem {
 
 const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
 
-type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget';
+type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget' | 'quick_actions';
 
 
-const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'expenses_chart', 'last_activity', 'current_budget'];
+const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
 const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   total_balance: true,
   monthly_income: true,
@@ -89,6 +89,7 @@ const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   expenses_chart: true,
   last_activity: true,
   current_budget: true,
+  quick_actions: true,
 };
 
 
@@ -365,6 +366,33 @@ export default function DashboardPage() {
     </Card>
   );
 
+  const renderQuickActionsCard = () => {
+    const actions = [
+      { href: '/transactions/new', labelKey: 'quickActionCreateTransaction', icon: ListChecks },
+      { href: '/wallets/new', labelKey: 'quickActionCreateWallet', icon: WalletCards },
+      { href: '/categories/new', labelKey: 'quickActionCreateCategory', icon: Shapes },
+      { href: '/budgets/new', labelKey: 'quickActionCreateBudget', icon: Target },
+    ];
+
+    return (
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-medium">{t('dashboardCardQuickActions')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow grid grid-cols-2 gap-4">
+          {actions.map(action => (
+            <Button asChild key={action.href} variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-2 text-center hover:bg-accent/50 hover:border-primary/50 transition-all">
+              <Link href={action.href}>
+                <action.icon className="h-6 w-6 text-primary" />
+                <span className="text-xs font-medium">{t(action.labelKey as any)}</span>
+              </Link>
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderExpensesChart = () => (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col lg:col-span-2">
       <CardHeader className="flex flex-col space-y-1.5 p-6">
@@ -438,6 +466,7 @@ export default function DashboardPage() {
     { id: 'total_balance', component: renderTotalBalanceCard() },
     { id: 'monthly_income', component: renderMonthlyIncomeCard() },
     { id: 'average_expenses', component: renderAverageExpensesCard() },
+    { id: 'quick_actions', component: renderQuickActionsCard() },
     { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-2' },
     { id: 'last_activity', component: renderLastActivity() },
     { id: 'current_budget', component: renderCurrentMonthBudget() },

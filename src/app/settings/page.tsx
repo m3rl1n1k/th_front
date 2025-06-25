@@ -35,9 +35,10 @@ const defaultDashboardVisibility = {
   expenses_chart: true,
   last_activity: true,
   current_budget: true,
+  quick_actions: true,
 };
 
-const defaultDashboardOrder = ['total_balance', 'monthly_income', 'average_expenses', 'expenses_chart', 'last_activity', 'current_budget'];
+const defaultDashboardOrder = ['total_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
 
 const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
 
@@ -68,6 +69,7 @@ const ALL_DASHBOARD_CARDS: DashboardCardConfig[] = [
   { id: 'total_balance', labelKey: 'dashboardCardTotalBalance' },
   { id: 'monthly_income', labelKey: 'dashboardCardMonthlyIncome' },
   { id: 'average_expenses', labelKey: 'dashboardCardAverageExpenses' },
+  { id: 'quick_actions', labelKey: 'dashboardCardQuickActions' },
   { id: 'expenses_chart', labelKey: 'dashboardCardExpensesChart' },
   { id: 'last_activity', labelKey: 'dashboardCardLastActivity' },
   { id: 'current_budget', labelKey: 'dashboardCardCurrentBudget' },
