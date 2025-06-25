@@ -93,13 +93,11 @@ export default function GeneralReportPage() {
   }, [appliedYear, appliedMonth, dateFnsLocale]);
 
   const { yearlyChartData, yAxisMax } = useMemo(() => {
-    if (!reportData?.yearlySummary) {
+    if (!reportData?.yearlySummary || !Array.isArray(reportData.yearlySummary)) {
       return { yearlyChartData: [], yAxisMax: 10000 };
     }
     
-    const summaryArray = Array.isArray(reportData.yearlySummary) 
-      ? reportData.yearlySummary 
-      : Object.values(reportData.yearlySummary);
+    const summaryArray: MonthlyFinancialSummary[] = reportData.yearlySummary;
 
 
     const monthMap: { [key: string]: number } = {
@@ -108,8 +106,8 @@ export default function GeneralReportPage() {
     };
 
     const chartData = summaryArray
-      .filter((item: MonthlyFinancialSummary) => item.month && item.month.trim() !== "")
-      .map((item: MonthlyFinancialSummary) => {
+      .filter(item => item.month && item.month.trim() !== "")
+      .map(item => {
         const monthIndex = monthMap[item.month as keyof typeof monthMap];
         if (monthIndex === undefined) return { ...item, monthIndex: -1 };
         const monthDate = new Date(appliedYear || new Date().getFullYear(), monthIndex);
