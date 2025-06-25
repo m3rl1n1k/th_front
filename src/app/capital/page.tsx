@@ -106,7 +106,6 @@ export default function CapitalPage() {
           await fetchUser(); 
         } else {
           setCapitalLoadingError(t('capitalLoadingError'));
-          // Do not toast here immediately, let invitations try to load first
           fetchedCapitalDetails = null;
           fetchedCapitalExists = false;
         }
@@ -158,15 +157,21 @@ export default function CapitalPage() {
     if (!token) return;
     setActionLoading(prev => ({ ...prev, createCapital: true }));
     try {
-      await createCapital({ name: data.name }, token);
+      const newCapitalDetails = await createCapital({ name: data.name }, token);
       toast({ title: t('sharingGroupCreatedSuccessTitle'), description: t('sharingGroupCreatedSuccessDesc', { name: data.name }) });
       capitalForm.reset();
-      await fetchUser(); // This will re-trigger fetchData due to user state change
+      
+      // Directly update the state to show the new capital details immediately.
+      setActiveCapitalDetails(newCapitalDetails);
+      setCapitalExists(true);
+      
+      // Refresh the user object in the context, which may now include the capital relation from the backend.
+      await fetchUser();
+
     } catch (err: any) {
       const apiError = err as ApiError;
       if (apiError.code === 401) {
         promptSessionRenewal();
-        setActionLoading(prev => ({ ...prev, createCapital: false }));
         return;
       }
       toast({ variant: 'destructive', title: t('sharingGroupCreateFailedTitle'), description: apiError.message });
@@ -189,7 +194,6 @@ export default function CapitalPage() {
       const apiError = err as ApiError;
       if (apiError.code === 401) {
         promptSessionRenewal();
-        setActionLoading(prev => ({ ...prev, deleteCapital: false }));
         return;
       }
       toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: apiError.message });
@@ -213,7 +217,6 @@ export default function CapitalPage() {
       const apiError = err as ApiError;
       if (apiError.code === 401) {
         promptSessionRenewal();
-        setActionLoading(prev => ({ ...prev, createInvitation: false }));
         return;
       }
       let description = apiError.message as string || t('unexpectedError');
@@ -246,7 +249,6 @@ export default function CapitalPage() {
       const apiError = err as ApiError;
       if (apiError.code === 401) {
         promptSessionRenewal();
-        setActionLoading(prev => ({ ...prev, [`invitation_${invitationId}`]: false }));
         return;
       }
       toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: apiError.message });
@@ -274,7 +276,6 @@ export default function CapitalPage() {
       const apiError = err as ApiError;
       if (apiError.code === 401) {
         promptSessionRenewal();
-        setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: false }));
         return;
       }
       toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: apiError.message });
@@ -294,7 +295,6 @@ export default function CapitalPage() {
       const apiError = err as ApiError;
       if (apiError.code === 401) {
         promptSessionRenewal();
-        setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: false }));
         return;
       }
       toast({ variant: 'destructive', title: t('leaveSharingGroupFailedTitle'), description: apiError.message });
