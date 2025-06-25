@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -129,7 +130,7 @@ export default function DashboardPage() {
           const allCardIds = new Set(DEFAULT_CARD_ORDER);
 
           const savedOrder = parsedSettings.dashboard_cards_order || DEFAULT_CARD_ORDER;
-          const currentOrder = savedOrder.filter((id: string) => allCardIds.has(id));
+          const currentOrder = savedOrder.filter((id: any): id is DashboardCardId => allCardIds.has(id));
           DEFAULT_CARD_ORDER.forEach(card => {
               if (!currentOrder.includes(card)) {
                   currentOrder.push(card);
