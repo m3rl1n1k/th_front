@@ -284,12 +284,13 @@ export default function DashboardPage() {
     );
   };
 
-  const customTooltipFormatter = (value: number, name: string, item: any) => {
+  const customTooltipFormatter = (value: any, name: string, item: any) => {
+    const numberValue = typeof value === 'number' ? value : 0;
     const formattedValue = new Intl.NumberFormat('de-DE', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
       useGrouping: false,
-    }).format(value / 100);
+    }).format(numberValue / 100);
 
     return (
       <div className="flex w-full items-center justify-between gap-2">
