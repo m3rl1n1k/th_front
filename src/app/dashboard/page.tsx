@@ -440,7 +440,7 @@ export default function DashboardPage() {
     { id: 'average_expenses', component: renderAverageExpensesCard() },
     { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-2' },
     { id: 'last_activity', component: renderLastActivity() },
-    { id: 'current_budget', component: renderCurrentBudget() },
+    { id: 'current_budget', component: renderCurrentMonthBudget() },
   ];
 
   const visibleCardIds = useMemo(() => {
