@@ -381,10 +381,11 @@ export default function DashboardPage() {
 
     return (
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium">{t('dashboardCardQuickActions')}</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">{t('dashboardCardQuickActions')}</CardTitle>
+          <PlusCircle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <CardContent className="flex-grow grid grid-cols-2 gap-4">
+        <CardContent className="flex-grow grid grid-cols-2 gap-4 pt-4">
           {actions.map(action => (
             <Button asChild key={action.href} variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-2 text-center hover:bg-accent/50 hover:border-primary/50 transition-all">
               <Link href={action.href}>
