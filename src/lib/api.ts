@@ -1,3 +1,4 @@
+
 import { URLS } from '@/config/urls';
 import type {
   ApiError,
@@ -147,11 +148,24 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
     headers.set('Accept', 'application/json');
   }
 
-  const response = await fetch(url, {
-    mode: 'cors',
-    ...fetchOptions,
-    headers,
-  });
+  let response;
+  try {
+      response = await fetch(url, {
+        mode: 'cors',
+        ...fetchOptions,
+        headers,
+      });
+  } catch (error) {
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+          const apiError: ApiError = {
+              message: 'Network error: Could not connect to the API. Please ensure the backend server is running and that CORS is configured correctly.',
+              code: 503, // Service Unavailable
+          };
+          throw apiError;
+      }
+      // Re-throw other network errors
+      throw error;
+  }
 
   return handleResponse<T>(response);
 }
