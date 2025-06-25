@@ -49,7 +49,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-      const initialLang = translationsMap[storedLang] ? storedLang : 'en';
+      const initialLang = (storedLang && translationsMap[storedLang]) ? storedLang : 'en';
       setLanguageState(initialLang);
       setCurrentTranslations(translationsMap[initialLang]);
       setCurrentDateFnsLocale(dateFnsLocaleMap[initialLang] || enUS);
