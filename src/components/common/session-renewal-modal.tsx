@@ -117,7 +117,7 @@ export function SessionRenewalModal({ isOpen, onClose, onSuccess, email }: Sessi
           )}
 
           <AlertDialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="mt-2 sm:mt-0">
               {t('logout')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
