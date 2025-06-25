@@ -243,10 +243,15 @@ export default function DashboardPage() {
       else if (txTypeName === 'EXPENSE') icon = <ArrowDownCircle className="h-5 w-5 text-red-500" />;
       else if (txTypeName === 'TRANSFER') icon = <ArrowRightLeft className="h-5 w-5 text-blue-500" />;
       else icon = <HelpCircle className="h-5 w-5 text-muted-foreground" />;
+      
+      const categoryDisplayName = tx.subCategory 
+        ? t(generateCategoryTranslationKey(tx.subCategory.name), { defaultValue: tx.subCategory.name }) 
+        : t('noCategory');
+      
       return {
         id: tx.id,
         icon,
-        displayText: tx.description || t('noDescription'),
+        displayText: categoryDisplayName,
         amount: tx.amount.amount,
         currencyCode: tx.amount.currency.code,
         date: format(parseISO(tx.date), "PP", { locale: dateFnsLocale }),
