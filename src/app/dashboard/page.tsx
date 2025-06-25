@@ -130,7 +130,7 @@ export default function DashboardPage() {
           const allCardIds = new Set(DEFAULT_CARD_ORDER);
 
           const savedOrder = parsedSettings.dashboard_cards_order || DEFAULT_CARD_ORDER;
-          const currentOrder = savedOrder.filter((id: any): id is DashboardCardId => allCardIds.has(id));
+          const currentOrder = savedOrder.filter((id: string): id is DashboardCardId => allCardIds.has(id));
           DEFAULT_CARD_ORDER.forEach(card => {
               if (!currentOrder.includes(card)) {
                   currentOrder.push(card);
@@ -260,7 +260,7 @@ export default function DashboardPage() {
     return 'bg-green-500 dark:bg-green-400';
   };
 
-  const renderActiveShape = (props: ActiveShapeProps) => {
+  const renderActiveShape = (props: any) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
     const sin = Math.sin(-midAngle * (Math.PI / 180));
     const cos = Math.cos(-midAngle * (Math.PI / 180));
