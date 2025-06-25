@@ -133,7 +133,7 @@ export default function ViewTransactionPage() {
       }
 
 
-      const items = [
+      const items: Array<{ labelKey: string; value: React.ReactNode; icon: React.ReactElement; fullWidth?: boolean }> = [
         { labelKey: 'amount', value: <CurrencyDisplay amountInCents={transaction.amount.amount} currencyCode={transaction.amount.currency.code} />, icon: typeIconElement },
         { labelKey: 'transactionType', value: typeName, icon: <Tag className="text-primary" /> },
         { labelKey: 'date', value: format(parseISO(transaction.date), "PPPp", { locale: dateFnsLocale }), icon: <CalendarDays className="text-primary" /> },
