@@ -48,20 +48,6 @@ interface TransformedChartItem {
   fill?: string;
 }
 
-interface ActiveShapeProps {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  startAngle: number;
-  endAngle: number;
-  fill: string;
-  payload: TransformedChartItem;
-  percent: number;
-  value: number;
-}
-
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
   return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
@@ -100,6 +86,49 @@ interface DashboardCard {
   component: React.ReactNode;
   className?: string;
 }
+
+const renderActiveShape = (props: any) => {
+  const RADIAN = Math.PI / 180;
+  const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
+  
+  // Use outerRadius to make connector lines and labels responsive
+  const isSmallChart = outerRadius < 80;
+  
+  const lineStartOffset = isSmallChart ? 5 : 10;
+  const lineMidOffset = isSmallChart ? 15 : 30;
+  const lineEndOffset = isSmallChart ? 12 : 22;
+  const labelOffset = isSmallChart ? 8 : 12;
+
+  const sin = Math.sin(-RADIAN * midAngle);
+  const cos = Math.cos(-RADIAN * midAngle);
+  const sx = cx + (outerRadius + lineStartOffset) * cos;
+  const sy = cy + (outerRadius + lineStartOffset) * sin;
+  const mx = cx + (outerRadius + lineMidOffset) * cos;
+  const my = cy + (outerRadius + lineMidOffset) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * lineEndOffset;
+  const ey = my;
+  const textAnchor = cos >= 0 ? 'start' : 'end';
+
+  return (
+    <g>
+      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
+      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+      <Sector
+        cx={cx}
+        cy={cy}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        innerRadius={outerRadius + (isSmallChart ? 2 : 6)}
+        outerRadius={outerRadius + (isSmallChart ? 4 : 10)}
+        fill={fill}
+      />
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+      <circle cx={ex} cy={ey} r={isSmallChart ? 1.5 : 2} fill={fill} stroke="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * labelOffset} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-xs sm:text-sm">{`(${(percent * 100).toFixed(1)}%)`}</text>
+    </g>
+  );
+};
+
 
 export default function DashboardPage() {
   const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
@@ -266,30 +295,6 @@ export default function DashboardPage() {
     return 'bg-green-500 dark:bg-green-400';
   };
 
-  const renderActiveShape = (props: any) => {
-    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
-    const sin = Math.sin(-midAngle * (Math.PI / 180));
-    const cos = Math.cos(-midAngle * (Math.PI / 180));
-    const sx = cx + (outerRadius + 10) * cos;
-    const sy = cy + (outerRadius + 10) * sin;
-    const mx = cx + (outerRadius + 30) * cos;
-    const my = cy + (outerRadius + 30) * sin;
-    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
-    const ey = my;
-    const textAnchor = cos >= 0 ? 'start' : 'end';
-
-    return (
-      <g>
-        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
-        <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-        <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 6} outerRadius={outerRadius + 10} fill={fill} />
-        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-        <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="hsl(var(--foreground))" className="text-sm pl-2">{`(${(percent * 100).toFixed(2)}%)`}</text>
-      </g>
-    );
-  };
-
   const customTooltipFormatter = (value: any, name: any, item: any) => {
     const numberValue = typeof value === 'number' ? value : 0;
     const formattedValue = new Intl.NumberFormat('de-DE', {
@@ -408,7 +413,7 @@ export default function DashboardPage() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 pt-0 flex-grow flex items-center justify-center">
-        {isLoading ? (<div className="flex justify-center items-center h-72"><Skeleton className="h-64 w-64 rounded-full" /></div>) : !expensesByCategoryData || transformedChartData.length === 0 ? (<div className="flex flex-col items-center justify-center h-72 text-center"><PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" /><p className="text-muted-foreground">{t('noDataAvailable')}</p><p className="text-sm text-muted-foreground">{t('tryAddingExpenses')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<ChartContainer config={chartConfig} className="mx-auto h-[25rem] w-[35rem] min-w-[35rem]"><PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}><ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={customTooltipFormatter} />} /><Pie data={transformedChartData} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius="30%" strokeWidth={2} activeIndex={activePieIndex} activeShape={renderActiveShape} onMouseEnter={onPieEnter}>{transformedChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />))}</Pie></PieChart></ChartContainer>)}
+        {isLoading ? (<div className="flex justify-center items-center h-72"><Skeleton className="h-64 w-64 rounded-full" /></div>) : !expensesByCategoryData || transformedChartData.length === 0 ? (<div className="flex flex-col items-center justify-center h-72 text-center"><PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" /><p className="text-muted-foreground">{t('noDataAvailable')}</p><p className="text-sm text-muted-foreground">{t('tryAddingExpenses')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<ChartContainer config={chartConfig} className="mx-auto aspect-video h-full w-full max-w-lg"><PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}><ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={customTooltipFormatter} />} /><Pie data={transformedChartData} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius="30%" strokeWidth={2} activeIndex={activePieIndex} activeShape={renderActiveShape} onMouseEnter={onPieEnter}>{transformedChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />))}</Pie></PieChart></ChartContainer>)}
       </CardContent>
     </Card>
   );
