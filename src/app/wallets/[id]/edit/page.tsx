@@ -32,7 +32,7 @@ const createEditWalletFormSchema = (t: Function) => z.object({
 type EditWalletFormData = z.infer<ReturnType<typeof createEditWalletFormSchema>>;
 
 export default function EditWalletPage() {
-  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -151,7 +151,6 @@ export default function EditWalletPage() {
       toast({ title: t('walletUpdateSuccessTitle'), description: t('walletUpdateSuccessDesc') });
       router.push('/wallets');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorUpdatingWallet'), description: error.message });
     } finally {
       setFormIsSubmitting(false);

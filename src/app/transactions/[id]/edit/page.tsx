@@ -51,7 +51,7 @@ const EditTransactionSchema = z.object({
 type EditTransactionFormData = z.infer<typeof EditTransactionSchema>;
 
 export default function EditTransactionPage() {
-  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
   const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
@@ -166,7 +166,6 @@ export default function EditTransactionPage() {
       });
       router.push('/transactions');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({
         variant: "destructive",
         title: t('transactionUpdateFailedTitle'),

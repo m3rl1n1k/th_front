@@ -34,7 +34,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function ViewTransactionPage() {
-  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
@@ -102,16 +102,12 @@ export default function ViewTransactionPage() {
       }
 
     } catch (err: any) {
-      if ((err as ApiError).code === 401) {
-        promptSessionRenewal();
-        return;
-      }
       setError(err.message || t('errorFetchingData'));
       toast({ variant: "destructive", title: t('errorFetchingData'), description: err.message });
     } finally {
       setIsLoading(false);
     }
-  }, [id, token, t, toast, promptSessionRenewal]);
+  }, [id, token, t, toast]);
 
   useEffect(() => {
     if (isAuthenticated) {

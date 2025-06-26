@@ -39,7 +39,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function NewTransactionPage() {
-  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -201,7 +201,6 @@ export default function NewTransactionPage() {
       });
       router.push('/transactions');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({
         variant: "destructive",
         title: t('transactionFailedTitle'),

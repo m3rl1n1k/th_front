@@ -63,7 +63,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function TransactionsPage() {
-  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -121,7 +121,6 @@ export default function TransactionsPage() {
           }
         })
         .catch(error => {
-          if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setTransactionTypes([]);
         })
@@ -133,7 +132,6 @@ export default function TransactionsPage() {
           setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch(error => {
-          if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setMainCategories([]);
         })
@@ -149,7 +147,6 @@ export default function TransactionsPage() {
           setApiFrequencies(formattedFrequencies);
         })
         .catch(error => {
-            if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
             toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
             setApiFrequencies([]);
         })
@@ -189,11 +186,7 @@ export default function TransactionsPage() {
           setTotalPages(pagination.total_pages);
         })
         .catch((error: ApiError) => {
-          if (error.code === 401) {
-            promptSessionRenewal();
-          } else {
-            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-          }
+          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
           if (pageToFetch === 1) setRawTransactions([]);
           setTotalPages(1);
         })
@@ -207,7 +200,7 @@ export default function TransactionsPage() {
       setIsLoadingMore(false);
       setTotalPages(1);
     }
-  }, [isAuthenticated, token, activeTab, toast, t, promptSessionRenewal]);
+  }, [isAuthenticated, token, activeTab, toast, t]);
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
@@ -215,11 +208,7 @@ export default function TransactionsPage() {
         getRepeatedTransactionsList(token)
             .then(response => setRepeatedDefinitions(response.repeated_transactions || []))
             .catch((error: ApiError) => {
-                if (error.code === 401) {
-                  promptSessionRenewal();
-                } else {
-                  toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
-                }
+                toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('unexpectedError') });
                 setRepeatedDefinitions([]);
             })
             .finally(() => {
@@ -229,7 +218,7 @@ export default function TransactionsPage() {
         setRepeatedDefinitions([]);
         if (showLoading) setIsLoadingRepeatedDefinitions(false);
     }
-  }, [isAuthenticated, token, activeTab, t, toast, promptSessionRenewal]);
+  }, [isAuthenticated, token, activeTab, t, toast]);
 
   useEffect(() => {
     if (activeTab === "all" && isAuthenticated && token) {
@@ -363,9 +352,7 @@ export default function TransactionsPage() {
       toast({ title: t('transactionDeletedTitle'), description: t('transactionDeletedDesc') });
       setRawTransactions(prev => prev.filter(tx => tx.id !== selectedTransactionForDelete.id));
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); } else {
-        toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
-      }
+      toast({ variant: "destructive", title: t('errorDeletingTransaction'), description: error.message || t('unexpectedError') });
     } finally {
       setIsDeleting(false);
       setDeleteConfirmationOpen(false);
@@ -391,9 +378,7 @@ export default function TransactionsPage() {
       toast({ title: t('statusToggledTitle'), description: t('statusToggledDesc')});
       fetchRepeatedDefinitions(false);
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); } else {
-        toast({ variant: "destructive", title: t('errorTogglingStatus'), description: error.message || t('unexpectedError') });
-      }
+      toast({ variant: "destructive", title: t('errorTogglingStatus'), description: error.message || t('unexpectedError') });
     } finally {
       setDefinitionActionStates(prev => ({ ...prev, [definition.id]: { isLoading: false } }));
     }
@@ -412,9 +397,7 @@ export default function TransactionsPage() {
       toast({ title: t('definitionRemovedTitle'), description: t('definitionRemovedDesc')});
       fetchRepeatedDefinitions(false);
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); } else {
-        toast({ variant: "destructive", title: t('errorRemovingDefinition'), description: error.message || t('unexpectedError') });
-      }
+      toast({ variant: "destructive", title: t('errorRemovingDefinition'), description: error.message || t('unexpectedError') });
     } finally {
       setDefinitionActionStates(prev => ({ ...prev, [selectedDefinitionForDelete.id]: { isLoading: false } }));
       setShowDeleteDefinitionDialog(false);

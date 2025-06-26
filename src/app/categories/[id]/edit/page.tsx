@@ -34,7 +34,7 @@ const createEditMainCategorySchema = (t: Function) => z.object({
 type EditMainCategoryFormData = z.infer<ReturnType<typeof createEditMainCategorySchema>>;
 
 export default function EditMainCategoryPage() {
-  const { token, isAuthenticated, isLoading: authIsLoading, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -110,7 +110,6 @@ export default function EditMainCategoryPage() {
       toast({ title: t('mainCategoryUpdatedTitle'), description: t('mainCategoryUpdatedDesc') });
       router.push('/categories');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorUpdatingMainCategory'), description: error.message });
     } finally {
       setFormIsSubmitting(false);
