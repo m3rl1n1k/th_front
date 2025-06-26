@@ -17,7 +17,7 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal, PlusCircle, WalletCards, Shapes } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal, PlusCircle, WalletCards, Shapes, Maximize } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary, ApiError } from '@/types';
@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 
 interface DashboardSummaryData {
@@ -136,7 +137,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
   const [summaryData, setSummaryData] = useState<DashboardSummaryData | null>(null);
-  const [averageExpenses, setAverageExpenses] = useState<AverageExpensesData | null>(null);
+  const [averageExpenses, setAverageExpensesData] = useState<AverageExpensesData | null>(null);
   const [expensesByCategoryData, setExpensesByCategoryData] = useState<MonthlyExpensesByCategoryResponse | null>(null);
   const [lastTransactions, setLastTransactions] = useState<TransactionType[] | null>(null);
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
@@ -209,7 +210,7 @@ export default function DashboardPage() {
           });
 
           const monthlyExpense = expenseData.month_expense;
-          setAverageExpenses({
+          setAverageExpensesData({
             daily: monthlyExpense / 30, // Approximation
             weekly: monthlyExpense / 4.345, // Approximation
             monthly: monthlyExpense,
@@ -407,17 +408,44 @@ export default function DashboardPage() {
   };
 
   const renderExpensesChart = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col lg:col-span-2">
-      <CardHeader className="flex flex-col space-y-1.5 p-6">
-        <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
-          <PieChartIcon className="h-6 w-6 text-primary" />
-          {t('dashboardCardExpensesChart')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 pt-0 flex-grow flex items-center justify-center">
-        {isLoading ? (<div className="flex justify-center items-center h-72"><Skeleton className="h-64 w-64 rounded-full" /></div>) : !expensesByCategoryData || transformedChartData.length === 0 ? (<div className="flex flex-col items-center justify-center h-72 text-center"><PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" /><p className="text-muted-foreground">{t('noDataAvailable')}</p><p className="text-sm text-muted-foreground">{t('tryAddingExpenses')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<ChartContainer config={chartConfig} className="mx-auto aspect-video h-full w-full max-w-lg"><PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}><ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={customTooltipFormatter} />} /><Pie data={transformedChartData} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius="30%" strokeWidth={2} activeIndex={activePieIndex} activeShape={renderActiveShape} onMouseEnter={onPieEnter}>{transformedChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />))}</Pie></PieChart></ChartContainer>)}
-      </CardContent>
-    </Card>
+    <Dialog>
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col lg:col-span-2">
+        <CardHeader className="flex flex-row items-center justify-between p-6">
+          <div className="space-y-1.5">
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+              <PieChartIcon className="h-6 w-6 text-primary" />
+              {t('dashboardCardExpensesChart')}
+            </CardTitle>
+          </div>
+          {(!isLoading && transformedChartData.length > 0) && (
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Maximize className="h-5 w-5" />
+                    <span className="sr-only">Expand chart</span>
+                </Button>
+            </DialogTrigger>
+          )}
+        </CardHeader>
+        <CardContent className="p-6 pt-0 flex-grow flex items-center justify-center">
+          {isLoading ? (<div className="flex justify-center items-center h-72"><Skeleton className="h-64 w-64 rounded-full" /></div>) : !expensesByCategoryData || transformedChartData.length === 0 ? (<div className="flex flex-col items-center justify-center h-72 text-center"><PieChartIcon className="h-16 w-16 text-muted-foreground mb-4" /><p className="text-muted-foreground">{t('noDataAvailable')}</p><p className="text-sm text-muted-foreground">{t('tryAddingExpenses')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<ChartContainer config={chartConfig} className="mx-auto aspect-video h-full w-full max-w-lg"><PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}><ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={customTooltipFormatter} />} /><Pie data={transformedChartData} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius="30%" strokeWidth={2} activeIndex={activePieIndex} activeShape={renderActiveShape} onMouseEnter={onPieEnter}>{transformedChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />))}</Pie></PieChart></ChartContainer>)}
+        </CardContent>
+      </Card>
+      <DialogContent className="max-w-3xl h-auto sm:h-[80vh] flex flex-col">
+        <DialogHeader>
+            <DialogTitle>{t('dashboardCardExpensesChart')}</DialogTitle>
+        </DialogHeader>
+        <div className="flex-grow flex items-center justify-center h-full w-full p-4">
+             <ChartContainer config={chartConfig} className="h-full w-full">
+                <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel formatter={customTooltipFormatter} />} />
+                    <Pie data={transformedChartData} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius="30%" outerRadius="80%" strokeWidth={2} activeIndex={activePieIndex} activeShape={renderActiveShape} onMouseEnter={onPieEnter}>
+                        {transformedChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} className="focus:outline-none" />))}
+                    </Pie>
+                </PieChart>
+             </ChartContainer>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 
   const renderLastActivity = () => (
@@ -512,3 +540,5 @@ export default function DashboardPage() {
     </MainLayout>
   );
 }
+
+    
