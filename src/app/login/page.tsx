@@ -17,6 +17,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
 import type { ApiError } from '@/types';
+import { devLog } from '@/lib/logger';
 
 const createLoginSchema = (t: Function) => z.object({
   email: z.string().email({ message: t('invalidEmail') }),
@@ -50,7 +51,7 @@ export default function LoginPage() {
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     setIsSubmittingForm(true);
-    console.log('Data being sent to server for login:', { username: data.email, password: data.password });
+    devLog('Data being sent to server for login:', { username: data.email, password: data.password });
     try {
       await login({ username: data.email, password: data.password });
       // Successful login navigation is handled by AuthContext effect or login function itself
