@@ -267,6 +267,10 @@ export interface DashboardLastTransactionsResponse {
   last_transactions: Transaction[];
 }
 
+export interface DashboardMainWalletBalanceResponse {
+  main_wallet_balance: number;
+}
+
 export interface CurrenciesApiResponse {
   currencies: Record<string, string>; // e.g. "uae_dirham": "AED"
 }

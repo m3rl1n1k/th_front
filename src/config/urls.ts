@@ -16,6 +16,7 @@ export const URLS = {
 
   // Dashboard
   dashboardTotalBalance: `${API_BASE_URL}/dashboard/total-balance`,
+  dashboardMainWalletBalance: `${API_BASE_URL}/dashboard/main-wallet-balance`,
   dashboardMonthlyIncome: `${API_BASE_URL}/dashboard/monthly-income`,
   dashboardMonthExpenses: `${API_BASE_URL}/dashboard/average-expenses`,
   dashboardChartTotalExpense: `${API_BASE_URL}/dashboard/chart/total-expense`,

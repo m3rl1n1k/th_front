@@ -184,6 +184,7 @@
 
   "//": "DASHBOARD",
   "totalBalance": "Total balance",
+  "mainWalletBalance": "Main Wallet Balance",
   "monthlyIncome": "Monthly income",
   "averageExpense": "Average expense",
   "daily": "Daily",
@@ -198,6 +199,7 @@
   "dashboardDataLoadError": "Could not load dashboard summary data.",
   "monthName": "{month}",
   "dashboardCardTotalBalance": "Total Balance",
+  "dashboardCardMainWalletBalance": "Main Wallet Balance",
   "dashboardCardMonthlyIncome": "Monthly Income",
   "dashboardCardAverageExpenses": "Average Expenses",
   "dashboardCardExpensesChart": "Expenses by Category Chart",
@@ -209,6 +211,8 @@
   "quickActionCreateCategory": "New Category",
   "quickActionCreateBudget": "New Budget",
   "quickActionCreateTransfer": "New Transfer",
+  "hideAmounts": "Hide Amounts",
+  "showAmounts": "Show Amounts",
 
   "//": "TRANSACTIONS",
   "newTransaction": "New transaction",

@@ -184,6 +184,7 @@
 
   "//": "ПАНЕЛЬ",
   "totalBalance": "Загальний баланс",
+  "mainWalletBalance": "Баланс основного гаманця",
   "monthlyIncome": "Місячний дохід",
   "averageExpense": "Середні витрати",
   "daily": "Щодня",
@@ -198,6 +199,7 @@
   "dashboardDataLoadError": "Не вдалося завантажити дані панелі.",
   "monthName": "{month}",
   "dashboardCardTotalBalance": "Загальний баланс",
+  "dashboardCardMainWalletBalance": "Баланс основного гаманця",
   "dashboardCardMonthlyIncome": "Місячний дохід",
   "dashboardCardAverageExpenses": "Середні витрати",
   "dashboardCardExpensesChart": "Діаграма витрат за категоріями",
@@ -209,8 +211,10 @@
   "quickActionCreateCategory": "Нова категорія",
   "quickActionCreateBudget": "Новий бюджет",
   "quickActionCreateTransfer": "Новий переказ",
+  "hideAmounts": "Приховати суми",
+  "showAmounts": "Показати суми",
 
-  "//": "ТРАНЗАКЦІЇ",
+  "//": "TRANSACTIONS",
   "newTransaction": "Нова транзакція",
   "addNewTransaction": "Додати нову транзакцію",
   "transactionType": "Тип",

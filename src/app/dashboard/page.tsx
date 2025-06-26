@@ -14,10 +14,11 @@ import {
   getTransactionTypes,
   getDashboardChartTotalExpense,
   getBudgetList,
+  getDashboardMainWalletBalance,
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
-import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal, PlusCircle, WalletCards, Shapes, Maximize } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, AlertTriangle, PieChart as PieChartIcon, ExternalLink, ListChecks, Activity, ArrowUpCircle, ArrowDownCircle, HelpCircle, Loader2, ArrowRightLeft, Target, Eye, BarChartHorizontal, PlusCircle, WalletCards, Shapes, Maximize, Landmark, EyeOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MonthlyExpensesByCategoryResponse, Transaction as TransactionType, TransactionType as AppTransactionType, MonthlyBudgetSummary, ApiError } from '@/types';
@@ -32,6 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface DashboardSummaryData {
   total_balance: number;
+  main_wallet_balance: number;
   month_income: number;
   month_expense: number;
 }
@@ -65,12 +67,13 @@ interface ProcessedLastTransactionItem {
 
 const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
 
-type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget' | 'quick_actions';
+type DashboardCardId = 'total_balance' | 'main_wallet_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget' | 'quick_actions';
 
-const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
+const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'main_wallet_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
 
 const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   total_balance: true,
+  main_wallet_balance: true,
   monthly_income: true,
   average_expenses: true,
   expenses_chart: true,
@@ -81,6 +84,7 @@ const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
 
 const DEFAULT_SIZES: Record<string, string> = {
   total_balance: '1x1',
+  main_wallet_balance: '1x1',
   monthly_income: '1x1',
   average_expenses: '1x1',
   quick_actions: '2x1',
@@ -162,6 +166,7 @@ export default function DashboardPage() {
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
   const [currentMonthBudget, setCurrentMonthBudget] = useState<MonthlyBudgetSummary | null>(null);
+  const [showAmounts, setShowAmounts] = useState(true);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -215,6 +220,7 @@ export default function DashboardPage() {
 
       Promise.all([
         getDashboardTotalBalance(token),
+        getDashboardMainWalletBalance(token),
         getDashboardMonthlyIncome(token),
         getDashboardMonthExpenses(token),
         getDashboardLastTransactions(token, limit),
@@ -222,9 +228,10 @@ export default function DashboardPage() {
         getDashboardChartTotalExpense(token),
         getBudgetList(token)
       ])
-        .then(([balanceData, incomeData, expenseData, lastTransactionsResp, typesData, chartData, budgetListResponse]) => {
+        .then(([balanceData, mainWalletBalanceData, incomeData, expenseData, lastTransactionsResp, typesData, chartData, budgetListResponse]) => {
           setSummaryData({
             total_balance: balanceData.total_balance,
+            main_wallet_balance: mainWalletBalanceData.main_wallet_balance,
             month_income: incomeData.month_income,
             month_expense: expenseData.month_expense,
           });
@@ -332,7 +339,7 @@ export default function DashboardPage() {
           <span className="text-muted-foreground">{item.name}</span>
         </div>
         <span className="font-mono font-medium tabular-nums text-foreground">
-          {formattedValue}&nbsp;{user?.userCurrency?.code || ''}
+            {showAmounts ? `${formattedValue} ${user?.userCurrency?.code || ''}` : '••••••'}
         </span>
       </div>
     );
@@ -345,7 +352,19 @@ export default function DashboardPage() {
         <Wallet className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent className="flex-grow flex items-center">
-        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold"><CurrencyDisplay amountInCents={summaryData.total_balance} /></div>}
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.total_balance} /></div>}
+      </CardContent>
+    </Card>
+  );
+
+  const renderMainWalletBalanceCard = () => (
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{t('mainWalletBalance')}</CardTitle>
+        <Landmark className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent className="flex-grow flex items-center">
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.main_wallet_balance} /></div>}
       </CardContent>
     </Card>
   );
@@ -357,7 +376,7 @@ export default function DashboardPage() {
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent className="flex-grow flex items-center">
-        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={summaryData.month_income} /></div>}
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.month_income} /></div>}
       </CardContent>
     </Card>
   );
@@ -379,15 +398,15 @@ export default function DashboardPage() {
           <>
             <div className="flex justify-between items-baseline text-sm">
               <span className="text-muted-foreground">{t('daily')}</span>
-              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.daily} /></span>
+              <span className="font-medium"><CurrencyDisplay isVisible={showAmounts} amountInCents={averageExpenses.daily} /></span>
             </div>
             <div className="flex justify-between items-baseline text-sm">
               <span className="text-muted-foreground">{t('weekly')}</span>
-              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.weekly} /></span>
+              <span className="font-medium"><CurrencyDisplay isVisible={showAmounts} amountInCents={averageExpenses.weekly} /></span>
             </div>
             <div className="flex justify-between items-baseline text-sm">
               <span className="text-muted-foreground">{t('monthly')}</span>
-              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.monthly} /></span>
+              <span className="font-medium"><CurrencyDisplay isVisible={showAmounts} amountInCents={averageExpenses.monthly} /></span>
             </div>
           </>
         )}
@@ -475,7 +494,7 @@ export default function DashboardPage() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 pt-0 flex-grow">
-        {isLoading ? (<div className="space-y-4">{[...Array(5)].map((_, i) => (<div key={i} className="flex items-center space-x-3 p-2"><Skeleton className="h-6 w-6 rounded-md" /><div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div><Skeleton className="h-4 w-1/4" /></div>))}</div>) : !processedLastActivity || processedLastActivity.length === 0 ? (<div className="flex flex-col items-center justify-center h-full text-center"><ListChecks className="h-12 w-12 text-muted-foreground mb-3" /><p className="text-muted-foreground">{t('noRecentTransactions')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<div className="space-y-1">{processedLastActivity.map((item) => (<Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-center justify-between gap-2"><div className="flex items-center space-x-3 flex-shrink min-w-0">{item.icon}<div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate" title={item.displayText}>{item.displayText}</p><p className="text-xs text-muted-foreground">{item.date}</p></div></div><div className="text-sm font-medium text-right flex-shrink-0 ml-2"><CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} /></div></div></Link>))}</div>)}
+        {isLoading ? (<div className="space-y-4">{[...Array(5)].map((_, i) => (<div key={i} className="flex items-center space-x-3 p-2"><Skeleton className="h-6 w-6 rounded-md" /><div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div><Skeleton className="h-4 w-1/4" /></div>))}</div>) : !processedLastActivity || processedLastActivity.length === 0 ? (<div className="flex flex-col items-center justify-center h-full text-center"><ListChecks className="h-12 w-12 text-muted-foreground mb-3" /><p className="text-muted-foreground">{t('noRecentTransactions')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<div className="space-y-1">{processedLastActivity.map((item) => (<Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-center justify-between gap-2"><div className="flex items-center space-x-3 flex-shrink min-w-0">{item.icon}<div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate" title={item.displayText}>{item.displayText}</p><p className="text-xs text-muted-foreground">{item.date}</p></div></div><div className="text-sm font-medium text-right flex-shrink-0 ml-2"><CurrencyDisplay isVisible={showAmounts} amountInCents={item.amount} currencyCode={item.currencyCode} /></div></div></Link>))}</div>)}
       </CardContent>
       {processedLastActivity && processedLastActivity.length > 0 && (<CardFooter className="p-6 pt-0"><Button variant="outline" asChild className="w-full mt-auto"><Link href="/transactions">{t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4" /></Link></Button></CardFooter>)}
     </Card>
@@ -509,10 +528,10 @@ export default function DashboardPage() {
                 <Progress value={(currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0)) > 100 ? 100 : (currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0))} indicatorClassName={getProgressColor((currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0)))} aria-label={t('budgetProgress', { percentage: (currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0)).toFixed(0) })} className="h-2" />
               </div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-4 w-4 text-green-500" />{t('budgetTotalPlannedShort')}</span><span className="font-semibold text-foreground"><CurrencyDisplay amountInCents={currentMonthBudget.totalPlanned.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-4 w-4 text-red-500" />{t('budgetTotalActualShort')}</span><span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalActual.currency.code} /></span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-4 w-4 text-green-500" />{t('budgetTotalPlannedShort')}</span><span className="font-semibold text-foreground"><CurrencyDisplay isVisible={showAmounts} amountInCents={currentMonthBudget.totalPlanned.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-4 w-4 text-red-500" />{t('budgetTotalActualShort')}</span><span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay isVisible={showAmounts} amountInCents={currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalActual.currency.code} /></span></div>
               </div>
-              <div className={cn("w-full text-center p-3 rounded-md font-semibold text-base sm:text-lg", (currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount) >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400")}><p className="text-xs sm:text-sm uppercase tracking-wider opacity-80 mb-1">{t('budgetRemainingAmountShort')}</p><CurrencyDisplay amountInCents={currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></div>
+              <div className={cn("w-full text-center p-3 rounded-md font-semibold text-base sm:text-lg", (currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount) >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400")}><p className="text-xs sm:text-sm uppercase tracking-wider opacity-80 mb-1">{t('budgetRemainingAmountShort')}</p><CurrencyDisplay isVisible={showAmounts} amountInCents={currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></div>
             </>
           )}
         </CardContent>
@@ -523,6 +542,7 @@ export default function DashboardPage() {
 
   const allCards: DashboardCard[] = [
     { id: 'total_balance', component: renderTotalBalanceCard() },
+    { id: 'main_wallet_balance', component: renderMainWalletBalanceCard() },
     { id: 'monthly_income', component: renderMonthlyIncomeCard() },
     { id: 'average_expenses', component: renderAverageExpensesCard() },
     { id: 'quick_actions', component: renderQuickActionsCard() },
@@ -544,7 +564,18 @@ export default function DashboardPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAmounts(!showAmounts)}
+              title={showAmounts ? t('hideAmounts') : t('showAmounts')}
+            >
+              {showAmounts ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+              {showAmounts ? t('hideAmounts') : t('showAmounts')}
+            </Button>
+        </div>
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {isLoading ?
             [...Array(8)].map((_, i) => <Skeleton key={i} className="h-48" />) :

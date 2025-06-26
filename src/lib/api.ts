@@ -21,6 +21,7 @@ import type {
   RepeatedTransactionEntry,
   MonthlyExpensesByCategoryResponse,
   DashboardLastTransactionsResponse,
+  DashboardMainWalletBalanceResponse,
   CreateWalletPayload,
   UpdateWalletPayload as AppUpdateWalletPayload,
   CurrenciesApiResponse,
@@ -236,6 +237,9 @@ export const updateUserSettings = (data: Partial<UserSettings>, token: string): 
 // Dashboard
 export const getDashboardTotalBalance = (token: string): Promise<{ total_balance: number }> =>
   request(URLS.dashboardTotalBalance, { method: 'GET', token });
+
+export const getDashboardMainWalletBalance = (token: string): Promise<DashboardMainWalletBalanceResponse> =>
+  request(URLS.dashboardMainWalletBalance, { method: 'GET', token });
 
 export const getDashboardMonthlyIncome = (token: string): Promise<{ month_income: number }> =>
   request(URLS.dashboardMonthlyIncome, { method: 'GET', token });
