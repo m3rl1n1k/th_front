@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { fetchUserProfile, loginUser as apiLoginUser, registerUser as apiRegisterUser, getInvitations } from '@/lib/api';
 import type { User, ApiError, LoginCredentials, RegistrationPayload, LoginResponse, Invitation } from '@/types';
@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
   const [reloadOnSuccess, setReloadOnSuccess] = useState(false);
+  const isModalOpenRef = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -73,17 +74,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleRenewalClose = useCallback(() => {
     console.log('DEV LOG: Session renewal modal closed by user. Logging out.');
+    isModalOpenRef.current = false;
     setIsRenewalModalOpen(false);
     logout();
   }, [logout]);
   
   const promptSessionRenewal = useCallback(() => {
     // Prevent opening if already open or if no user was logged in previously
-    if (!isRenewalModalOpen && user) {
+    if (!isModalOpenRef.current && user) {
+        isModalOpenRef.current = true;
         console.log('DEV LOG: Prompting for session renewal.');
         setIsRenewalModalOpen(true);
     }
-  }, [isRenewalModalOpen, user]);
+  }, [user]);
 
   // Listen for the custom sessionExpired event
   useEffect(() => {
@@ -140,6 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('DEV LOG: Session renewal successful. Processing new token.');
     try {
       await processSuccessfulLogin(newToken);
+      isModalOpenRef.current = false;
       setIsRenewalModalOpen(false);
       toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
       setReloadOnSuccess(true);
