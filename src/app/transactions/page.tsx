@@ -29,7 +29,7 @@ import {
 import { useTranslation } from '@/context/i18n-context';
 import {
   CalendarIcon, PlusCircle, ListFilter, RefreshCwIcon, History,
-  ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText, Shapes
+  ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, HelpCircle, MoreHorizontal, Eye, Edit3, Trash2, Loader2, Power, PowerOff, FileText, Shapes, ChevronsUpDown
 } from 'lucide-react';
 import { format, parseISO, differenceInDays, add, sub } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -52,6 +52,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { CategorySelector } from '@/components/common/category-selector';
 
 interface GroupedTransactions {
   [date: string]: Transaction[];
@@ -656,25 +657,15 @@ export default function TransactionsPage() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
-                          <Select value={filters.categoryId || 'all'} onValueChange={(value) => handleFilterChange('categoryId', value === 'all' ? undefined : value)} disabled={isLoadingCategories}>
-                            <SelectTrigger id="filterCategory" className={cn("border border-input font-normal hover:border-primary transition-colors")}>
-                              <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
-                              <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-72">
-                              <SelectItem value="all">{t('allCategories')}</SelectItem>
-                              {mainCategories.map(mainCat => (
-                                <SelectGroup key={mainCat.id}>
-                                  <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
-                                  {mainCat.subCategories && mainCat.subCategories.map(subCat => (
-                                    <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                      {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
-                                    </SelectItem>
-                                  ))}
-                                </SelectGroup>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <CategorySelector
+                              value={filters.categoryId}
+                              onChange={(value) => handleFilterChange('categoryId', value)}
+                              mainCategories={mainCategories}
+                              disabled={isLoadingCategories}
+                              placeholder={t('selectCategoryPlaceholder')}
+                              allowAllCategories={true}
+                              triggerClassName="border border-input font-normal hover:border-primary transition-colors"
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="filterType" className="font-medium">{t('filterByType')}</Label>

@@ -12,7 +12,6 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
 import { getBudgetSummaryItemForEdit, updateBudget, getMainCategories } from '@/lib/api';
@@ -21,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { BudgetDetails, UpdateBudgetPayload, MainCategory as ApiMainCategory, ApiError } from '@/types';
 import { Save, ArrowLeft, Loader2, Shapes, CalendarDays, DollarSign, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CategorySelector } from '@/components/common/category-selector';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -238,28 +238,14 @@ export default function EditBudgetItemPage() {
                     name="categoryId"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isLoadingData || mainCategoriesHierarchical.length === 0}
-                      >
-                        <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
-                          <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder={isLoadingData ? t('loading') : t('selectCategoryPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72 overflow-y-auto">
-                          {mainCategoriesHierarchical.map(mainCat => (
-                            <SelectGroup key={mainCat.id}>
-                              <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
-                              {mainCat.subCategories && mainCat.subCategories.map(subCat => (
-                                <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <CategorySelector
+                          value={field.value}
+                          onChange={field.onChange}
+                          mainCategories={mainCategoriesHierarchical}
+                          disabled={isLoadingData || mainCategoriesHierarchical.length === 0}
+                          placeholder={t('selectCategoryPlaceholder')}
+                          triggerClassName={errors.categoryId ? 'border-destructive' : ''}
+                      />
                     )}
                   />
                   {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}

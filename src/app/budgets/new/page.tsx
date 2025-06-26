@@ -21,6 +21,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { CreateBudgetPayload, MainCategory as ApiMainCategory, BudgetCategorySummaryItem, ApiError } from '@/types';
 import { ArrowLeft, Save, Loader2, Shapes, CalendarDays, DollarSign, AlertTriangle } from 'lucide-react';
+import { CategorySelector } from '@/components/common/category-selector';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -156,33 +157,14 @@ export default function NewBudgetPage() {
                     name="categoryId"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
-                      >
-                        <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
-                          <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72 overflow-y-auto">
-                          {mainCategoriesHierarchical.map(mainCat => (
-                            <SelectGroup key={mainCat.id}>
-                              <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
-                              {mainCat.subCategories && mainCat.subCategories.map(subCat => (
-                                <SelectItem 
-                                  key={subCat.id} 
-                                  value={String(subCat.id)}
-                                  // Removed disabled logic for revert
-                                >
-                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
-                                  {/* Removed (Budgeted) text for revert */}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <CategorySelector
+                            value={field.value}
+                            onChange={field.onChange}
+                            mainCategories={mainCategoriesHierarchical}
+                            disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
+                            placeholder={t('selectCategoryPlaceholder')}
+                            triggerClassName={errors.categoryId ? 'border-destructive' : ''}
+                        />
                     )}
                   />
                   {errors.categoryId && <p className="text-sm text-destructive">{errors.categoryId.message}</p>}

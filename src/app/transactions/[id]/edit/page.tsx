@@ -32,6 +32,7 @@ import type { Transaction, TransactionType as AppTransactionType, Frequency, Wal
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, AlertTriangle, Calculator } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { SimpleAmountCalculator } from '@/components/common/simple-amount-calculator';
+import { CategorySelector } from '@/components/common/category-selector';
 
 const generateCategoryTranslationKey = (name: string | undefined | null): string => {
   if (!name) return '';
@@ -326,29 +327,15 @@ export default function EditTransactionPage() {
                     name="categoryId"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                        value={field.value || "none"}
-                        disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
-                      >
-                        <SelectTrigger id="categoryId" className={errors.categoryId ? 'border-destructive' : ''}>
-                          <Shapes className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder={isLoadingCategories ? t('loading') : t('selectCategoryOptionalPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72 overflow-y-auto">
-                           <SelectItem value="none">{t('noCategoryOption')}</SelectItem>
-                          {mainCategoriesHierarchical.map(mainCat => (
-                            <SelectGroup key={mainCat.id}>
-                              <SelectLabel>{t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}</SelectLabel>
-                              {mainCat.subCategories && mainCat.subCategories.map(subCat => (
-                                <SelectItem key={subCat.id} value={String(subCat.id)}>
-                                  {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <CategorySelector
+                          value={field.value}
+                          onChange={field.onChange}
+                          mainCategories={mainCategoriesHierarchical}
+                          disabled={isLoadingCategories || mainCategoriesHierarchical.length === 0}
+                          placeholder={t('selectCategoryOptionalPlaceholder')}
+                          allowNoCategory={true}
+                          triggerClassName={errors.categoryId ? 'border-destructive' : ''}
+                      />
                     )}
                   />
                   {errors.categoryId && <p className="text-sm text-destructive">{t(errors.categoryId.message as any) || errors.categoryId.message}</p>}
