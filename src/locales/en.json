@@ -668,6 +668,7 @@
   "captchaPlaceholder": "Enter sum",
   "captchaRequiredError": "Captcha is required.",
   "captchaIncorrectError": "Incorrect captcha answer. please try again.",
+  "captchaNotConfiguredError": "Captcha is not configured correctly. Site key is missing.",
   "refreshCaptchaLabel": "Refresh captcha",
 
   "//": "CALCULATOR",

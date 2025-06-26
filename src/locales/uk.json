@@ -668,6 +668,7 @@
   "captchaPlaceholder": "Введіть суму",
   "captchaRequiredError": "Капча обов'язкова.",
   "captchaIncorrectError": "Неправильна відповідь капчі. будь ласка, спробуйте ще раз.",
+  "captchaNotConfiguredError": "Капча налаштована неправильно. Відсутній ключ сайту.",
   "refreshCaptchaLabel": "Оновити капчу",
 
   "//": "CALCULATOR",

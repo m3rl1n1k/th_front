@@ -16,8 +16,8 @@ export interface TurnstileCaptchaRef {
     reset: () => void;
 }
 
-// Site Key provided by the user
-const SITE_KEY = '0x4AAAAAABick5l4CGDJ6YlI';
+// Site Key is now loaded from environment variables
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export const TurnstileCaptcha = forwardRef<TurnstileCaptchaRef, TurnstileCaptchaProps>(
     ({ onSuccess, error }, ref) => {
@@ -30,6 +30,15 @@ export const TurnstileCaptcha = forwardRef<TurnstileCaptchaRef, TurnstileCaptcha
             turnstileRef.current?.reset();
         }
     }));
+
+    if (!SITE_KEY) {
+        console.error("Turnstile Site Key is not configured. Please set NEXT_PUBLIC_TURNSTILE_SITE_KEY in your .env file.");
+        return (
+            <div className="p-4 bg-destructive/10 text-destructive text-sm rounded-md">
+                {t('captchaNotConfiguredError', { defaultValue: 'Captcha is not configured correctly. Site key is missing.' })}
+            </div>
+        );
+    }
   
     return (
         <div className="space-y-2">
