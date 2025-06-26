@@ -184,7 +184,7 @@
 
   "//": "ПАНЕЛЬ",
   "totalBalance": "Загальний баланс",
-  "mainWalletBalance": "Баланс основного гаманця",
+  "mainWalletLabel": "Основний гаманець",
   "monthlyIncome": "Місячний дохід",
   "averageExpense": "Середні витрати",
   "daily": "Щодня",
@@ -199,7 +199,6 @@
   "dashboardDataLoadError": "Не вдалося завантажити дані панелі.",
   "monthName": "{month}",
   "dashboardCardTotalBalance": "Загальний баланс",
-  "dashboardCardMainWalletBalance": "Баланс основного гаманця",
   "dashboardCardMonthlyIncome": "Місячний дохід",
   "dashboardCardAverageExpenses": "Середні витрати",
   "dashboardCardExpensesChart": "Діаграма витрат за категоріями",
@@ -543,6 +542,11 @@
   "saveStatusButton": "Зберегти статус",
   "statusUpdatedSuccess": "Статус відгуку оновлено",
   "errorUpdatingStatus": "Помилка оновлення статусу",
+  "feedbackDeletedTitle": "Відгук видалено",
+  "feedbackDeletedDesc": "Відгук \"{subject}\" було видалено.",
+  "errorDeletingFeedback": "Помилка видалення відгуку",
+  "deleteFeedbackConfirmTitle": "Підтвердити видалення",
+  "deleteFeedbackConfirmMessage": "Ви впевнені, що хочете видалити цей відгук?",
 
   "//": "БЮДЖЕТИ",
   "budgetCreateNewButton": "Створити новий бюджет",

@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import {
   getDashboardTotalBalance,
+  getDashboardMainWalletBalance,
   getDashboardMonthlyIncome,
   getDashboardMonthExpenses,
   getDashboardLastTransactions,
   getTransactionTypes,
   getDashboardChartTotalExpense,
   getBudgetList,
-  getDashboardMainWalletBalance,
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { CurrencyDisplay } from '@/components/common/currency-display';
@@ -67,13 +67,12 @@ interface ProcessedLastTransactionItem {
 
 const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
 
-type DashboardCardId = 'total_balance' | 'main_wallet_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget' | 'quick_actions';
+type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget' | 'quick_actions';
 
-const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'main_wallet_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
+const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
 
 const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   total_balance: true,
-  main_wallet_balance: true,
   monthly_income: true,
   average_expenses: true,
   expenses_chart: true,
@@ -84,7 +83,6 @@ const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
 
 const DEFAULT_SIZES: Record<string, string> = {
   total_balance: '1x1',
-  main_wallet_balance: '1x1',
   monthly_income: '1x1',
   average_expenses: '1x1',
   quick_actions: '2x1',
@@ -351,20 +349,17 @@ export default function DashboardPage() {
         <CardTitle className="text-sm font-medium">{t('totalBalance')}</CardTitle>
         <Wallet className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="flex-grow flex items-center">
-        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.total_balance} /></div>}
-      </CardContent>
-    </Card>
-  );
-
-  const renderMainWalletBalanceCard = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{t('mainWalletBalance')}</CardTitle>
-        <Landmark className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent className="flex-grow flex items-center">
-        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.main_wallet_balance} /></div>}
+      <CardContent className="flex-grow flex flex-col justify-center">
+        {isLoading || !summaryData ? (
+          <Skeleton className="h-8 w-3/4" />
+        ) : (
+          <>
+            <div className="text-2xl font-bold"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.total_balance} /></div>
+            <p className="text-xs text-muted-foreground pt-1">
+              {t('mainWalletLabel')}: <CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.main_wallet_balance} />
+            </p>
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -542,7 +537,6 @@ export default function DashboardPage() {
 
   const allCards: DashboardCard[] = [
     { id: 'total_balance', component: renderTotalBalanceCard() },
-    { id: 'main_wallet_balance', component: renderMainWalletBalanceCard() },
     { id: 'monthly_income', component: renderMonthlyIncomeCard() },
     { id: 'average_expenses', component: renderAverageExpensesCard() },
     { id: 'quick_actions', component: renderQuickActionsCard() },

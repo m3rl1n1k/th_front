@@ -184,7 +184,7 @@
 
   "//": "DASHBOARD",
   "totalBalance": "Total balance",
-  "mainWalletBalance": "Main Wallet Balance",
+  "mainWalletLabel": "Main Wallet",
   "monthlyIncome": "Monthly income",
   "averageExpense": "Average expense",
   "daily": "Daily",
@@ -199,7 +199,6 @@
   "dashboardDataLoadError": "Could not load dashboard summary data.",
   "monthName": "{month}",
   "dashboardCardTotalBalance": "Total Balance",
-  "dashboardCardMainWalletBalance": "Main Wallet Balance",
   "dashboardCardMonthlyIncome": "Monthly Income",
   "dashboardCardAverageExpenses": "Average Expenses",
   "dashboardCardExpensesChart": "Expenses by Category Chart",
@@ -543,6 +542,11 @@
   "saveStatusButton": "Save Status",
   "statusUpdatedSuccess": "Feedback status updated",
   "errorUpdatingStatus": "Error updating status",
+  "feedbackDeletedTitle": "Feedback deleted",
+  "feedbackDeletedDesc": "Feedback \"{subject}\" has been deleted.",
+  "errorDeletingFeedback": "Error deleting feedback",
+  "deleteFeedbackConfirmTitle": "Confirm Deletion",
+  "deleteFeedbackConfirmMessage": "Are you sure you want to delete this feedback item?",
 
   "//": "BUDGETS",
   "budgetCreateNewButton": "Create new budget",

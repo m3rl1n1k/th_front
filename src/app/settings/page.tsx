@@ -32,7 +32,6 @@ const DEFAULT_CHART_CAPITAL_COLOR = '#f59e0b';
 
 const defaultDashboardVisibility = {
   total_balance: true,
-  main_wallet_balance: true,
   monthly_income: true,
   average_expenses: true,
   expenses_chart: true,
@@ -41,11 +40,10 @@ const defaultDashboardVisibility = {
   quick_actions: true,
 };
 
-const defaultDashboardOrder = ['total_balance', 'main_wallet_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
+const defaultDashboardOrder = ['total_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
 
 const defaultDashboardSizes: Record<string, string> = {
   total_balance: '1x1',
-  main_wallet_balance: '1x1',
   monthly_income: '1x1',
   average_expenses: '1x1',
   quick_actions: '2x1',
@@ -82,7 +80,6 @@ type DashboardCardConfig = {
 
 const ALL_DASHBOARD_CARDS: DashboardCardConfig[] = [
   { id: 'total_balance', labelKey: 'dashboardCardTotalBalance' },
-  { id: 'main_wallet_balance', labelKey: 'dashboardCardMainWalletBalance' },
   { id: 'monthly_income', labelKey: 'dashboardCardMonthlyIncome' },
   { id: 'average_expenses', labelKey: 'dashboardCardAverageExpenses' },
   { id: 'quick_actions', labelKey: 'dashboardCardQuickActions' },
