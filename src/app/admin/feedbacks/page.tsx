@@ -13,12 +13,22 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
-import { getFeedbacks, updateFeedbackStatus } from '@/lib/api';
+import { getFeedbacks, updateFeedbackStatus, deleteFeedback } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { FeedbackTypeOption } from '@/types';
 import type { Feedback as FeedbackItemType, ApiError, UpdateFeedbackStatusPayload } from '@/types';
-import { Loader2, ShieldAlert, ClipboardList, AlertTriangle, Save } from 'lucide-react';
+import { Loader2, ShieldAlert, ClipboardList, AlertTriangle, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const REQUIRED_ROLE = "ROLE_MODERATOR_FEEDBACK";
 
@@ -39,6 +49,10 @@ export default function AdminFeedbacksPage() {
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
   const [statusChanges, setStatusChanges] = useState<Record<string, FeedbackStatus>>({});
 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<FeedbackItemType | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const userHasRequiredRole = useCallback(() => {
     return user?.roles?.includes(REQUIRED_ROLE) || false;
   }, [user]);
@@ -56,16 +70,13 @@ export default function AdminFeedbacksPage() {
           setFeedbacks(normalizedFeedbacks);
         })
         .catch((error: ApiError) => {
-          if (error.code !== 401) {
-            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
-          }
           setFeedbacks([]);
         })
         .finally(() => {
           setIsLoadingFeedbacks(false);
         });
     }
-  }, [token, userHasRequiredRole, toast, t]);
+  }, [token, userHasRequiredRole]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -120,9 +131,7 @@ export default function AdminFeedbacksPage() {
       toast({ title: t('statusUpdatedSuccess') });
       fetchFeedbacks(); // Refresh data
     } catch (error: any) {
-      if ((error as ApiError).code !== 401) {
-        toast({ variant: "destructive", title: t('errorUpdatingStatus'), description: error.message || t('unexpectedError') });
-      }
+      toast({ variant: "destructive", title: t('errorUpdatingStatus'), description: error.message || t('unexpectedError') });
     } finally {
       setUpdatingStatus(prev => ({ ...prev, [feedbackId]: false }));
       setStatusChanges(prev => {
@@ -130,6 +139,28 @@ export default function AdminFeedbacksPage() {
         delete newChanges[feedbackId];
         return newChanges;
       });
+    }
+  };
+
+  const openDeleteDialog = (item: FeedbackItemType) => {
+    setItemToDelete(item);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!itemToDelete || !token) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteFeedback(itemToDelete.id, token);
+      toast({ title: t('feedbackDeletedTitle', { defaultValue: 'Feedback deleted' }), description: t('feedbackDeletedDesc', { defaultValue: `Feedback "${itemToDelete.subject}" has been deleted.` }) });
+      fetchFeedbacks(); // Refresh list
+    } catch (error: any) {
+      toast({ variant: "destructive", title: t('errorDeletingFeedback'), description: error.message || t('unexpectedError') });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
     }
   };
 
@@ -211,8 +242,8 @@ export default function AdminFeedbacksPage() {
                       <p className="text-xs text-muted-foreground mb-4">
                         {t('feedbackSubmittedAtLabel')}: {fb.createdAt ? format(parseISO(fb.createdAt), "PPp", { locale: dateFnsLocale }) : t('notApplicable')}
                       </p>
-                      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
-                        <div className="space-y-1 flex-grow">
+                      <div className="flex flex-col sm:flex-row items-end gap-2">
+                        <div className="space-y-1 flex-grow w-full sm:w-auto">
                           <Label htmlFor={`status-${fb.id}`} className="text-xs">{t('feedbackStatusLabel')}</Label>
                            <Select
                             onValueChange={(value) => handleStatusChange(fb.id, value as FeedbackStatus)}
@@ -230,19 +261,29 @@ export default function AdminFeedbacksPage() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button
-                          onClick={() => handleSaveStatus(fb.id)}
-                          disabled={!statusChanges[fb.id] || updatingStatus[fb.id]}
-                          size="sm"
-                          className="w-full sm:w-auto"
-                        >
-                           {updatingStatus[fb.id] ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Save className="mr-2 h-4 w-4" />
-                          )}
-                          {t('saveStatusButton')}
-                        </Button>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button
+                            onClick={() => handleSaveStatus(fb.id)}
+                            disabled={!statusChanges[fb.id] || updatingStatus[fb.id]}
+                            size="sm"
+                            className="flex-grow sm:flex-grow-0"
+                          >
+                            {updatingStatus[fb.id] ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Save className="mr-2 h-4 w-4" />
+                            )}
+                            {t('saveStatusButton')}
+                          </Button>
+                          <Button
+                            onClick={() => openDeleteDialog(fb)}
+                            disabled={isDeleting}
+                            size="sm"
+                            variant="destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -252,6 +293,23 @@ export default function AdminFeedbacksPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteFeedbackConfirmTitle', { defaultValue: 'Confirm Deletion' })}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('deleteFeedbackConfirmMessage', { defaultValue: 'Are you sure you want to delete this feedback item?' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setItemToDelete(null)}>{t('cancelButton')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirmed} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('deleteButtonConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

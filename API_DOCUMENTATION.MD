@@ -261,3 +261,11 @@ Updates the status of a specific feedback item. Requires `ROLE_MODERATOR_FEEDBAC
     }
     ```
 *   **Failure Response (400, 401, 403, 404)**: Standard error format.
+    
+#### `DELETE /feedbacks/{id}`
+Deletes a specific feedback item. Requires `ROLE_MODERATOR_FEEDBACK` role.
+*   **URL Params**:
+    *   `id` (integer, required) - The ID of the feedback item.
+*   **Request Body**: None
+*   **Success Response (204 No Content)**
+*   **Failure Response (401, 403, 404)**: Standard error format.

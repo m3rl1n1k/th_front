@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { TurnstileCaptcha, type TurnstileCaptchaRef } from '@/components/common/turnstile-captcha';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +23,6 @@ const createRegistrationSchema = (t: Function) => z.object({
   login: z.string().min(3, { message: t('loginMinLengthError') }).max(50, { message: t('loginMaxLengthError') }),
   password: z.string().min(6, { message: t('passwordMinLengthError') }),
   confirmPassword: z.string(),
-  captcha: z.string().min(1, { message: t('captchaRequiredError') }),
 }).refine(data => data.password === data.confirmPassword, {
   message: t('passwordsDoNotMatchError'),
   path: ["confirmPassword"],
@@ -37,14 +35,13 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register: registerUser, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
-  const captchaRef = useRef<TurnstileCaptchaRef>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const registrationSchema = createRegistrationSchema(t);
 
   const { control, handleSubmit, setError, formState: { errors } } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
-    defaultValues: { email: '', login: '', password: '', confirmPassword: '', captcha: ''},
+    defaultValues: { email: '', login: '', password: '', confirmPassword: ''},
     shouldFocusError: false,
   });
 
@@ -63,7 +60,7 @@ export default function RegisterPage() {
        if (apiError.errors) {
          Object.entries(apiError.errors).forEach(([field, messages]) => {
            if (field as keyof RegistrationFormData) {
-            const validFields: Array<keyof RegistrationFormData> = ["email", "login", "password", "confirmPassword", "captcha"];
+            const validFields: Array<keyof RegistrationFormData> = ["email", "login", "password", "confirmPassword"];
             if (validFields.includes(field as keyof RegistrationFormData)) {
              setError(field as keyof RegistrationFormData, { type: 'server', message: messages.join(', ') });
             }
@@ -72,7 +69,6 @@ export default function RegisterPage() {
          errorMessage = t('validationFailedCheckFields');
        }
       toast({ variant: "destructive", title: t('registrationFailedTitle'), description: errorMessage });
-      captchaRef.current?.reset();
     } finally {
       setIsSubmittingForm(false);
     }
@@ -150,18 +146,6 @@ export default function RegisterPage() {
               {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
             
-            <Controller
-              name="captcha"
-              control={control}
-              render={({ field }) => (
-                <TurnstileCaptcha
-                  ref={captchaRef}
-                  onSuccess={(token) => field.onChange(token)}
-                  error={errors.captcha?.message}
-                />
-              )}
-            />
-
             <Button type="submit" className="w-full" disabled={isSubmittingForm || authIsLoading}>
               {(isSubmittingForm || authIsLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmittingForm || authIsLoading ? t('registeringButton') : t('registerButton')}

@@ -70,6 +70,7 @@ export const URLS = {
   submitFeedback: `${API_BASE_URL}/feedbacks`,
   getFeedbacks: `${API_BASE_URL}/feedbacks`,
   updateFeedbackStatus: (id: string | number) => `${API_BASE_URL}/feedbacks/${id}`,
+  deleteFeedback: (id: string | number) => `${API_BASE_URL}/feedbacks/${id}`,
 
   // Budgets
   getBudgets: `${API_BASE_URL}/budgets`, 

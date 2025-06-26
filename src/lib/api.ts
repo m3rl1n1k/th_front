@@ -387,6 +387,10 @@ export const updateFeedbackStatus = (id: string | number, data: UpdateFeedbackSt
   return request(URLS.updateFeedbackStatus(id), { method: 'PUT', body: data, token });
 };
 
+export const deleteFeedback = (id: string | number, token: string): Promise<void> => {
+  return request(URLS.deleteFeedback(id), { method: 'DELETE', token });
+};
+
 // Budgets
 export const getBudgetList = (token: string): Promise<BudgetListApiResponse> => {
   return request(URLS.getBudgets, { method: 'GET', token });

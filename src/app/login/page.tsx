@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
@@ -11,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { TurnstileCaptcha, type TurnstileCaptchaRef } from '@/components/common/turnstile-captcha';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,6 @@ import { devLog } from '@/lib/logger';
 const createLoginSchema = (t: Function) => z.object({
   email: z.string().email({ message: t('invalidEmail') }),
   password: z.string().min(1, { message: t('passwordRequiredError') }),
-  captcha: z.string().min(1, { message: t('captchaRequiredError') }),
 });
 
 type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
@@ -32,14 +31,13 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
-  const captchaRef = useRef<TurnstileCaptchaRef>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const loginSchema = createLoginSchema(t);
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', captcha: '' },
+    defaultValues: { email: '', password: '' },
     shouldFocusError: false, 
   });
 
@@ -62,7 +60,6 @@ export default function LoginPage() {
         title: t('loginFailedTitle'),
         description: apiError.message || t('loginFailedDesc'),
       });
-      captchaRef.current?.reset(); // Reset captcha on API error
     } finally {
       setIsSubmittingForm(false);
     }
@@ -125,18 +122,6 @@ export default function LoginPage() {
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
             
-            <Controller
-              name="captcha"
-              control={control}
-              render={({ field }) => (
-                <TurnstileCaptcha
-                  ref={captchaRef}
-                  onSuccess={(token) => field.onChange(token)}
-                  error={errors.captcha?.message}
-                />
-              )}
-            />
-
             <Button type="submit" className="w-full" disabled={isSubmittingForm || authIsLoading}>
               {(isSubmittingForm || authIsLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSubmittingForm || authIsLoading ? t('loggingInButton') : t('loginButton')}
