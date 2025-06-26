@@ -18,7 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { getMainCategories, updateSubCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { MainCategory, SubCategory, UpdateSubCategoryPayload } from '@/types';
+import type { MainCategory, SubCategory, UpdateSubCategoryPayload, ApiError } from '@/types';
 import { Save, ArrowLeft, Loader2, AlertTriangle, Palette } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -40,7 +40,7 @@ const createEditSubCategorySchema = (t: Function) => z.object({
 type EditSubCategoryFormData = z.infer<ReturnType<typeof createEditSubCategorySchema>>;
 
 export default function EditSubCategoryPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -129,6 +129,7 @@ export default function EditSubCategoryPage() {
       toast({ title: t('subCategoryUpdatedTitle'), description: t('subCategoryUpdatedDesc') });
       router.push('/categories');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorUpdatingSubCategory'), description: error.message });
     } finally {
       setFormIsSubmitting(false);

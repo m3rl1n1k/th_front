@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -27,7 +28,7 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory } from '@/types';
+import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, ApiError } from '@/types';
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, Calculator, PlusCircle } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { SimpleAmountCalculator } from '@/components/common/simple-amount-calculator';
@@ -38,7 +39,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function NewTransactionPage() {
-  const { token, isAuthenticated, user } = useAuth();
+  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -200,6 +201,7 @@ export default function NewTransactionPage() {
       });
       router.push('/transactions');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({
         variant: "destructive",
         title: t('transactionFailedTitle'),

@@ -16,7 +16,7 @@ import { useAuth } from '@/context/auth-context';
 import { getWalletById, updateWallet, getWalletTypes, getWalletsList, getCurrencies } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { UpdateWalletPayload, WalletDetails, WalletTypeMap, CurrenciesApiResponse, CurrencyInfo } from '@/types';
+import type { UpdateWalletPayload, WalletDetails, WalletTypeMap, CurrenciesApiResponse, CurrencyInfo, ApiError } from '@/types';
 import { Save, ArrowLeft, Loader2, Coins, AlertTriangle } from 'lucide-react';
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
@@ -32,7 +32,7 @@ const createEditWalletFormSchema = (t: Function) => z.object({
 type EditWalletFormData = z.infer<ReturnType<typeof createEditWalletFormSchema>>;
 
 export default function EditWalletPage() {
-  const { token, isAuthenticated, user } = useAuth();
+  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -151,6 +151,7 @@ export default function EditWalletPage() {
       toast({ title: t('walletUpdateSuccessTitle'), description: t('walletUpdateSuccessDesc') });
       router.push('/wallets');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorUpdatingWallet'), description: error.message });
     } finally {
       setFormIsSubmitting(false);

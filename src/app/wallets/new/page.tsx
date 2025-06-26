@@ -16,7 +16,7 @@ import { useAuth } from '@/context/auth-context';
 import { createWallet, getWalletTypes, getWalletsList, getCurrencies } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { CreateWalletPayload, WalletTypeMap, WalletDetails, CurrenciesApiResponse, CurrencyInfo } from '@/types';
+import type { CreateWalletPayload, WalletTypeMap, WalletDetails, CurrenciesApiResponse, CurrencyInfo, ApiError } from '@/types';
 import { Save, ArrowLeft, Loader2, Coins } from 'lucide-react';
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
@@ -32,7 +32,7 @@ const createWalletFormSchema = (t: Function) => z.object({
 type WalletFormData = z.infer<ReturnType<typeof createWalletFormSchema>>;
 
 export default function NewWalletPage() {
-  const { token, isAuthenticated, user } = useAuth();
+  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -143,6 +143,7 @@ export default function NewWalletPage() {
       toast({ title: t('walletCreatedTitle'), description: t('walletCreatedDesc') });
       router.push('/wallets');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorCreatingWallet'), description: error.message });
     }
   };

@@ -18,7 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { getMainCategoryById, updateMainCategory } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { MainCategory, UpdateMainCategoryPayload } from '@/types';
+import type { MainCategory, UpdateMainCategoryPayload, ApiError } from '@/types';
 import { Save, ArrowLeft, Loader2, AlertTriangle, Palette } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,7 +34,7 @@ const createEditMainCategorySchema = (t: Function) => z.object({
 type EditMainCategoryFormData = z.infer<ReturnType<typeof createEditMainCategorySchema>>;
 
 export default function EditMainCategoryPage() {
-  const { token, isAuthenticated, isLoading: authIsLoading } = useAuth();
+  const { token, isAuthenticated, isLoading: authIsLoading, promptSessionRenewal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -110,6 +110,7 @@ export default function EditMainCategoryPage() {
       toast({ title: t('mainCategoryUpdatedTitle'), description: t('mainCategoryUpdatedDesc') });
       router.push('/categories');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorUpdatingMainCategory'), description: error.message });
     } finally {
       setFormIsSubmitting(false);

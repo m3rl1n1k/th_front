@@ -28,7 +28,7 @@ import {
 } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { Transaction, TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, UpdateTransactionPayload } from '@/types';
+import type { Transaction, TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, UpdateTransactionPayload, ApiError } from '@/types';
 import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, AlertTriangle, Calculator } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { SimpleAmountCalculator } from '@/components/common/simple-amount-calculator';
@@ -51,7 +51,7 @@ const EditTransactionSchema = z.object({
 type EditTransactionFormData = z.infer<typeof EditTransactionSchema>;
 
 export default function EditTransactionPage() {
-  const { token, isAuthenticated, user } = useAuth();
+  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation(); 
   const { toast } = useToast();
   const router = useRouter();
@@ -166,6 +166,7 @@ export default function EditTransactionPage() {
       });
       router.push('/transactions');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({
         variant: "destructive",
         title: t('transactionUpdateFailedTitle'),
@@ -442,4 +443,3 @@ export default function EditTransactionPage() {
     </MainLayout>
   );
 }
-    

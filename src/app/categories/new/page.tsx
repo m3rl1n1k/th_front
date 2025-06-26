@@ -19,7 +19,7 @@ import { useAuth } from '@/context/auth-context';
 import { createMainCategory, createSubCategory, getMainCategories } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload } from '@/types';
+import type { MainCategory, CreateMainCategoryPayload, CreateSubCategoryPayload, ApiError } from '@/types';
 import { Save, ArrowLeft, PlusCircle, Tag, Loader2, Palette } from 'lucide-react';
 import { iconMapKeys, IconRenderer } from '@/components/common/icon-renderer';
 import { ColorSwatches, predefinedColors } from '@/components/common/ColorSwatches';
@@ -43,7 +43,7 @@ type SubCategoryFormData = z.infer<ReturnType<typeof createSubCategorySchema>>;
 
 
 export default function CreateCategoryPage() {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -100,6 +100,7 @@ export default function CreateCategoryPage() {
       toast({ title: t('mainCategoryCreatedTitle'), description: t('mainCategoryCreatedDesc') });
       router.push('/categories');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorCreatingMainCategory'), description: error.message });
     }
   };
@@ -117,6 +118,7 @@ export default function CreateCategoryPage() {
       toast({ title: t('subCategoryCreatedTitle'), description: t('subCategoryCreatedDesc') });
       router.push('/categories');
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({ variant: "destructive", title: t('errorCreatingSubCategory'), description: error.message });
     }
   };
