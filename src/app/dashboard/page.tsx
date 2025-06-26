@@ -387,8 +387,10 @@ export default function DashboardPage() {
     return (
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">{t('dashboardCardQuickActions')}</CardTitle>
-          <PlusCircle className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <PlusCircle className="h-4 w-4 text-primary" />
+            {t('dashboardCardQuickActions')}
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow grid grid-cols-2 gap-4 pt-4">
           {actions.map(action => (
@@ -497,9 +499,9 @@ export default function DashboardPage() {
     <MainLayout>
       <div className="space-y-6">
         <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {isLoading ?
-            [...Array(6)].map((_, i) => <Skeleton key={i} className="h-48" />) :
+            [...Array(8)].map((_, i) => <Skeleton key={i} className="h-48" />) :
             visibleCards.map(({ id, component, className }) => (
               <div key={id} className={cn(className, "self-stretch")}>
                 {React.cloneElement(component as React.ReactElement, { className: 'h-full' })}
