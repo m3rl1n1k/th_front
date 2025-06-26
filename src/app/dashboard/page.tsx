@@ -79,7 +79,7 @@ const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   quick_actions: true,
 };
 
-const DEFAULT_SIZES: Record<DashboardCardId, string> = {
+const DEFAULT_SIZES: Record<string, string> = {
   total_balance: '1x1',
   monthly_income: '1x1',
   average_expenses: '1x1',
@@ -129,7 +129,9 @@ const renderActiveShape = (props: any) => {
 
   return (
     <g>
-      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill} className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
+      {/* Background circle for the center text to improve readability */}
+      <circle cx={cx} cy={cy} r={innerRadius} fill="hsl(var(--background))" opacity="0.6" />
+      <text x={cx} y={cy} dy={8} textAnchor="middle" fill="hsl(var(--foreground))" className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
       <Sector
         cx={cx}
