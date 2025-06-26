@@ -21,7 +21,7 @@ import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
   Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, Target, Briefcase,
-  BarChart3, Brain, FileSignature, Bot
+  BarChart3, Brain, FileSignature, Bot, Star
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
@@ -50,6 +50,7 @@ const supportNavItems = [
 const userSpecificNavItems = [
   { href: '/profile', labelKey: 'profile', icon: UserCircle, authRequired: true },
   { href: '/settings', labelKey: 'settings', icon: Settings, authRequired: true },
+  { href: '/settings/subscription', labelKey: 'subscription', icon: Star, authRequired: true },
 ];
 
 const adminNavItems = [
@@ -97,7 +98,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
+    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify', '/settings/subscription'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
@@ -162,7 +163,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
+  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify', '/settings/subscription'];
   if (!isAuthenticated && !authIsLoading && !publicPaths.includes(pathname)) {
      return null;
   }

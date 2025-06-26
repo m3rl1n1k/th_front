@@ -29,10 +29,9 @@ const INTENDED_DESTINATION_KEY = 'intended_destination';
 const AUTH_TOKEN_KEY = 'financeflow_auth_token';
 
 const augmentUserData = (user: User): User => {
-  // The server might send `verifiedAt` instead of `isVerified`.
-  // We'll ensure `isVerified` is correctly set for use in the app.
   const isVerified = !!user.verifiedAt || !!user.isVerified;
-  return { ...user, isVerified };
+  const subscription = user.subscription !== undefined ? user.subscription : null;
+  return { ...user, isVerified, subscription };
 };
 
 

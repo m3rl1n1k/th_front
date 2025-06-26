@@ -6,6 +6,13 @@ export interface UserSettings {
   records_per_page?: number | null;
 }
 
+export interface Subscription {
+  plan_name: string;
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | 'free';
+  ends_at: string | null;
+  trial_ends_at: string | null;
+}
+
 export interface User {
   id: string | number;
   login: string; // This is the username
@@ -21,6 +28,7 @@ export interface User {
     id: number;
   } | null;
   settings?: UserSettings; // Added user settings
+  subscription?: Subscription | null;
 }
 
 export interface LoginCredentials {

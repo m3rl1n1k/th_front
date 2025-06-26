@@ -470,3 +470,10 @@ export const rejectInvitation = (invitationId: string | number, token: string): 
 export const getReportData = (token: string, year: number, month: number | string): Promise<ReportDataResponse> => {
   return request(URLS.getReportData(year, month), { method: 'GET', token });
 };
+
+// Stripe Subscriptions
+export const createCheckoutSession = (token: string, priceId: string): Promise<{ sessionId: string }> =>
+  request(URLS.createCheckoutSession, { method: 'POST', token, body: { price_id: priceId } });
+
+export const createPortalSession = (token: string): Promise<{ url: string }> =>
+  request(URLS.createPortalSession, { method: 'POST', token });

@@ -95,4 +95,8 @@ export const URLS = {
 
   // Reports
   getReportData: (year: number, month: number | string) => `${API_BASE_URL}/report-data?year=${year}&month=${month}`,
+
+  // Subscriptions
+  createCheckoutSession: `${API_BASE_URL}/subscription/checkout-session`,
+  createPortalSession: `${API_BASE_URL}/subscription/portal-session`,
 };

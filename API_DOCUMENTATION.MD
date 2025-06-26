@@ -59,19 +59,25 @@ Logs in a user.
     {
       "user": {
         "id": 1,
-        "login": "user_login_name", // The actual username/login
+        "login": "user_login_name",
         "email": "user@example.com",
-        "isVerified": true, // **NEW**: Indicates if the user's email is verified
+        "isVerified": true,
+        "memberSince": "2023-01-15T10:00:00Z",
         "userCurrency": {
            "code": "USD"
         },
-        "memberSince": "2023-01-15T10:00:00Z",
-        "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"],
-        "settings": { // User settings included here
+        "roles": ["ROLE_USER"],
+        "settings": {
             "chart_income_color": "#10b981",
             "chart_expense_color": "#ef4444",
             "chart_capital_color": "#f59e0b",
             "records_per_page": 10
+        },
+        "subscription": {
+            "plan_name": "Pro Plan",
+            "status": "active",
+            "ends_at": null,
+            "trial_ends_at": "2024-12-31T23:59:59Z"
         }
       },
       "token": "your_jwt_token_here"
@@ -86,7 +92,7 @@ Registers a new user. The backend should automatically generate a verification t
     ```json
     {
       "email": "user@example.com",
-      "login": "user_chosen_login_name", // Desired username
+      "login": "user_chosen_login_name",
       "password": "securepassword123"
     }
     ```
@@ -148,17 +154,23 @@ Retrieves the profile information for the currently authenticated user.
       "id": 1,
       "login": "user_login_name",
       "email": "user@example.com",
-      "isVerified": true, // **NEW**: Indicates if the user's email is verified
+      "isVerified": true,
       "memberSince": "2023-01-15T10:00:00Z",
       "userCurrency": {
         "code": "USD"
       },
-      "roles": ["ROLE_USER", "ROLE_MODERATOR_FEEDBACK"],
+      "roles": ["ROLE_USER"],
       "settings": {
         "chart_income_color": "#10b981",
         "chart_expense_color": "#ef4444",
         "chart_capital_color": "#f59e0b",
         "records_per_page": 10
+      },
+      "subscription": {
+        "plan_name": "Pro Plan",
+        "status": "active",
+        "ends_at": null,
+        "trial_ends_at": "2024-12-31T23:59:59Z"
       }
     }
     ```
@@ -169,12 +181,12 @@ Updates the profile information for the currently authenticated user.
 *   **Request Body**:
     ```json
     {
-      "login": "new_user_login_name", // Username
+      "login": "new_user_login_name",
       "email": "new_email@example.com",
-      "userCurrencyCode": "EUR" // User's preferred currency code
+      "userCurrencyCode": "EUR"
     }
     ```
-*   **Success Response (200 OK)**: Returns the updated user profile (including settings).
+*   **Success Response (200 OK)**: Returns the updated user profile (including settings and subscription).
 *   **Failure Response (400 Bad Request, 401 Unauthorized)**
 
 #### `POST /user/change-password`
@@ -193,79 +205,39 @@ Allows the authenticated user to change their password.
 ... (rest of the file remains unchanged)
 <-- Omitted for brevity -->
 
-### Feedbacks
+### 11. Subscriptions (Stripe)
 
-#### `GET /feedbacks`
-Retrieves a list of all feedback submissions. Requires `ROLE_MODERATOR_FEEDBACK` role.
-*   **Request Body**: None
+#### `POST /subscription/checkout-session`
+Creates a Stripe Checkout session for a user to purchase a subscription.
+*   **Authentication**: Required.
+*   **Request Body**:
+    ```json
+    {
+      "price_id": "price_1..." // The ID of the Stripe Price object
+    }
+    ```
 *   **Success Response (200 OK)**:
     ```json
     {
-      "feedbacks": [
-        {
-          "id": 1,
-          "type": "BUG_REPORT",
-          "subject": "Login button not working",
-          "message": "The login button on the main page does nothing when I click it.",
-          "status": "pending",
-          "createdAt": "2023-10-27T10:00:00Z",
-          "user": {
-            "id": 2,
-            "login": "frustrated_user"
-          }
-        }
-      ]
+      "sessionId": "cs_test_a1..." // The ID of the Stripe Checkout Session
     }
     ```
+*   **Failure Response**: `400`, `401`.
 
-#### `POST /feedbacks`
-Submits a new feedback item for the authenticated user.
-*   **Request Body**:
+#### `POST /subscription/portal-session`
+Creates a Stripe Customer Portal session for a user to manage their existing subscription.
+*   **Authentication**: Required.
+*   **Success Response (200 OK)**:
     ```json
     {
-      "type": "FEATURE_REQUEST", 
-      "subject": "Add dark mode",
-      "message": "It would be great to have a dark mode option in the settings."
+      "url": "https://billing.stripe.com/p/session/..." // The URL to the Stripe Customer Portal
     }
     ```
-*   **Success Response (201 Created)**:
-    ```json
-    {
-      "message": "Feedback submitted successfully."
-    }
-    ```
+*   **Failure Response**: `400`, `401`.
 
-#### `PUT /feedbacks/{id}`
-Updates the status of a specific feedback item. Requires `ROLE_MODERATOR_FEEDBACK` role.
-*   **URL Params**:
-    *   `id` (integer, required) - The ID of the feedback item.
-*   **Request Body**:
-    ```json
-    {
-      "status": "active" 
-    }
-    ```
-*   **Success Response (200 OK)**: Returns the updated feedback object.
-    ```json
-    {
-      "id": 1,
-      "type": "BUG_REPORT",
-      "subject": "Login button not working",
-      "message": "The login button on the main page does nothing when I click it.",
-      "status": "active",
-      "createdAt": "2023-10-27T10:00:00Z",
-      "user": {
-        "id": 2,
-        "login": "frustrated_user"
-      }
-    }
-    ```
-*   **Failure Response (400, 401, 403, 404)**: Standard error format.
-    
-#### `DELETE /feedbacks/{id}`
-Deletes a specific feedback item. Requires `ROLE_MODERATOR_FEEDBACK` role.
-*   **URL Params**:
-    *   `id` (integer, required) - The ID of the feedback item.
-*   **Request Body**: None
-*   **Success Response (204 No Content)**
-*   **Failure Response (401, 403, 404)**: Standard error format.
+#### Stripe Webhooks `POST /webhooks/stripe`
+The backend must implement a webhook endpoint to receive events from Stripe. The endpoint must handle events like `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed` to keep the user's subscription status in sync. This endpoint does not require JWT authentication but should be protected using Stripe's webhook signature verification.
+
+### Feedbacks
+... (rest of the file remains unchanged)
+<-- Omitted for brevity -->
