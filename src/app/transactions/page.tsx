@@ -122,7 +122,6 @@ export default function TransactionsPage() {
           }
         })
         .catch(error => {
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setTransactionTypes([]);
         })
         .finally(() => setIsLoadingTypes(false));
@@ -133,7 +132,6 @@ export default function TransactionsPage() {
           setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch(error => {
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setMainCategories([]);
         })
         .finally(() => setIsLoadingCategories(false));
@@ -148,7 +146,6 @@ export default function TransactionsPage() {
           setApiFrequencies(formattedFrequencies);
         })
         .catch(error => {
-            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
             setApiFrequencies([]);
         })
         .finally(() => setIsLoadingFrequencies(false));
@@ -200,7 +197,7 @@ export default function TransactionsPage() {
       setIsLoadingMore(false);
       setTotalPages(1);
     }
-  }, [isAuthenticated, token, activeTab, toast, t]);
+  }, [isAuthenticated, token, activeTab]);
 
   const fetchRepeatedDefinitions = useCallback((showLoading = true) => {
     if (isAuthenticated && token && activeTab === "recurring") {
@@ -217,7 +214,7 @@ export default function TransactionsPage() {
         setRepeatedDefinitions([]);
         if (showLoading) setIsLoadingRepeatedDefinitions(false);
     }
-  }, [isAuthenticated, token, activeTab, t, toast]);
+  }, [isAuthenticated, token, activeTab]);
 
   useEffect(() => {
     if (activeTab === "all" && isAuthenticated && token) {
@@ -660,7 +657,7 @@ export default function TransactionsPage() {
                           <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
                           <CategorySelector
                               value={filters.categoryId}
-                              onChange={(value) => handleFilterChange('categoryId', value)}
+                              onChange={(value) => handleFilterChange('categoryId', value === null ? undefined : value)}
                               mainCategories={mainCategories}
                               disabled={isLoadingCategories}
                               placeholder={t('selectCategoryPlaceholder')}
