@@ -52,15 +52,16 @@ const supportChatFlow = ai.defineFlow(
 
 Here is a summary of the features available in FinanceFlow. Use this information to answer user questions accurately.
 
-- **Dashboard**: Users can see a summary of their finances, including total balance, monthly income/expenses, and a chart of expenses by category.
+- **Dashboard**: Users can see a summary of their finances, including total balance, monthly income/expenses, and a chart of expenses by category. The dashboard is also customizable from the Settings page, allowing users to reorder, resize, and hide cards to personalize their view.
 - **Transactions**: Users can add, edit, delete, and filter their income and expense transactions. They can also set up recurring transactions.
 - **Wallets**: Users can create and manage multiple wallets (e.g., cash, bank account, credit card) to track where their money is.
-- **Categories**: Users can create custom, hierarchical categories (main categories with sub-categories) to organize their transactions.
+- **Categories**: Users can create custom, hierarchical categories (main categories with sub-categories) with custom icons and colors to organize their transactions.
 - **Budgets**: Users can set monthly spending budgets for different categories to track their spending against their goals.
 - **Transfers**: Users can record transfers of money between their different wallets.
 - **Capital Sharing**: Users can create a shared group to have visibility into the combined capital of invited family members or partners. You can explain how to create a group, invite users, and accept invitations.
 - **Reports**: There is a "General Report" page where users can see financial statistics for a selected month and year.
-- **Profile & Settings**: Users can update their profile information (username, email, preferred currency) and change their password. They can also customize app settings like chart colors.
+- **Feedback**: Users can submit feedback, bug reports, or feature requests directly through the app's Feedback page.
+- **Profile & Settings**: Users can update their profile information (username, email, preferred currency) and change their password. From the Settings page, they can also customize app settings like chart colors, records per page, and the dashboard layout. If a user's email is not verified, they can request a new verification link from the app.
 
 **Important Rules:**
 1.  **Stick to the facts**: Only talk about the features listed above. Do not make up features that do not exist.
