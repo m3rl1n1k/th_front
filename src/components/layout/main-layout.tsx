@@ -50,7 +50,6 @@ const supportNavItems = [
 const userSpecificNavItems = [
   { href: '/profile', labelKey: 'profile', icon: UserCircle, authRequired: true },
   { href: '/settings', labelKey: 'settings', icon: Settings, authRequired: true },
-  { href: '/settings/subscription', labelKey: 'subscription', icon: Star, authRequired: true },
 ];
 
 const adminNavItems = [
@@ -98,7 +97,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify', '/settings/subscription'];
+    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
     if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
@@ -163,7 +162,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify', '/settings/subscription'];
+  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
   if (!isAuthenticated && !authIsLoading && !publicPaths.includes(pathname)) {
      return null;
   }

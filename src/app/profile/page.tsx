@@ -8,7 +8,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2, Lock, KeyRound as KeyIcon, CalendarDays } from 'lucide-react';
+import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2, Lock, KeyRound as KeyIcon, CalendarDays, Star, CheckCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -16,12 +16,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, getCurrencies, changePassword as apiChangePassword } from '@/lib/api';
+import { updateUserProfile, getCurrencies, changePassword as apiChangePassword, createCheckoutSession, createPortalSession } from '@/lib/api';
 import type { ApiError, User as UserType, CurrenciesApiResponse, CurrencyInfo, ChangePasswordPayload } from '@/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { loadStripe } from '@stripe/stripe-js';
+import { Badge } from '@/components/ui/badge';
+
 
 interface UserProfileData {
   login: string;
@@ -60,6 +63,8 @@ const createChangePasswordSchema = (t: Function) => z.object({
 
 type ChangePasswordFormData = z.infer<ReturnType<typeof createChangePasswordSchema>>;
 
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+const proPlanPriceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID || '';
 
 export default function ProfilePage() {
   const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
@@ -70,6 +75,7 @@ export default function ProfilePage() {
   const [showCurrencyPrompt, setShowCurrencyPrompt] = useState(false);
   const [allCurrencies, setAllCurrencies] = useState<CurrencyInfo[]>([]);
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const EditProfileSchema = createEditProfileSchema(t);
   const ChangePasswordSchema = createChangePasswordSchema(t);
@@ -220,6 +226,36 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCreateCheckout = async (priceId: string) => {
+    if (!token) return;
+    setIsRedirecting(true);
+    try {
+      const { sessionId } = await createCheckoutSession(token, priceId);
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe.js has not loaded yet.');
+      }
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: t('errorCreatingSession'), description: error.message });
+      setIsRedirecting(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!token) return;
+    setIsRedirecting(true);
+    try {
+      const { url } = await createPortalSession(token);
+      window.location.href = url;
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: t('errorCreatingSession'), description: error.message });
+      setIsRedirecting(false);
+    }
+  };
 
   const isLoadingEffectively = isLoadingPage || authIsLoading || (!profileData && isAuthenticated);
 
@@ -287,6 +323,32 @@ export default function ProfilePage() {
       </MainLayout>
     )
   }
+
+  const subscription = user?.subscription;
+  const planName = subscription?.plan_name || t('freePlanTitle');
+  const status = subscription?.status || 'free';
+  const endsAt = subscription?.ends_at ? format(parseISO(subscription.ends_at), 'PPP', { locale: dateFnsLocale }) : null;
+  const trialEndsAt = subscription?.trial_ends_at ? format(parseISO(subscription.trial_ends_at), 'PPP', { locale: dateFnsLocale }) : null;
+
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'active': return 'default';
+      case 'trialing': return 'secondary';
+      case 'past_due':
+      case 'unpaid':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  const PlanFeatures = () => (
+    <ul className="space-y-2 text-sm text-muted-foreground">
+      <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-green-500" />{t('proPlanFeature1')}</li>
+      <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-green-500" />{t('proPlanFeature2')}</li>
+      <li className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-green-500" />{t('proPlanFeature3')}</li>
+    </ul>
+  );
 
   return (
     <MainLayout>
@@ -434,6 +496,60 @@ export default function ProfilePage() {
             </Dialog>
           </CardContent>
         </Card>
+
+        {/* Subscription Card */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Star className="mr-3 h-6 w-6 text-primary" />
+              {t('manageSubscriptionTitle')}
+            </CardTitle>
+            <CardDescription>{t('manageSubscriptionDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-muted/50 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <p className="font-semibold text-xl">{planName}</p>
+                {trialEndsAt && status === 'trialing' && (
+                  <p className="text-sm text-muted-foreground">{t('trialEndsOn', { date: trialEndsAt })}</p>
+                )}
+                {endsAt && status === 'canceled' && (
+                  <p className="text-sm text-muted-foreground">{t('subscriptionExpiresOn', { date: endsAt })}</p>
+                )}
+              </div>
+              <Badge variant={getStatusBadgeVariant(status)} className="capitalize text-base">
+                {t(`status_${status}`, { defaultValue: status })}
+              </Badge>
+            </div>
+            {status === 'active' || status === 'trialing' ? (
+              <Button onClick={handleManageSubscription} disabled={isRedirecting} className="w-full sm:w-auto">
+                {isRedirecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('billingPortalButton')}
+              </Button>
+            ) : (status === 'free' || status === 'canceled') && (
+              <Card className="shadow-none border-2 border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="text-xl">{t('proPlanTitle')}</CardTitle>
+                  <CardDescription>{t('proPlanDesc')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PlanFeatures />
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={() => handleCreateCheckout(proPlanPriceId)} disabled={isRedirecting || !proPlanPriceId} className="w-full">
+                    {isRedirecting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Star className="mr-2 h-4 w-4" />
+                    )}
+                    {t('upgradeToProButton')}
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+
 
         {/* Change Password Card */}
         <Card className="shadow-xl">

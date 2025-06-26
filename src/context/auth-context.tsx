@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const promptSessionRenewal = useCallback(() => {
     // Prevent opening if already open or if no user was logged in previously
-    if (!isModalOpenRef.current && user) {
+    if (!isModalOpenRef.current && (user || sessionStorage.getItem(AUTH_TOKEN_KEY))) {
         isModalOpenRef.current = true;
         devLog('Prompting for session renewal.');
         setIsRenewalModalOpen(true);
