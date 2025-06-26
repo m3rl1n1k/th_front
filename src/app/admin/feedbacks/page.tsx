@@ -235,6 +235,7 @@ export default function AdminFeedbacksPage() {
                           onClick={() => handleSaveStatus(fb.id)}
                           disabled={!statusChanges[fb.id] || updatingStatus[fb.id]}
                           size="sm"
+                          className="w-full sm:w-auto"
                         >
                            {updatingStatus[fb.id] ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
