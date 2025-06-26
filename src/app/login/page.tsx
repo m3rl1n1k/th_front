@@ -1,9 +1,8 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,7 +27,6 @@ type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
 
 export default function LoginPage() {
   const { t } = useTranslation();
-  const router = useRouter();
   const { login, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
@@ -41,18 +39,12 @@ export default function LoginPage() {
     shouldFocusError: false, 
   });
 
-  useEffect(() => {
-    if (!authIsLoading && isAuthenticated) {
-      router.replace('/dashboard');
-    }
-  }, [authIsLoading, isAuthenticated, router]);
-
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     setIsSubmittingForm(true);
     devLog('Data being sent to server for login:', { username: data.email, password: data.password });
     try {
       await login({ username: data.email, password: data.password });
-      // Successful login navigation is handled by AuthContext effect or login function itself
+      // Successful login navigation is handled by AuthContext's login function
     } catch (error) {
       const apiError = error as ApiError;
       toast({
