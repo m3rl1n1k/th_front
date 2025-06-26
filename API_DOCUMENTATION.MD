@@ -192,3 +192,72 @@ Allows the authenticated user to change their password.
 ### 3. Dashboard
 ... (rest of the file remains unchanged)
 <-- Omitted for brevity -->
+
+### Feedbacks
+
+#### `GET /feedbacks`
+Retrieves a list of all feedback submissions. Requires `ROLE_MODERATOR_FEEDBACK` role.
+*   **Request Body**: None
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "feedbacks": [
+        {
+          "id": 1,
+          "type": "BUG_REPORT",
+          "subject": "Login button not working",
+          "message": "The login button on the main page does nothing when I click it.",
+          "status": "pending",
+          "createdAt": "2023-10-27T10:00:00Z",
+          "user": {
+            "id": 2,
+            "login": "frustrated_user"
+          }
+        }
+      ]
+    }
+    ```
+
+#### `POST /feedbacks`
+Submits a new feedback item for the authenticated user.
+*   **Request Body**:
+    ```json
+    {
+      "type": "FEATURE_REQUEST", 
+      "subject": "Add dark mode",
+      "message": "It would be great to have a dark mode option in the settings."
+    }
+    ```
+*   **Success Response (201 Created)**:
+    ```json
+    {
+      "message": "Feedback submitted successfully."
+    }
+    ```
+
+#### `PUT /feedbacks/{id}`
+Updates the status of a specific feedback item. Requires `ROLE_MODERATOR_FEEDBACK` role.
+*   **URL Params**:
+    *   `id` (integer, required) - The ID of the feedback item.
+*   **Request Body**:
+    ```json
+    {
+      "status": "active" 
+    }
+    ```
+*   **Success Response (200 OK)**: Returns the updated feedback object.
+    ```json
+    {
+      "id": 1,
+      "type": "BUG_REPORT",
+      "subject": "Login button not working",
+      "message": "The login button on the main page does nothing when I click it.",
+      "status": "active",
+      "createdAt": "2023-10-27T10:00:00Z",
+      "user": {
+        "id": 2,
+        "login": "frustrated_user"
+      }
+    }
+    ```
+*   **Failure Response (400, 401, 403, 404)**: Standard error format.

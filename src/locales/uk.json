@@ -531,6 +531,13 @@
   "yourSubmittedFeedbackTitle": "Ваші надіслані відгуки",
   "yourSubmittedFeedbackDesc": "Список відгуків, які ви надіслали.",
   "youHaveNotSubmittedFeedback": "Ви ще не надсилали жодних відгуків.",
+  "status_pending": "В очікуванні",
+  "status_active": "В роботі",
+  "status_done": "Виконано",
+  "feedbackStatusLabel": "Статус",
+  "saveStatusButton": "Зберегти статус",
+  "statusUpdatedSuccess": "Статус відгуку оновлено",
+  "errorUpdatingStatus": "Помилка оновлення статусу",
 
   "//": "БЮДЖЕТИ",
   "budgetCreateNewButton": "Створити новий бюджет",

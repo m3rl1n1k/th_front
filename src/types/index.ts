@@ -333,6 +333,7 @@ export interface Feedback {
   subject: string;
   message: string;
   createdAt: string; // ISO date string
+  status?: 'pending' | 'active' | 'done' | null;
   user?: { // Optional user info
     id: string | number;
     login: string;
@@ -341,6 +342,10 @@ export interface Feedback {
 
 export interface GetFeedbacksResponse {
   feedbacks: Feedback[];
+}
+
+export interface UpdateFeedbackStatusPayload {
+  status: 'pending' | 'active' | 'done';
 }
 
 // Budget Types

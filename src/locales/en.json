@@ -531,6 +531,13 @@
   "yourSubmittedFeedbackTitle": "Your Submitted Feedback",
   "yourSubmittedFeedbackDesc": "A list of the feedback you've sent.",
   "youHaveNotSubmittedFeedback": "You have not submitted any feedback yet.",
+  "status_pending": "Pending",
+  "status_active": "Active",
+  "status_done": "Done",
+  "feedbackStatusLabel": "Status",
+  "saveStatusButton": "Save Status",
+  "statusUpdatedSuccess": "Feedback status updated",
+  "errorUpdatingStatus": "Error updating status",
 
   "//": "BUDGETS",
   "budgetCreateNewButton": "Create new budget",

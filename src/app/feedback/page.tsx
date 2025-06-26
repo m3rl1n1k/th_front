@@ -15,13 +15,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from '@/context/auth-context';
 import { submitFeedback, getFeedbacks } from '@/lib/api';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
-import { FeedbackTypeOption, type SubmitFeedbackPayload, type Feedback as FeedbackItemType } from '@/types';
+import { FeedbackTypeOption, type SubmitFeedbackPayload, type Feedback as FeedbackItemType, ApiError } from '@/types';
 import { Send, MessageSquare, ArrowLeft, Loader2, History, AlertTriangle } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 
 const createFeedbackSchema = (t: Function) => z.object({
@@ -35,7 +35,7 @@ const createFeedbackSchema = (t: Function) => z.object({
 type FeedbackFormData = z.infer<ReturnType<typeof createFeedbackSchema>>;
 
 export default function FeedbackPage() {
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -65,10 +65,16 @@ export default function FeedbackPage() {
             .map(fb => ({
               ...fb,
               type: String(fb.type || '').toUpperCase() as FeedbackTypeOption,
-            }));
+              status: fb.status || 'pending',
+            }))
+            .sort((a, b) => parseISO(b.createdAt).getTime() - parseISO(a.createdAt).getTime());
           setMyFeedbacks(userFeedbacks);
         })
-        .catch(error => {
+        .catch((error: ApiError) => {
+          if ((error as ApiError).code === 401) {
+            promptSessionRenewal();
+            return;
+          }
           toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setMyFeedbacks([]);
         })
@@ -79,7 +85,7 @@ export default function FeedbackPage() {
         setIsLoadingMyFeedbacks(false);
         setMyFeedbacks([]);
     }
-  }, [token, isAuthenticated, user, toast, t]);
+  }, [token, isAuthenticated, user, toast, t, promptSessionRenewal]);
 
 
   useEffect(() => {
@@ -108,6 +114,7 @@ export default function FeedbackPage() {
       reset(); // Clear the form
       fetchMyFeedbacks(); // Refresh the list after submission
     } catch (error: any) {
+      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
       toast({
         variant: "destructive",
         title: t('feedbackSubmitFailedTitle'),
@@ -124,12 +131,22 @@ export default function FeedbackPage() {
   const getFeedbackTypeBadgeVariant = (type: FeedbackTypeOption): "default" | "secondary" | "destructive" | "outline" => {
     switch (type) {
       case FeedbackTypeOption.BUG_REPORT: return "destructive";
-      case FeedbackTypeOption.FEATURE_REQUEST: return "default"; // primary
+      case FeedbackTypeOption.FEATURE_REQUEST: return "default";
       case FeedbackTypeOption.QUESTION: return "secondary";
       case FeedbackTypeOption.GENERAL_FEEDBACK: return "outline";
       default: return "outline";
     }
   };
+  
+  const getStatusBadgeVariant = (status?: string | null): "default" | "secondary" | "destructive" => {
+    switch (status) {
+      case 'active': return 'default';
+      case 'done': return 'secondary';
+      case 'pending':
+      default:
+        return 'destructive';
+    }
+  }
 
 
   return (
@@ -232,32 +249,33 @@ export default function FeedbackPage() {
                     <p>{t('youHaveNotSubmittedFeedback')}</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('feedbackTypeLabel')}</TableHead>
-                          <TableHead>{t('feedbackSubjectLabel')}</TableHead>
-                          <TableHead className="text-right">{t('feedbackSubmittedAtLabel')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {myFeedbacks.map(fb => (
-                          <TableRow key={fb.id}>
-                            <TableCell>
-                              <Badge variant={getFeedbackTypeBadgeVariant(fb.type)}>
+                  <Accordion type="multiple" className="w-full space-y-2">
+                    {myFeedbacks.map(fb => (
+                      <AccordionItem value={String(fb.id)} key={fb.id} className="bg-muted/30 rounded-lg">
+                        <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full text-left">
+                            <p className="font-medium text-foreground flex-1 truncate">{fb.subject}</p>
+                            <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-center">
+                              <Badge variant={getStatusBadgeVariant(fb.status)} className="text-xs">
+                                {t(`status_${fb.status || 'pending'}` as any, { defaultValue: (fb.status || 'pending') })}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {fb.createdAt ? format(parseISO(fb.createdAt), "PP", { locale: dateFnsLocale }) : t('notApplicable')}
+                              </span>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                           <div className="space-y-2">
+                             <Badge variant={getFeedbackTypeBadgeVariant(fb.type)} className="text-xs">
                                 {t(`feedbackType_${fb.type}` as any, { defaultValue: (fb.type || '').replace(/_/g, ' ') })}
                               </Badge>
-                            </TableCell>
-                            <TableCell className="font-medium">{fb.subject}</TableCell>
-                            <TableCell className="text-right text-muted-foreground text-sm">
-                                {fb.createdAt ? format(parseISO(fb.createdAt), "PP", { locale: dateFnsLocale }) : t('notApplicable')}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                              <p className="text-sm text-foreground whitespace-pre-wrap">{fb.message}</p>
+                           </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 )}
               </CardContent>
             </Card>

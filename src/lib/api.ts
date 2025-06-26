@@ -35,6 +35,7 @@ import type {
   Feedback,
   GetFeedbacksResponse,
   FeedbackTypeOption,
+  UpdateFeedbackStatusPayload,
   BudgetListApiResponse,
   BudgetListItem,
   BudgetDetails,
@@ -372,6 +373,10 @@ export const submitFeedback = (data: SubmitFeedbackPayload, token: string): Prom
 
 export const getFeedbacks = (token: string): Promise<GetFeedbacksResponse> => {
   return request(URLS.getFeedbacks, { method: 'GET', token });
+};
+
+export const updateFeedbackStatus = (id: string | number, data: UpdateFeedbackStatusPayload, token: string): Promise<Feedback> => {
+  return request(URLS.updateFeedbackStatus(id), { method: 'PUT', body: data, token });
 };
 
 // Budgets
