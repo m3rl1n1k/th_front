@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { SimpleCaptcha, type SimpleCaptchaRef } from '@/components/common/simple-captcha';
+import { TurnstileCaptcha, type TurnstileCaptchaRef } from '@/components/common/turnstile-captcha';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -37,24 +37,18 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register: registerUser, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
-  const captchaRef = useRef<SimpleCaptchaRef>(null);
+  const captchaRef = useRef<TurnstileCaptchaRef>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const registrationSchema = createRegistrationSchema(t);
 
-  const { control, handleSubmit, setError, getValues, formState: { errors } } = useForm<RegistrationFormData>({
+  const { control, handleSubmit, setError, formState: { errors } } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: { email: '', login: '', password: '', confirmPassword: '', captcha: ''},
     shouldFocusError: false,
   });
 
   const onSubmit: SubmitHandler<RegistrationFormData> = async (data) => {
-    const captchaValueFromRHF = getValues("captcha");
-    if (captchaRef.current && !captchaRef.current.validateWithValue(captchaValueFromRHF)) {
-      setError("captcha", { type: "manual", message: t('captchaIncorrectError') });
-      captchaRef.current.refresh();
-      return;
-    }
     setIsSubmittingForm(true);
     try {
       await registerUser({ email: data.email, login: data.login, password: data.password });
@@ -78,7 +72,7 @@ export default function RegisterPage() {
          errorMessage = t('validationFailedCheckFields');
        }
       toast({ variant: "destructive", title: t('registrationFailedTitle'), description: errorMessage });
-      captchaRef.current?.refresh();
+      captchaRef.current?.reset();
     } finally {
       setIsSubmittingForm(false);
     }
@@ -160,10 +154,9 @@ export default function RegisterPage() {
               name="captcha"
               control={control}
               render={({ field }) => (
-                <SimpleCaptcha
+                <TurnstileCaptcha
                   ref={captchaRef}
-                  value={field.value}
-                  onChange={field.onChange}
+                  onSuccess={(token) => field.onChange(token)}
                   error={errors.captcha?.message}
                 />
               )}

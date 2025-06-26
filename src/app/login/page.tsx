@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { SimpleCaptcha, type SimpleCaptchaRef } from '@/components/common/simple-captcha';
+import { TurnstileCaptcha, type TurnstileCaptchaRef } from '@/components/common/turnstile-captcha';
 import { useAuth } from '@/context/auth-context';
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
@@ -32,12 +32,12 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
-  const captchaRef = useRef<SimpleCaptchaRef>(null);
+  const captchaRef = useRef<TurnstileCaptchaRef>(null);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const loginSchema = createLoginSchema(t);
 
-  const { control, handleSubmit, setError, getValues, formState: { errors } } = useForm<LoginFormData>({
+  const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '', captcha: '' },
     shouldFocusError: false, 
@@ -50,12 +50,6 @@ export default function LoginPage() {
   }, [authIsLoading, isAuthenticated, router]);
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
-    const captchaValueFromRHF = getValues("captcha");
-    if (captchaRef.current && !captchaRef.current.validateWithValue(captchaValueFromRHF)) {
-      setError("captcha", { type: "manual", message: t('captchaIncorrectError') });
-      captchaRef.current.refresh();
-      return;
-    }
     setIsSubmittingForm(true);
     try {
       await login({ username: data.email, password: data.password });
@@ -67,7 +61,7 @@ export default function LoginPage() {
         title: t('loginFailedTitle'),
         description: apiError.message || t('loginFailedDesc'),
       });
-      captchaRef.current?.refresh(); // Refresh captcha on API error
+      captchaRef.current?.reset(); // Reset captcha on API error
     } finally {
       setIsSubmittingForm(false);
     }
@@ -134,10 +128,9 @@ export default function LoginPage() {
               name="captcha"
               control={control}
               render={({ field }) => (
-                <SimpleCaptcha
+                <TurnstileCaptcha
                   ref={captchaRef}
-                  value={field.value}
-                  onChange={field.onChange}
+                  onSuccess={(token) => field.onChange(token)}
                   error={errors.captcha?.message}
                 />
               )}
