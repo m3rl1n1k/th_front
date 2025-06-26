@@ -22,6 +22,8 @@ import { Switch } from '@/components/ui/switch';
 import { DndContext, closestCenter, type DragEndEvent, useSensor, useSensors, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 const DEFAULT_RECORDS_PER_PAGE = 20;
 const DEFAULT_CHART_INCOME_COLOR = '#10b981';
@@ -40,6 +42,16 @@ const defaultDashboardVisibility = {
 
 const defaultDashboardOrder = ['total_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
 
+const defaultDashboardSizes: Record<string, string> = {
+  total_balance: '1x1',
+  monthly_income: '1x1',
+  average_expenses: '1x1',
+  quick_actions: '2x1',
+  expenses_chart: '2x2',
+  last_activity: '2x2',
+  current_budget: '2x1',
+};
+
 const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
 
 const hexColorRegex = /^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/i;
@@ -56,6 +68,7 @@ type GeneralSettingsFormData = z.infer<ReturnType<typeof generalSettingsSchema>>
 const dashboardSettingsSchema = z.object({
   dashboard_cards_visibility: z.record(z.boolean()).default(defaultDashboardVisibility),
   dashboard_cards_order: z.array(z.string()).default(defaultDashboardOrder),
+  dashboard_cards_sizes: z.record(z.string()).default(defaultDashboardSizes),
 });
 
 type DashboardSettingsFormData = z.infer<typeof dashboardSettingsSchema>;
@@ -75,19 +88,70 @@ const ALL_DASHBOARD_CARDS: DashboardCardConfig[] = [
   { id: 'current_budget', labelKey: 'dashboardCardCurrentBudget' },
 ];
 
-const SortableCardItem = ({ id, label, isVisible, onVisibilityChange }: { id: string; label: string; isVisible: boolean; onVisibilityChange: (checked: boolean) => void; }) => {
+const cardSizeOptions: Record<string, { value: string, label: string }[]> = {
+    default: [
+        { value: '1x1', label: '1x1' },
+    ],
+    expandable: [
+        { value: '1x1', label: '1x1' },
+        { value: '2x1', label: '2x1 (Wide)' },
+    ],
+    large: [
+        { value: '1x1', label: '1x1' },
+        { value: '2x1', label: '2x1 (Wide)' },
+        { value: '1x2', label: '1x2 (Tall)' },
+        { value: '2x2', label: '2x2 (Large)' },
+    ],
+};
+
+const getAvailableSizesForCard = (cardId: string) => {
+    switch (cardId) {
+        case 'expenses_chart':
+        case 'last_activity':
+            return cardSizeOptions.large;
+        case 'quick_actions':
+        case 'current_budget':
+            return cardSizeOptions.expandable;
+        default:
+            return cardSizeOptions.default;
+    }
+};
+
+const SortableDashboardItem = ({ id, label, isVisible, onVisibilityChange, size, onSizeChange }: {
+    id: string;
+    label: string;
+    isVisible: boolean;
+    onVisibilityChange: (checked: boolean) => void;
+    size: string;
+    onSizeChange: (newSize: string) => void;
+}) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, };
+  const availableSizes = getAvailableSizesForCard(id);
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center justify-between rounded-md p-3 bg-muted/30">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing p-1 h-auto">
-          <GripVertical className="h-5 w-5 text-muted-foreground" />
-        </Button>
-        <Label htmlFor={`visibility-${id}`} className="flex-1 cursor-pointer">{label}</Label>
+    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto,1fr,auto] items-center gap-3 rounded-md p-3 bg-muted/30">
+      <Button variant="ghost" size="icon" {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing p-1 h-auto">
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </Button>
+      
+      <div className="flex-1 flex flex-col gap-1">
+        <Label htmlFor={`visibility-${id}`} className="font-medium cursor-pointer">{label}</Label>
       </div>
-      <Switch id={`visibility-${id}`} checked={isVisible} onCheckedChange={onVisibilityChange} />
+
+      <div className="flex items-center gap-3">
+        <Select value={size} onValueChange={onSizeChange} disabled={availableSizes.length <= 1}>
+          <SelectTrigger className="w-28 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availableSizes.map(option => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Switch id={`visibility-${id}`} checked={isVisible} onCheckedChange={onVisibilityChange} />
+      </div>
     </div>
   );
 };
@@ -117,6 +181,7 @@ export default function SettingsPage() {
     defaultValues: {
       dashboard_cards_visibility: defaultDashboardVisibility,
       dashboard_cards_order: defaultDashboardOrder,
+      dashboard_cards_sizes: defaultDashboardSizes,
     }
   });
 
@@ -128,7 +193,6 @@ export default function SettingsPage() {
   );
 
   useEffect(() => {
-    // Populate General Settings from user object
     if (user?.settings) {
       generalForm.reset({
         chart_income_color: user.settings.chart_income_color ?? DEFAULT_CHART_INCOME_COLOR,
@@ -138,7 +202,6 @@ export default function SettingsPage() {
       });
     }
 
-    // Populate Dashboard Settings from localStorage
     let savedDashboardSettings = null;
     if (typeof window !== 'undefined') {
       const storedSettings = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
@@ -146,18 +209,14 @@ export default function SettingsPage() {
         try {
           savedDashboardSettings = JSON.parse(storedSettings);
         } catch (e) {
-          // Failed to parse dashboard settings from localStorage
+            // Failed to parse dashboard settings
         }
       }
     }
 
     const savedOrder = savedDashboardSettings?.dashboard_cards_order || defaultDashboardOrder;
     const savedVisibility = savedDashboardSettings?.dashboard_cards_visibility || defaultDashboardVisibility;
-
-    dashboardForm.reset({
-      dashboard_cards_order: savedOrder,
-      dashboard_cards_visibility: savedVisibility
-    });
+    const savedSizes = savedDashboardSettings?.dashboard_cards_sizes || defaultDashboardSizes;
 
     const allCardIds = new Set(ALL_DASHBOARD_CARDS.map(c => c.id));
     const currentOrder = savedOrder.filter((id: string) => allCardIds.has(id));
@@ -165,6 +224,12 @@ export default function SettingsPage() {
       if (!currentOrder.includes(card.id)) {
         currentOrder.push(card.id);
       }
+    });
+    
+    dashboardForm.reset({
+      dashboard_cards_order: currentOrder,
+      dashboard_cards_visibility: { ...defaultDashboardVisibility, ...savedVisibility },
+      dashboard_cards_sizes: { ...defaultDashboardSizes, ...savedSizes },
     });
 
     setOrderedCards(currentOrder.map((id: string) => ALL_DASHBOARD_CARDS.find(c => c.id === id)!));
@@ -175,6 +240,7 @@ export default function SettingsPage() {
   const watchedExpenseColor = generalForm.watch("chart_expense_color");
   const watchedCapitalColor = generalForm.watch("chart_capital_color");
   const watchedVisibility = dashboardForm.watch("dashboard_cards_visibility");
+  const watchedSizes = dashboardForm.watch("dashboard_cards_sizes");
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -256,13 +322,17 @@ export default function SettingsPage() {
                 <SortableContext items={orderedCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-3">
                     {orderedCards.map(card => (
-                      <SortableCardItem
+                      <SortableDashboardItem
                         key={card.id}
                         id={card.id}
                         label={t(card.labelKey as any)}
                         isVisible={watchedVisibility?.[card.id] ?? true}
                         onVisibilityChange={(checked) => {
                           dashboardForm.setValue(`dashboard_cards_visibility.${card.id}`, checked, { shouldDirty: true });
+                        }}
+                        size={watchedSizes?.[card.id] ?? '1x1'}
+                        onSizeChange={(newSize) => {
+                            dashboardForm.setValue(`dashboard_cards_sizes.${card.id}`, newSize, { shouldDirty: true });
                         }}
                       />
                     ))}

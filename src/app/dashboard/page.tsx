@@ -67,8 +67,8 @@ const DASHBOARD_LAST_TRANSACTIONS_LIMIT = 5;
 
 type DashboardCardId = 'total_balance' | 'monthly_income' | 'average_expenses' | 'expenses_chart' | 'last_activity' | 'current_budget' | 'quick_actions';
 
-
 const DEFAULT_CARD_ORDER: DashboardCardId[] = ['total_balance', 'monthly_income', 'average_expenses', 'quick_actions', 'expenses_chart', 'last_activity', 'current_budget'];
+
 const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   total_balance: true,
   monthly_income: true,
@@ -79,20 +79,37 @@ const DEFAULT_VISIBILITY: Record<DashboardCardId, boolean> = {
   quick_actions: true,
 };
 
+const DEFAULT_SIZES: Record<DashboardCardId, string> = {
+  total_balance: '1x1',
+  monthly_income: '1x1',
+  average_expenses: '1x1',
+  quick_actions: '2x1',
+  expenses_chart: '2x2',
+  last_activity: '2x2',
+  current_budget: '2x1',
+};
+
 
 const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
 
 interface DashboardCard {
   id: DashboardCardId;
   component: React.ReactNode;
-  className?: string;
 }
+
+const sizeToClassMap: Record<string, string> = {
+  '1x1': 'lg:col-span-1 lg:row-span-1',
+  '1x2': 'lg:col-span-1 lg:row-span-2',
+  '2x1': 'lg:col-span-2 lg:row-span-1',
+  '2x2': 'lg:col-span-2 lg:row-span-2',
+  '4x1': 'lg:col-span-4 lg:row-span-1',
+  '4x2': 'lg:col-span-4 lg:row-span-2',
+};
 
 const renderActiveShape = (props: any) => {
   const RADIAN = Math.PI / 180;
   const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
   
-  // Use outerRadius to make connector lines and labels responsive
   const isSmallChart = outerRadius < 80;
   
   const lineStartOffset = isSmallChart ? 5 : 10;
@@ -149,10 +166,10 @@ export default function DashboardPage() {
   const [dashboardSettings, setDashboardSettings] = useState({
     order: DEFAULT_CARD_ORDER,
     visibility: DEFAULT_VISIBILITY,
+    sizes: DEFAULT_SIZES,
   });
 
   useEffect(() => {
-    // This effect runs on the client after hydration
     if (typeof window !== 'undefined') {
       const storedSettings = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
       if (storedSettings) {
@@ -171,12 +188,13 @@ export default function DashboardPage() {
           setDashboardSettings({
             order: currentOrder,
             visibility: { ...DEFAULT_VISIBILITY, ...parsedSettings.dashboard_cards_visibility },
+            sizes: { ...DEFAULT_SIZES, ...parsedSettings.dashboard_cards_sizes },
           });
         } catch (e) {
-          // Failed to parse dashboard settings, using defaults.
           setDashboardSettings({
             order: DEFAULT_CARD_ORDER,
             visibility: DEFAULT_VISIBILITY,
+            sizes: DEFAULT_SIZES,
           });
         }
       }
@@ -407,7 +425,7 @@ export default function DashboardPage() {
 
   const renderExpensesChart = () => (
     <Dialog>
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col lg:col-span-2">
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between p-6">
           <div className="space-y-1.5">
             <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
@@ -506,7 +524,7 @@ export default function DashboardPage() {
     { id: 'monthly_income', component: renderMonthlyIncomeCard() },
     { id: 'average_expenses', component: renderAverageExpensesCard() },
     { id: 'quick_actions', component: renderQuickActionsCard() },
-    { id: 'expenses_chart', component: renderExpensesChart(), className: 'lg:col-span-2' },
+    { id: 'expenses_chart', component: renderExpensesChart() },
     { id: 'last_activity', component: renderLastActivity() },
     { id: 'current_budget', component: renderCurrentMonthBudget() },
   ];
@@ -528,11 +546,16 @@ export default function DashboardPage() {
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {isLoading ?
             [...Array(8)].map((_, i) => <Skeleton key={i} className="h-48" />) :
-            visibleCards.map(({ id, component, className }) => (
-              <div key={id} className={cn(className, "self-stretch")}>
-                {React.cloneElement(component as React.ReactElement, { className: 'h-full' })}
-              </div>
-          ))}
+            visibleCards.map(({ id, component }) => {
+              const size = dashboardSettings.sizes[id] || '1x1';
+              const sizeClasses = sizeToClassMap[size] || sizeToClassMap['1x1'];
+              
+              return (
+                <div key={id} className={cn(sizeClasses, "self-stretch")}>
+                  {React.cloneElement(component as React.ReactElement, { className: 'h-full' })}
+                </div>
+              );
+            })}
         </div>
       </div>
     </MainLayout>
