@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -51,6 +50,7 @@ export default function LoginPage() {
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     setIsSubmittingForm(true);
+    console.log('Data being sent to server for login:', { username: data.email, password: data.password });
     try {
       await login({ username: data.email, password: data.password });
       // Successful login navigation is handled by AuthContext effect or login function itself
