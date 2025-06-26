@@ -43,7 +43,7 @@ type SubCategoryFormData = z.infer<ReturnType<typeof createSubCategorySchema>>;
 
 
 export default function CreateCategoryPage() {
-  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -79,7 +79,9 @@ export default function CreateCategoryPage() {
           setExistingMainCategories(Array.isArray(data) ? data : []); 
         })
         .catch(error => {
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          if ((error as ApiError).code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          }
           setExistingMainCategories([]); 
         })
         .finally(() => setIsLoadingCategories(false));
@@ -100,8 +102,9 @@ export default function CreateCategoryPage() {
       toast({ title: t('mainCategoryCreatedTitle'), description: t('mainCategoryCreatedDesc') });
       router.push('/categories');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({ variant: "destructive", title: t('errorCreatingMainCategory'), description: error.message });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorCreatingMainCategory'), description: error.message });
+      }
     }
   };
 
@@ -118,8 +121,9 @@ export default function CreateCategoryPage() {
       toast({ title: t('subCategoryCreatedTitle'), description: t('subCategoryCreatedDesc') });
       router.push('/categories');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({ variant: "destructive", title: t('errorCreatingSubCategory'), description: error.message });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorCreatingSubCategory'), description: error.message });
+      }
     }
   };
   

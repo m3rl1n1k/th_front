@@ -41,7 +41,7 @@ const generateCategoryTranslationKey = (name: string | undefined | null): string
 };
 
 export default function CategoriesPage() {
-  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -62,19 +62,17 @@ export default function CategoriesPage() {
           setMainCategories(Array.isArray(data) ? data : []);
         })
         .catch((error: ApiError) => {
-          if (error.code === 401) {
-            promptSessionRenewal();
-            return;
+          if (error.code !== 401) {
+            setMainCategories([]);
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           }
-          setMainCategories([]);
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoading(false));
     } else if (!isAuthenticated) {
       setIsLoading(false);
       setMainCategories([]);
     }
-  }, [token, isAuthenticated, toast, t, promptSessionRenewal]);
+  }, [token, isAuthenticated, toast, t]);
 
   useEffect(() => {
     fetchCategories();
@@ -106,18 +104,13 @@ export default function CategoriesPage() {
       }
       fetchCategories(); // Refresh list
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        setIsDeleting(false);
-        setShowDeleteDialog(false);
-        setItemToDelete(null);
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({
+          variant: "destructive",
+          title: itemToDelete.type === 'main' ? t('errorDeletingMainCategory') : t('errorDeletingSubCategory'),
+          description: error.message,
+        });
       }
-      toast({
-        variant: "destructive",
-        title: itemToDelete.type === 'main' ? t('errorDeletingMainCategory') : t('errorDeletingSubCategory'),
-        description: error.message,
-      });
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

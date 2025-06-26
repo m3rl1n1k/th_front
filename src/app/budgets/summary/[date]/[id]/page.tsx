@@ -35,7 +35,7 @@ const editBudgetFormSchema = (t: Function) => z.object({
 type BudgetEditFormData = z.infer<ReturnType<typeof editBudgetFormSchema>>;
 
 export default function EditBudgetItemPage() {
-  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -81,16 +81,14 @@ export default function EditBudgetItemPage() {
         });
       }
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorFetchingBudgetItem'), description: error.message });
       }
-      toast({ variant: "destructive", title: t('errorFetchingBudgetItem'), description: error.message });
       setErrorOccurred(true);
     } finally {
       setIsLoadingData(false);
     }
-  }, [budgetId, monthYear, token, reset, toast, t, promptSessionRenewal]);
+  }, [budgetId, monthYear, token, reset, toast, t]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -117,27 +115,24 @@ export default function EditBudgetItemPage() {
       toast({ title: t('budgetItemUpdatedTitle'), description: t('budgetItemUpdatedDesc', {categoryName: budgetToEdit?.subCategory?.name || t('category')}) });
       router.push(`/budgets/summary/${monthYear}`); // Navigate back to the summary page for that month
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        setFormIsSubmitting(false);
-        return;
-      }
-      const apiError = error as ApiError;
-      let errorMessage = apiError.message || t('unexpectedError');
+      if ((error as ApiError).code !== 401) {
+        const apiError = error as ApiError;
+        let errorMessage = apiError.message || t('unexpectedError');
 
-      // Check for specific "Validation failed" message string
-      if (typeof apiError.message === 'string' && apiError.message.toLowerCase().includes("validation failed")) {
-          errorMessage = t('validationFailedCheckFields'); 
-      } 
-      // Check for the { "field": ["message"] } structure
-      else if (Array.isArray(apiError.errors) && apiError.errors.length > 0 && apiError.errors[0].message) {
-          errorMessage = apiError.errors.map(e => e.message).join('; ');
-      } 
-      // Check for the general {"errors": {"field": ["message"]}} structure
-      else if (typeof apiError.errors === 'object' && apiError.errors !== null && !Array.isArray(apiError.errors)) {
-          errorMessage = Object.values(apiError.errors).flat().join('; ');
+        // Check for specific "Validation failed" message string
+        if (typeof apiError.message === 'string' && apiError.message.toLowerCase().includes("validation failed")) {
+            errorMessage = t('validationFailedCheckFields'); 
+        } 
+        // Check for the { "field": ["message"] } structure
+        else if (Array.isArray(apiError.errors) && apiError.errors.length > 0 && apiError.errors[0].message) {
+            errorMessage = apiError.errors.map(e => e.message).join('; ');
+        } 
+        // Check for the general {"errors": {"field": ["message"]}} structure
+        else if (typeof apiError.errors === 'object' && apiError.errors !== null && !Array.isArray(apiError.errors)) {
+            errorMessage = Object.values(apiError.errors).flat().join('; ');
+        }
+        toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: errorMessage });
       }
-      toast({ variant: "destructive", title: t('errorUpdatingBudgetItem'), description: errorMessage });
     } finally {
       setFormIsSubmitting(false);
     }

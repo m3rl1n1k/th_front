@@ -50,7 +50,7 @@ interface ItemToDeleteDetails {
 
 
 export default function BudgetsPage() {
-  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -99,17 +99,15 @@ export default function BudgetsPage() {
       }).sort((a, b) => b.monthYear.localeCompare(a.monthYear));
       setMonthlyBudgets(processed);
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
       }
-      toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
       setMonthlyBudgets([]);
     } finally {
       if (showLoadingIndicator) setIsLoading(false); 
       isFetchingRef.current = false;
     }
-  }, [isAuthenticated, token, toast, t, dateFnsLocale, promptSessionRenewal]);
+  }, [isAuthenticated, token, toast, t, dateFnsLocale]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -169,15 +167,13 @@ export default function BudgetsPage() {
       });
       fetchBudgets(false); 
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({
+          variant: "destructive",
+          title: t('errorDeletingMonthBudgets'),
+          description: error.message || t('unexpectedError'),
+        });
       }
-      toast({
-        variant: "destructive",
-        title: t('errorDeletingMonthBudgets'),
-        description: error.message || t('unexpectedError'),
-      });
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

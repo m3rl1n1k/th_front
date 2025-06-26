@@ -47,7 +47,7 @@ const walletTypeSortOrder: Record<string, number> = {
 
 
 export default function WalletsPage() {
-  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -70,11 +70,9 @@ export default function WalletsPage() {
           setWallets(data.wallets || []);
         })
         .catch((error: ApiError) => {
-          if (error.code === 401) {
-            promptSessionRenewal();
-            return;
+          if (error.code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           }
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setWallets([]);
         })
         .finally(() => setIsLoading(false));
@@ -92,11 +90,9 @@ export default function WalletsPage() {
           setWalletTypeMap(data.types || {});
         })
         .catch((error: ApiError) => {
-          if (error.code === 401) {
-            promptSessionRenewal();
-            return;
+          if (error.code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           }
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
         })
         .finally(() => setIsLoadingTypes(false));
     } else {
@@ -181,14 +177,9 @@ export default function WalletsPage() {
       toast({ title: t('walletDeletedTitle'), description: t('walletDeletedDesc') });
       fetchWalletData(); 
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        setIsDeleting(false);
-        setDeleteDialogOpen(false);
-        setWalletToDelete(null);
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorDeletingWallet'), description: error.message });
       }
-      toast({ variant: "destructive", title: t('errorDeletingWallet'), description: error.message });
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);

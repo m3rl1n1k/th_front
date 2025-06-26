@@ -32,7 +32,7 @@ const createWalletFormSchema = (t: Function) => z.object({
 type WalletFormData = z.infer<ReturnType<typeof createWalletFormSchema>>;
 
 export default function NewWalletPage() {
-  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -62,7 +62,11 @@ export default function NewWalletPage() {
       setIsLoadingTypes(true);
       getWalletTypes(token)
         .then(data => setWalletTypes(data.types || {}))
-        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
+        .catch(error => {
+          if ((error as ApiError).code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          }
+        })
         .finally(() => setIsLoadingTypes(false));
 
       setIsLoadingExistingWallets(true);
@@ -71,7 +75,11 @@ export default function NewWalletPage() {
           const currentWallets = data.wallets || [];
           setHasMainWallet(currentWallets.some(wallet => wallet.type === 'main'));
         })
-        .catch(error => toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message }))
+        .catch(error => {
+          if ((error as ApiError).code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+          }
+        })
         .finally(() => setIsLoadingExistingWallets(false));
 
       setIsLoadingCurrencies(true);
@@ -84,7 +92,11 @@ export default function NewWalletPage() {
           }));
           setAllCurrencies(formattedCurrencies);
         })
-        .catch(error => toast({ variant: "destructive", title: t('errorFetchingCurrencies'), description: error.message}))
+        .catch(error => {
+          if ((error as ApiError).code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingCurrencies'), description: error.message });
+          }
+        })
         .finally(() => setIsLoadingCurrencies(false));
     }
   }, [token, isAuthenticated, t, toast]);
@@ -143,8 +155,9 @@ export default function NewWalletPage() {
       toast({ title: t('walletCreatedTitle'), description: t('walletCreatedDesc') });
       router.push('/wallets');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({ variant: "destructive", title: t('errorCreatingWallet'), description: error.message });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorCreatingWallet'), description: error.message });
+      }
     }
   };
 

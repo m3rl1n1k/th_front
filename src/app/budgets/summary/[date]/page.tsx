@@ -42,7 +42,7 @@ interface ProcessedCategoryBudgetDetail extends ApiBudgetCategorySummaryItem {
 
 
 export default function BudgetSummaryPage() {
-  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -73,16 +73,14 @@ export default function BudgetSummaryPage() {
       const processedDetails: ProcessedCategoryBudgetDetail[] = Object.values(response.categories || {});
       setCategoryBudgets(processedDetails);
     } catch (err: any) {
-      if ((err as ApiError).code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((err as ApiError).code !== 401) {
+        setError(err.message || t('errorFetchingBudgetSummary'));
+        toast({ variant: "destructive", title: t('errorFetchingBudgetSummary'), description: err.message });
       }
-      setError(err.message || t('errorFetchingBudgetSummary'));
-      toast({ variant: "destructive", title: t('errorFetchingBudgetSummary'), description: err.message });
     } finally {
       if(showLoading) setIsLoading(false);
     }
-  }, [monthYear, isAuthenticated, token, t, toast, promptSessionRenewal]);
+  }, [monthYear, isAuthenticated, token, t, toast]);
 
   useEffect(() => {
     fetchBudgetSummary();
@@ -123,11 +121,9 @@ export default function BudgetSummaryPage() {
       toast({ title: t('budgetItemDeletedTitle'), description: t('budgetItemDeletedDesc', { categoryName: itemToDelete.name }) });
       fetchBudgetSummary(false); 
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorDeletingBudgetItem'), description: error.message });
       }
-      toast({ variant: "destructive", title: t('errorDeletingBudgetItem'), description: error.message });
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

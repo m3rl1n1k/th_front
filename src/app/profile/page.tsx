@@ -62,7 +62,7 @@ type ChangePasswordFormData = z.infer<ReturnType<typeof createChangePasswordSche
 
 
 export default function ProfilePage() {
-  const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser, promptSessionRenewal } = useAuth();
+  const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoadingPage, setIsLoadingPage] = useState(true);
@@ -131,16 +131,13 @@ export default function ProfilePage() {
       }
 
     } catch (error) {
-      const apiError = error as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorFetchingData'), description: (error as ApiError).message });
       }
-      toast({ variant: "destructive", title: t('errorFetchingData'), description: apiError.message });
     } finally {
         setIsLoadingPage(false);
     }
-  }, [isAuthenticated, user, token, editProfileForm, t, toast, promptSessionRenewal]);
+  }, [isAuthenticated, user, token, editProfileForm, t, toast]);
 
 
   useEffect(() => {
@@ -187,16 +184,13 @@ export default function ProfilePage() {
       toast({ title: t('profileUpdateSuccessTitle'), description: t('profileUpdateSuccessDescApi') });
       setShowCurrencyPrompt(false); 
     } catch (error) {
-      const apiError = error as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({
+          variant: "destructive",
+          title: t('errorUpdatingProfile'),
+          description: (error as ApiError).message || t('unexpectedError'),
+        });
       }
-      toast({
-        variant: "destructive",
-        title: t('errorUpdatingProfile'),
-        description: apiError.message || t('unexpectedError'),
-      });
     }
   };
 
@@ -216,16 +210,13 @@ export default function ProfilePage() {
       toast({ title: t('passwordChangeSuccessTitle'), description: t('passwordChangeSuccessDesc') });
       changePasswordForm.reset();
     } catch (error) {
-      const apiError = error as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({
+          variant: "destructive",
+          title: t('passwordChangeFailedTitle'),
+          description: (error as ApiError).message || t('unexpectedError'),
+        });
       }
-      toast({
-        variant: "destructive",
-        title: t('passwordChangeFailedTitle'),
-        description: apiError.message || t('unexpectedError'),
-      });
     }
   };
 

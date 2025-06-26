@@ -27,7 +27,7 @@ type FeedbackStatus = 'pending' | 'active' | 'done';
 const feedbackStatuses: FeedbackStatus[] = ['pending', 'active', 'done'];
 
 export default function AdminFeedbacksPage() {
-  const { token, isAuthenticated, user, isLoading: authLoading, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, user, isLoading: authLoading } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
@@ -56,18 +56,16 @@ export default function AdminFeedbacksPage() {
           setFeedbacks(normalizedFeedbacks);
         })
         .catch((error: ApiError) => {
-          if (error.code === 401) {
-            promptSessionRenewal();
-            return;
+          if (error.code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           }
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setFeedbacks([]);
         })
         .finally(() => {
           setIsLoadingFeedbacks(false);
         });
     }
-  }, [token, userHasRequiredRole, toast, t, promptSessionRenewal]);
+  }, [token, userHasRequiredRole, toast, t]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -122,8 +120,9 @@ export default function AdminFeedbacksPage() {
       toast({ title: t('statusUpdatedSuccess') });
       fetchFeedbacks(); // Refresh data
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({ variant: "destructive", title: t('errorUpdatingStatus'), description: error.message || t('unexpectedError') });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorUpdatingStatus'), description: error.message || t('unexpectedError') });
+      }
     } finally {
       setUpdatingStatus(prev => ({ ...prev, [feedbackId]: false }));
       setStatusChanges(prev => {

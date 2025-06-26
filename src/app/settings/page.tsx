@@ -58,7 +58,7 @@ const dashboardSettingsSchema = z.object({
   dashboard_cards_order: z.array(z.string()).default(defaultDashboardOrder),
 });
 
-type DashboardSettingsFormData = z.infer<typeof dashboardSettingsSchema>;
+type DashboardSettingsFormData = z.infer<ReturnType<typeof dashboardSettingsSchema>>;
 
 type DashboardCardConfig = {
   id: string;
@@ -206,8 +206,9 @@ export default function SettingsPage() {
       toast({ title: t('userSettingsSavedSuccess'), description: t('generalSettingsSavedDesc') });
       generalForm.reset(data); // Reset dirty state
     } catch (error) {
-      const apiError = error as ApiError;
-      toast({ variant: "destructive", title: t('errorUpdatingUserSettings'), description: apiError.message || t('unexpectedError') });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorUpdatingUserSettings'), description: (error as ApiError).message || t('unexpectedError') });
+      }
     }
   };
 

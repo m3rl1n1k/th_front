@@ -40,7 +40,7 @@ const createBudgetFormSchema = (t: Function) => z.object({
 type BudgetFormData = z.infer<ReturnType<typeof createBudgetFormSchema>>;
 
 export default function NewBudgetPage() {
-  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -69,17 +69,15 @@ export default function NewBudgetPage() {
       getMainCategories(token)
         .then(data => setMainCategoriesHierarchical(Array.isArray(data) ? data : []))
         .catch((error: ApiError) => {
-          if (error.code === 401) {
-            promptSessionRenewal();
-            return;
+          if (error.code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           }
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setMainCategoriesHierarchical([]);
         })
         .finally(() => setIsLoadingCategories(false));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isAuthenticated, toast, t, promptSessionRenewal]);
+  }, [token, isAuthenticated, toast, t]);
 
   // Removed useEffect for fetching existing budgets for revert
 
@@ -108,12 +106,9 @@ export default function NewBudgetPage() {
       toast({ title: t('budgetCreatedTitle'), description: t('budgetCreatedDesc') });
       router.push('/budgets');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorCreatingBudget'), description: error.message || t('unexpectedError') });
       }
-      // Simplified error handling for revert
-      toast({ variant: "destructive", title: t('errorCreatingBudget'), description: error.message || t('unexpectedError') });
     }
   };
 

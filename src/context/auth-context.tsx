@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -21,7 +20,6 @@ interface AuthContextType {
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
-  promptSessionRenewal: () => void; // Function to trigger the modal
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +85,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isRenewalModalOpen, user]);
 
+  // Listen for the custom sessionExpired event
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      promptSessionRenewal();
+    };
+
+    window.addEventListener('sessionExpired', handleSessionExpired);
+
+    return () => {
+      window.removeEventListener('sessionExpired', handleSessionExpired);
+    };
+  }, [promptSessionRenewal]);
+
 
   const updatePendingInvitations = useCallback(async (apiToken: string, currentUserId?: string | number) => {
     if (!currentUserId) return;
@@ -98,13 +109,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ).length;
       setPendingInvitationCount(count);
     } catch (error) {
-      const apiError = error as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-      }
+      // Don't toast here as it can be noisy. The central handler will show the modal.
       setPendingInvitationCount(0); // Reset on error
     }
-  }, [promptSessionRenewal]);
+  }, []);
 
   const processSuccessfulLogin = useCallback(async (apiToken: string, fetchedUser?: User) => {
     console.log('DEV LOG: Processing successful login...');
@@ -254,16 +262,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await updatePendingInvitations(currentToken, userData.id); // Fetch invitations
         console.log('DEV LOG: Successfully fetched and updated user data.');
       } catch (error) {
-        const apiError = error as ApiError;
-        console.error('DEV LOG: Failed to fetch user data.', apiError);
-        if(apiError.code === 401 && user) {
-           promptSessionRenewal();
-        } else {
-            toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: apiError.message || t('sessionRefreshFailedDesc') });
+        if ((error as ApiError).code !== 401) {
+            toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
             clearAuthData();
             const publicPaths = ['/login', '/register', '/terms', '/'];
             if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
-            localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
+              localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
             }
             router.replace('/login');
         }
@@ -277,7 +281,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
        setIsLoading(false);
     }
-  }, [token, user, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations, promptSessionRenewal]);
+  }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations]);
 
   useEffect(() => {
     const publicPaths = ['/login', '/register', '/terms', '/'];
@@ -309,7 +313,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, pendingInvitationCount, promptSessionRenewal }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, pendingInvitationCount }}>
       {children}
       <SessionRenewalModal
         isOpen={isRenewalModalOpen}

@@ -35,7 +35,7 @@ const createTransferFormSchema = (t: Function) => z.object({
 type TransferFormData = z.infer<ReturnType<typeof createTransferFormSchema>>;
 
 export default function TransfersPage() {
-  const { token, isAuthenticated, user, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
 
@@ -84,12 +84,13 @@ export default function TransfersPage() {
       setUserWallets(data.user_wallets || []);
       setCapitalWalletsGrouped(data.capital_wallets || {});
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+      }
     } finally {
       setIsLoadingFormData(false);
     }
-  }, [isAuthenticated, token, toast, t, promptSessionRenewal]);
+  }, [isAuthenticated, token, toast, t]);
 
   const fetchTransfers = useCallback(async () => {
     if (!isAuthenticated || !token) return;
@@ -98,12 +99,13 @@ export default function TransfersPage() {
       const data = await getTransfersList(token);
       setTransfersList(data.transfers || []);
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
+      }
     } finally {
       setIsLoadingTransfers(false);
     }
-  }, [isAuthenticated, token, toast, t, promptSessionRenewal]);
+  }, [isAuthenticated, token, toast, t]);
 
   useEffect(() => {
     fetchFormData();
@@ -125,7 +127,7 @@ export default function TransfersPage() {
       reset();
       fetchTransfers(); 
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); } else {
+      if ((error as ApiError).code !== 401) {
         toast({ variant: "destructive", title: t('transferFailedTitle'), description: error.message });
       }
     } finally {
@@ -146,7 +148,7 @@ export default function TransfersPage() {
       toast({ title: t('transferDeletedTitle'), description: t('transferDeletedDesc') });
       fetchTransfers();
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); } else {
+      if ((error as ApiError).code !== 401) {
         toast({ variant: "destructive", title: t('transferDeleteFailedTitle'), description: error.message });
       }
     } finally {

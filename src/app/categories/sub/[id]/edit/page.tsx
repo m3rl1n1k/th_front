@@ -40,7 +40,7 @@ const createEditSubCategorySchema = (t: Function) => z.object({
 type EditSubCategoryFormData = z.infer<ReturnType<typeof createEditSubCategorySchema>>;
 
 export default function EditSubCategoryPage() {
-  const { token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -101,7 +101,9 @@ export default function EditSubCategoryPage() {
         toast({ variant: "destructive", title: t('errorFetchingCategory'), description: t('subCategoryNotFound') });
       }
     } catch (error: any) {
-      toast({ variant: "destructive", title: t('errorFetchingCategory'), description: error.message });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorFetchingCategory'), description: error.message });
+      }
       setErrorOccurred(true);
     } finally {
       setIsLoadingData(false);
@@ -129,8 +131,9 @@ export default function EditSubCategoryPage() {
       toast({ title: t('subCategoryUpdatedTitle'), description: t('subCategoryUpdatedDesc') });
       router.push('/categories');
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({ variant: "destructive", title: t('errorUpdatingSubCategory'), description: error.message });
+      if ((error as ApiError).code !== 401) {
+        toast({ variant: "destructive", title: t('errorUpdatingSubCategory'), description: error.message });
+      }
     } finally {
       setFormIsSubmitting(false);
     }

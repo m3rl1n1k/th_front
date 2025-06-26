@@ -132,7 +132,7 @@ const renderActiveShape = (props: any) => {
 
 
 export default function DashboardPage() {
-  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
 
@@ -223,9 +223,7 @@ export default function DashboardPage() {
           setCurrentMonthBudget(budgetListResponse.budgets[currentMonthKey] || null);
         })
         .catch((error: ApiError) => {
-          if (error.code === 401) {
-            promptSessionRenewal();
-          } else {
+          if (error.code !== 401) {
             toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message || t('dashboardDataLoadError') });
           }
         })
@@ -235,7 +233,7 @@ export default function DashboardPage() {
     } else if (!isAuthenticated) {
       setIsLoading(false);
     }
-  }, [token, isAuthenticated, t, toast, promptSessionRenewal]);
+  }, [token, isAuthenticated, t, toast]);
 
   const onPieEnter = useCallback((_: any, index: number) => {
     setActivePieIndex(index);
@@ -540,5 +538,3 @@ export default function DashboardPage() {
     </MainLayout>
   );
 }
-
-    

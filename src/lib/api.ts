@@ -63,6 +63,14 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
+  if (response.status === 401) {
+    // Dispatch a global event for session expiration
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sessionExpired'));
+    }
+    // Still throw an error to stop the current request processing chain
+    throw { message: 'Session expired', code: 401 } as ApiError;
+  }
   if (!response.ok) {
     let rawResponseBody = '';
     let jsonData: any = null;

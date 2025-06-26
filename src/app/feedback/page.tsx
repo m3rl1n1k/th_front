@@ -35,7 +35,7 @@ const createFeedbackSchema = (t: Function) => z.object({
 type FeedbackFormData = z.infer<ReturnType<typeof createFeedbackSchema>>;
 
 export default function FeedbackPage() {
-  const { user, token, isAuthenticated, promptSessionRenewal } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
@@ -71,11 +71,9 @@ export default function FeedbackPage() {
           setMyFeedbacks(userFeedbacks);
         })
         .catch((error: ApiError) => {
-          if ((error as ApiError).code === 401) {
-            promptSessionRenewal();
-            return;
+          if ((error as ApiError).code !== 401) {
+            toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           }
-          toast({ variant: "destructive", title: t('errorFetchingData'), description: error.message });
           setMyFeedbacks([]);
         })
         .finally(() => {
@@ -85,7 +83,7 @@ export default function FeedbackPage() {
         setIsLoadingMyFeedbacks(false);
         setMyFeedbacks([]);
     }
-  }, [token, isAuthenticated, user, toast, t, promptSessionRenewal]);
+  }, [token, isAuthenticated, user, toast, t]);
 
 
   useEffect(() => {
@@ -114,12 +112,13 @@ export default function FeedbackPage() {
       reset(); // Clear the form
       fetchMyFeedbacks(); // Refresh the list after submission
     } catch (error: any) {
-      if ((error as ApiError).code === 401) { promptSessionRenewal(); return; }
-      toast({
-        variant: "destructive",
-        title: t('feedbackSubmitFailedTitle'),
-        description: error.message || t('unexpectedError'),
-      });
+      if ((error as ApiError).code !== 401) {
+        toast({
+          variant: "destructive",
+          title: t('feedbackSubmitFailedTitle'),
+          description: error.message || t('unexpectedError'),
+        });
+      }
     }
   };
 

@@ -55,7 +55,7 @@ const createInvitationSchema = (t: Function) => z.object({
 type CreateInvitationFormData = z.infer<ReturnType<typeof createInvitationSchema>>;
 
 export default function CapitalPage() {
-  const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser, promptSessionRenewal } = useAuth();
+  const { user, token, isAuthenticated, isLoading: authIsLoading, fetchUser } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
 
@@ -97,7 +97,8 @@ export default function CapitalPage() {
       } catch (err: any) {
         const apiError = err as ApiError;
         if (apiError.code === 401) {
-          promptSessionRenewal();
+          // The centralized handler will show the renewal modal
+          setIsLoadingPageData(false);
           return;
         }
         if (apiError.code === 404) {
@@ -123,7 +124,7 @@ export default function CapitalPage() {
     } catch (err: any) {
       const apiError = err as ApiError;
       if (apiError.code === 401) {
-        promptSessionRenewal();
+        setIsLoadingPageData(false);
         return;
       }
       const message = typeof apiError.message === 'string'
@@ -143,7 +144,7 @@ export default function CapitalPage() {
 
 
     setIsLoadingPageData(false);
-  }, [isAuthenticated, token, user, t, toast, fetchUser, capitalLoadingError, invitationsLoadingError, promptSessionRenewal]);
+  }, [isAuthenticated, token, user, t, toast, fetchUser, capitalLoadingError, invitationsLoadingError]);
 
 
   useEffect(() => {
@@ -169,12 +170,9 @@ export default function CapitalPage() {
       await fetchUser();
 
     } catch (err: any) {
-      const apiError = err as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((err as ApiError).code !== 401) {
+        toast({ variant: 'destructive', title: t('sharingGroupCreateFailedTitle'), description: (err as ApiError).message });
       }
-      toast({ variant: 'destructive', title: t('sharingGroupCreateFailedTitle'), description: apiError.message });
     } finally {
       setActionLoading(prev => ({ ...prev, createCapital: false }));
     }
@@ -191,12 +189,9 @@ export default function CapitalPage() {
       toast({ title: t('sharingGroupDeletedSuccessTitle') });
       await fetchUser();
     } catch (err: any) {
-      const apiError = err as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((err as ApiError).code !== 401) {
+        toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: (err as ApiError).message });
       }
-      toast({ variant: 'destructive', title: t('capitalDeleteFailedTitle'), description: apiError.message });
     } finally {
       setActionLoading(prev => ({ ...prev, deleteCapital: false }));
     }
@@ -215,13 +210,9 @@ export default function CapitalPage() {
       fetchData(); // Re-fetch to update invitation lists
     } catch (err: any) {
       const apiError = err as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
-      }
-      let description = apiError.message as string || t('unexpectedError');
+      if (apiError.code === 401) return;
 
-      // Check for the specific server message
+      let description = apiError.message as string || t('unexpectedError');
       if (typeof apiError.message === 'string' && apiError.message.includes("User have capital")) {
         description = t('userAlreadyInCapitalError');
       }
@@ -246,12 +237,9 @@ export default function CapitalPage() {
         fetchData(); // Re-fetch invitations
       }
     } catch (err: any) {
-      const apiError = err as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((err as ApiError).code !== 401) {
+        toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: (err as ApiError).message });
       }
-      toast({ variant: 'destructive', title: t('invitationActionFailedTitle'), description: apiError.message });
     } finally {
       setActionLoading(prev => ({ ...prev, [`invitation_${invitationId}`]: false }));
     }
@@ -273,12 +261,9 @@ export default function CapitalPage() {
       toast({ title: t('userRemovedSuccessTitle') });
       fetchData(); // Re-fetch to update capital members
     } catch (err: any) {
-      const apiError = err as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((err as ApiError).code !== 401) {
+        toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: (err as ApiError).message });
       }
-      toast({ variant: 'destructive', title: t('userRemoveFailedTitle'), description: apiError.message });
     } finally {
       setActionLoading(prev => ({ ...prev, [`removeUser_${userIdToRemove}`]: false }));
     }
@@ -292,12 +277,9 @@ export default function CapitalPage() {
       toast({ title: t('leftSharingGroupSuccessTitle') });
       await fetchUser(); // Re-fetch user to update their capital status, then fetchData
     } catch (err: any) {
-      const apiError = err as ApiError;
-      if (apiError.code === 401) {
-        promptSessionRenewal();
-        return;
+      if ((err as ApiError).code !== 401) {
+        toast({ variant: 'destructive', title: t('leaveSharingGroupFailedTitle'), description: (err as ApiError).message });
       }
-      toast({ variant: 'destructive', title: t('leaveSharingGroupFailedTitle'), description: apiError.message });
     } finally {
       setActionLoading(prev => ({ ...prev, [`leaveCapital_${capitalIdToLeave}`]: false }));
     }
