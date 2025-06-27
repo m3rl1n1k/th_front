@@ -361,7 +361,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
+              <span className="hidden md:inline font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
             </Link>
           </div>
 

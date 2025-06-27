@@ -71,7 +71,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
+              <span className="hidden sm:inline font-headline text-2xl font-bold text-foreground">{t('appName')}</span>
             </Link>
           </div>
           <div className="flex items-center space-x-2"> {/* Action buttons group */}
