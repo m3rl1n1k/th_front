@@ -42,5 +42,11 @@
   "supportChatDesc": "Маєте запитання щодо FinanceFlow? Запитайте нашого AI-помічника.",
   "chatPlaceholder": "Введіть ваше повідомлення тут...",
   "chatMessageRequiredError": "Повідомлення не може бути порожнім.",
-  "supportChatThinking": "Думаю..."
+  "supportChatThinking": "Думаю...",
+  "themeColorsTitle": "Кольори теми",
+  "themeColorsDesc": "Персоналізуйте основні кольори додатку.",
+  "primaryColorLabel": "Основний колір",
+  "primaryColorDesc": "Основний колір для кнопок та виділень.",
+  "accentColorLabel": "Акцентний колір",
+  "accentColorDesc": "Колір для ефектів наведення та фонів."
 }

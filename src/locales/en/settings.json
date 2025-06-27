@@ -42,5 +42,11 @@
   "supportChatDesc": "Have a question about FinanceFlow? Ask our AI assistant.",
   "chatPlaceholder": "Type your message here...",
   "chatMessageRequiredError": "Message cannot be empty.",
-  "supportChatThinking": "Thinking..."
+  "supportChatThinking": "Thinking...",
+  "themeColorsTitle": "Theme Colors",
+  "themeColorsDesc": "Personalize the main colors of the application.",
+  "primaryColorLabel": "Primary Color",
+  "primaryColorDesc": "Main color for buttons and highlights.",
+  "accentColorLabel": "Accent Color",
+  "accentColorDesc": "Color for hover effects and backgrounds."
 }

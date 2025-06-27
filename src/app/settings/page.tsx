@@ -30,6 +30,9 @@ const DEFAULT_RECORDS_PER_PAGE = 20;
 const DEFAULT_CHART_INCOME_COLOR = '#10b981';
 const DEFAULT_CHART_EXPENSE_COLOR = '#ef4444';
 const DEFAULT_CHART_CAPITAL_COLOR = '#f59e0b';
+const DEFAULT_PRIMARY_COLOR = '#3b82f6';
+const DEFAULT_ACCENT_COLOR = '#f0f5f9';
+
 
 const defaultDashboardVisibility = {
   total_balance: true,
@@ -62,6 +65,8 @@ const generalSettingsSchema = (t: Function) => z.object({
   chart_expense_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
   chart_capital_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
   records_per_page: z.coerce.number().min(1, { message: t('recordsPerPageMinError') }).max(100, { message: t('recordsPerPageMaxError') }).nullable().optional(),
+  primary_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
+  accent_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
 });
 
 type GeneralSettingsFormData = z.infer<ReturnType<typeof generalSettingsSchema>>;
@@ -155,6 +160,8 @@ export default function SettingsPage() {
       chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
       chart_capital_color: DEFAULT_CHART_CAPITAL_COLOR,
       records_per_page: DEFAULT_RECORDS_PER_PAGE,
+      primary_color: DEFAULT_PRIMARY_COLOR,
+      accent_color: DEFAULT_ACCENT_COLOR,
     },
   });
 
@@ -184,6 +191,8 @@ export default function SettingsPage() {
         chart_expense_color: user.settings.chart_expense_color ?? DEFAULT_CHART_EXPENSE_COLOR,
         chart_capital_color: user.settings.chart_capital_color ?? DEFAULT_CHART_CAPITAL_COLOR,
         records_per_page: user.settings.records_per_page ?? DEFAULT_RECORDS_PER_PAGE,
+        primary_color: user.settings.primary_color ?? DEFAULT_PRIMARY_COLOR,
+        accent_color: user.settings.accent_color ?? DEFAULT_ACCENT_COLOR,
       });
     }
 
@@ -224,6 +233,8 @@ export default function SettingsPage() {
   const watchedIncomeColor = generalForm.watch("chart_income_color");
   const watchedExpenseColor = generalForm.watch("chart_expense_color");
   const watchedCapitalColor = generalForm.watch("chart_capital_color");
+  const watchedPrimaryColor = generalForm.watch("primary_color");
+  const watchedAccentColor = generalForm.watch("accent_color");
   const watchedVisibility = dashboardForm.watch("dashboard_cards_visibility");
   const watchedSizes = dashboardForm.watch("dashboard_cards_sizes");
 
@@ -251,6 +262,8 @@ export default function SettingsPage() {
         chart_expense_color: data.chart_expense_color || null,
         chart_capital_color: data.chart_capital_color || null,
         records_per_page: data.records_per_page ? Number(data.records_per_page) : null,
+        primary_color: data.primary_color || null,
+        accent_color: data.accent_color || null,
       };
       await updateUserSettings(payload, token);
       await fetchUser();
@@ -382,6 +395,25 @@ export default function SettingsPage() {
             </CardHeader>
             <form onSubmit={generalForm.handleSubmit(handleGeneralSettingsSave)}>
                 <CardContent className="space-y-6">
+                    <div>
+                        <h3 className="text-md font-semibold text-foreground">{t('themeColorsTitle')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('themeColorsDesc')}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                           <ColorPickerSetting 
+                                label={t('primaryColorLabel')}
+                                description={t('primaryColorDesc')}
+                                formControl={{name: 'primary_color', control: generalForm.control}}
+                                watchedColor={watchedPrimaryColor}
+                           />
+                           <ColorPickerSetting 
+                                label={t('accentColorLabel')}
+                                description={t('accentColorDesc')}
+                                formControl={{name: 'accent_color', control: generalForm.control}}
+                                watchedColor={watchedAccentColor}
+                           />
+                        </div>
+                    </div>
+                    <Separator />
                     <div>
                         <h3 className="text-md font-semibold text-foreground">{t('chartColorsTitle')}</h3>
                         <p className="text-sm text-muted-foreground">{t('chartColorsDesc')}</p>
