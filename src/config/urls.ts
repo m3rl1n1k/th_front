@@ -71,14 +71,14 @@ export const URLS = {
   submitFeedback: `${API_BASE_URL}/feedbacks`,
   getFeedbacks: `${API_BASE_URL}/feedbacks`,
   updateFeedbackStatus: (id: string | number) => `${API_BASE_URL}/feedbacks/${id}`,
-  deleteFeedback: (id: string | number) => `${API_BASE_URL}/feedbacks/${id}`,
+  deleteFeedback: (id: string | number) => `${API_BASE_URL}/remove-feedback/${id}`,
 
   // Budgets
   getBudgets: `${API_BASE_URL}/budgets`, 
   getBudgetById_DEPRECATED: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, 
   createBudget: `${API_BASE_URL}/budgets`, 
   updateBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`, 
-  deleteBudget: (date: string) => `${API_BASE_URL}/budgets/${date}`,
+  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${date}`, // ID will be in body
   deleteBudgetsForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/${monthYear}`, 
   getBudgetSummaryForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/summary/${monthYear}`,
   getBudgetSummaryItemForEdit: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`,
