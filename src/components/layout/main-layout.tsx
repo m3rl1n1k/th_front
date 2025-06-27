@@ -26,6 +26,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { EmailVerificationBanner } from '@/components/common/email-verification-banner';
+import { BottomNavBar } from './BottomNavBar';
 
 const baseNavItems = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard, authRequired: true },
@@ -472,7 +473,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </nav>
             </aside>
           )}
-          <main className={`flex-1 overflow-auto ${isAuthenticated ? 'md:ml-64' : ''}`}>
+          <main className={`flex-1 overflow-auto ${isAuthenticated ? 'md:ml-64 md:pb-0 pb-16' : ''}`}>
             <div className="p-4 sm:p-6 lg:p-8">
               {isAuthenticated && <EmailVerificationBanner />}
               { (isAuthenticated && !authIsLoading) || publicPaths.includes(pathname) ? children : null }
@@ -480,6 +481,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      {isAuthenticated && <BottomNavBar />}
     </div>
   );
 }

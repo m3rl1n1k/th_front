@@ -333,7 +333,7 @@ export default function TransactionsPage() {
     fetchTransactions(1, {});
   };
 
-  const handleAddNewTransaction = () => router.push('/transactions/new');
+  const handleAddNewTransaction = () => router.push('/transactions/new/select-category');
 
   const openDeleteDialog = (transaction: Transaction) => {
     setSelectedTransactionForDelete(transaction);
@@ -657,7 +657,7 @@ export default function TransactionsPage() {
                           <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
                           <CategorySelector
                               value={filters.categoryId}
-                              onChange={(value) => handleFilterChange('categoryId', value === null ? undefined : value)}
+                              onChange={(value) => handleFilterChange('categoryId', value)}
                               mainCategories={mainCategories}
                               disabled={isLoadingCategories}
                               placeholder={t('selectCategoryPlaceholder')}

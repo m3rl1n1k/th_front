@@ -105,5 +105,9 @@
   "frequency_Yearly": "Щорічно",
   "frequency_ONE_TIME": "Одноразово",
   "frequency_EVERY_TWO_WEEKS": "Кожні два тижні",
-  "frequency_EVERY_6_MONTHS": "Кожні 6 місяців"
+  "frequency_EVERY_6_MONTHS": "Кожні 6 місяців",
+  "selectCategoryForTransactionTitle": "Нова транзакція",
+  "selectCategoryStepTitle": "Крок 1: Виберіть категорію",
+  "selectCategoryStepDesc": "Виберіть категорію, щоб пов’язати її з новою транзакцією.",
+  "selectCategoryOptionalPlaceholder": "Вибрати категорію (необов'язково)"
 }

@@ -131,7 +131,6 @@ const renderActiveShape = (props: any) => {
 
   return (
     <g>
-      {/* Background circle for the center text to improve readability */}
       <circle cx={cx} cy={cy} r={innerRadius} fill="hsl(var(--card))" opacity="0.6" />
       <text x={cx} y={cy} dy={8} textAnchor="middle" fill="hsl(var(--foreground))" className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
@@ -411,7 +410,7 @@ export default function DashboardPage() {
 
   const renderQuickActionsCard = () => {
     const actions = [
-      { href: '/transactions/new', labelKey: 'quickActionCreateTransaction', icon: ListChecks },
+      { href: '/transactions/new/select-category', labelKey: 'quickActionCreateTransaction', icon: ListChecks },
       { href: '/wallets/new', labelKey: 'quickActionCreateWallet', icon: WalletCards },
       { href: '/categories/new', labelKey: 'quickActionCreateCategory', icon: Shapes },
       { href: '/budgets/new', labelKey: 'quickActionCreateBudget', icon: Target },

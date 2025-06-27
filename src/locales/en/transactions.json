@@ -105,5 +105,9 @@
   "frequency_Yearly": "Yearly",
   "frequency_ONE_TIME": "One time",
   "frequency_EVERY_TWO_WEEKS": "Every two weeks",
-  "frequency_EVERY_6_MONTHS": "Every 6 months"
+  "frequency_EVERY_6_MONTHS": "Every 6 months",
+  "selectCategoryForTransactionTitle": "New Transaction",
+  "selectCategoryStepTitle": "Step 1: Choose a Category",
+  "selectCategoryStepDesc": "Select a category to associate with your new transaction.",
+  "selectCategoryOptionalPlaceholder": "Select category (optional)"
 }

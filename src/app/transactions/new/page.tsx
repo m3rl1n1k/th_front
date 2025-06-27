@@ -1,8 +1,8 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,7 +13,7 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -29,21 +29,30 @@ import {
 import { useTranslation } from '@/context/i18n-context';
 import { useToast } from '@/hooks/use-toast';
 import type { TransactionType as AppTransactionType, Frequency, WalletDetails, MainCategory as ApiMainCategory, ApiError } from '@/types';
-import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Shapes, Loader2, Calculator, PlusCircle } from 'lucide-react';
+import { CalendarIcon, Save, ArrowLeft, Repeat, Landmark, Loader2, Calculator, PlusCircle } from 'lucide-react';
 import { CurrencyDisplay } from '@/components/common/currency-display';
 import { SimpleAmountCalculator } from '@/components/common/simple-amount-calculator';
 import { CategorySelector } from '@/components/common/category-selector';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const generateCategoryTranslationKey = (name: string | undefined | null): string => {
-  if (!name) return '';
-  return name.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-};
+const NewTransactionSchema = z.object({
+    amount: z.coerce.number().positive({ message: "Amount must be a positive number." }),
+    description: z.string().max(255, { message: "Description must be 255 characters or less."}).optional().nullable(),
+    typeId: z.string().min(1, { message: "Type is required." }),
+    date: z.date({ required_error: "Date is required." }),
+    walletId: z.string().min(1, { message: "Wallet is required." }),
+    categoryId: z.string().optional().nullable(),
+    frequencyId: z.string().min(1, { message: "Frequency is required."}),
+});
 
-export default function NewTransactionPage() {
+type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
+
+function NewTransactionForm() {
   const { token, isAuthenticated, user } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [frequencies, setFrequencies] = useState<Frequency[]>([]);
@@ -55,18 +64,6 @@ export default function NewTransactionPage() {
   const [isLoadingWallets, setIsLoadingWallets] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
-
-  const NewTransactionSchema = z.object({
-    amount: z.coerce.number().positive({ message: t('amountPositiveError') }),
-    description: z.string().max(255, { message: t('descriptionTooLongError')}).optional().nullable(),
-    typeId: z.string().min(1, { message: t('typeRequired') }),
-    date: z.date({ required_error: t('dateRequired') }),
-    walletId: z.string().min(1, { message: t('walletRequiredError') }),
-    categoryId: z.string().optional().nullable(),
-    frequencyId: z.string().min(1, { message: t('frequencyRequiredError')}),
-  });
-
-  type NewTransactionFormData = z.infer<typeof NewTransactionSchema>;
 
   const { control, handleSubmit, formState: { errors, isSubmitting: formIsSubmitting }, register, reset, getValues, setValue } = useForm<NewTransactionFormData>({
     resolver: zodResolver(NewTransactionSchema),
@@ -177,6 +174,16 @@ export default function NewTransactionPage() {
     wallets, transactionTypes, frequencies,
     reset, getValues
   ]);
+
+  useEffect(() => {
+      const categoryIdFromQuery = searchParams.get('categoryId');
+      if (categoryIdFromQuery && mainCategoriesHierarchical.length > 0) {
+          const allSubCategoryIds = mainCategoriesHierarchical.flatMap(mc => mc.subCategories.map(sc => String(sc.id)));
+          if (allSubCategoryIds.includes(categoryIdFromQuery)) {
+              setValue('categoryId', categoryIdFromQuery, { shouldDirty: true, shouldTouch: true });
+          }
+      }
+  }, [searchParams, setValue, mainCategoriesHierarchical]);
 
 
   const onSubmit: SubmitHandler<NewTransactionFormData> = async (data) => {
@@ -444,4 +451,48 @@ export default function NewTransactionPage() {
       </div>
     </MainLayout>
   );
+}
+
+const NewTransactionPageSkeleton = () => (
+  <MainLayout>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-10 w-24" />
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-7 w-1/2" />
+          <Skeleton className="h-4 w-3/4" />
+        </CardHeader>
+        <CardContent className="space-y-6 pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <Skeleton className="h-20 w-full" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="flex justify-end">
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  </MainLayout>
+);
+
+
+export default function NewTransactionPage() {
+    return (
+        <Suspense fallback={<NewTransactionPageSkeleton />}>
+            <NewTransactionForm />
+        </Suspense>
+    )
 }
