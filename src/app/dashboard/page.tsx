@@ -132,7 +132,7 @@ const renderActiveShape = (props: any) => {
   return (
     <g>
       {/* Background circle for the center text to improve readability */}
-      <circle cx={cx} cy={cy} r={innerRadius} fill="hsl(var(--background))" opacity="0.6" />
+      <circle cx={cx} cy={cy} r={innerRadius} fill="hsl(var(--card))" opacity="0.6" />
       <text x={cx} y={cy} dy={8} textAnchor="middle" fill="hsl(var(--foreground))" className="font-semibold text-sm sm:text-base">{payload.categoryName}</text>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
       <Sector
@@ -344,7 +344,7 @@ export default function DashboardPage() {
   };
 
   const renderTotalBalanceCard = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{t('totalBalance')}</CardTitle>
         <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -365,7 +365,7 @@ export default function DashboardPage() {
   );
 
   const renderMonthlyIncomeCard = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{t('monthlyIncome')}</CardTitle>
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -377,7 +377,7 @@ export default function DashboardPage() {
   );
 
   const renderAverageExpensesCard = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{t('averageExpense')}</CardTitle>
         <BarChartHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -418,7 +418,7 @@ export default function DashboardPage() {
     ];
 
     return (
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+      <Card className="h-full flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <PlusCircle className="h-4 w-4 text-primary" />
@@ -441,7 +441,7 @@ export default function DashboardPage() {
 
   const renderExpensesChart = () => (
     <Dialog>
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+      <Card className="h-full flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between p-6">
           <div className="space-y-1.5">
             <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
@@ -481,7 +481,7 @@ export default function DashboardPage() {
   );
 
   const renderLastActivity = () => (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+    <Card className="h-full flex flex-col">
       <CardHeader className="p-6">
         <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <Activity className="h-6 w-6 text-primary" />
@@ -489,7 +489,7 @@ export default function DashboardPage() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 pt-0 flex-grow">
-        {isLoading ? (<div className="space-y-4">{[...Array(5)].map((_, i) => (<div key={i} className="flex items-center space-x-3 p-2"><Skeleton className="h-6 w-6 rounded-md" /><div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div><Skeleton className="h-4 w-1/4" /></div>))}</div>) : !processedLastActivity || processedLastActivity.length === 0 ? (<div className="flex flex-col items-center justify-center h-full text-center"><ListChecks className="h-12 w-12 text-muted-foreground mb-3" /><p className="text-muted-foreground">{t('noRecentTransactions')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<div className="space-y-1">{processedLastActivity.map((item) => (<Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-center justify-between gap-2"><div className="flex items-center space-x-3 flex-shrink min-w-0">{item.icon}<div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate" title={item.displayText}>{item.displayText}</p><p className="text-xs text-muted-foreground">{item.date}</p></div></div><div className="text-sm font-medium text-right flex-shrink-0 ml-2"><CurrencyDisplay isVisible={showAmounts} amountInCents={item.amount} currencyCode={item.currencyCode} /></div></div></Link>))}</div>)}
+        {isLoading ? (<div className="space-y-4">{[...Array(5)].map((_, i) => (<div key={i} className="flex items-center space-x-3 p-2"><Skeleton className="h-6 w-6 rounded-md" /><div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div><Skeleton className="h-4 w-1/4" /></div>))}</div>) : !processedLastActivity || processedLastActivity.length === 0 ? (<div className="flex flex-col items-center justify-center h-full text-center"><ListChecks className="h-12 w-12 text-muted-foreground mb-3" /><p className="text-muted-foreground">{t('noRecentTransactions')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<div className="space-y-1">{processedLastActivity.map((item) => (<Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-accent/50 dark:hover:bg-accent/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-center justify-between gap-2"><div className="flex items-center space-x-3 flex-shrink min-w-0">{item.icon}<div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate" title={item.displayText}>{item.displayText}</p><p className="text-xs text-muted-foreground">{item.date}</p></div></div><div className="text-sm font-medium text-right flex-shrink-0 ml-2"><CurrencyDisplay isVisible={showAmounts} amountInCents={item.amount} currencyCode={item.currencyCode} /></div></div></Link>))}</div>)}
       </CardContent>
       {processedLastActivity && processedLastActivity.length > 0 && (<CardFooter className="p-6 pt-0"><Button variant="outline" asChild className="w-full mt-auto"><Link href="/transactions">{t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4" /></Link></Button></CardFooter>)}
     </Card>
@@ -500,7 +500,7 @@ export default function DashboardPage() {
     const currentMonthKey = format(new Date(), 'yyyy-MM');
 
     return (
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 h-full">
+      <Card className="flex flex-col bg-card h-full">
         <CardHeader className="p-6">
           <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <Target className="h-6 w-6 text-primary" />

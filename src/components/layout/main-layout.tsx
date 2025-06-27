@@ -97,8 +97,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
-    if (!authIsLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
+    const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify', '/email-verification'];
+    if (!authIsLoading && !isAuthenticated && !publicPaths.some(p => pathname.startsWith(p))) {
       if (typeof window !== 'undefined') {
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
       }
@@ -108,8 +108,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         isAuthenticated &&
         user &&
         (!user.userCurrency || !user.userCurrency.code) &&
-        pathname !== '/profile' &&
-        !publicPaths.includes(pathname)
+        !publicPaths.some(p => pathname.startsWith(p)) &&
+        pathname !== '/profile'
       ) {
         toast({
           title: t('setYourCurrencyTitle'),
@@ -162,8 +162,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify'];
-  if (!isAuthenticated && !authIsLoading && !publicPaths.includes(pathname)) {
+  const publicPaths = ['/login', '/register', '/terms', '/', '/set-token', '/auth/verify', '/email-verification'];
+  if (!isAuthenticated && !authIsLoading && !publicPaths.some(p => pathname.startsWith(p))) {
      return null;
   }
 
@@ -240,7 +240,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </svg>
         </div>
       )}
-      <header className="sticky top-0 z-40 w-full bg-card shadow-sm">
+      <header className="sticky top-0 z-40 w-full border-b bg-card">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center">
             {isAuthenticated && (
@@ -454,7 +454,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1">
           {isAuthenticated && (
-            <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto">
+            <aside className="fixed top-16 left-0 bottom-0 hidden md:flex md:flex-col w-64 border-r bg-card p-4 space-y-1 z-30 h-[calc(100vh-4rem)] overflow-y-auto">
               <nav className="flex-1 space-y-1">
                 {renderNavGroup(baseNavItems)}
                 <Separator className="my-2" />

@@ -205,7 +205,7 @@ export default function WalletsPage() {
           <div className={`grid gap-6 ${viewMode === 'card' ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
             {viewMode === 'card' ? (
               [1, 2, 3, 4].map(i => (
-                <Card key={i} className="shadow-lg">
+                <Card key={i}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <Skeleton className="h-6 w-3/5" />
                     <Skeleton className="h-6 w-6 rounded-full" />
@@ -218,7 +218,7 @@ export default function WalletsPage() {
                 </Card>
               ))
             ) : (
-              <Card className="shadow-lg">
+              <Card>
                 <CardHeader>
                   <Skeleton className="h-8 w-1/2 mb-2" />
                   <Skeleton className="h-4 w-3/4" />
@@ -254,7 +254,7 @@ export default function WalletsPage() {
               {t('addNewWalletButton')}
             </Button>
           </div>
-          <Card className="shadow-lg text-center py-12">
+          <Card className="text-center py-12">
             <CardHeader>
               <WalletCards className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <CardTitle>{t('noWalletsFoundTitle')}</CardTitle>
@@ -300,7 +300,7 @@ export default function WalletsPage() {
                 <List className="h-5 w-5" />
               </Button>
             </div>
-            <Button onClick={handleAddNewWallet} className="shadow-md hover:shadow-lg transition-shadow w-full sm:w-auto">
+            <Button onClick={handleAddNewWallet} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-5 w-5" />
               {t('addNewWalletButton')}
             </Button>
@@ -310,8 +310,8 @@ export default function WalletsPage() {
         {viewMode === 'card' ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {processedWallets.map(wallet => (
-              <Card key={wallet.id} className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col bg-card">
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 bg-muted/20 dark:bg-muted/10 rounded-t-lg p-4">
+              <Card key={wallet.id} className="hover:shadow-lg transition-shadow duration-300 flex flex-col bg-card">
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 bg-muted/20 dark:bg-muted/10 p-4">
                   <div className="space-y-1">
                       <CardTitle className="text-xl font-semibold text-foreground">{wallet.name}</CardTitle>
                       <CardDescription className="text-xs text-muted-foreground">{wallet.typeName}</CardDescription>
@@ -353,7 +353,7 @@ export default function WalletsPage() {
             ))}
           </div>
         ) : (
-          <Card className="shadow-xl">
+          <Card>
             <CardHeader>
               <CardTitle>{t('walletsListTableTitle')}</CardTitle>
               <CardDescription>{t('walletsListTableDescription')}</CardDescription>

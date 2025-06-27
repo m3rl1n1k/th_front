@@ -406,7 +406,7 @@ export default function TransactionsPage() {
     if (isLoadingTransactions && rawTransactions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="h-60 text-center border-b-0">
+          <TableCell colSpan={7} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -419,7 +419,7 @@ export default function TransactionsPage() {
     if (sortedDateKeys.length === 0 && !isLoadingTransactions) {
       return (
         <TableRow>
-          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground border-b-0">
+          <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
             <div className="flex flex-col items-center justify-center">
                 <History className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noTransactionsFound')}</p>
@@ -432,7 +432,7 @@ export default function TransactionsPage() {
 
     return sortedDateKeys.map(dateKey => (
       <React.Fragment key={dateKey + '-group'}>
-        <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30 border-b-0">
+        <TableRow className="bg-muted/50 hover:bg-muted/60 sticky top-0 z-10 dark:bg-muted/20 dark:hover:bg-muted/30">
           <TableCell colSpan={7} className="py-3 px-4 font-semibold text-foreground text-md">
             {format(parseISO(dateKey), "PPP", { locale: dateFnsLocale })}
           </TableCell>
@@ -452,7 +452,7 @@ export default function TransactionsPage() {
             (selectedTransactionForDelete?.id === tx.id && (isDeleting || deleteConfirmationOpen));
 
           return (
-            <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors border-b-0">
+            <TableRow key={tx.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
               <TableCell className="py-3 px-4 align-top text-sm">
                 {tx.date ? format(parseISO(tx.date), "p", { locale: dateFnsLocale }) : 'N/A'}
               </TableCell>
@@ -523,7 +523,7 @@ export default function TransactionsPage() {
     if (isLoadingRepeatedDefinitions || isLoadingFrequencies) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="h-60 text-center border-b-0">
+          <TableCell colSpan={6} className="h-60 text-center">
             <div className="flex flex-col items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-3" />
               <p className="text-lg text-muted-foreground">{t('loading')}</p>
@@ -536,7 +536,7 @@ export default function TransactionsPage() {
     if (!repeatedDefinitions || repeatedDefinitions.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground border-b-0">
+          <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
              <div className="flex flex-col items-center justify-center">
                 <RefreshCwIcon className="h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-xl font-medium">{t('noRecurringDefinitionsFound')}</p>
@@ -552,7 +552,7 @@ export default function TransactionsPage() {
       const templateTransactionId = def.transaction?.id;
 
       return (
-      <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors border-b-0">
+      <TableRow key={def.id} className="hover:bg-accent/10 dark:hover:bg-accent/5 transition-colors">
         <TableCell className="py-3 px-4 align-top text-sm">
           {templateTransactionId ? (
             <Button
@@ -606,23 +606,23 @@ export default function TransactionsPage() {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="font-headline text-4xl font-bold text-foreground">{t('transactions')}</h1>
-          <Button onClick={handleAddNewTransaction} className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow">
+          <Button onClick={handleAddNewTransaction} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-5 w-5" />
             {t('addNewTransaction')}
           </Button>
         </div>
 
         {activeTab === 'all' && (
-          <Card className="shadow-xl">
+          <Card>
             <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="filters" className="border-b-0">
+              <AccordionItem value="filters">
                   <AccordionTrigger className="w-full px-6 py-4 hover:no-underline hover:bg-muted/30 dark:hover:bg-muted/10 transition-colors rounded-t-lg">
                     <div className="flex items-center text-xl font-semibold text-foreground">
                       <ListFilter className="mr-3 h-6 w-6 text-primary" />
                       {t('filterTransactionsTitle')}
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="border-t">
+                  <AccordionContent>
                     <div className="p-6 space-y-6 bg-background rounded-b-lg">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
                         <div className="space-y-2">
@@ -684,8 +684,8 @@ export default function TransactionsPage() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 pt-0 sm:flex-row sm:justify-end sm:space-x-3">
-                        <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="w-full sm:w-auto shadow-sm hover:shadow-md transition-shadow">{t('clearFiltersButton')}</Button>
-                        <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="w-full sm:w-auto shadow-sm hover:shadow-md transition-shadow">
+                        <Button variant="outline" onClick={handleClearFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="w-full sm:w-auto">{t('clearFiltersButton')}</Button>
+                        <Button onClick={handleApplyFilters} disabled={isLoadingTransactions || isLoadingTypes || isLoadingCategories} className="w-full sm:w-auto">
                           {(isLoadingTransactions && activeTab === 'all') && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           {t('applyFiltersButton')}
                         </Button>
@@ -698,20 +698,20 @@ export default function TransactionsPage() {
         )}
 
         <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as "all" | "recurring"); setCurrentPage(1); setTotalPages(1); }} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/20 p-1.5 rounded-lg">
-            <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex bg-muted/60 dark:bg-muted/20 p-1.5 rounded-lg">
+            <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-150 py-2.5">
               <History className="h-5 w-5" />
               {t('allTransactionsTab')}
             </TabsTrigger>
-            <TabsTrigger value="recurring" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
+            <TabsTrigger value="recurring" className="flex-1 gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-150 py-2.5">
               <RefreshCwIcon className="h-5 w-5" />
               {t('recurringTransactionsTab')}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-6">
-            <Card className="shadow-xl">
-              <CardHeader className="border-b-0">
+            <Card>
+              <CardHeader>
                 <CardTitle className="text-2xl font-semibold text-foreground">{t('recentTransactionsTitle')}</CardTitle>
                 <CardDescription>{t('viewAllYourTransactions')}</CardDescription>
               </CardHeader>
@@ -719,7 +719,7 @@ export default function TransactionsPage() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader className="bg-muted/30 dark:bg-muted/10">
-                      <TableRow className="border-b-0">
+                      <TableRow>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('time')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs text-center">{t('transactionType')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('category')}</TableHead>
@@ -736,7 +736,7 @@ export default function TransactionsPage() {
                 </div>
               </CardContent>
               {activeTab === 'all' && (
-                <CardFooter className="flex items-center justify-center py-4 border-t-0">
+                <CardFooter className="flex items-center justify-center py-4">
                   {isLoadingMore ? (
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   ) : currentPage >= totalPages && rawTransactions.length > 0 ? (
@@ -748,8 +748,8 @@ export default function TransactionsPage() {
             </Card>
           </TabsContent>
           <TabsContent value="recurring" className="mt-6">
-             <Card className="shadow-xl">
-              <CardHeader className="border-b-0">
+             <Card>
+              <CardHeader>
                 <CardTitle className="text-2xl font-semibold text-foreground">{t('recurringTransactionsListTitle')}</CardTitle>
                 <CardDescription>{t('manageRecurringDefinitions')}</CardDescription>
               </CardHeader>
@@ -757,7 +757,7 @@ export default function TransactionsPage() {
                 <div className="overflow-x-auto">
                    <Table>
                      <TableHeader className="bg-muted/30 dark:bg-muted/10">
-                      <TableRow className="border-b-0">
+                      <TableRow>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('templateInfo')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('status')}</TableHead>
                         <TableHead className="px-4 py-3 text-muted-foreground uppercase tracking-wider text-xs">{t('frequency')}</TableHead>

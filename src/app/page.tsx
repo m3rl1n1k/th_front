@@ -101,7 +101,7 @@ export default function HomePage() {
 
         {/* Main Feature Screenshot */}
         <section className="container mx-auto px-4 -mt-16">
-           <div className="relative mx-auto w-full max-w-5xl h-auto aspect-video rounded-xl overflow-hidden shadow-2xl border-4 border-card">
+           <div className="relative mx-auto w-full max-w-5xl h-auto aspect-video rounded-xl overflow-hidden shadow-2xl border">
               <Image
                 src="https://placehold.co/1200x675.png"
                 alt={t('altFinancialPlanning')}
@@ -130,7 +130,7 @@ export default function HomePage() {
                     </div>
                     <p className="text-muted-foreground text-lg">{t(feature.descriptionKey as any)}</p>
                   </div>
-                  <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg md:order-${index % 2 === 0 ? '2' : '1'}`}>
+                  <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg border md:order-${index % 2 === 0 ? '2' : '1'}`}>
                      <Image
                       src={feature.image.src}
                       alt={feature.image.alt}

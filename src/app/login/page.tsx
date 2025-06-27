@@ -74,7 +74,7 @@ export default function LoginPage() {
 
   return (
     <PublicLayout>
-      <Card className="w-full max-w-md shadow-2xl">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <LogIn size={32} />

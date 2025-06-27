@@ -76,7 +76,7 @@ export default function RegisterPage() {
 
   return (
     <PublicLayout>
-      <Card className="w-full max-w-lg shadow-2xl">
+      <Card className="w-full max-w-lg shadow-lg">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <UserPlus size={32} />
