@@ -10,7 +10,6 @@ import { MainCategory as ApiMainCategory } from '@/types';
 import { useTranslation } from '@/context/i18n-context';
 import { ChevronsUpDown, Shapes } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 interface CategorySelectorProps {
   value: string | null | undefined;
