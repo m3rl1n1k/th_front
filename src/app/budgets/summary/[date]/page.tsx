@@ -235,7 +235,7 @@ export default function BudgetSummaryPage() {
             const progressColorClass = getProgressColor(progressPercentageSafe);
 
             return (
-              <Card key={budget.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50">
+              <Card key={budget.budgetId} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/80 dark:bg-card/50 border-border/50 hover:border-primary/50">
                 <CardHeader className="p-4 pb-2 border-b flex-row items-center justify-between">
                   <div className="space-y-0.5">
                     <CardTitle className="text-lg font-semibold text-foreground flex items-center">
