@@ -1,0 +1,27 @@
+
+{
+  "reportsGroup": "Звіти",
+  "generalReportMenu": "Загальний",
+  "aiReportMenu": "AI Звіт",
+  "aiReportPageTitle": "AI фінансовий звіт",
+  "aiReportPageDesc": "Використовуйте ШІ для глибшого аналізу ваших фінансових моделей та потенційних оптимізацій.",
+  "aiReportComingSoon": "Функції звітності на базі ШІ знаходяться в розробці.",
+  "aiReportEnsureKeyNote": "Переконайтеся, що ваш API ключ Gemini дійсний для майбутніх функцій.",
+  "navigateToSettings": "Перейти до налаштувань",
+  "generalReportPageTitle": "Загальний звіт",
+  "selectReportPeriod": "Виберіть період для створення звіту",
+  "selectYear": "Вибрати рік",
+  "selectMonth": "Вибрати місяць",
+  "reportForPeriod": "Звіт за {period}",
+  "keyFinancialStats": "Ключові фінансові показники",
+  "startOfMonthBalance": "Баланс на початок місяця",
+  "endOfMonthBalance": "Баланс на кінець місяця",
+  "totalIncome": "Загальний дохід",
+  "totalExpense": "Загальні витрати",
+  "yearlyPerformance": "Річні показники",
+  "monthlyExpensesByCategory": "Щомісячні витрати за категоріями",
+  "noReportData": "Дані за вибраний період відсутні.",
+  "generateReportPrompt": "Виберіть рік і місяць, а потім натисніть 'Застосувати фільтри', щоб створити звіт.",
+  "income": "Дохід",
+  "expense": "Витрата"
+}

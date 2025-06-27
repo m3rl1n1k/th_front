@@ -288,8 +288,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations]);
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/'];
-    if (!isLoading && !isAuthenticated && !publicPaths.includes(pathname)) {
+    const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
+    if (!isLoading && !isAuthenticated && !publicPaths.some(p => pathname.startsWith(p)) && !isRenewalModalOpen) {
       if (typeof window !== 'undefined') {
         devLog(`Not authenticated. Storing intended destination: ${pathname}`);
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
@@ -301,7 +301,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user &&
         (!user.userCurrency || !user.userCurrency.code) &&
         pathname !== '/profile' &&
-        !publicPaths.includes(pathname)
+        !publicPaths.some(p => pathname.startsWith(p))
       ) {
         devLog('User currency not set. Redirecting to profile.');
         toast({
@@ -312,8 +312,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         router.replace('/profile');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isAuthenticated, user, router, pathname, t, toast]);
+  }, [isLoading, isAuthenticated, user, router, pathname, t, toast, isRenewalModalOpen]);
 
 
   return (

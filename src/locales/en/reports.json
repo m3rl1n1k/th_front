@@ -1,0 +1,27 @@
+
+{
+  "reportsGroup": "Reports",
+  "generalReportMenu": "General",
+  "aiReportMenu": "AI Report",
+  "aiReportPageTitle": "AI financial report",
+  "aiReportPageDesc": "Use AI to get deeper insights into your financial patterns and potential optimizations.",
+  "aiReportComingSoon": "AI-powered reporting features are under development.",
+  "aiReportEnsureKeyNote": "Ensure your Gemini API key is valid for upcoming features.",
+  "navigateToSettings": "Navigate to settings",
+  "generalReportPageTitle": "General report",
+  "selectReportPeriod": "Select period to generate report",
+  "selectYear": "Select year",
+  "selectMonth": "Select month",
+  "reportForPeriod": "Report for {period}",
+  "keyFinancialStats": "Key financial stats",
+  "startOfMonthBalance": "Start of month balance",
+  "endOfMonthBalance": "End of month balance",
+  "totalIncome": "Total income",
+  "totalExpense": "Total expense",
+  "yearlyPerformance": "Yearly performance",
+  "monthlyExpensesByCategory": "Monthly expenses by category",
+  "noReportData": "No data is available for the selected period.",
+  "generateReportPrompt": "Select a year and month, then click 'Apply filters' to generate a report.",
+  "income": "Income",
+  "expense": "Expense"
+}
