@@ -39,16 +39,20 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   pendingInvitationCount: number; // Added for badge
+  showAmounts: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (payload: RegistrationPayload) => Promise<void>;
   logout: () => void;
   fetchUser: () => Promise<void>;
+  toggleShowAmounts: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const INTENDED_DESTINATION_KEY = 'intended_destination';
 const AUTH_TOKEN_KEY = 'financeflow_auth_token';
+const AMOUNTS_VISIBILITY_KEY = 'financeflow_amounts_visible';
+
 
 const augmentUserData = (user: User): User => {
   const isVerified = !!user.verifiedAt || !!user.isVerified;
@@ -63,6 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
+  const [showAmounts, setShowAmounts] = useState(true);
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
   const [reloadOnSuccess, setReloadOnSuccess] = useState(false);
   const isModalOpenRef = useRef(false);
@@ -81,6 +86,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedVisibility = localStorage.getItem(AMOUNTS_VISIBILITY_KEY);
+      setShowAmounts(storedVisibility === null ? true : storedVisibility === 'true');
+    }
+  }, []);
+
+  const toggleShowAmounts = () => {
+    setShowAmounts(prev => {
+      const newState = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(AMOUNTS_VISIBILITY_KEY, String(newState));
+      }
+      return newState;
+    });
+  };
 
   const logout = useCallback(() => {
     setIsLoading(true);
@@ -385,7 +407,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, pendingInvitationCount }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isAuthenticated, login, logout, register, fetchUser, pendingInvitationCount, showAmounts, toggleShowAmounts }}>
       {children}
       <SessionRenewalModal
         isOpen={isRenewalModalOpen}

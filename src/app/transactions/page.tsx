@@ -810,7 +810,7 @@ export default function TransactionsPage() {
               className="bg-destructive hover:bg-destructive/90"
             >
               {definitionActionStates[selectedDefinitionForDelete?.id || '']?.isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {definitionActionStates[selectedDefinitionForDelete?.id || '']?.isLoading ? t('deleting') : t('deleteButtonConfirm')}
+              {isDeleting ? t('deleting') : t('deleteButtonConfirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

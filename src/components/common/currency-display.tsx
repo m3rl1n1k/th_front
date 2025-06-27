@@ -8,14 +8,13 @@ import { useAuth } from '@/context/auth-context'; // Import useAuth
 interface CurrencyDisplayProps {
   amountInCents: number;
   currencyCode?: string; // Optional currency code from transaction
-  isVisible?: boolean;
 }
 
-export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ amountInCents, currencyCode, isVisible = true }) => {
+export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({ amountInCents, currencyCode }) => {
   const { language } = useTranslation();
-  const { user } = useAuth(); // Get user from AuthContext
+  const { user, showAmounts } = useAuth(); // Get user and showAmounts from AuthContext
 
-  if (!isVisible) {
+  if (!showAmounts) {
     return <span className="font-mono tracking-widest">••••••</span>;
   }
 

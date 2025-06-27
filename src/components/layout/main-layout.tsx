@@ -21,7 +21,7 @@ import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, ListChecks, UserCircle, LogOut, Menu, Settings, Languages, WalletCards,
   Shapes, Sun, Moon, UserPlus, ArrowRightLeft, MessageSquare, ClipboardList, Target, Briefcase,
-  BarChart3, Brain, FileSignature, Bot, Star
+  BarChart3, Brain, FileSignature, Bot, Star, Eye, EyeOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
@@ -65,7 +65,7 @@ const publicNavItems = [
 const INTENDED_DESTINATION_KEY = 'intended_destination';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAuthenticated, isLoading: authIsLoading, pendingInvitationCount } = useAuth();
+  const { user, logout, isAuthenticated, isLoading: authIsLoading, pendingInvitationCount, showAmounts, toggleShowAmounts } = useAuth();
   const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
@@ -366,6 +366,17 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center space-x-2">
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleShowAmounts}
+                aria-label={showAmounts ? t('hideAmounts') : t('showAmounts')}
+                disabled={isNavigating}
+              >
+                {showAmounts ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </Button>
+            )}
             {mounted && (
               <Button
                 variant="ghost"
