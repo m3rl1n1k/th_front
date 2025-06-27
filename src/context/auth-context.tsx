@@ -80,13 +80,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [logout]);
   
   const promptSessionRenewal = useCallback(() => {
+    // Prevent opening if already on a public page like login
+    const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
+    if (publicPaths.some(p => pathname.startsWith(p))) {
+        devLog('On a public page, not showing renewal modal.');
+        return;
+    }
+
     // Prevent opening if already open or if no user was logged in previously
     if (!isModalOpenRef.current && (user || sessionStorage.getItem(AUTH_TOKEN_KEY))) {
         isModalOpenRef.current = true;
         devLog('Prompting for session renewal.');
         setIsRenewalModalOpen(true);
     }
-  }, [user]);
+  }, [user, pathname]);
 
   // Listen for the custom sessionExpired event
   useEffect(() => {
