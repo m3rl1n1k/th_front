@@ -241,3 +241,4 @@ The backend must implement a webhook endpoint to receive events from Stripe. The
 ### Feedbacks
 ... (rest of the file remains unchanged)
 <-- Omitted for brevity -->
+/home/user/studio/src/img

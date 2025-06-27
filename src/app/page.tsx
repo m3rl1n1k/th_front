@@ -103,7 +103,7 @@ export default function HomePage() {
         <section className="container mx-auto px-4 -mt-16">
            <div className="relative mx-auto w-full max-w-5xl h-auto aspect-video rounded-xl overflow-hidden shadow-2xl border">
               <Image
-                src="https://storage.googleapis.com/project-osprey-428717-assets/56108151-ff72-466a-937e-616997675e8d.png"
+                src="/img/dashboard.png"
                 alt="A screenshot of the FinanceFlow application dashboard showing various financial metrics and charts."
                 fill
                 className="object-cover"
