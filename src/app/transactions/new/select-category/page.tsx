@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -85,7 +84,7 @@ export default function SelectCategoryForTransactionPage() {
               <Card key={mainCat.id}>
                 <CardHeader>
                   <CardTitle className="flex items-center text-xl">
-                    <IconRenderer iconName={mainCat.icon} className="mr-3 h-6 w-6" style={{ color: mainCat.color || 'hsl(var(--primary))' }} />
+                    <IconRenderer iconName={mainCat.icon} className="mr-3 h-6 w-6" color={mainCat.color || 'hsl(var(--primary))'} />
                     {t(generateCategoryTranslationKey(mainCat.name), { defaultValue: mainCat.name })}
                   </CardTitle>
                 </CardHeader>
@@ -98,7 +97,7 @@ export default function SelectCategoryForTransactionPage() {
                       className="h-auto py-3 flex-col gap-2 justify-center"
                     >
                       <Link href={`/transactions/new?categoryId=${subCat.id}`}>
-                        <IconRenderer iconName={subCat.icon} className="h-6 w-6" style={{ color: subCat.color || 'hsl(var(--foreground))' }} />
+                        <IconRenderer iconName={subCat.icon} className="h-6 w-6" color={subCat.color || 'hsl(var(--foreground))'} />
                         <span className="text-center text-xs sm:text-sm">
                           {t(generateCategoryTranslationKey(subCat.name), { defaultValue: subCat.name })}
                         </span>
