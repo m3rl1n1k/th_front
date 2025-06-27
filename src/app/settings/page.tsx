@@ -188,7 +188,12 @@ export default function SettingsPage() {
   const [orderedCards, setOrderedCards] = useState<DashboardCardConfig[]>([]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor)
   );
 
