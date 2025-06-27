@@ -79,7 +79,7 @@ const dashboardSettingsSchema = z.object({
   dashboard_cards_order: z.array(z.string()).default(defaultDashboardOrder),
   dashboard_cards_sizes: z.record(z.string()).default(defaultDashboardSizes),
 });
-type DashboardSettingsFormData = z.infer<ReturnType<typeof dashboardSettingsSchema>>;
+type DashboardSettingsFormData = z.infer<typeof dashboardSettingsSchema>;
 
 type DashboardCardConfig = {
   id: string;
