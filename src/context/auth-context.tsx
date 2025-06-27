@@ -60,6 +60,12 @@ const augmentUserData = (user: User): User => {
   return { ...user, isVerified, subscription };
 };
 
+const PUBLIC_PATHS = ['/', '/login', '/register', '/terms', '/email-verification', '/auth/verify'];
+const PUBLIC_REDIRECT_PAGES = ['/login', '/register', '/email-verification', '/auth/verify'];
+
+const isPublicPath = (path: string) => PUBLIC_PATHS.some(p => p === '/' ? path === p : path.startsWith(p));
+const isOnPublicRedirectPage = (path: string) => PUBLIC_REDIRECT_PAGES.some(p => path.startsWith(p));
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -69,7 +75,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
   const [showAmounts, setShowAmounts] = useState(true);
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
-  const [reloadOnSuccess, setReloadOnSuccess] = useState(false);
   const [expiredTokenEmail, setExpiredTokenEmail] = useState<string | null>(null);
   const isModalOpenRef = useRef(false);
   const router = useRouter();
@@ -122,20 +127,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isModalOpenRef.current = false;
     setIsRenewalModalOpen(false);
     setExpiredTokenEmail(null);
-    
-    // Perform logout actions directly
-    clearAuthData();
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(INTENDED_DESTINATION_KEY);
-    }
-    toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
-    router.push('/login');
-
-  }, [clearAuthData, router, t, toast]);
+    logout();
+  }, [logout]);
   
   const promptSessionRenewal = useCallback(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
-    if (publicPaths.some(p => p === '/' ? pathname === p : pathname.startsWith(p))) {
+    if (isPublicPath(pathname)) {
         devLog('On a public page, not showing renewal modal.');
         return;
     }
@@ -248,18 +244,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await processSuccessfulLogin(newToken);
       toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
-      setReloadOnSuccess(true);
     } catch (error) {
         toast({ variant: 'destructive', title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
         handleRenewalClose();
     }
   }, [processSuccessfulLogin, toast, t, handleRenewalClose]);
-
-  useEffect(() => {
-    if (reloadOnSuccess) {
-      window.location.reload();
-    }
-  }, [reloadOnSuccess]);
 
 
   useEffect(() => {
@@ -374,8 +363,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if ((error as ApiError).code !== 401) {
             toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
             clearAuthData();
-            const publicPaths = ['/login', '/register', '/terms', '/'];
-            if (typeof window !== 'undefined' && !publicPaths.some(p => p === '/' ? pathname === p : pathname.startsWith(p))) {
+            if (!isPublicPath(pathname)) {
               localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
             }
             router.replace('/login');
@@ -393,27 +381,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations]);
 
   useEffect(() => {
-    const publicRedirectPages = ['/login', '/register', '/email-verification', '/auth/verify'];
-    const isOnPublicRedirectPage = publicRedirectPages.some(p => pathname.startsWith(p));
-    const isPublic = ['/', '/terms', ...publicRedirectPages].some(p => pathname.startsWith(p));
+    if (isLoading) return;
 
-    if (!isLoading && isAuthenticated && isOnPublicRedirectPage) {
-      devLog(`Authenticated user on a public redirect page (${pathname}). Redirecting to dashboard.`);
-      router.replace('/dashboard');
-    } else if (!isLoading && !isAuthenticated && !isPublic && !isRenewalModalOpen) {
-      if (typeof window !== 'undefined') {
-        devLog(`Not authenticated on a protected route. Storing intended destination: ${pathname}`);
-        localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
-      }
-      router.replace('/login');
-    } else if (
-        !isLoading &&
-        isAuthenticated &&
-        user &&
-        (!user.userCurrency || !user.userCurrency.code) &&
-        pathname !== '/profile' &&
-        !isPublic
-      ) {
+    if (isAuthenticated) {
+      if (isOnPublicRedirectPage(pathname)) {
+        devLog(`Authenticated user on a public redirect page (${pathname}). Redirecting to dashboard.`);
+        router.replace('/dashboard');
+      } else if (user && (!user.userCurrency || !user.userCurrency.code) && pathname !== '/profile') {
         devLog('User currency not set. Redirecting to profile.');
         toast({
           title: t('setYourCurrencyTitle'),
@@ -422,6 +396,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           duration: 7000,
         });
         router.replace('/profile');
+      }
+    } else { // Not authenticated
+      if (!isPublicPath(pathname) && !isRenewalModalOpen) {
+        if (typeof window !== 'undefined') {
+          devLog(`Not authenticated on a protected route. Storing intended destination: ${pathname}`);
+          localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
+        }
+        router.replace('/login');
+      }
     }
   }, [isLoading, isAuthenticated, user, router, pathname, t, toast, isRenewalModalOpen]);
 
