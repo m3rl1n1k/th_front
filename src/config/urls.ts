@@ -78,7 +78,7 @@ export const URLS = {
   getBudgetById_DEPRECATED: (id: string | number) => `${API_BASE_URL}/budgets/${id}`, 
   createBudget: `${API_BASE_URL}/budgets`, 
   updateBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`, 
-  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`,
+  deleteBudget: (date: string, id: string | number) => `${API_BASE_URL}/budgets/${date}/${id}`,
   deleteBudgetsForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/${monthYear}`, 
   getBudgetSummaryForMonth: (monthYear: string) => `${API_BASE_URL}/budgets/summary/${monthYear}`,
   getBudgetSummaryItemForEdit: (date: string, id: string | number) => `${API_BASE_URL}/budgets/summary/${date}/${id}`,
