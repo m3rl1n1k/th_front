@@ -37,7 +37,7 @@
   "youHaveNotSubmittedFeedback": "Ви ще не надсилали жодних відгуків.",
   "status_pending": "В очікуванні",
   "status_active": "В роботі",
-  "status_done": "Виконано",
+  "status_complete": "Завершено",
   "feedbackStatusLabel": "Статус",
   "saveStatusButton": "Зберегти статус",
   "statusUpdatedSuccess": "Статус відгуку оновлено",

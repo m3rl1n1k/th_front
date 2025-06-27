@@ -345,7 +345,7 @@ export interface Feedback {
   subject: string;
   message: string;
   createdAt: string; // ISO date string
-  status?: 'pending' | 'active' | 'done' | null;
+  status?: 'pending' | 'active' | 'complete' | null;
   user?: { // Optional user info
     id: string | number;
     login: string;
@@ -357,7 +357,7 @@ export interface GetFeedbacksResponse {
 }
 
 export interface UpdateFeedbackStatusPayload {
-  status: 'pending' | 'active' | 'done';
+  status: 'pending' | 'active' | 'complete';
 }
 
 // Budget Types

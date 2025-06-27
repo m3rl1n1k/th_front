@@ -37,7 +37,7 @@
   "youHaveNotSubmittedFeedback": "You have not submitted any feedback yet.",
   "status_pending": "Pending",
   "status_active": "Active",
-  "status_done": "Done",
+  "status_complete": "Complete",
   "feedbackStatusLabel": "Status",
   "saveStatusButton": "Save Status",
   "statusUpdatedSuccess": "Feedback status updated",

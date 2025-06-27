@@ -32,9 +32,9 @@ import {
 
 const REQUIRED_ROLE = "ROLE_MODERATOR_FEEDBACK";
 
-type FeedbackStatus = 'pending' | 'active' | 'done';
+type FeedbackStatus = 'pending' | 'active' | 'complete';
 
-const feedbackStatuses: FeedbackStatus[] = ['pending', 'active', 'done'];
+const feedbackStatuses: FeedbackStatus[] = ['pending', 'active', 'complete'];
 
 export default function AdminFeedbacksPage() {
   const { token, isAuthenticated, user, isLoading: authLoading } = useAuth();
@@ -109,7 +109,7 @@ export default function AdminFeedbacksPage() {
   const getStatusBadgeVariant = (status?: string | null): "default" | "secondary" | "destructive" => {
     switch (status) {
       case 'active': return 'default';
-      case 'done': return 'secondary';
+      case 'complete': return 'secondary';
       case 'pending':
       default:
         return 'destructive';
