@@ -152,7 +152,7 @@ const renderActiveShape = (props: any) => {
 
 
 export default function DashboardPage() {
-  const { user, token, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated, showAmounts } = useAuth();
   const { t, dateFnsLocale } = useTranslation();
   const { toast } = useToast();
 
@@ -163,7 +163,6 @@ export default function DashboardPage() {
   const [transactionTypes, setTransactionTypes] = useState<AppTransactionType[]>([]);
   const [activePieIndex, setActivePieIndex] = useState(0);
   const [currentMonthBudget, setCurrentMonthBudget] = useState<MonthlyBudgetSummary | null>(null);
-  const [showAmounts, setShowAmounts] = useState(true);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -353,9 +352,9 @@ export default function DashboardPage() {
           <Skeleton className="h-8 w-3/4" />
         ) : (
           <>
-            <div className="text-2xl font-bold"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.total_balance} /></div>
+            <div className="text-2xl font-bold"><CurrencyDisplay amountInCents={summaryData.total_balance} /></div>
             <p className="text-xs text-muted-foreground pt-1">
-              {t('mainWalletLabel')}: <CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.main_wallet_balance} />
+              {t('mainWalletLabel')}: <CurrencyDisplay amountInCents={summaryData.main_wallet_balance} />
             </p>
           </>
         )}
@@ -370,7 +369,7 @@ export default function DashboardPage() {
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent className="flex-grow flex items-center">
-        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay isVisible={showAmounts} amountInCents={summaryData.month_income} /></div>}
+        {isLoading || !summaryData ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-green-600 dark:text-green-400"><CurrencyDisplay amountInCents={summaryData.month_income} /></div>}
       </CardContent>
     </Card>
   );
@@ -392,15 +391,15 @@ export default function DashboardPage() {
           <>
             <div className="flex justify-between items-baseline text-sm">
               <span className="text-muted-foreground">{t('daily')}</span>
-              <span className="font-medium"><CurrencyDisplay isVisible={showAmounts} amountInCents={averageExpenses.daily} /></span>
+              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.daily} /></span>
             </div>
             <div className="flex justify-between items-baseline text-sm">
               <span className="text-muted-foreground">{t('weekly')}</span>
-              <span className="font-medium"><CurrencyDisplay isVisible={showAmounts} amountInCents={averageExpenses.weekly} /></span>
+              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.weekly} /></span>
             </div>
             <div className="flex justify-between items-baseline text-sm">
               <span className="text-muted-foreground">{t('monthly')}</span>
-              <span className="font-medium"><CurrencyDisplay isVisible={showAmounts} amountInCents={averageExpenses.monthly} /></span>
+              <span className="font-medium"><CurrencyDisplay amountInCents={averageExpenses.monthly} /></span>
             </div>
           </>
         )}
@@ -488,7 +487,7 @@ export default function DashboardPage() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 pt-0 flex-grow">
-        {isLoading ? (<div className="space-y-4">{[...Array(5)].map((_, i) => (<div key={i} className="flex items-center space-x-3 p-2"><Skeleton className="h-6 w-6 rounded-md" /><div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div><Skeleton className="h-4 w-1/4" /></div>))}</div>) : !processedLastActivity || processedLastActivity.length === 0 ? (<div className="flex flex-col items-center justify-center h-full text-center"><ListChecks className="h-12 w-12 text-muted-foreground mb-3" /><p className="text-muted-foreground">{t('noRecentTransactions')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<div className="space-y-1">{processedLastActivity.map((item) => (<Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-accent/50 dark:hover:bg-accent/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-center justify-between gap-2"><div className="flex items-center space-x-3 flex-shrink min-w-0">{item.icon}<div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate" title={item.displayText}>{item.displayText}</p><p className="text-xs text-muted-foreground">{item.date}</p></div></div><div className="text-sm font-medium text-right flex-shrink-0 ml-2"><CurrencyDisplay isVisible={showAmounts} amountInCents={item.amount} currencyCode={item.currencyCode} /></div></div></Link>))}</div>)}
+        {isLoading ? (<div className="space-y-4">{[...Array(5)].map((_, i) => (<div key={i} className="flex items-center space-x-3 p-2"><Skeleton className="h-6 w-6 rounded-md" /><div className="flex-1 space-y-1.5"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div><Skeleton className="h-4 w-1/4" /></div>))}</div>) : !processedLastActivity || processedLastActivity.length === 0 ? (<div className="flex flex-col items-center justify-center h-full text-center"><ListChecks className="h-12 w-12 text-muted-foreground mb-3" /><p className="text-muted-foreground">{t('noRecentTransactions')}</p><Button variant="link" asChild className="mt-2"><Link href="/transactions/new">{t('addNewTransaction')} <ExternalLink className="ml-1 h-4 w-4" /></Link></Button></div>) : (<div className="space-y-1">{processedLastActivity.map((item) => (<Link key={item.id} href={`/transactions/${item.id}`} className="block p-3 rounded-md hover:bg-accent/50 dark:hover:bg-accent/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-center justify-between gap-2"><div className="flex items-center space-x-3 flex-shrink min-w-0">{item.icon}<div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate" title={item.displayText}>{item.displayText}</p><p className="text-xs text-muted-foreground">{item.date}</p></div></div><div className="text-sm font-medium text-right flex-shrink-0 ml-2"><CurrencyDisplay amountInCents={item.amount} currencyCode={item.currencyCode} /></div></div></Link>))}</div>)}
       </CardContent>
       {processedLastActivity && processedLastActivity.length > 0 && (<CardFooter className="p-6 pt-0"><Button variant="outline" asChild className="w-full mt-auto"><Link href="/transactions">{t('viewAllTransactions')} <ExternalLink className="ml-2 h-4 w-4" /></Link></Button></CardFooter>)}
     </Card>
@@ -522,10 +521,10 @@ export default function DashboardPage() {
                 <Progress value={(currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0)) > 100 ? 100 : (currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0))} indicatorClassName={getProgressColor((currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0)))} aria-label={t('budgetProgress', { percentage: (currentMonthBudget.totalPlanned.amount > 0 ? (currentMonthBudget.totalActual.amount / currentMonthBudget.totalPlanned.amount) * 100 : (currentMonthBudget.totalActual.amount > 0 ? 101 : 0)).toFixed(0) })} className="h-2" />
               </div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-4 w-4 text-green-500" />{t('budgetTotalPlannedShort')}</span><span className="font-semibold text-foreground"><CurrencyDisplay isVisible={showAmounts} amountInCents={currentMonthBudget.totalPlanned.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-4 w-4 text-red-500" />{t('budgetTotalActualShort')}</span><span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay isVisible={showAmounts} amountInCents={currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalActual.currency.code} /></span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingUp className="mr-1.5 h-4 w-4 text-green-500" />{t('budgetTotalPlannedShort')}</span><span className="font-semibold text-foreground"><CurrencyDisplay amountInCents={currentMonthBudget.totalPlanned.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center"><TrendingDown className="mr-1.5 h-4 w-4 text-red-500" />{t('budgetTotalActualShort')}</span><span className="font-semibold text-red-600 dark:text-red-400"><CurrencyDisplay amountInCents={currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalActual.currency.code} /></span></div>
               </div>
-              <div className={cn("w-full text-center p-3 rounded-md font-semibold text-base sm:text-lg", (currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount) >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400")}><p className="text-xs sm:text-sm uppercase tracking-wider opacity-80 mb-1">{t('budgetRemainingAmountShort')}</p><CurrencyDisplay isVisible={showAmounts} amountInCents={currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></div>
+              <div className={cn("w-full text-center p-3 rounded-md font-semibold text-base sm:text-lg", (currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount) >= 0 ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-700 dark:text-red-400")}><p className="text-xs sm:text-sm uppercase tracking-wider opacity-80 mb-1">{t('budgetRemainingAmountShort')}</p><CurrencyDisplay amountInCents={currentMonthBudget.totalPlanned.amount - currentMonthBudget.totalActual.amount} currencyCode={currentMonthBudget.totalPlanned.currency.code} /></div>
             </>
           )}
         </CardContent>
@@ -559,15 +558,6 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h1 className="font-headline text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard')}</h1>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAmounts(!showAmounts)}
-              title={showAmounts ? t('hideAmounts') : t('showAmounts')}
-            >
-              {showAmounts ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
-              {showAmounts ? t('hideAmounts') : t('showAmounts')}
-            </Button>
         </div>
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {isLoading ?
