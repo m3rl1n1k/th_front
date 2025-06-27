@@ -10,6 +10,28 @@ import { useTranslation } from './i18n-context';
 import { SessionRenewalModal } from '@/components/common/session-renewal-modal';
 import { devLog } from '@/lib/logger';
 
+/**
+ * Decodes the payload of a JWT token without verifying the signature.
+ *
+ * @param token The JWT token string.
+ * @returns The decoded payload object containing claims like 'exp', or null if decoding fails.
+ */
+function decodeJwtPayload(token: string): { exp: number; [key: string]: any } | null {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    devLog("Failed to decode JWT", error);
+    return null;
+  }
+}
+
 
 interface AuthContextType {
   user: User | null;
@@ -80,14 +102,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [logout]);
   
   const promptSessionRenewal = useCallback(() => {
-    // Prevent opening if already on a public page like login
     const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
-    if (publicPaths.some(p => pathname.startsWith(p))) {
+    if (publicPaths.some(p => p === '/' ? pathname === p : pathname.startsWith(p))) {
         devLog('On a public page, not showing renewal modal.');
         return;
     }
 
-    // For pages that are authenticated but are entry points, we should redirect to login instead of showing modal.
     const preAuthPages = ['/transactions/new/select-category'];
     if (preAuthPages.some(p => pathname.startsWith(p))) {
       devLog(`On pre-auth page "${pathname}" with expired session, logging out.`);
@@ -95,7 +115,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Prevent opening if already open or if no user was logged in previously
     if (!isModalOpenRef.current && (user || sessionStorage.getItem(AUTH_TOKEN_KEY))) {
         isModalOpenRef.current = true;
         devLog('Prompting for session renewal.');
@@ -103,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, pathname, logout]);
 
-  // Listen for the custom sessionExpired event
+  // Reactive check: Listen for the custom sessionExpired event from API calls
   useEffect(() => {
     const handleSessionExpired = () => {
       promptSessionRenewal();
@@ -116,6 +135,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [promptSessionRenewal]);
 
+  // Proactive check: Periodically check the token's expiration date
+  useEffect(() => {
+    const checkTokenExpiration = () => {
+      if (isModalOpenRef.current) return;
+
+      const currentToken = token || (typeof window !== 'undefined' ? sessionStorage.getItem(AUTH_TOKEN_KEY) : null);
+      if (!currentToken) {
+        return;
+      }
+
+      const payload = decodeJwtPayload(currentToken);
+      if (payload && payload.exp) {
+        const isExpired = Date.now() >= payload.exp * 1000;
+        if (isExpired) {
+          devLog('Token expired based on frontend check.');
+          promptSessionRenewal();
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkTokenExpiration, 30000); // Check every 30 seconds
+    window.addEventListener('focus', checkTokenExpiration); // Also check on window focus
+
+    checkTokenExpiration(); // Initial check
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', checkTokenExpiration);
+    };
+  }, [token, promptSessionRenewal]);
+
 
   const updatePendingInvitations = useCallback(async (apiToken: string, currentUserId?: string | number) => {
     if (!currentUserId) return;
@@ -127,8 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ).length;
       setPendingInvitationCount(count);
     } catch (error) {
-      // Don't toast here as it can be noisy. The central handler will show the modal.
-      setPendingInvitationCount(0); // Reset on error
+      setPendingInvitationCount(0);
     }
   }, []);
 
@@ -145,7 +194,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.setItem(AUTH_TOKEN_KEY, apiToken);
         devLog('Auth token stored in session storage.');
       }
-      await updatePendingInvitations(apiToken, userData.id); // Fetch invitations after user is set
+      isModalOpenRef.current = false;
+      setIsRenewalModalOpen(false);
+      await updatePendingInvitations(apiToken, userData.id);
       return userData;
     } catch (error) {
       console.error('Error during post-login processing:', error);
@@ -158,19 +209,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     devLog('Session renewal successful. Processing new token.');
     try {
       await processSuccessfulLogin(newToken);
-      isModalOpenRef.current = false;
-      setIsRenewalModalOpen(false);
       toast({ title: t('sessionRefreshedTitle'), description: t('sessionRefreshedDesc') });
       setReloadOnSuccess(true);
     } catch (error) {
         toast({ variant: 'destructive', title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
-        handleRenewalClose(); // Logout user if processing fails
+        handleRenewalClose();
     }
   }, [processSuccessfulLogin, toast, t, handleRenewalClose]);
 
   useEffect(() => {
     if (reloadOnSuccess) {
-      // This effect runs after the re-render that closes the modal, preventing a race condition.
       window.location.reload();
     }
   }, [reloadOnSuccess]);
@@ -189,7 +237,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(userData);
             setToken(storedToken);
             setIsAuthenticated(true);
-            await updatePendingInvitations(storedToken, userData.id); // Fetch invitations
+            await updatePendingInvitations(storedToken, userData.id);
             devLog('Auto-login successful.');
           } catch (error) {
             devLog('Auto-login failed. Clearing auth data.', error);
@@ -278,14 +326,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
         setToken(currentToken);
         setIsAuthenticated(true);
-        await updatePendingInvitations(currentToken, userData.id); // Fetch invitations
+        await updatePendingInvitations(currentToken, userData.id);
         devLog('Successfully fetched and updated user data.');
       } catch (error) {
         if ((error as ApiError).code !== 401) {
             toast({ variant: "destructive", title: t('sessionRefreshFailedTitle'), description: (error as ApiError).message || t('sessionRefreshFailedDesc') });
             clearAuthData();
             const publicPaths = ['/login', '/register', '/terms', '/'];
-            if (typeof window !== 'undefined' && !publicPaths.includes(pathname)) {
+            if (typeof window !== 'undefined' && !publicPaths.some(p => p === '/' ? pathname === p : pathname.startsWith(p))) {
               localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
             }
             router.replace('/login');
@@ -306,8 +354,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
     
     const isPublic = publicPaths.some(p => {
-      // Exact match for root path, startsWith for others
-      return p === '/' ? pathname === '/' : pathname.startsWith(p);
+      return p === '/' ? pathname === p : pathname.startsWith(p);
     });
 
     if (!isLoading && !isAuthenticated && !isPublic && !isRenewalModalOpen) {
