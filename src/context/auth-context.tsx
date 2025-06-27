@@ -351,13 +351,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token, toast, t, router, clearAuthData, pathname, isAuthenticated, updatePendingInvitations]);
 
   useEffect(() => {
-    const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
-    
-    const isPublic = publicPaths.some(p => {
-      return p === '/' ? pathname === p : pathname.startsWith(p);
-    });
+    const publicRedirectPages = ['/login', '/register', '/email-verification', '/auth/verify'];
+    const isOnPublicRedirectPage = publicRedirectPages.some(p => pathname.startsWith(p));
+    const isPublic = ['/', '/terms', ...publicRedirectPages].some(p => pathname.startsWith(p));
 
-    if (!isLoading && !isAuthenticated && !isPublic && !isRenewalModalOpen) {
+    if (!isLoading && isAuthenticated && isOnPublicRedirectPage) {
+      devLog(`Authenticated user on a public redirect page (${pathname}). Redirecting to dashboard.`);
+      router.replace('/dashboard');
+    } else if (!isLoading && !isAuthenticated && !isPublic && !isRenewalModalOpen) {
       if (typeof window !== 'undefined') {
         devLog(`Not authenticated on a protected route. Storing intended destination: ${pathname}`);
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
