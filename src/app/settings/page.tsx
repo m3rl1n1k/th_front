@@ -72,7 +72,7 @@ const dashboardSettingsSchema = z.object({
   dashboard_cards_sizes: z.record(z.string()).default(defaultDashboardSizes),
 });
 
-type DashboardSettingsFormData = z.infer<typeof dashboardSettingsSchema>;
+type DashboardSettingsFormData = z.infer<ReturnType<typeof dashboardSettingsSchema>>;
 
 type DashboardCardConfig = {
   id: string;
@@ -89,33 +89,17 @@ const ALL_DASHBOARD_CARDS: DashboardCardConfig[] = [
   { id: 'current_budget', labelKey: 'dashboardCardCurrentBudget' },
 ];
 
-const cardSizeOptions: Record<string, { value: string, label: string }[]> = {
-    default: [
-        { value: '1x1', label: '1x1' },
-    ],
-    expandable: [
-        { value: '1x1', label: '1x1' },
-        { value: '2x1', label: '2x1 (Wide)' },
-    ],
-    large: [
-        { value: '1x1', label: '1x1' },
-        { value: '2x1', label: '2x1 (Wide)' },
-        { value: '1x2', label: '1x2 (Tall)' },
-        { value: '2x2', label: '2x2 (Large)' },
-    ],
-};
+const ALL_CARD_SIZES: { value: string, label: string }[] = [
+    { value: '1x1', label: '1x1' },
+    { value: '1x2', label: '1x2 (Tall)' },
+    { value: '2x1', label: '2x1 (Wide)' },
+    { value: '2x2', label: '2x2 (Large)' },
+    { value: '4x1', label: '4x1 (Full Width)' },
+    { value: '4x2', label: '4x2 (Full Width, Tall)' },
+];
 
 const getAvailableSizesForCard = (cardId: string) => {
-    switch (cardId) {
-        case 'expenses_chart':
-        case 'last_activity':
-            return cardSizeOptions.large;
-        case 'quick_actions':
-        case 'current_budget':
-            return cardSizeOptions.expandable;
-        default:
-            return cardSizeOptions.default;
-    }
+    return ALL_CARD_SIZES;
 };
 
 const SortableDashboardItem = ({ id, label, isVisible, onVisibilityChange, size, onSizeChange }: {
@@ -131,18 +115,17 @@ const SortableDashboardItem = ({ id, label, isVisible, onVisibilityChange, size,
   const availableSizes = getAvailableSizesForCard(id);
 
   return (
-    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md p-3 bg-muted/50 border">
-      <Button variant="ghost" size="icon" {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing p-1 h-auto">
-        <GripVertical className="h-5 w-5 text-muted-foreground" />
-      </Button>
-      
-      <div className="flex-1 flex flex-col gap-1">
-        <Label htmlFor={`visibility-${id}`} className="font-medium cursor-pointer">{label}</Label>
+    <div ref={setNodeRef} style={style} className="flex flex-col gap-3 rounded-md p-3 bg-muted/50 border sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex flex-1 items-center gap-3">
+        <Button variant="ghost" size="icon" {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing p-1 h-auto shrink-0">
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </Button>
+        <Label htmlFor={`visibility-${id}`} className="font-medium cursor-pointer truncate">{label}</Label>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Select value={size} onValueChange={onSizeChange} disabled={availableSizes.length <= 1}>
-          <SelectTrigger className="w-28 h-8 text-xs">
+      <div className="flex items-center gap-3 self-end sm:self-center">
+        <Select value={size} onValueChange={onSizeChange}>
+          <SelectTrigger className="w-32 h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
