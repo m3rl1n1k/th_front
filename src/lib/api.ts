@@ -431,7 +431,7 @@ export const updateBudget = (date: string, id: string | number, data: UpdateBudg
 };
 
 export const deleteBudget = (date: string, id: string | number, token: string): Promise<void> => {
-  return request<void>(URLS.deleteBudget(date, id), { method: 'DELETE', token });
+  return request<void>(URLS.deleteBudget(date), { method: 'DELETE', token, body: { id } });
 };
 
 export const deleteBudgetsForMonth = (monthYear: string, token: string): Promise<void> => {
