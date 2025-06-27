@@ -16,7 +16,7 @@ import { devLog } from '@/lib/logger';
  * @param token The JWT token string.
  * @returns The decoded payload object containing claims like 'exp', or null if decoding fails.
  */
-function decodeJwtPayload(token: string): { exp: number; [key: string]: any } | null {
+function decodeJwtPayload(token: string): { exp: number; username: string; [key: string]: any } | null {
   try {
     const base64Url = token.split('.')[1];
     if (!base64Url) return null;
@@ -70,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [showAmounts, setShowAmounts] = useState(true);
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
   const [reloadOnSuccess, setReloadOnSuccess] = useState(false);
+  const [expiredTokenEmail, setExpiredTokenEmail] = useState<string | null>(null);
   const isModalOpenRef = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -120,6 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     devLog('Session renewal modal closed by user. Logging out.');
     isModalOpenRef.current = false;
     setIsRenewalModalOpen(false);
+    setExpiredTokenEmail(null);
     logout();
   }, [logout]);
   
@@ -138,11 +140,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (!isModalOpenRef.current && (user || sessionStorage.getItem(AUTH_TOKEN_KEY))) {
+        const currentToken = token || sessionStorage.getItem(AUTH_TOKEN_KEY);
+        if (currentToken) {
+            const payload = decodeJwtPayload(currentToken);
+            setExpiredTokenEmail(payload?.username || null); // Store the email from the token
+        }
         isModalOpenRef.current = true;
         devLog('Prompting for session renewal.');
         setIsRenewalModalOpen(true);
     }
-  }, [user, pathname, logout]);
+  }, [user, token, pathname, logout]);
 
   // Reactive check: Listen for the custom sessionExpired event from API calls
   useEffect(() => {
@@ -218,6 +225,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       isModalOpenRef.current = false;
       setIsRenewalModalOpen(false);
+      setExpiredTokenEmail(null);
       await updatePendingInvitations(apiToken, userData.id);
       return userData;
     } catch (error) {
@@ -262,8 +270,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await updatePendingInvitations(storedToken, userData.id);
             devLog('Auto-login successful.');
           } catch (error) {
-            devLog('Auto-login failed. Clearing auth data.', error);
-            clearAuthData();
+             if ((error as ApiError)?.code !== 401) {
+              devLog('Auto-login failed with non-401 error. Clearing auth data.', error);
+              clearAuthData();
+            } else {
+              devLog('Auto-login failed with 401. Session renewal process will be initiated.');
+            }
           } finally {
             setIsLoading(false);
           }
@@ -413,7 +425,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isOpen={isRenewalModalOpen}
         onClose={handleRenewalClose}
         onSuccess={handleRenewalSuccess}
-        email={user?.email || null}
+        email={user?.email || expiredTokenEmail}
       />
     </AuthContext.Provider>
   );
