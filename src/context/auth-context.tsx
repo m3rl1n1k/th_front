@@ -122,8 +122,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isModalOpenRef.current = false;
     setIsRenewalModalOpen(false);
     setExpiredTokenEmail(null);
-    logout();
-  }, [logout]);
+    
+    // Perform logout actions directly
+    clearAuthData();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(INTENDED_DESTINATION_KEY);
+    }
+    toast({ title: t('logoutSuccessTitle'), description: t('logoutSuccessDesc') });
+    router.push('/login');
+
+  }, [clearAuthData, router, t, toast]);
   
   const promptSessionRenewal = useCallback(() => {
     const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
