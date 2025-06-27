@@ -657,7 +657,7 @@ export default function TransactionsPage() {
                           <Label htmlFor="filterCategory" className="font-medium">{t('filterByCategory')}</Label>
                           <CategorySelector
                               value={filters.categoryId}
-                              onChange={(value) => handleFilterChange('categoryId', value)}
+                              onChange={(value) => handleFilterChange('categoryId', value ?? undefined)}
                               mainCategories={mainCategories}
                               disabled={isLoadingCategories}
                               placeholder={t('selectCategoryPlaceholder')}
