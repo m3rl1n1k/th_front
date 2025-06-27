@@ -30,13 +30,13 @@ export function BottomNavBar() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            aria-label={item.label}
                             className={cn(
                                 "inline-flex flex-col items-center justify-center px-5 hover:bg-muted/50 group transition-colors",
                                 isActive ? "text-primary" : "text-muted-foreground"
                             )}
                         >
-                            <item.icon className="w-6 h-6 mb-1" />
-                            <span className="text-xs">{item.label}</span>
+                            <item.icon className="w-8 h-8" />
                         </Link>
                     )
                 })}
