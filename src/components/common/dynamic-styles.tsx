@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useEffect } from 'react';
-import { useAuth } from '@/context/auth-context';
+import { useEffect, useCallback } from 'react';
+
+const THEME_SETTINGS_KEY = 'financeflow_theme_settings';
 
 function hexToHsl(hex: string): string | null {
   if (!hex || !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)) {
@@ -37,12 +38,11 @@ function hexToHsl(hex: string): string | null {
 }
 
 export function DynamicStyles() {
-  const { user } = useAuth();
 
-  useEffect(() => {
+  const applyTheme = useCallback((settings: any) => {
     const root = document.documentElement;
-    if (user?.settings) {
-      const { primary_color, accent_color } = user.settings;
+    if (settings) {
+      const { primary_color, accent_color } = settings;
 
       if (primary_color) {
         const primaryHsl = hexToHsl(primary_color);
@@ -57,7 +57,38 @@ export function DynamicStyles() {
         }
       }
     }
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    // Initial load from localStorage
+    try {
+      const storedSettings = localStorage.getItem(THEME_SETTINGS_KEY);
+      if (storedSettings) {
+        const parsedSettings = JSON.parse(storedSettings);
+        applyTheme(parsedSettings);
+      }
+    } catch (e) {
+      console.error("Failed to parse theme settings from localStorage", e);
+    }
+    
+    // Listen for changes from other tabs/windows or the settings page itself
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === THEME_SETTINGS_KEY && event.newValue) {
+        try {
+          const newSettings = JSON.parse(event.newValue);
+          applyTheme(newSettings);
+        } catch (e) {
+          console.error("Failed to parse new theme settings from storage event", e);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [applyTheme]);
 
   return null;
 }

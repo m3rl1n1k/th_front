@@ -4,8 +4,6 @@ export interface UserSettings {
   chart_expense_color?: string | null;
   chart_capital_color?: string | null;
   records_per_page?: number | null;
-  primary_color?: string | null;
-  accent_color?: string | null;
 }
 
 export interface Subscription {

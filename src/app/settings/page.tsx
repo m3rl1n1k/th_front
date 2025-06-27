@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,7 +33,6 @@ const DEFAULT_CHART_CAPITAL_COLOR = '#f59e0b';
 const DEFAULT_PRIMARY_COLOR = '#3b82f6';
 const DEFAULT_ACCENT_COLOR = '#f0f5f9';
 
-
 const defaultDashboardVisibility = {
   total_balance: true,
   monthly_income: true,
@@ -57,18 +56,22 @@ const defaultDashboardSizes: Record<string, string> = {
 };
 
 const DASHBOARD_SETTINGS_KEY = 'dashboard_layout_settings';
+const THEME_SETTINGS_KEY = 'financeflow_theme_settings';
 
 const hexColorRegex = /^#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/i;
+
+const themeSettingsSchema = (t: Function) => z.object({
+  primary_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
+  accent_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
+});
+type ThemeSettingsFormData = z.infer<ReturnType<typeof themeSettingsSchema>>;
 
 const generalSettingsSchema = (t: Function) => z.object({
   chart_income_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
   chart_expense_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
   chart_capital_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
   records_per_page: z.coerce.number().min(1, { message: t('recordsPerPageMinError') }).max(100, { message: t('recordsPerPageMaxError') }).nullable().optional(),
-  primary_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
-  accent_color: z.string().regex(hexColorRegex, { message: t('invalidHexColorError') }).nullable().optional(),
 });
-
 type GeneralSettingsFormData = z.infer<ReturnType<typeof generalSettingsSchema>>;
 
 const dashboardSettingsSchema = z.object({
@@ -76,8 +79,7 @@ const dashboardSettingsSchema = z.object({
   dashboard_cards_order: z.array(z.string()).default(defaultDashboardOrder),
   dashboard_cards_sizes: z.record(z.string()).default(defaultDashboardSizes),
 });
-
-type DashboardSettingsFormData = z.infer<typeof dashboardSettingsSchema>;
+type DashboardSettingsFormData = z.infer<ReturnType<typeof dashboardSettingsSchema>>;
 
 type DashboardCardConfig = {
   id: string;
@@ -145,13 +147,20 @@ const SortableDashboardItem = ({ id, label, isVisible, onVisibilityChange, size,
   );
 };
 
-
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { user, token, fetchUser, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   
   const [orderedCards, setOrderedCards] = useState<DashboardCardConfig[]>([]);
+
+  const themeForm = useForm<ThemeSettingsFormData>({
+    resolver: zodResolver(themeSettingsSchema(t)),
+    defaultValues: {
+      primary_color: DEFAULT_PRIMARY_COLOR,
+      accent_color: DEFAULT_ACCENT_COLOR,
+    },
+  });
 
   const generalForm = useForm<GeneralSettingsFormData>({
     resolver: zodResolver(generalSettingsSchema(t)),
@@ -160,8 +169,6 @@ export default function SettingsPage() {
       chart_expense_color: DEFAULT_CHART_EXPENSE_COLOR,
       chart_capital_color: DEFAULT_CHART_CAPITAL_COLOR,
       records_per_page: DEFAULT_RECORDS_PER_PAGE,
-      primary_color: DEFAULT_PRIMARY_COLOR,
-      accent_color: DEFAULT_ACCENT_COLOR,
     },
   });
 
@@ -191,21 +198,17 @@ export default function SettingsPage() {
         chart_expense_color: user.settings.chart_expense_color ?? DEFAULT_CHART_EXPENSE_COLOR,
         chart_capital_color: user.settings.chart_capital_color ?? DEFAULT_CHART_CAPITAL_COLOR,
         records_per_page: user.settings.records_per_page ?? DEFAULT_RECORDS_PER_PAGE,
-        primary_color: user.settings.primary_color ?? DEFAULT_PRIMARY_COLOR,
-        accent_color: user.settings.accent_color ?? DEFAULT_ACCENT_COLOR,
       });
     }
 
     let savedDashboardSettings = null;
+    let savedThemeSettings = null;
     if (typeof window !== 'undefined') {
-      const storedSettings = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
-      if (storedSettings) {
-        try {
-          savedDashboardSettings = JSON.parse(storedSettings);
-        } catch (e) {
-            // Failed to parse dashboard settings
-        }
-      }
+      const storedDashboardSettings = localStorage.getItem(DASHBOARD_SETTINGS_KEY);
+      if (storedDashboardSettings) { try { savedDashboardSettings = JSON.parse(storedDashboardSettings); } catch (e) {} }
+
+      const storedThemeSettings = localStorage.getItem(THEME_SETTINGS_KEY);
+      if (storedThemeSettings) { try { savedThemeSettings = JSON.parse(storedThemeSettings); } catch (e) {} }
     }
 
     const savedOrder = savedDashboardSettings?.dashboard_cards_order || defaultDashboardOrder;
@@ -214,27 +217,28 @@ export default function SettingsPage() {
 
     const allCardIds = new Set(ALL_DASHBOARD_CARDS.map(c => c.id));
     const currentOrder = savedOrder.filter((id: string) => allCardIds.has(id));
-    ALL_DASHBOARD_CARDS.forEach(card => {
-      if (!currentOrder.includes(card.id)) {
-        currentOrder.push(card.id);
-      }
-    });
+    ALL_DASHBOARD_CARDS.forEach(card => { if (!currentOrder.includes(card.id)) { currentOrder.push(card.id); } });
     
     dashboardForm.reset({
       dashboard_cards_order: currentOrder,
       dashboard_cards_visibility: { ...defaultDashboardVisibility, ...savedVisibility },
       dashboard_cards_sizes: { ...defaultDashboardSizes, ...savedSizes },
     });
-
     setOrderedCards(currentOrder.map((id: string) => ALL_DASHBOARD_CARDS.find(c => c.id === id)!));
+
+    themeForm.reset({
+      primary_color: savedThemeSettings?.primary_color ?? DEFAULT_PRIMARY_COLOR,
+      accent_color: savedThemeSettings?.accent_color ?? DEFAULT_ACCENT_COLOR,
+    });
     
-  }, [user, generalForm, dashboardForm]);
+  }, [user, generalForm, dashboardForm, themeForm]);
   
   const watchedIncomeColor = generalForm.watch("chart_income_color");
   const watchedExpenseColor = generalForm.watch("chart_expense_color");
   const watchedCapitalColor = generalForm.watch("chart_capital_color");
-  const watchedPrimaryColor = generalForm.watch("primary_color");
-  const watchedAccentColor = generalForm.watch("accent_color");
+  const watchedPrimaryColor = themeForm.watch("primary_color");
+  const watchedAccentColor = themeForm.watch("accent_color");
+
   const watchedVisibility = dashboardForm.watch("dashboard_cards_visibility");
   const watchedSizes = dashboardForm.watch("dashboard_cards_sizes");
 
@@ -251,6 +255,31 @@ export default function SettingsPage() {
     }
   };
 
+  const handleThemeSettingsSave: SubmitHandler<ThemeSettingsFormData> = async (data) => {
+    try {
+      if (typeof window !== 'undefined') {
+        const settingsToSave = {
+          primary_color: data.primary_color || DEFAULT_PRIMARY_COLOR,
+          accent_color: data.accent_color || DEFAULT_ACCENT_COLOR,
+        };
+        localStorage.setItem(THEME_SETTINGS_KEY, JSON.stringify(settingsToSave));
+        
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: THEME_SETTINGS_KEY,
+          newValue: JSON.stringify(settingsToSave),
+          storageArea: localStorage,
+        }));
+
+        toast({ title: t('userSettingsSavedSuccess'), description: t('themeColorsSavedDesc', { defaultValue: 'Your theme colors have been saved locally.' }) });
+        themeForm.reset(data);
+      }
+    } catch (error) {
+      const e = error as Error;
+      toast({ variant: "destructive", title: t('errorUpdatingUserSettings'), description: e.message || t('unexpectedError') });
+    }
+  };
+
+
   const handleGeneralSettingsSave: SubmitHandler<GeneralSettingsFormData> = async (data) => {
     if (!token) {
       toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
@@ -262,13 +291,11 @@ export default function SettingsPage() {
         chart_expense_color: data.chart_expense_color || null,
         chart_capital_color: data.chart_capital_color || null,
         records_per_page: data.records_per_page ? Number(data.records_per_page) : null,
-        primary_color: data.primary_color || null,
-        accent_color: data.accent_color || null,
       };
       await updateUserSettings(payload, token);
       await fetchUser();
       toast({ title: t('userSettingsSavedSuccess'), description: t('generalSettingsSavedDesc') });
-      generalForm.reset(data); // Reset dirty state
+      generalForm.reset(data);
     } catch (error) {
       if ((error as ApiError).code !== 401) {
         toast({ variant: "destructive", title: t('errorUpdatingUserSettings'), description: (error as ApiError).message || t('unexpectedError') });
@@ -281,7 +308,7 @@ export default function SettingsPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem(DASHBOARD_SETTINGS_KEY, JSON.stringify(data));
         toast({ title: t('userSettingsSavedSuccess'), description: t('dashboardSettingsSavedDesc') });
-        dashboardForm.reset(data); // Reset dirty state
+        dashboardForm.reset(data);
       }
     } catch (error) {
       const e = error as Error;
@@ -386,34 +413,49 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="shadow-lg">
+          <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-primary" />
+                  {t('themeColorsTitle')}
+              </CardTitle>
+              <CardDescription>{t('themeColorsDesc')}</CardDescription>
+          </CardHeader>
+          <form onSubmit={themeForm.handleSubmit(handleThemeSettingsSave)}>
+              <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <ColorPickerSetting 
+                          label={t('primaryColorLabel')}
+                          description={t('primaryColorDesc')}
+                          formControl={{name: 'primary_color', control: themeForm.control}}
+                          watchedColor={watchedPrimaryColor}
+                      />
+                      <ColorPickerSetting 
+                          label={t('accentColorLabel')}
+                          description={t('accentColorDesc')}
+                          formControl={{name: 'accent_color', control: themeForm.control}}
+                          watchedColor={watchedAccentColor}
+                      />
+                  </div>
+              </CardContent>
+              <CardFooter className="flex justify-end">
+                  <Button type="submit" disabled={themeForm.formState.isSubmitting || !themeForm.formState.isDirty}>
+                    {themeForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {t('saveSettingsButton')}
+                  </Button>
+              </CardFooter>
+          </form>
+        </Card>
+
+        <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-primary" />
+                <ListChecks className="h-5 w-5 text-primary" />
                 {t('generalSettingsTitle')}
               </CardTitle>
               <CardDescription>{t('generalSettingsDesc')}</CardDescription>
             </CardHeader>
             <form onSubmit={generalForm.handleSubmit(handleGeneralSettingsSave)}>
                 <CardContent className="space-y-6">
-                    <div>
-                        <h3 className="text-md font-semibold text-foreground">{t('themeColorsTitle')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('themeColorsDesc')}</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                           <ColorPickerSetting 
-                                label={t('primaryColorLabel')}
-                                description={t('primaryColorDesc')}
-                                formControl={{name: 'primary_color', control: generalForm.control}}
-                                watchedColor={watchedPrimaryColor}
-                           />
-                           <ColorPickerSetting 
-                                label={t('accentColorLabel')}
-                                description={t('accentColorDesc')}
-                                formControl={{name: 'accent_color', control: generalForm.control}}
-                                watchedColor={watchedAccentColor}
-                           />
-                        </div>
-                    </div>
-                    <Separator />
                     <div>
                         <h3 className="text-md font-semibold text-foreground">{t('chartColorsTitle')}</h3>
                         <p className="text-sm text-muted-foreground">{t('chartColorsDesc')}</p>
