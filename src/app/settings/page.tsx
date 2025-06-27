@@ -24,6 +24,7 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const DEFAULT_RECORDS_PER_PAGE = 20;
 const DEFAULT_CHART_INCOME_COLOR = '#10b981';
@@ -130,7 +131,7 @@ const SortableDashboardItem = ({ id, label, isVisible, onVisibilityChange, size,
   const availableSizes = getAvailableSizesForCard(id);
 
   return (
-    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto,1fr,auto] items-center gap-3 rounded-md p-3 bg-muted/30">
+    <div ref={setNodeRef} style={style} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md p-3 bg-muted/50 border">
       <Button variant="ghost" size="icon" {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing p-1 h-auto">
         <GripVertical className="h-5 w-5 text-muted-foreground" />
       </Button>
@@ -162,9 +163,7 @@ export default function SettingsPage() {
   const { user, token, fetchUser, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   
-  const [isIncomeColorModalOpen, setIsIncomeColorModalOpen] = useState(false);
-  const [isExpenseColorModalOpen, setIsExpenseColorModalOpen] = useState(false);
-  const [isCapitalColorModalOpen, setIsCapitalColorModalOpen] = useState(false);
+  const [orderedCards, setOrderedCards] = useState<DashboardCardConfig[]>([]);
 
   const generalForm = useForm<GeneralSettingsFormData>({
     resolver: zodResolver(generalSettingsSchema(t)),
@@ -184,8 +183,6 @@ export default function SettingsPage() {
       dashboard_cards_sizes: defaultDashboardSizes,
     }
   });
-
-  const [orderedCards, setOrderedCards] = useState<DashboardCardConfig[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -306,22 +303,60 @@ export default function SettingsPage() {
     );
   }
 
+  const ColorPickerSetting = ({
+      label,
+      description,
+      formControl,
+      watchedColor,
+  }: {
+      label: string;
+      description: string;
+      formControl: any;
+      watchedColor: string | null | undefined;
+  }) => (
+      <div className="space-y-2">
+          <Label>{label}</Label>
+          <Dialog>
+              <DialogTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full justify-start text-left font-normal gap-2 h-auto p-2">
+                      <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedColor || 'transparent' }} />
+                      <div className="flex flex-col">
+                          <span className="font-mono text-sm">{watchedColor}</span>
+                          <span className="text-xs text-muted-foreground">{description}</span>
+                      </div>
+                  </Button>
+              </DialogTrigger>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle>{t('selectColorButton')} - {label}</DialogTitle>
+                  </DialogHeader>
+                  <Controller name={formControl.name} control={formControl.control} render={({ field }) => (
+                      <ColorSwatches value={field.value} onChange={field.onChange} />
+                  )}/>
+              </DialogContent>
+          </Dialog>
+      </div>
+  );
+
   return (
     <MainLayout>
-      <div className="space-y-8 max-w-2xl mx-auto">
-        <h1 className="font-headline text-3xl font-bold text-foreground">
-          {t('settingsPageTitle')}
-        </h1>
+      <div className="space-y-8 max-w-4xl mx-auto">
+        <div>
+          <h1 className="font-headline text-3xl font-bold text-foreground">
+            {t('settingsPageTitle')}
+          </h1>
+          <p className="text-muted-foreground mt-1">{t('settingsPageDesc')}</p>
+        </div>
 
-        <form onSubmit={dashboardForm.handleSubmit(handleDashboardSettingsSave)}>
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <LayoutDashboard className="h-5 w-5 text-primary" />
-                {t('dashboardLayoutSettingsTitle')}
-              </CardTitle>
-              <CardDescription>{t('dashboardLayoutSettingsDesc')}</CardDescription>
-            </CardHeader>
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LayoutDashboard className="h-5 w-5 text-primary" />
+              {t('dashboardLayoutSettingsTitle')}
+            </CardTitle>
+            <CardDescription>{t('dashboardLayoutSettingsDesc')}</CardDescription>
+          </CardHeader>
+          <form onSubmit={dashboardForm.handleSubmit(handleDashboardSettingsSave)}>
             <CardContent>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={orderedCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
@@ -351,11 +386,10 @@ export default function SettingsPage() {
                 {t('saveLayoutButton')}
               </Button>
             </CardFooter>
-          </Card>
-        </form>
+          </form>
+        </Card>
 
-        <form onSubmit={generalForm.handleSubmit(handleGeneralSettingsSave)}>
-           <Card className="shadow-lg">
+        <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
@@ -363,49 +397,51 @@ export default function SettingsPage() {
               </CardTitle>
               <CardDescription>{t('generalSettingsDesc')}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="chart_income_color_input">{t('chartIncomeColorLabel')}</Label>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedIncomeColor || 'transparent' }} />
-                  <Controller name="chart_income_color" control={generalForm.control} render={({ field }) => (<Input id="chart_income_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#10b981"/>)}/>
-                  <Dialog open={isIncomeColorModalOpen} onOpenChange={setIsIncomeColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectIncomeColorTitle') || "Select Income Color"}</DialogTitle></DialogHeader><Controller name="chart_income_color" control={generalForm.control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsIncomeColorModalOpen(false); }} />)}/></DialogContent></Dialog>
-                </div>
-                {generalForm.formState.errors.chart_income_color && <p className="text-sm text-destructive">{generalForm.formState.errors.chart_income_color.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="chart_expense_color_input">{t('chartExpenseColorLabel')}</Label>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedExpenseColor || 'transparent' }} />
-                  <Controller name="chart_expense_color" control={generalForm.control} render={({ field }) => (<Input id="chart_expense_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#ef4444"/>)}/>
-                  <Dialog open={isExpenseColorModalOpen} onOpenChange={setIsExpenseColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectExpenseColorTitle') || "Select Expense Color"}</DialogTitle></DialogHeader><Controller name="chart_expense_color" control={generalForm.control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsExpenseColorModalOpen(false); }} />)}/></DialogContent></Dialog>
-                </div>
-                {generalForm.formState.errors.chart_expense_color && <p className="text-sm text-destructive">{generalForm.formState.errors.chart_expense_color.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="chart_capital_color_input">{t('chartCapitalColorLabel')}</Label>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-md border" style={{ backgroundColor: watchedCapitalColor || 'transparent' }} />
-                  <Controller name="chart_capital_color" control={generalForm.control} render={({ field }) => (<Input id="chart_capital_color_input" value={field.value || ''} onChange={field.onChange} readOnly className="flex-grow" placeholder="#f59e0b"/>)}/>
-                   <Dialog open={isCapitalColorModalOpen} onOpenChange={setIsCapitalColorModalOpen}><DialogTrigger asChild><Button type="button" variant="outline"><Palette className="mr-2 h-4 w-4" /> {t('selectColorButton') || "Select"}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t('selectCapitalColorTitle') || "Select Capital Color"}</DialogTitle></DialogHeader><Controller name="chart_capital_color" control={generalForm.control} render={({ field }) => (<ColorSwatches value={field.value} onChange={(color) => { field.onChange(color); setIsCapitalColorModalOpen(false); }} />)}/></DialogContent></Dialog>
-                </div>
-                {generalForm.formState.errors.chart_capital_color && <p className="text-sm text-destructive">{generalForm.formState.errors.chart_capital_color.message}</p>}
-              </div>
-               <div className="space-y-2 sm:max-w-xs pt-4">
-                  <Label htmlFor="records_per_page">{t('recordsPerPageLabel')}</Label>
-                  <Controller name="records_per_page" control={generalForm.control} render={({ field }) => (<Input id="records_per_page" type="number" min="1" max="100" placeholder={String(DEFAULT_RECORDS_PER_PAGE)} {...field} value={field.value ?? ''} className={generalForm.formState.errors.records_per_page ? 'border-destructive' : ''}/>)}/>
-                  <p className="text-xs text-muted-foreground">{t('recordsPerPageDesc')}</p>
-                  {generalForm.formState.errors.records_per_page && <p className="text-sm text-destructive">{generalForm.formState.errors.records_per_page.message}</p>}
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-                <Button type="submit" disabled={generalForm.formState.isSubmitting || !generalForm.formState.isDirty}>
-                  {generalForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {t('saveSettingsButton')}
-                </Button>
-            </CardFooter>
-          </Card>
-        </form>
+            <form onSubmit={generalForm.handleSubmit(handleGeneralSettingsSave)}>
+                <CardContent className="space-y-6">
+                    <div>
+                        <h3 className="text-md font-semibold text-foreground">{t('chartColorsTitle')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('chartColorsDesc')}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                           <ColorPickerSetting 
+                                label={t('chartIncomeColorLabel')}
+                                description={t('chartIncomeColorDesc')}
+                                formControl={{name: 'chart_income_color', control: generalForm.control}}
+                                watchedColor={watchedIncomeColor}
+                           />
+                           <ColorPickerSetting 
+                                label={t('chartExpenseColorLabel')}
+                                description={t('chartExpenseColorDesc')}
+                                formControl={{name: 'chart_expense_color', control: generalForm.control}}
+                                watchedColor={watchedExpenseColor}
+                           />
+                           <ColorPickerSetting 
+                                label={t('chartCapitalColorLabel')}
+                                description={t('chartCapitalColorDesc')}
+                                formControl={{name: 'chart_capital_color', control: generalForm.control}}
+                                watchedColor={watchedCapitalColor}
+                           />
+                        </div>
+                    </div>
+                    <Separator />
+                     <div>
+                        <h3 className="text-md font-semibold text-foreground">{t('displayPreferencesTitle')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('displayPreferencesDesc')}</p>
+                        <div className="space-y-2 sm:max-w-xs pt-4">
+                            <Label htmlFor="records_per_page">{t('recordsPerPageLabel')}</Label>
+                            <Controller name="records_per_page" control={generalForm.control} render={({ field }) => (<Input id="records_per_page" type="number" min="1" max="100" placeholder={String(DEFAULT_RECORDS_PER_PAGE)} {...field} value={field.value ?? ''} className={generalForm.formState.errors.records_per_page ? 'border-destructive' : ''}/>)}/>
+                            {generalForm.formState.errors.records_per_page && <p className="text-sm text-destructive">{generalForm.formState.errors.records_per_page.message}</p>}
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex justify-end">
+                    <Button type="submit" disabled={generalForm.formState.isSubmitting || !generalForm.formState.isDirty}>
+                      {generalForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      {t('saveSettingsButton')}
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
       </div>
     </MainLayout>
   );
