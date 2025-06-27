@@ -319,12 +319,12 @@ export default function BudgetsPage() {
                                 <CurrencyDisplay amountInCents={remainingAmount} currencyCode={budget.currencyCode} />
                               </div>
                           </CardContent>
-                           <CardFooter className="p-0 pt-2 border-t mt-2 flex justify-end gap-1.5">
-                                <Button variant="outline" size="sm" onClick={() => handleViewDetails(budget.monthYear)} title={t('viewTransactionsForMonth', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs">
+                           <CardFooter className="p-0 pt-2 border-t mt-2 grid grid-cols-2 md:grid-cols-1 gap-1.5">
+                                <Button variant="outline" size="sm" onClick={() => handleViewDetails(budget.monthYear)} title={t('viewTransactionsForMonth', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs w-full">
                                     <Eye className="mr-1 h-3 w-3" />
                                     {t('detailsAction')}
                                 </Button>
-                                <Button variant="destructive" size="sm" onClick={() => handleRemoveClick(budget)} title={t('deleteAllMonthBudgetsConfirmTitle', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs">
+                                <Button variant="destructive" size="sm" onClick={() => handleRemoveClick(budget)} title={t('deleteAllMonthBudgetsConfirmTitle', {month: budget.monthDisplayName })} className="h-7 px-2 py-1 text-xs w-full">
                                     <Trash2 className="mr-1 h-3 w-3" />
                                     {t('removeAction')}
                                 </Button>
