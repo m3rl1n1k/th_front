@@ -87,13 +87,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
 
+    // For pages that are authenticated but are entry points, we should redirect to login instead of showing modal.
+    const preAuthPages = ['/transactions/new/select-category'];
+    if (preAuthPages.some(p => pathname.startsWith(p))) {
+      devLog(`On pre-auth page "${pathname}" with expired session, logging out.`);
+      logout();
+      return;
+    }
+
     // Prevent opening if already open or if no user was logged in previously
     if (!isModalOpenRef.current && (user || sessionStorage.getItem(AUTH_TOKEN_KEY))) {
         isModalOpenRef.current = true;
         devLog('Prompting for session renewal.');
         setIsRenewalModalOpen(true);
     }
-  }, [user, pathname]);
+  }, [user, pathname, logout]);
 
   // Listen for the custom sessionExpired event
   useEffect(() => {
