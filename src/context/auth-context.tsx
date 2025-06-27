@@ -304,9 +304,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const publicPaths = ['/login', '/register', '/terms', '/', '/email-verification', '/auth/verify'];
-    if (!isLoading && !isAuthenticated && !publicPaths.some(p => pathname.startsWith(p)) && !isRenewalModalOpen) {
+    
+    const isPublic = publicPaths.some(p => {
+      // Exact match for root path, startsWith for others
+      return p === '/' ? pathname === '/' : pathname.startsWith(p);
+    });
+
+    if (!isLoading && !isAuthenticated && !isPublic && !isRenewalModalOpen) {
       if (typeof window !== 'undefined') {
-        devLog(`Not authenticated. Storing intended destination: ${pathname}`);
+        devLog(`Not authenticated on a protected route. Storing intended destination: ${pathname}`);
         localStorage.setItem(INTENDED_DESTINATION_KEY, pathname);
       }
       router.replace('/login');
@@ -316,7 +322,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user &&
         (!user.userCurrency || !user.userCurrency.code) &&
         pathname !== '/profile' &&
-        !publicPaths.some(p => pathname.startsWith(p))
+        !isPublic
       ) {
         devLog('User currency not set. Redirecting to profile.');
         toast({
