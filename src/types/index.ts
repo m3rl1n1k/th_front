@@ -481,6 +481,7 @@ export interface CapitalData {
 export interface CapitalFinancialDetails {
   total_capital_sum: number; // in cents
   user_capital_sum: number;  // in cents
+  expenses_by_categories?: Record<string, Record<string, { amount: number; color: string; }>>;
 }
 
 export interface CapitalDetailsApiResponse {

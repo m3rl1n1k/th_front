@@ -204,7 +204,51 @@ Allows the authenticated user to change their password.
 ### 3. Dashboard
 ... (rest of the file remains unchanged)
 <-- Omitted for brevity -->
+### 10. Capital & Invitations
 
+#### `GET /capital/{id}`
+Retrieves detailed information about a specific capital group.
+*   **Authentication**: Required.
+*   **Success Response (200 OK)**:
+    ```json
+    {
+      "capital": {
+        "id": 1,
+        "name": "Family Finances",
+        "owner": {
+          "id": 1,
+          "email": "owner@example.com",
+          "login": "owner_login"
+        },
+        "users": [
+          {
+            "id": 1,
+            "email": "owner@example.com",
+            "login": "owner_login"
+          },
+          {
+            "id": 2,
+            "email": "member@example.com",
+            "login": "member_login"
+          }
+        ]
+      },
+      "details": {
+        "total_capital_sum": 500000, // in cents
+        "user_capital_sum": 200000,   // in cents
+        "expenses_by_categories": {   // NEW
+          "owner_login": {
+            "Groceries": { "amount": 15000, "color": "#10b981" },
+            "Utilities": { "amount": 5000, "color": "#f59e0b" }
+          },
+          "member_login": {
+            "Transport": { "amount": 8000, "color": "#3b82f6" }
+          }
+        }
+      }
+    }
+    ```
+*   **Failure Response**: `401`, `403`, `404`.
 ### 11. Subscriptions (Stripe)
 
 #### `POST /subscription/checkout-session`

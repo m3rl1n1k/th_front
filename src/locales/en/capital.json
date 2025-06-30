@@ -64,5 +64,12 @@
   "noSentInvitationsFound": "You have not sent any invitations for this group yet.",
   "capitalNameLabel": "Capital group",
   "ownerCanInvite": "Only the group owner can send new invitations.",
-  "userAlreadyInCapitalError": "This user is already part of a capital sharing group and cannot be invited."
+  "userAlreadyInCapitalError": "This user is already part of a capital sharing group and cannot be invited.",
+  "capitalOverviewTab": "Overview",
+  "capitalSettingsTab": "Members & Settings",
+  "userExpensesTitle": "Expenses Breakdown by User",
+  "noExpensesReported": "No expenses reported for this user.",
+  "dangerZone": "Danger Zone",
+  "dangerZoneDesc": "These actions are permanent and cannot be undone.",
+  "ownerCanManageUsers": "As the owner, you can remove users from this group."
 }
