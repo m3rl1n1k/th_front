@@ -337,7 +337,7 @@ export default function CapitalPage() {
             </h1>
 
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 p-1.5 rounded-lg md:w-auto md:inline-flex bg-muted/60 dark:bg-muted/20">
+              <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex bg-muted/60 dark:bg-muted/20 p-1.5 rounded-lg">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-card data-[state=active]:shadow-sm">{t('capitalOverviewTab')}</TabsTrigger>
                 <TabsTrigger value="settings" className="data-[state=active]:bg-card data-[state=active]:shadow-sm">{t('capitalSettingsTab')}</TabsTrigger>
               </TabsList>
@@ -622,7 +622,7 @@ export default function CapitalPage() {
                             </Button>
                             </>
                         )}
-                        {isCurrentUserMemberOfThisCapitalViaThisInvite && (
+                        {isCurrentUserMemberOfThisCapitalViaThisInvite && inv.status !== 'rejected' && (
                             <Button
                             size="sm"
                             variant="outline"
