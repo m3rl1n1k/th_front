@@ -337,9 +337,9 @@ export default function CapitalPage() {
             </h1>
 
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="overview">{t('capitalOverviewTab')}</TabsTrigger>
-                <TabsTrigger value="settings">{t('capitalSettingsTab')}</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 p-1.5 rounded-lg md:w-auto md:inline-flex bg-muted/60 dark:bg-muted/20">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-card data-[state=active]:shadow-sm">{t('capitalOverviewTab')}</TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:bg-card data-[state=active]:shadow-sm">{t('capitalSettingsTab')}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="mt-6 space-y-6">

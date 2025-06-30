@@ -194,12 +194,12 @@ export default function CategoriesPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex shadow-inner bg-muted/60 dark:bg-muted/30 p-1.5 rounded-lg">
-            <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex bg-muted/60 dark:bg-muted/20 p-1.5 rounded-lg">
+            <TabsTrigger value="all" className="flex-1 gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-150 py-2.5">
               <Shapes className="h-5 w-5" />
               {t('allCategoriesTab')}
             </TabsTrigger>
-            <TabsTrigger value="main_only" className="flex-1 gap-2 data-[state=active]:shadow-md data-[state=active]:bg-background dark:data-[state=active]:bg-muted/50 transition-all duration-150 py-2.5">
+            <TabsTrigger value="main_only" className="flex-1 gap-2 data-[state=active]:bg-card data-[state=active]:shadow-sm transition-all duration-150 py-2.5">
               <Folder className="h-5 w-5" />
               {t('mainCategoriesOnlyTab')}
             </TabsTrigger>

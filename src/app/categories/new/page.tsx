@@ -143,9 +143,9 @@ export default function CreateCategoryPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="main">{t('mainCategoryTab')}</TabsTrigger>
-            <TabsTrigger value="sub">{t('subCategoryTab')}</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex bg-muted/60 dark:bg-muted/20 p-1.5 rounded-lg">
+            <TabsTrigger value="main" className="data-[state=active]:bg-card data-[state=active]:shadow-sm">{t('mainCategoryTab')}</TabsTrigger>
+            <TabsTrigger value="sub" className="data-[state=active]:bg-card data-[state=active]:shadow-sm">{t('subCategoryTab')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="main">
