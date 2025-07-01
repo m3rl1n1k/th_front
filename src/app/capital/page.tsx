@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -100,7 +99,7 @@ export default function CapitalPage() {
 
     if (user && user.capital && typeof user.capital.id === 'number') {
       try {
-        const response: CapitalDetailsApiResponse = await getCapitalDetails(user.capital.id, token);
+        const response: CapitalDetailsApiResponse = await getCapitalDetails(token);
         fetchedCapitalDetails = response;
         fetchedCapitalExists = true;
       } catch (err: any) {

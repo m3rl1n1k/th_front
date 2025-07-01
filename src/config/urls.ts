@@ -1,4 +1,3 @@
-
 // All API endpoints used in the application
 
 // Replace with your actual backend base URL
@@ -85,7 +84,7 @@ export const URLS = {
 
   // Capital & Invitations
   createCapital: `${API_BASE_URL}/capitals`,
-  getCapitalDetails: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
+  getCapitalDetails: `${API_BASE_URL}/capital`,
   deleteCapital: (capitalId: string | number) => `${API_BASE_URL}/capital/${capitalId}`,
   removeUserFromCapital: (userId: string | number) => `${API_BASE_URL}/capital/user/${userId}/remove`, 
   

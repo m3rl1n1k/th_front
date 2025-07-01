@@ -206,8 +206,8 @@ Allows the authenticated user to change their password.
 <-- Omitted for brevity -->
 ### 10. Capital & Invitations
 
-#### `GET /capital/{id}`
-Retrieves detailed information about a specific capital group.
+#### `GET /capital`
+Retrieves detailed information about the capital group the authenticated user belongs to.
 *   **Authentication**: Required.
 *   **Success Response (200 OK)**:
     ```json
@@ -285,4 +285,3 @@ The backend must implement a webhook endpoint to receive events from Stripe. The
 ### Feedbacks
 ... (rest of the file remains unchanged)
 <-- Omitted for brevity -->
-/home/user/studio/src/img

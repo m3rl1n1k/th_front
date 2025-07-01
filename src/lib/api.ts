@@ -1,4 +1,3 @@
-
 import { URLS } from '@/config/urls';
 import type {
   ApiError,
@@ -430,9 +429,10 @@ export const updateBudget = (date: string, id: string | number, data: UpdateBudg
   return request<BudgetListItem>(URLS.updateBudget(date, id), { method: 'PUT', body: data, token });
 };
 
-export const deleteBudget = (date: string, id: string | number, token: string): Promise<void> => {
-  return request<void>(URLS.deleteBudget(date), { method: 'DELETE', token, body: { id } });
+export const deleteBudget = (date: string, token: string, body: {id: number | string}): Promise<void> => {
+  return request<void>(URLS.deleteBudget(date), { method: 'DELETE', token, body });
 };
+
 
 export const deleteBudgetsForMonth = (monthYear: string, token: string): Promise<void> => {
   return request<void>(URLS.deleteBudgetsForMonth(monthYear), { method: 'DELETE', token });
@@ -446,8 +446,8 @@ export const getBudgetSummaryForMonth = (monthYear: string, token: string): Prom
 export const createCapital = (data: CreateCapitalPayload, token: string): Promise<CapitalDetailsApiResponse> =>
   request(URLS.createCapital, { method: 'POST', body: data, token });
 
-export const getCapitalDetails = (capitalId: string | number, token: string): Promise<CapitalDetailsApiResponse> =>
-  request(URLS.getCapitalDetails(capitalId), { method: 'GET', token });
+export const getCapitalDetails = (token: string): Promise<CapitalDetailsApiResponse> =>
+  request(URLS.getCapitalDetails, { method: 'GET', token });
 
 export const deleteCapital = (capitalId: string | number, token: string): Promise<void> =>
   request(URLS.deleteCapital(capitalId), { method: 'DELETE', token });
