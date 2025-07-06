@@ -63,5 +63,6 @@
   "errorUpdatingWallet": "Помилка оновлення гаманця",
   "errorFetchingWalletData": "Помилка завантаження даних гаманця",
   "couldNotLoadWalletEdit": "Не вдалося завантажити дані гаманця для редагування. будь ласка, спробуйте знову.",
-  "balanceCannotBeNegative": "Баланс не може бути від'ємним."
+  "balanceCannotBeNegative": "Баланс не може бути від'ємним.",
+  "walletIdLabel": "ID гаманця"
 }

@@ -144,6 +144,7 @@ export default function ViewWalletPage() {
   }
   
   const detailItems = [
+    { labelKey: 'walletIdLabel', value: String(wallet.id), icon: <Info className="text-primary" /> },
     { labelKey: 'nameLabel', value: wallet.name, icon: <Info className="text-primary" /> },
     { labelKey: 'walletTypeLabel', value: getTranslatedWalletType(wallet.type), icon: <Info className="text-primary" /> },
     { labelKey: 'balanceLabel', value: <CurrencyDisplay amountInCents={wallet.amount.amount} currencyCode={wallet.currency.code} />, icon: <Landmark className="text-primary" /> },

@@ -63,5 +63,6 @@
   "errorUpdatingWallet": "Error updating wallet",
   "errorFetchingWalletData": "Error fetching wallet data",
   "couldNotLoadWalletEdit": "Could not load wallet data for editing. please try again.",
-  "balanceCannotBeNegative": "Balance cannot be negative."
+  "balanceCannotBeNegative": "Balance cannot be negative.",
+  "walletIdLabel": "Wallet ID"
 }
