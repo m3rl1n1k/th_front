@@ -960,3 +960,27 @@ Retrieves data for the general report page.
     *   `year` (integer): e.g., 2025
     *   `month` (integer): e.g., 7 for July
 *   **Success Response (200 OK)**: Returns a composite object with report statistics, yearly summary, and category summary.
+
+### 15. Application Tokens
+
+#### `POST /generate-app-token`
+Generates a new application token for the authenticated user for API access.
+*   **Authentication**: Required.
+*   **Request Body**: None.
+*   **Success Response (201 Created)**:
+    ```json
+    {
+      "success": true,
+      "message": "App token generated successfully",
+      "token": {
+        "token": "app_8CKRqoLPyV6qSypfUG3zRoRhZw1NfyIH28lak9SjMqf1lZAtMKGUn4J6L6gBXmJIghwsITFnyml0+dEmds4IwOkEeqjzq5fWMqvkLVLRUVOJqMujnqjgd4D6MrAutmjT_token",
+        "scopes": [
+          "transaction_write"
+        ],
+        "isRevoked": false,
+        "createdAt": "2025-07-07T16:02:12+00:00"
+      }
+    }
+    ```
+*   **Failure Response**: `401`, `500`.
+```

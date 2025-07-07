@@ -56,5 +56,18 @@
   "status_past_due": "Past Due",
   "status_canceled": "Canceled",
   "status_unpaid": "Unpaid",
-  "status_free": "Free"
+  "status_free": "Free",
+  "appTokensTitle": "Application Tokens",
+  "appTokensDesc": "Generate API tokens for use with external applications.",
+  "generateTokenButton": "Generate New Token",
+  "generatingTokenButton": "Generating...",
+  "tokenGeneratedTitle": "Token Generated Successfully",
+  "tokenGeneratedDesc": "Your new application token is ready.",
+  "errorGeneratingToken": "Error Generating Token",
+  "tokenDialogTitle": "New Application Token",
+  "tokenDialogDesc": "This is your new token. Copy it now, as you will not be able to see it again.",
+  "copyTokenButton": "Copy Token",
+  "tokenCopiedTitle": "Copied!",
+  "tokenCopiedDesc": "The token has been copied to your clipboard.",
+  "closeButton": "Close"
 }

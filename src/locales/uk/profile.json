@@ -56,5 +56,18 @@
   "status_past_due": "Прострочена",
   "status_canceled": "Скасована",
   "status_unpaid": "Неоплачена",
-  "status_free": "Безкоштовний"
+  "status_free": "Безкоштовний",
+  "appTokensTitle": "Токени додатків",
+  "appTokensDesc": "Створюйте та керуйте API-токенами для зовнішніх додатків.",
+  "generateTokenButton": "Створити новий токен",
+  "generatingTokenButton": "Створення...",
+  "tokenGeneratedTitle": "Токен успішно створено",
+  "tokenGeneratedDesc": "Ваш новий токен для додатку готовий.",
+  "errorGeneratingToken": "Помилка створення токена",
+  "tokenDialogTitle": "Новий токен для додатку",
+  "tokenDialogDesc": "Це ваш новий токен. Скопіюйте його зараз, оскільки ви не зможете побачити його знову.",
+  "copyTokenButton": "Копіювати токен",
+  "tokenCopiedTitle": "Скопійовано!",
+  "tokenCopiedDesc": "Токен було скопійовано у буфер обміну.",
+  "closeButton": "Закрити"
 }

@@ -54,6 +54,7 @@ import type {
   UserSettings,
   GetTransactionsListResponse,
   ReportDataResponse,
+  GenerateAppTokenResponse,
 } from '@/types';
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
@@ -481,3 +482,7 @@ export const createCheckoutSession = (token: string, priceId: string): Promise<{
 
 export const createPortalSession = (token: string): Promise<{ url: string }> =>
   request(URLS.createPortalSession, { method: 'POST', token });
+
+// App Tokens
+export const generateAppToken = (token: string): Promise<GenerateAppTokenResponse> =>
+  request(URLS.generateAppToken, { method: 'POST', token });

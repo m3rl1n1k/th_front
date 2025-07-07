@@ -37,7 +37,9 @@ export const URLS = {
   // User Profile
   userProfile: `${API_BASE_URL}/user`,
   changePassword: `${API_BASE_URL}/user/change-password`,
-  userSettings: `${API_BASE_URL}/settings`, // New User Settings URL
+  userSettings: `${API_BASE_URL}/settings`,
+  generateAppToken: `${API_BASE_URL}/generate-app-token`,
+
 
   // Wallets
   wallets: `${API_BASE_URL}/wallets`,

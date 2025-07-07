@@ -8,7 +8,7 @@ import { useTranslation } from '@/context/i18n-context';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2, Lock, KeyRound as KeyIcon, CalendarDays, Star, CheckCircle, ExternalLink } from 'lucide-react';
+import { UserCircle, Mail, Edit3, Briefcase, AlertTriangle as InfoIcon, Coins, Loader2, Lock, KeyRound as KeyIcon, CalendarDays, Star, CheckCircle, ExternalLink, Shield, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -16,14 +16,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, getCurrencies, changePassword as apiChangePassword, createCheckoutSession, createPortalSession } from '@/lib/api';
-import type { ApiError, User as UserType, CurrenciesApiResponse, CurrencyInfo, ChangePasswordPayload } from '@/types';
+import { updateUserProfile, getCurrencies, changePassword as apiChangePassword, createCheckoutSession, createPortalSession, generateAppToken } from '@/lib/api';
+import type { ApiError, User as UserType, CurrenciesApiResponse, CurrencyInfo, ChangePasswordPayload, AppToken } from '@/types';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { loadStripe } from '@stripe/stripe-js';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 
 interface UserProfileData {
@@ -76,6 +77,11 @@ export default function ProfilePage() {
   const [allCurrencies, setAllCurrencies] = useState<CurrencyInfo[]>([]);
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // State for App Token Generation
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [generatedTokenInfo, setGeneratedTokenInfo] = useState<AppToken | null>(null);
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
 
   const EditProfileSchema = createEditProfileSchema(t);
   const ChangePasswordSchema = createChangePasswordSchema(t);
@@ -254,6 +260,30 @@ export default function ProfilePage() {
     } catch (error: any) {
       toast({ variant: 'destructive', title: t('errorCreatingSession'), description: error.message });
       setIsRedirecting(false);
+    }
+  };
+
+  const handleGenerateToken = async () => {
+    if (!token) return;
+    setIsGeneratingToken(true);
+    try {
+        const response = await generateAppToken(token);
+        if (response.success && response.token) {
+            setGeneratedTokenInfo(response.token);
+            setShowTokenDialog(true);
+            toast({ title: t('tokenGeneratedTitle'), description: t('tokenGeneratedDesc') });
+        }
+    } catch (error) {
+        toast({ variant: "destructive", title: t('errorGeneratingToken'), description: (error as ApiError).message || t('unexpectedError') });
+    } finally {
+        setIsGeneratingToken(false);
+    }
+  };
+
+  const handleCopyToken = () => {
+    if (generatedTokenInfo?.token) {
+        navigator.clipboard.writeText(generatedTokenInfo.token);
+        toast({ title: t('tokenCopiedTitle'), description: t('tokenCopiedDesc') });
     }
   };
 
@@ -550,6 +580,22 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
+        {/* App Token Card */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Shield className="mr-3 h-6 w-6 text-primary" />
+              {t('appTokensTitle')}
+            </CardTitle>
+            <CardDescription>{t('appTokensDesc')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handleGenerateToken} disabled={isGeneratingToken}>
+              {isGeneratingToken && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isGeneratingToken ? t('generatingTokenButton') : t('generateTokenButton')}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Change Password Card */}
         <Card className="shadow-xl">
@@ -617,6 +663,36 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+      
+      <Dialog open={showTokenDialog} onOpenChange={(isOpen) => { setShowTokenDialog(isOpen); if (!isOpen) setGeneratedTokenInfo(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('tokenDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('tokenDialogDesc')}</DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Input 
+                readOnly 
+                value={generatedTokenInfo?.token || ''}
+                className="pr-10 font-mono text-sm bg-muted/50"
+            />
+            <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                onClick={handleCopyToken}
+            >
+                <Copy className="h-4 w-4" />
+                <span className="sr-only">{t('copyTokenButton')}</span>
+            </Button>
+          </div>
+          <DialogFooter>
+             <DialogClose asChild>
+                <Button type="button">{t('closeButton') || "Close"}</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

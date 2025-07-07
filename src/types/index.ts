@@ -566,3 +566,17 @@ export interface ReportDataResponse {
   yearlySummary: MonthlyFinancialSummary[];
   categorySummary: Record<string, CategoryMonthlySummary>;
 }
+
+// App Token Types
+export interface AppToken {
+  token: string;
+  scopes: string[];
+  isRevoked: boolean;
+  createdAt: string; // ISO date string
+}
+
+export interface GenerateAppTokenResponse {
+  success: boolean;
+  message: string;
+  token: AppToken;
+}
