@@ -1,3 +1,4 @@
+
 # FinanceFlow API Documentation (for PHP Backend)
 
 This document outlines the API endpoints and data structures required for the FinanceFlow application. The backend should be implemented in PHP.
@@ -67,6 +68,7 @@ Logs in a user.
            "code": "USD"
         },
         "roles": ["ROLE_USER"],
+        "user_secret_set": true,
         "settings": {
             "chart_income_color": "#10b981",
             "chart_expense_color": "#ef4444",
@@ -160,6 +162,7 @@ Retrieves the profile information for the currently authenticated user.
         "code": "USD"
       },
       "roles": ["ROLE_USER"],
+      "user_secret_set": true,
       "settings": {
         "chart_income_color": "#10b981",
         "chart_expense_color": "#ef4444",
@@ -183,7 +186,8 @@ Updates the profile information for the currently authenticated user.
     {
       "login": "new_user_login_name",
       "email": "new_email@example.com",
-      "userCurrencyCode": "EUR"
+      "userCurrencyCode": "EUR",
+      "user_secret": "my-super-secret-phrase-for-api"
     }
     ```
 *   **Success Response (200 OK)**: Returns the updated user profile (including settings and subscription).
@@ -983,4 +987,3 @@ Generates a new application token for the authenticated user for API access.
     }
     ```
 *   **Failure Response**: `401`, `500`.
-```

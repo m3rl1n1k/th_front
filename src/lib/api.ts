@@ -1,3 +1,4 @@
+
 import { URLS } from '@/config/urls';
 import type {
   ApiError,
@@ -214,7 +215,7 @@ export const registerUser = (payload: RegistrationPayload): Promise<Registration
 export const fetchUserProfile = (token: string): Promise<User> =>
   request(URLS.me, { method: 'GET', token });
 
-export const updateUserProfile = (data: Partial<User & { userCurrencyCode?: string }>, token: string): Promise<User> =>
+export const updateUserProfile = (data: Partial<User & { userCurrencyCode?: string; user_secret?: string }>, token: string): Promise<User> =>
   request(URLS.userProfile, { method: 'PUT', body: data, token });
 
 export const changePassword = (data: ChangePasswordPayload, token: string): Promise<void> =>

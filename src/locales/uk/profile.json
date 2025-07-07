@@ -73,5 +73,16 @@
   "copyFailedTitle": "Помилка копіювання",
   "copyFailedDesc": "Не вдалося скопіювати токен у буфер обміну.",
   "copyNotSupportedTitle": "Копіювання не підтримується",
-  "copyNotSupportedDesc": "Доступ до буфера обміну недоступний у цьому контексті."
+  "copyNotSupportedDesc": "Доступ до буфера обміну недоступний у цьому контексті.",
+  "apiSecurityTitle": "Безпека API",
+  "apiSecurityDesc": "Встановіть свою секретну фразу для генерації токенів додатків для зовнішніх сервісів.",
+  "userSecretLabel": "Секрет API",
+  "userSecretPlaceholder": "Введіть надійну секретну фразу",
+  "userSecretMinLengthError": "Секрет повинен містити щонайменше 8 символів.",
+  "saveSecretButton": "Зберегти секрет",
+  "savingSecretButton": "Збереження...",
+  "secretSavedSuccessTitle": "Секрет збережено",
+  "secretSavedSuccessDesc": "Ваш секрет API оновлено. Тепер ви можете згенерувати токен.",
+  "secretIsSetMsg": "Секрет API встановлено. Ви можете його перезаписати або згенерувати новий токен.",
+  "secretNotSetMsg": "Секрет API не встановлено. Будь ласка, встановіть його, щоб генерувати токени."
 }

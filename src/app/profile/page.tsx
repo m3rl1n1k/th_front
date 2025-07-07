@@ -33,6 +33,7 @@ interface UserProfileData {
   profilePictureUrl?: string;
   userCurrencyCode?: string | null;
   memberSince?: string;
+  user_secret_set?: boolean;
 }
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
@@ -64,6 +65,12 @@ const createChangePasswordSchema = (t: Function) => z.object({
 
 type ChangePasswordFormData = z.infer<ReturnType<typeof createChangePasswordSchema>>;
 
+const userSecretSchema = (t: Function) => z.object({
+  user_secret: z.string().min(8, { message: t('userSecretMinLengthError') }),
+});
+type UserSecretFormData = z.infer<ReturnType<typeof userSecretSchema>>;
+
+
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 const proPlanPriceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID || '';
 
@@ -78,13 +85,13 @@ export default function ProfilePage() {
   const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // State for App Token Generation
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [generatedTokenInfo, setGeneratedTokenInfo] = useState<AppToken | null>(null);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
 
   const EditProfileSchema = createEditProfileSchema(t);
   const ChangePasswordSchema = createChangePasswordSchema(t);
+  const UserSecretSchema = userSecretSchema(t);
 
   const editProfileForm = useForm<EditProfileFormData>({
     resolver: zodResolver(EditProfileSchema),
@@ -103,6 +110,12 @@ export default function ProfilePage() {
       confirmNewPassword: '',
     }
   });
+
+  const userSecretForm = useForm<UserSecretFormData>({
+    resolver: zodResolver(UserSecretSchema),
+    defaultValues: { user_secret: '' },
+  });
+
 
   const fetchPageData = useCallback(async () => {
     if (!isAuthenticated || !user || !token) {
@@ -128,6 +141,7 @@ export default function ProfilePage() {
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`,
         userCurrencyCode: user.userCurrency?.code || null,
         memberSince: user.memberSince,
+        user_secret_set: user.user_secret_set,
       };
       setProfileData(newProfileData);
       editProfileForm.reset({
@@ -206,6 +220,18 @@ export default function ProfilePage() {
     }
   };
 
+   const handleSecretUpdate: SubmitHandler<UserSecretFormData> = async (data) => {
+    if (!token) return;
+    try {
+      await updateUserProfile({ user_secret: data.user_secret }, token);
+      await fetchUser();
+      toast({ title: t('secretSavedSuccessTitle'), description: t('secretSavedSuccessDesc') });
+      userSecretForm.reset();
+    } catch (error) {
+      toast({ variant: "destructive", title: t('errorUpdatingProfile'), description: (error as ApiError).message });
+    }
+  };
+
   const handleChangePassword: SubmitHandler<ChangePasswordFormData> = async (data) => {
     if (!token) {
       toast({ variant: "destructive", title: t('error'), description: t('tokenMissingError') });
@@ -281,17 +307,15 @@ export default function ProfilePage() {
   };
 
   const handleCopyToken = () => {
-    if (generatedTokenInfo?.token) {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(generatedTokenInfo.token).then(() => {
-          toast({ title: t('tokenCopiedTitle'), description: t('tokenCopiedDesc') });
-        }).catch(err => {
-          console.error('Failed to copy token: ', err);
-          toast({ variant: 'destructive', title: t('copyFailedTitle'), description: t('copyFailedDesc') });
-        });
-      } else {
-        toast({ variant: 'destructive', title: t('copyNotSupportedTitle'), description: t('copyNotSupportedDesc') });
-      }
+    if (generatedTokenInfo?.token && navigator.clipboard) {
+      navigator.clipboard.writeText(generatedTokenInfo.token).then(() => {
+        toast({ title: t('tokenCopiedTitle'), description: t('tokenCopiedDesc') });
+      }).catch(err => {
+        console.error('Failed to copy token: ', err);
+        toast({ variant: 'destructive', title: t('copyFailedTitle'), description: t('copyFailedDesc') });
+      });
+    } else if (!navigator.clipboard) {
+      toast({ variant: 'destructive', title: t('copyNotSupportedTitle'), description: t('copyNotSupportedDesc') });
     }
   };
 
@@ -588,21 +612,48 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* App Token Card */}
+        {/* API Security Card */}
         <Card className="shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Shield className="mr-3 h-6 w-6 text-primary" />
-              {t('appTokensTitle')}
+              {t('apiSecurityTitle')}
             </CardTitle>
-            <CardDescription>{t('appTokensDesc')}</CardDescription>
+            <CardDescription>{t('apiSecurityDesc')}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button onClick={handleGenerateToken} disabled={isGeneratingToken}>
+          <CardContent className="space-y-4">
+            <form onSubmit={userSecretForm.handleSubmit(handleSecretUpdate)} className="space-y-2">
+                <Label htmlFor="user_secret">{t('userSecretLabel')}</Label>
+                 <div className="flex gap-2">
+                    <Input
+                        id="user_secret"
+                        type="password"
+                        placeholder={t('userSecretPlaceholder')}
+                        {...userSecretForm.register('user_secret')}
+                        className={userSecretForm.formState.errors.user_secret ? 'border-destructive' : ''}
+                    />
+                    <Button type="submit" disabled={userSecretForm.formState.isSubmitting}>
+                        {userSecretForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {t('saveSecretButton')}
+                    </Button>
+                 </div>
+                 {userSecretForm.formState.errors.user_secret && (
+                    <p className="text-sm text-destructive">{userSecretForm.formState.errors.user_secret.message}</p>
+                 )}
+            </form>
+             <Alert variant={user?.user_secret_set ? "default" : "destructive"} className={cn(user?.user_secret_set ? 'border-green-500/50' : '')}>
+                <InfoIcon className="h-4 w-4" />
+                <AlertDescription>
+                    {user?.user_secret_set ? t('secretIsSetMsg') : t('secretNotSetMsg')}
+                </AlertDescription>
+             </Alert>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleGenerateToken} disabled={isGeneratingToken || !user?.user_secret_set}>
               {isGeneratingToken && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isGeneratingToken ? t('generatingTokenButton') : t('generateTokenButton')}
             </Button>
-          </CardContent>
+          </CardFooter>
         </Card>
 
         {/* Change Password Card */}

@@ -73,5 +73,16 @@
   "copyFailedTitle": "Copy Failed",
   "copyFailedDesc": "Could not copy token to clipboard.",
   "copyNotSupportedTitle": "Copy Not Supported",
-  "copyNotSupportedDesc": "Clipboard access is not available in this context."
+  "copyNotSupportedDesc": "Clipboard access is not available in this context.",
+  "apiSecurityTitle": "API Security",
+  "apiSecurityDesc": "Set your secret phrase to generate application tokens for external services.",
+  "userSecretLabel": "API Secret",
+  "userSecretPlaceholder": "Enter a strong secret phrase",
+  "userSecretMinLengthError": "Secret must be at least 8 characters.",
+  "saveSecretButton": "Save Secret",
+  "savingSecretButton": "Saving...",
+  "secretSavedSuccessTitle": "Secret Saved",
+  "secretSavedSuccessDesc": "Your API secret has been updated. You can now generate a token.",
+  "secretIsSetMsg": "An API secret is set. You can overwrite it or generate a new token.",
+  "secretNotSetMsg": "No API secret is set. Please set one to generate tokens."
 }
