@@ -55,7 +55,7 @@ const AMOUNTS_VISIBILITY_KEY = 'financeflow_amounts_visible';
 
 
 const augmentUserData = (user: User): User => {
-  const isVerified = !!user.verifiedAt || !!user.isVerified;
+  const isVerified = !!user.verifiedAt;
   const subscription = user.subscription !== undefined ? user.subscription : null;
   return { ...user, isVerified, subscription };
 };

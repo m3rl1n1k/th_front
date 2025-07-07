@@ -62,13 +62,13 @@ Logs in a user.
         "id": 1,
         "login": "user_login_name",
         "email": "user@example.com",
-        "isVerified": true,
+        "verifiedAt": "2025-05-28T21:44:05+00:00",
         "memberSince": "2023-01-15T10:00:00Z",
         "userCurrency": {
            "code": "USD"
         },
         "roles": ["ROLE_USER"],
-        "user_secret_set": true,
+        "userSecret": true,
         "settings": {
             "chart_income_color": "#10b981",
             "chart_expense_color": "#ef4444",
@@ -156,13 +156,13 @@ Retrieves the profile information for the currently authenticated user.
       "id": 1,
       "login": "user_login_name",
       "email": "user@example.com",
-      "isVerified": true,
+      "verifiedAt": "2025-05-28T21:44:05+00:00",
       "memberSince": "2023-01-15T10:00:00Z",
       "userCurrency": {
         "code": "USD"
       },
       "roles": ["ROLE_USER"],
-      "user_secret_set": true,
+      "userSecret": true,
       "settings": {
         "chart_income_color": "#10b981",
         "chart_expense_color": "#ef4444",

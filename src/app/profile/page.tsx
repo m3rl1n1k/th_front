@@ -33,7 +33,7 @@ interface UserProfileData {
   profilePictureUrl?: string;
   userCurrencyCode?: string | null;
   memberSince?: string;
-  user_secret_set?: boolean;
+  userSecret?: boolean;
 }
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
@@ -141,7 +141,7 @@ export default function ProfilePage() {
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`,
         userCurrencyCode: user.userCurrency?.code || null,
         memberSince: user.memberSince,
-        user_secret_set: user.user_secret_set,
+        userSecret: user.userSecret,
       };
       setProfileData(newProfileData);
       editProfileForm.reset({
@@ -641,15 +641,15 @@ export default function ProfilePage() {
                     <p className="text-sm text-destructive">{userSecretForm.formState.errors.user_secret.message}</p>
                  )}
             </form>
-             <Alert variant={user?.user_secret_set ? "default" : "destructive"} className={cn(user?.user_secret_set ? 'border-green-500/50' : '')}>
+             <Alert variant={user?.userSecret ? "default" : "destructive"} className={cn(user?.userSecret ? 'border-green-500/50' : '')}>
                 <InfoIcon className="h-4 w-4" />
                 <AlertDescription>
-                    {user?.user_secret_set ? t('secretIsSetMsg') : t('secretNotSetMsg')}
+                    {user?.userSecret ? t('secretIsSetMsg') : t('secretNotSetMsg')}
                 </AlertDescription>
              </Alert>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleGenerateToken} disabled={isGeneratingToken || !user?.user_secret_set}>
+            <Button onClick={handleGenerateToken} disabled={isGeneratingToken || !user?.userSecret}>
               {isGeneratingToken && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isGeneratingToken ? t('generatingTokenButton') : t('generateTokenButton')}
             </Button>
