@@ -29,7 +29,7 @@ export interface User {
   } | null;
   settings?: UserSettings; // Added user settings
   subscription?: Subscription | null;
-  userSecret?: boolean;
+  userSetSecret?: boolean;
 }
 
 export interface LoginCredentials {

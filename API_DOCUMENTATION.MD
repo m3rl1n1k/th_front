@@ -68,7 +68,7 @@ Logs in a user.
            "code": "USD"
         },
         "roles": ["ROLE_USER"],
-        "userSecret": true,
+        "userSetSecret": true,
         "settings": {
             "chart_income_color": "#10b981",
             "chart_expense_color": "#ef4444",
@@ -162,7 +162,7 @@ Retrieves the profile information for the currently authenticated user.
         "code": "USD"
       },
       "roles": ["ROLE_USER"],
-      "userSecret": true,
+      "userSetSecret": true,
       "settings": {
         "chart_income_color": "#10b981",
         "chart_expense_color": "#ef4444",

@@ -33,7 +33,7 @@ interface UserProfileData {
   profilePictureUrl?: string;
   userCurrencyCode?: string | null;
   memberSince?: string;
-  userSecret?: boolean;
+  userSetSecret?: boolean;
 }
 
 const currencyCodeRegex = /^[A-Z]{3}$/;
@@ -141,7 +141,7 @@ export default function ProfilePage() {
         profilePictureUrl: `https://placehold.co/150x150.png?text=${user.login.charAt(0).toUpperCase()}`,
         userCurrencyCode: user.userCurrency?.code || null,
         memberSince: user.memberSince,
-        userSecret: user.userSecret,
+        userSetSecret: user.userSetSecret,
       };
       setProfileData(newProfileData);
       editProfileForm.reset({
@@ -319,13 +319,15 @@ export default function ProfilePage() {
         console.error('Modern clipboard copy failed: ', err);
       }
     }
-
+    
+    // Fallback for non-secure contexts
     try {
       const textArea = document.createElement('textarea');
       textArea.value = tokenToCopy;
-      textArea.style.position = 'fixed';
+      textArea.style.position = 'fixed'; // Avoid scrolling to bottom
       textArea.style.top = '0';
       textArea.style.left = '0';
+      textArea.style.opacity = '0'; // Hide the element
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
@@ -342,6 +344,7 @@ export default function ProfilePage() {
       toast({ variant: 'destructive', title: t('copyFailedTitle'), description: t('copyFailedDesc') });
     }
   };
+
 
   const isLoadingEffectively = isLoadingPage || authIsLoading || (!profileData && isAuthenticated);
 
@@ -438,9 +441,11 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-8 max-w-2xl mx-auto">
+      <div className="space-y-8">
+        <h1 className="font-headline text-3xl font-bold text-foreground text-center">{t('userProfileTitle')}</h1>
+
         {showCurrencyPrompt && (
-          <Alert variant="default" className="mb-6 bg-primary/10 border-primary/30 text-primary-foreground dark:bg-primary/20 dark:border-primary/40 dark:text-primary-foreground">
+          <Alert variant="default" className="bg-primary/10 border-primary/30 text-primary-foreground dark:bg-primary/20 dark:border-primary/40 dark:text-primary-foreground">
             <InfoIcon className="h-5 w-5 text-primary" />
             <AlertTitle>{t('completeYourProfileTitle')}</AlertTitle>
             <AlertDescription>
@@ -448,303 +453,304 @@ export default function ProfilePage() {
             </AlertDescription>
           </Alert>
         )}
-        <h1 className="font-headline text-3xl font-bold text-foreground text-center">{t('userProfileTitle')}</h1>
 
-        <Card className="shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-br from-primary via-primary/80 to-accent h-32" />
-          <CardHeader className="items-center text-center -mt-16">
-            <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profileData.profilePictureUrl} alt={profileData.login} data-ai-hint="avatar user"/>
-              <AvatarFallback className="text-4xl">
-                {profileData.login.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <CardTitle className="font-headline text-2xl mt-4">{profileData.login}</CardTitle>
-            <CardDescription>{t('loggedInAs', { username: profileData.login })}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-4 pb-8 px-6">
-            <div className="border-t border-border pt-6 space-y-4">
-              <div className="flex items-center">
-                <Mail className="mr-4 h-6 w-6 text-primary" />
-                <div>
-                  <p className="text-xs text-muted-foreground">{t('emailLabel')}</p>
-                  <p className="text-md font-medium text-foreground">{profileData.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Briefcase className="mr-4 h-6 w-6 text-primary" />
-                 <div>
-                  <p className="text-xs text-muted-foreground">{t('preferredCurrencyLabel')}</p>
-                  <p className="text-md font-medium text-foreground">{profileData.userCurrencyCode || t('notSet')}</p>
-                </div>
-              </div>
-              {profileData.memberSince && (
-                <div className="flex items-center">
-                  <CalendarDays className="mr-4 h-6 w-6 text-primary" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t('memberSinceLabel')}</p>
-                    <p className="text-md font-medium text-foreground">
-                      {format(parseISO(profileData.memberSince), 'PPP', { locale: dateFnsLocale })}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="w-full mt-6">
-                  <Edit3 className="mr-2 h-4 w-4" /> {t('editProfileButton')}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <form onSubmit={editProfileForm.handleSubmit(handleProfileUpdate)}>
-                  <DialogHeader>
-                    <DialogTitle>{t('editProfileDialogTitle')}</DialogTitle>
-                    <DialogDescription>
-                      {t('editProfileDialogDescription')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login">{t('loginLabel')}</Label>
-                      <Controller
-                        name="login"
-                        control={editProfileForm.control}
-                        render={({ field }) => <Input id="login" {...field} />}
-                      />
-                      {editProfileForm.formState.errors.login && <p className="text-sm text-destructive">{editProfileForm.formState.errors.login.message}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">{t('emailLabel')}</Label>
-                       <Controller
-                        name="email"
-                        control={editProfileForm.control}
-                        render={({ field }) => <Input id="email" type="email" {...field} />}
-                      />
-                      {editProfileForm.formState.errors.email && <p className="text-sm text-destructive">{editProfileForm.formState.errors.email.message}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="userCurrencyCode">{t('currencyCodeLabel')}</Label>
-                       <Controller
-                        name="userCurrencyCode"
-                        control={editProfileForm.control}
-                        render={({ field }) => (
-                          <Select
-                            onValueChange={(value) => {
-                                field.onChange(value);
-                            }}
-                            value={field.value || NO_CURRENCY_SELECTED_PLACEHOLDER}
-                            disabled={isLoadingCurrencies || allCurrencies.length === 0}
-                          >
-                            <SelectTrigger id="userCurrencyCode" className={editProfileForm.formState.errors.userCurrencyCode ? 'border-destructive' : ''}>
-                              <Coins className="mr-2 h-4 w-4 text-muted-foreground" />
-                              <SelectValue placeholder={isLoadingCurrencies ? t('loading') : t('selectCurrencyPlaceholder')} />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-72">
-                               <SelectItem value={NO_CURRENCY_SELECTED_PLACEHOLDER}>{t('notSet')}</SelectItem>
-                               <SelectSeparator />
-                              {mostUsefulCurrenciesList.length > 0 && (
-                                <SelectGroup>
-                                  <SelectLabel>{t('mostCommonCurrenciesLabel')}</SelectLabel>
-                                  {mostUsefulCurrenciesList.map(curr => (
-                                    <SelectItem key={curr.code} value={curr.code}>{curr.displayName}</SelectItem>
-                                  ))}
-                                </SelectGroup>
-                              )}
-                              {mostUsefulCurrenciesList.length > 0 && otherCurrenciesList.length > 0 && <SelectSeparator />}
-                              {otherCurrenciesList.length > 0 && (
-                                <SelectGroup>
-                                  <SelectLabel>{t('allCurrenciesLabel')}</SelectLabel>
-                                  {otherCurrenciesList.map(curr => (
-                                    <SelectItem key={curr.code} value={curr.code}>{curr.displayName}</SelectItem>
-                                  ))}
-                                </SelectGroup>
-                              )}
-                            </SelectContent>
-                          </Select>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+            <div className="lg:col-span-2 space-y-8">
+                <Card className="shadow-xl overflow-hidden">
+                    <div className="bg-gradient-to-br from-primary via-primary/80 to-accent h-32" />
+                    <CardHeader className="items-center text-center -mt-16">
+                        <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
+                        <AvatarImage src={profileData.profilePictureUrl} alt={profileData.login} data-ai-hint="avatar user"/>
+                        <AvatarFallback className="text-4xl">
+                            {profileData.login.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                        </Avatar>
+                        <CardTitle className="font-headline text-2xl mt-4">{profileData.login}</CardTitle>
+                        <CardDescription>{t('loggedInAs', { username: profileData.login })}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6 pt-4 pb-8 px-6">
+                        <div className="border-t border-border pt-6 space-y-4">
+                        <div className="flex items-center">
+                            <Mail className="mr-4 h-6 w-6 text-primary" />
+                            <div>
+                            <p className="text-xs text-muted-foreground">{t('emailLabel')}</p>
+                            <p className="text-md font-medium text-foreground">{profileData.email}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center">
+                            <Briefcase className="mr-4 h-6 w-6 text-primary" />
+                            <div>
+                            <p className="text-xs text-muted-foreground">{t('preferredCurrencyLabel')}</p>
+                            <p className="text-md font-medium text-foreground">{profileData.userCurrencyCode || t('notSet')}</p>
+                            </div>
+                        </div>
+                        {profileData.memberSince && (
+                            <div className="flex items-center">
+                            <CalendarDays className="mr-4 h-6 w-6 text-primary" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">{t('memberSinceLabel')}</p>
+                                <p className="text-md font-medium text-foreground">
+                                {format(parseISO(profileData.memberSince), 'PPP', { locale: dateFnsLocale })}
+                                </p>
+                            </div>
+                            </div>
                         )}
-                      />
-                      {editProfileForm.formState.errors.userCurrencyCode && <p className="text-sm text-destructive">{editProfileForm.formState.errors.userCurrencyCode.message}</p>}
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                       <Button type="button" variant="outline">{t('cancelButton')}</Button>
-                    </DialogClose>
-                     <Button type="submit" disabled={editProfileForm.formState.isSubmitting || isLoadingCurrencies}>
-                        {editProfileForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {editProfileForm.formState.isSubmitting ? t('saving') : t('saveChangesButton')}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
+                        </div>
 
-        {/* Subscription Card */}
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Star className="mr-3 h-6 w-6 text-primary" />
-              {t('manageSubscriptionTitle')}
-            </CardTitle>
-            <CardDescription>{t('manageSubscriptionDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-muted/50 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <p className="font-semibold text-xl">{planName}</p>
-                {trialEndsAt && status === 'trialing' && (
-                  <p className="text-sm text-muted-foreground">{t('trialEndsOn', { date: trialEndsAt })}</p>
-                )}
-                {endsAt && status === 'canceled' && (
-                  <p className="text-sm text-muted-foreground">{t('subscriptionExpiresOn', { date: endsAt })}</p>
-                )}
-              </div>
-              <Badge variant={getStatusBadgeVariant(status)} className="capitalize text-base">
-                {t(`status_${status}`, { defaultValue: status })}
-              </Badge>
+                        <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full mt-6">
+                            <Edit3 className="mr-2 h-4 w-4" /> {t('editProfileButton')}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <form onSubmit={editProfileForm.handleSubmit(handleProfileUpdate)}>
+                            <DialogHeader>
+                                <DialogTitle>{t('editProfileDialogTitle')}</DialogTitle>
+                                <DialogDescription>
+                                {t('editProfileDialogDescription')}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                <Label htmlFor="login">{t('loginLabel')}</Label>
+                                <Controller
+                                    name="login"
+                                    control={editProfileForm.control}
+                                    render={({ field }) => <Input id="login" {...field} />}
+                                />
+                                {editProfileForm.formState.errors.login && <p className="text-sm text-destructive">{editProfileForm.formState.errors.login.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                <Label htmlFor="email">{t('emailLabel')}</Label>
+                                <Controller
+                                    name="email"
+                                    control={editProfileForm.control}
+                                    render={({ field }) => <Input id="email" type="email" {...field} />}
+                                />
+                                {editProfileForm.formState.errors.email && <p className="text-sm text-destructive">{editProfileForm.formState.errors.email.message}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                <Label htmlFor="userCurrencyCode">{t('currencyCodeLabel')}</Label>
+                                <Controller
+                                    name="userCurrencyCode"
+                                    control={editProfileForm.control}
+                                    render={({ field }) => (
+                                    <Select
+                                        onValueChange={(value) => {
+                                            field.onChange(value);
+                                        }}
+                                        value={field.value || NO_CURRENCY_SELECTED_PLACEHOLDER}
+                                        disabled={isLoadingCurrencies || allCurrencies.length === 0}
+                                    >
+                                        <SelectTrigger id="userCurrencyCode" className={editProfileForm.formState.errors.userCurrencyCode ? 'border-destructive' : ''}>
+                                        <Coins className="mr-2 h-4 w-4 text-muted-foreground" />
+                                        <SelectValue placeholder={isLoadingCurrencies ? t('loading') : t('selectCurrencyPlaceholder')} />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-72">
+                                            <SelectItem value={NO_CURRENCY_SELECTED_PLACEHOLDER}>{t('notSet')}</SelectItem>
+                                            <SelectSeparator />
+                                        {mostUsefulCurrenciesList.length > 0 && (
+                                            <SelectGroup>
+                                            <SelectLabel>{t('mostCommonCurrenciesLabel')}</SelectLabel>
+                                            {mostUsefulCurrenciesList.map(curr => (
+                                                <SelectItem key={curr.code} value={curr.code}>{curr.displayName}</SelectItem>
+                                            ))}
+                                            </SelectGroup>
+                                        )}
+                                        {mostUsefulCurrenciesList.length > 0 && otherCurrenciesList.length > 0 && <SelectSeparator />}
+                                        {otherCurrenciesList.length > 0 && (
+                                            <SelectGroup>
+                                            <SelectLabel>{t('allCurrenciesLabel')}</SelectLabel>
+                                            {otherCurrenciesList.map(curr => (
+                                                <SelectItem key={curr.code} value={curr.code}>{curr.displayName}</SelectItem>
+                                            ))}
+                                            </SelectGroup>
+                                        )}
+                                        </SelectContent>
+                                    </Select>
+                                    )}
+                                />
+                                {editProfileForm.formState.errors.userCurrencyCode && <p className="text-sm text-destructive">{editProfileForm.formState.errors.userCurrencyCode.message}</p>}
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                <Button type="button" variant="outline">{t('cancelButton')}</Button>
+                                </DialogClose>
+                                <Button type="submit" disabled={editProfileForm.formState.isSubmitting || isLoadingCurrencies}>
+                                    {editProfileForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    {editProfileForm.formState.isSubmitting ? t('saving') : t('saveChangesButton')}
+                                </Button>
+                            </DialogFooter>
+                            </form>
+                        </DialogContent>
+                        </Dialog>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center">
+                        <Star className="mr-3 h-6 w-6 text-primary" />
+                        {t('manageSubscriptionTitle')}
+                        </CardTitle>
+                        <CardDescription>{t('manageSubscriptionDesc')}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="p-4 bg-muted/50 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <p className="font-semibold text-xl">{planName}</p>
+                            {trialEndsAt && status === 'trialing' && (
+                            <p className="text-sm text-muted-foreground">{t('trialEndsOn', { date: trialEndsAt })}</p>
+                            )}
+                            {endsAt && status === 'canceled' && (
+                            <p className="text-sm text-muted-foreground">{t('subscriptionExpiresOn', { date: endsAt })}</p>
+                            )}
+                        </div>
+                        <Badge variant={getStatusBadgeVariant(status)} className="capitalize text-base">
+                            {t(`status_${status}`, { defaultValue: status })}
+                        </Badge>
+                        </div>
+                        {status === 'active' || status === 'trialing' ? (
+                        <Button onClick={handleManageSubscription} disabled={isRedirecting} className="w-full sm:w-auto">
+                            {isRedirecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {t('billingPortalButton')}
+                        </Button>
+                        ) : (status === 'free' || status === 'canceled') && (
+                        <Card className="shadow-none border-2 border-primary/50 bg-primary/5">
+                            <CardHeader>
+                            <CardTitle className="text-xl">{t('proPlanTitle')}</CardTitle>
+                            <CardDescription>{t('proPlanDesc')}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                            <PlanFeatures />
+                            </CardContent>
+                            <CardFooter>
+                            <Button onClick={() => handleCreateCheckout(proPlanPriceId)} disabled={isRedirecting || !proPlanPriceId} className="w-full">
+                                {isRedirecting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                <Star className="mr-2 h-4 w-4" />
+                                )}
+                                {t('upgradeToProButton')}
+                            </Button>
+                            </CardFooter>
+                        </Card>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
-            {status === 'active' || status === 'trialing' ? (
-              <Button onClick={handleManageSubscription} disabled={isRedirecting} className="w-full sm:w-auto">
-                {isRedirecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('billingPortalButton')}
-              </Button>
-            ) : (status === 'free' || status === 'canceled') && (
-              <Card className="shadow-none border-2 border-primary/50 bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="text-xl">{t('proPlanTitle')}</CardTitle>
-                  <CardDescription>{t('proPlanDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PlanFeatures />
-                </CardContent>
-                <CardFooter>
-                  <Button onClick={() => handleCreateCheckout(proPlanPriceId)} disabled={isRedirecting || !proPlanPriceId} className="w-full">
-                    {isRedirecting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Star className="mr-2 h-4 w-4" />
-                    )}
-                    {t('upgradeToProButton')}
-                  </Button>
-                </CardFooter>
-              </Card>
-            )}
-          </CardContent>
-        </Card>
+            <div className="lg:col-span-3 space-y-8">
+                <Card className="shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center">
+                        <Shield className="mr-3 h-6 w-6 text-primary" />
+                        {t('apiSecurityTitle')}
+                        </CardTitle>
+                        <CardDescription>{t('apiSecurityDesc')}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <form onSubmit={userSecretForm.handleSubmit(handleSecretUpdate)} className="space-y-2">
+                            <Label htmlFor="user_secret">{t('userSecretLabel')}</Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    id="user_secret"
+                                    type="password"
+                                    placeholder={t('userSecretPlaceholder')}
+                                    {...userSecretForm.register('user_secret')}
+                                    className={userSecretForm.formState.errors.user_secret ? 'border-destructive' : ''}
+                                />
+                                <Button type="submit" disabled={userSecretForm.formState.isSubmitting}>
+                                    {userSecretForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {t('saveSecretButton')}
+                                </Button>
+                            </div>
+                            {userSecretForm.formState.errors.user_secret && (
+                                <p className="text-sm text-destructive">{userSecretForm.formState.errors.user_secret.message}</p>
+                            )}
+                        </form>
+                        <Alert variant={user?.userSetSecret ? "default" : "destructive"} className={cn(user?.userSetSecret ? 'border-green-500/50' : '')}>
+                            <InfoIcon className="h-4 w-4" />
+                            <AlertDescription>
+                                {user?.userSetSecret ? t('secretIsSetMsg') : t('secretNotSetMsg')}
+                            </AlertDescription>
+                        </Alert>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleGenerateToken} disabled={isGeneratingToken || !user?.userSetSecret}>
+                        {isGeneratingToken && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isGeneratingToken ? t('generatingTokenButton') : t('generateTokenButton')}
+                        </Button>
+                    </CardFooter>
+                </Card>
 
-        {/* API Security Card */}
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Shield className="mr-3 h-6 w-6 text-primary" />
-              {t('apiSecurityTitle')}
-            </CardTitle>
-            <CardDescription>{t('apiSecurityDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={userSecretForm.handleSubmit(handleSecretUpdate)} className="space-y-2">
-                <Label htmlFor="user_secret">{t('userSecretLabel')}</Label>
-                 <div className="flex gap-2">
-                    <Input
-                        id="user_secret"
-                        type="password"
-                        placeholder={t('userSecretPlaceholder')}
-                        {...userSecretForm.register('user_secret')}
-                        className={userSecretForm.formState.errors.user_secret ? 'border-destructive' : ''}
-                    />
-                    <Button type="submit" disabled={userSecretForm.formState.isSubmitting}>
-                        {userSecretForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {t('saveSecretButton')}
-                    </Button>
-                 </div>
-                 {userSecretForm.formState.errors.user_secret && (
-                    <p className="text-sm text-destructive">{userSecretForm.formState.errors.user_secret.message}</p>
-                 )}
-            </form>
-             <Alert variant={user?.userSecret ? "default" : "destructive"} className={cn(user?.userSecret ? 'border-green-500/50' : '')}>
-                <InfoIcon className="h-4 w-4" />
-                <AlertDescription>
-                    {user?.userSecret ? t('secretIsSetMsg') : t('secretNotSetMsg')}
-                </AlertDescription>
-             </Alert>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleGenerateToken} disabled={isGeneratingToken || !user?.userSecret}>
-              {isGeneratingToken && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isGeneratingToken ? t('generatingTokenButton') : t('generateTokenButton')}
-            </Button>
-          </CardFooter>
-        </Card>
+                <Card className="shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center">
+                        <KeyIcon className="mr-3 h-6 w-6 text-primary" />
+                        {t('changePasswordTitle')}
+                        </CardTitle>
+                        <CardDescription>{t('changePasswordDesc')}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={changePasswordForm.handleSubmit(handleChangePassword)} className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="currentPassword">{t('currentPasswordLabel')}</Label>
+                            <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Controller
+                                name="currentPassword"
+                                control={changePasswordForm.control}
+                                render={({ field }) => (
+                                <Input id="currentPassword" type="password" placeholder="••••••••" {...field} className={`pl-10 ${changePasswordForm.formState.errors.currentPassword ? 'border-destructive' : ''}`} />
+                                )}
+                            />
+                            </div>
+                            {changePasswordForm.formState.errors.currentPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.currentPassword.message}</p>}
+                        </div>
 
-        {/* Change Password Card */}
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <KeyIcon className="mr-3 h-6 w-6 text-primary" />
-              {t('changePasswordTitle')}
-            </CardTitle>
-            <CardDescription>{t('changePasswordDesc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={changePasswordForm.handleSubmit(handleChangePassword)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">{t('currentPasswordLabel')}</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Controller
-                    name="currentPassword"
-                    control={changePasswordForm.control}
-                    render={({ field }) => (
-                      <Input id="currentPassword" type="password" placeholder="••••••••" {...field} className={`pl-10 ${changePasswordForm.formState.errors.currentPassword ? 'border-destructive' : ''}`} />
-                    )}
-                  />
-                </div>
-                {changePasswordForm.formState.errors.currentPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.currentPassword.message}</p>}
-              </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="newPassword">{t('newPasswordLabel')}</Label>
+                            <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Controller
+                                name="newPassword"
+                                control={changePasswordForm.control}
+                                render={({ field }) => (
+                                <Input id="newPassword" type="password" placeholder={t('newPasswordPlaceholder')} {...field} className={`pl-10 ${changePasswordForm.formState.errors.newPassword ? 'border-destructive' : ''}`} />
+                                )}
+                            />
+                            </div>
+                            {changePasswordForm.formState.errors.newPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.newPassword.message}</p>}
+                        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">{t('newPasswordLabel')}</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Controller
-                    name="newPassword"
-                    control={changePasswordForm.control}
-                    render={({ field }) => (
-                      <Input id="newPassword" type="password" placeholder={t('newPasswordPlaceholder')} {...field} className={`pl-10 ${changePasswordForm.formState.errors.newPassword ? 'border-destructive' : ''}`} />
-                    )}
-                  />
-                </div>
-                {changePasswordForm.formState.errors.newPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.newPassword.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmNewPassword">{t('confirmNewPasswordLabel')}</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Controller
-                    name="confirmNewPassword"
-                    control={changePasswordForm.control}
-                    render={({ field }) => (
-                      <Input id="confirmNewPassword" type="password" placeholder={t('confirmNewPasswordPlaceholder')} {...field} className={`pl-10 ${changePasswordForm.formState.errors.confirmNewPassword ? 'border-destructive' : ''}`} />
-                    )}
-                  />
-                </div>
-                {changePasswordForm.formState.errors.confirmNewPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.confirmNewPassword.message}</p>}
-              </div>
-              
-              <div className="flex justify-end">
-                <Button type="submit" disabled={changePasswordForm.formState.isSubmitting}>
-                  {changePasswordForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyIcon className="mr-2 h-4 w-4" />}
-                  {changePasswordForm.formState.isSubmitting ? t('saving') : t('changePasswordButton')}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmNewPassword">{t('confirmNewPasswordLabel')}</Label>
+                            <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Controller
+                                name="confirmNewPassword"
+                                control={changePasswordForm.control}
+                                render={({ field }) => (
+                                <Input id="confirmNewPassword" type="password" placeholder={t('confirmNewPasswordPlaceholder')} {...field} className={`pl-10 ${changePasswordForm.formState.errors.confirmNewPassword ? 'border-destructive' : ''}`} />
+                                )}
+                            />
+                            </div>
+                            {changePasswordForm.formState.errors.confirmNewPassword && <p className="text-sm text-destructive">{changePasswordForm.formState.errors.confirmNewPassword.message}</p>}
+                        </div>
+                        
+                        <div className="flex justify-end">
+                            <Button type="submit" disabled={changePasswordForm.formState.isSubmitting}>
+                            {changePasswordForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyIcon className="mr-2 h-4 w-4" />}
+                            {changePasswordForm.formState.isSubmitting ? t('saving') : t('changePasswordButton')}
+                            </Button>
+                        </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
       </div>
       
       <Dialog open={showTokenDialog} onOpenChange={(isOpen) => { setShowTokenDialog(isOpen); if (!isOpen) setGeneratedTokenInfo(null); }}>
