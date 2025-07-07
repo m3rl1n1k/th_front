@@ -306,16 +306,40 @@ export default function ProfilePage() {
     }
   };
 
-  const handleCopyToken = () => {
-    if (generatedTokenInfo?.token && navigator.clipboard) {
-      navigator.clipboard.writeText(generatedTokenInfo.token).then(() => {
+  const handleCopyToken = async () => {
+    if (!generatedTokenInfo?.token) return;
+    const tokenToCopy = generatedTokenInfo.token;
+
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(tokenToCopy);
         toast({ title: t('tokenCopiedTitle'), description: t('tokenCopiedDesc') });
-      }).catch(err => {
-        console.error('Failed to copy token: ', err);
-        toast({ variant: 'destructive', title: t('copyFailedTitle'), description: t('copyFailedDesc') });
-      });
-    } else if (!navigator.clipboard) {
-      toast({ variant: 'destructive', title: t('copyNotSupportedTitle'), description: t('copyNotSupportedDesc') });
+        return;
+      } catch (err) {
+        console.error('Modern clipboard copy failed: ', err);
+      }
+    }
+
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = tokenToCopy;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        toast({ title: t('tokenCopiedTitle'), description: t('tokenCopiedDesc') });
+      } else {
+        throw new Error('Fallback copy command failed');
+      }
+    } catch (err) {
+      console.error('Fallback clipboard copy failed: ', err);
+      toast({ variant: 'destructive', title: t('copyFailedTitle'), description: t('copyFailedDesc') });
     }
   };
 
