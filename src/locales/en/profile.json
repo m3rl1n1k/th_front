@@ -69,5 +69,9 @@
   "copyTokenButton": "Copy Token",
   "tokenCopiedTitle": "Copied!",
   "tokenCopiedDesc": "The token has been copied to your clipboard.",
-  "closeButton": "Close"
+  "closeButton": "Close",
+  "copyFailedTitle": "Copy Failed",
+  "copyFailedDesc": "Could not copy token to clipboard.",
+  "copyNotSupportedTitle": "Copy Not Supported",
+  "copyNotSupportedDesc": "Clipboard access is not available in this context."
 }

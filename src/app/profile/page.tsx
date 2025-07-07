@@ -282,8 +282,16 @@ export default function ProfilePage() {
 
   const handleCopyToken = () => {
     if (generatedTokenInfo?.token) {
-        navigator.clipboard.writeText(generatedTokenInfo.token);
-        toast({ title: t('tokenCopiedTitle'), description: t('tokenCopiedDesc') });
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(generatedTokenInfo.token).then(() => {
+          toast({ title: t('tokenCopiedTitle'), description: t('tokenCopiedDesc') });
+        }).catch(err => {
+          console.error('Failed to copy token: ', err);
+          toast({ variant: 'destructive', title: t('copyFailedTitle'), description: t('copyFailedDesc') });
+        });
+      } else {
+        toast({ variant: 'destructive', title: t('copyNotSupportedTitle'), description: t('copyNotSupportedDesc') });
+      }
     }
   };
 

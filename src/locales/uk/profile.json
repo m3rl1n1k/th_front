@@ -69,5 +69,9 @@
   "copyTokenButton": "Копіювати токен",
   "tokenCopiedTitle": "Скопійовано!",
   "tokenCopiedDesc": "Токен було скопійовано у буфер обміну.",
-  "closeButton": "Закрити"
+  "closeButton": "Закрити",
+  "copyFailedTitle": "Помилка копіювання",
+  "copyFailedDesc": "Не вдалося скопіювати токен у буфер обміну.",
+  "copyNotSupportedTitle": "Копіювання не підтримується",
+  "copyNotSupportedDesc": "Доступ до буфера обміну недоступний у цьому контексті."
 }
